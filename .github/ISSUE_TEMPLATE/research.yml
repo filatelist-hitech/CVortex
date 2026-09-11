@@ -1,0 +1,50 @@
+name: Research task
+description: Track current evidence needed before a technical or product decision
+title: "research: "
+labels:
+  - type:research
+  - status:needs-research
+  - priority:p2
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: State the decision-relevant question precisely.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Decision impact
+      description: Which architecture, product, security, integration, or cost decision depends on this research?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: freshness
+    attributes:
+      label: Freshness sensitivity
+      options:
+        - High — APIs, pricing, model catalog, laws, service capabilities
+        - Medium — ecosystem/tooling recommendations
+        - Low — stable standards or conceptual background
+    validations:
+      required: true
+
+  - type: textarea
+    id: sources
+    attributes:
+      label: Preferred sources
+      description: Official docs, standards, vendor docs, primary research, or other source requirements.
+    validations:
+      required: true
+
+  - type: textarea
+    id: completion
+    attributes:
+      label: Completion criteria
+      description: What evidence and comparison are sufficient to close the research task?
+    validations:
+      required: true
