@@ -2,31 +2,47 @@
 
 ## Current Phase
 
-`00-ai-system-bootstrap`
+`01-project-knowledge-bootstrap`
 
 Status: **completed**
 
 ## Completed Phases
 
 - `00-ai-system-bootstrap`
+- `01-project-knowledge-bootstrap`
 
 ## Current Repository State
 
-The repository contains the development-agent operating layer and repository/GitHub governance foundation created for Phase 00.
+The repository contains the development-agent operating layer and
+repository/GitHub governance foundation created during Phase 00.
+
+Phase 01 adds the initial CVortex project knowledge base and documentation
+skeleton for use by subsequent Codex sessions.
+
+The project knowledge base currently includes:
+
+- project home;
+- documentation map;
+- product vision;
+- product principles;
+- product scope;
+- canonical glossary;
+- documentation section skeleton for architecture, ADRs, data, API, AI,
+  design, security, QA, operations, research, and archive.
 
 No product implementation has been created.
 
-Specifically, Phase 00 does not create:
+Phase 01 does not introduce:
 
-- Laravel;
-- Next.js;
+- Laravel or Next.js product code;
 - npm/composer dependencies;
 - Docker Compose;
 - database migrations;
-- backend/frontend product code;
 - final ERD;
+- concrete dependency versions;
 - permanent concrete LLM model mappings;
-- LLM pricing assumptions.
+- LLM pricing assumptions;
+- runtime product AI Skills.
 
 ## Accepted Decisions
 
@@ -77,6 +93,16 @@ Architecture decisions requiring ADR treatment will be formalized in later phase
 
 ## Files Created / Changed
 
+Phase 01 project knowledge:
+
+- `docs/00-Home/CVortex.md`
+- `docs/00-Home/Documentation-Map.md`
+- `docs/01-Product/Vision.md`
+- `docs/01-Product/Principles.md`
+- `docs/01-Product/Scope.md`
+- `docs/01-Product/Glossary.md`
+- documentation skeleton directories under `docs/`
+
 Core operating layer:
 
 - `AGENTS.md`
@@ -121,22 +147,37 @@ Repository/GitHub governance:
 - `scripts/sync-git-governance.sh`
 - `scripts/bootstrap-github-metadata.sh`
 
+### Phase 01 — Project Knowledge Bootstrap
+
+Documentation:
+
+- `docs/00-Home/CVortex.md`
+- `docs/00-Home/Documentation-Map.md`
+- `docs/01-Product/Vision.md`
+- `docs/01-Product/Principles.md`
+- `docs/01-Product/Scope.md`
+- `docs/01-Product/Glossary.md`
+- documentation skeleton under `docs/`
+
+Project state:
+
+- `.agents/state/STATUS.md`
+- `.agents/state/NEXT.md`
+
 ## Last Validation Result
 
-Phase 00 bootstrap validation is performed by the bootstrap script after all core files are created.
+Phase 01 validation: **PASS**
 
-Required checks:
+Validated:
 
-- all operating instructions exist;
-- policies are separated;
-- workflows are separated;
-- templates exist;
-- persistent state exists;
-- docs and research have scoped instructions;
-- `NEXT.md` contains only `01-project-knowledge-bootstrap`;
-- no prohibited product bootstrap artifacts exist;
-- Git governance references resolve to real repository paths;
-- release policy does not create decorative tags/releases before a runnable milestone;
-- GitHub metadata contains no secrets or private user/job-search data.
-
-Expected result: PASS.
+- required starter documentation exists;
+- project knowledge is split into focused Markdown documents;
+- required frontmatter is present;
+- documentation skeleton is represented in Git;
+- product vision, principles, scope, and glossary are captured;
+- no product code was introduced;
+- no dependencies were installed;
+- no concrete dependency versions were frozen;
+- no concrete LLM model mapping or pricing was frozen;
+- no premature architecture ADR was introduced;
+- next bounded phase is `02-research-plan`.
