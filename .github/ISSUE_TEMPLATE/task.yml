@@ -1,0 +1,48 @@
+name: Engineering task
+description: Track bounded implementation, maintenance, refactor, test, documentation, or infrastructure work
+title: "task: "
+labels:
+  - priority:p2
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What concrete result should exist when this task is complete?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is explicitly in and out of scope?
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / decisions
+      description: Relevant ADRs, research, blockers, APIs, or prerequisite tasks.
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      placeholder: |
+        - [ ] tests
+        - [ ] authorization/security
+        - [ ] docs
+        - [ ] observability/error handling
+        - [ ] backward compatibility/migrations if applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      description: Observable completion criteria.
+    validations:
+      required: true
