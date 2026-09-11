@@ -1,0 +1,88 @@
+# Canonical GitHub label taxonomy for CVortex.
+# Apply/update it with: bash scripts/bootstrap-github-metadata.sh
+
+labels:
+  # Change type
+  - name: type:bug
+    color: D73A4A
+    description: Confirmed defect or regression
+  - name: type:feature
+    color: 1F6FEB
+    description: New product capability or behavior
+  - name: type:docs
+    color: 0075CA
+    description: Documentation-only change
+  - name: type:research
+    color: 8250DF
+    description: Research, evidence gathering, or validation
+  - name: type:refactor
+    color: FBCA04
+    description: Internal refactor without intended behavior change
+  - name: type:test
+    color: 0E8A16
+    description: Test or evaluation work
+  - name: type:chore
+    color: C5DEF5
+    description: Repository, tooling, or maintenance work
+  - name: type:security
+    color: B60205
+    description: Security-sensitive change or finding
+
+  # Product / technical area
+  - name: area:backend
+    color: 5319E7
+    description: Laravel backend or API
+  - name: area:frontend
+    color: 0969DA
+    description: Next.js, React, PWA, or browser UI
+  - name: area:ai
+    color: 8A2BE2
+    description: LLM architecture, skills, agents, prompts, or evals
+  - name: area:data
+    color: 0052CC
+    description: PostgreSQL, data model, provenance, or migrations
+  - name: area:infra
+    color: 006B75
+    description: Docker, Nginx, Redis, CI/CD, deployment, or operations
+  - name: area:design
+    color: D4C5F9
+    description: Figma, design tokens, accessibility, or UI system
+  - name: area:docs
+    color: 0E8A16
+    description: Project documentation and Obsidian vault
+
+  # Priority
+  - name: priority:p0
+    color: B60205
+    description: Critical; blocks safe progress or release
+  - name: priority:p1
+    color: D93F0B
+    description: High priority
+  - name: priority:p2
+    color: FBCA04
+    description: Normal priority
+  - name: priority:p3
+    color: C2E0C6
+    description: Low priority or backlog
+
+  # Workflow state
+  - name: status:blocked
+    color: B60205
+    description: Cannot proceed because of an explicit blocker
+  - name: status:needs-decision
+    color: D876E3
+    description: Requires an explicit product or architecture decision
+  - name: status:needs-research
+    color: 8250DF
+    description: Requires current evidence before implementation
+  - name: status:ready
+    color: 0E8A16
+    description: Requirements are sufficiently clear to execute
+
+  # Release semantics
+  - name: breaking-change
+    color: B60205
+    description: Backward-incompatible behavior or contract change
+  - name: skip-changelog
+    color: EDEDED
+    description: Exclude from generated release notes
