@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security-sensitive report
+    url: https://github.com/filatelist-hitech/CVortex/security
+    about: Do not post secrets, credentials, private career data, recruiter messages, or exploitable security details in a public issue.

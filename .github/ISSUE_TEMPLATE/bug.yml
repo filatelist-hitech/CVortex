@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible defect or regression
+title: "bug: "
+labels:
+  - type:bug
+  - priority:p2
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide facts and reproduction evidence. Do not paste secrets, API keys, private career data, recruiter messages, or production data.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+      placeholder: Concise description of the defect.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Minimal deterministic steps to reproduce the issue.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Branch/commit, OS, browser/runtime, container/service, and relevant versions.
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Sanitized logs, screenshots, request IDs, test output, or other evidence.
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, credentials, private user data, and production data from this report.
+          required: true

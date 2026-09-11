@@ -68,6 +68,32 @@ Before merge, verify as applicable:
 - no secret, token, personal resume, recruiter message, or production data is present;
 - untrusted external content is not treated as agent/system instructions.
 
+## Labels
+
+The canonical repository label taxonomy is stored in `.github/labels.yml`.
+
+Synchronize labels with GitHub using:
+
+```bash
+bash scripts/bootstrap-github-metadata.sh
+```
+
+Use labels for change type, technical/product area, priority, workflow state, and release-note grouping. Do not invent near-duplicate labels ad hoc in the GitHub UI.
+
+## Releases and tags
+
+Versioning, tags, and GitHub Releases follow `.agents/policies/release-management.md`.
+
+Key rules:
+
+- do not tag every phase, commit, or pull request;
+- release tags are created only from `main`;
+- use Semantic Versioning with a `v` prefix;
+- do not move or reuse published tags;
+- no GitHub Release is required during the current repository/documentation bootstrap;
+- the first release becomes eligible only when a runnable milestone has actually been validated;
+- `.github/release.yml` defines generated release-note grouping.
+
 ## Merge policy
 
 Prefer **squash merge** for ordinary short-lived branches to keep history readable. Release PRs from `stage` to `main` may use a normal merge when preserving the release boundary is useful.
