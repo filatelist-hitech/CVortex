@@ -152,8 +152,8 @@ A Git-related change is complete only when:
 EOF
 
 managed_block() {
-  cat <<EOF
-$BEGIN_MARKER
+  printf '%s\n' "$BEGIN_MARKER"
+  cat <<'EOF'
 ## Git workflow
 
 For all repository changes, follow `.agents/policies/git-workflow.md` and `CONTRIBUTING.md`.
@@ -161,8 +161,9 @@ For all repository changes, follow `.agents/policies/git-workflow.md` and `CONTR
 Mandatory baseline: work on short-lived branches, target `stage` for normal changes, promote `stage` to `main` via release PR, and never force-push or delete protected branches.
 
 The canonical GitHub ruleset is `.github/rulesets/cvortex-protected-branches.json`.
-$END_MARKER
+Versioning, tags, and GitHub Releases follow `.agents/policies/release-management.md`.
 EOF
+  printf '%s\n' "$END_MARKER"
 }
 
 if [[ -f "$AGENTS_FILE" ]]; then
