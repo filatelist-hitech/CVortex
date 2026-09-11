@@ -12,7 +12,7 @@ Status: **completed**
 
 ## Current Repository State
 
-The repository contains only the development-agent operating layer created for Phase 00.
+The repository contains the development-agent operating layer and repository/GitHub governance foundation created for Phase 00.
 
 No product implementation has been created.
 
@@ -53,6 +53,11 @@ The following product directions are owner-approved inputs:
 - Figma is the visual source of truth.
 - Documentation is Markdown stored in Git and usable as an Obsidian Vault.
 - `.agents/` is reserved for DEVELOPMENT AGENTS.
+- `main` is the stable/release branch and `stage` is the integration branch.
+- Normal changes use short-lived branches and pull requests into `stage`.
+- Release promotion flows from validated `stage` to `main` through a pull request.
+- Git tags and GitHub Releases are created only from validated `main` commits and follow SemVer once releases begin.
+- No tag/release is required for documentation/repository bootstrap phases.
 
 ## Pending Architecture Decisions
 
@@ -72,6 +77,8 @@ Architecture decisions requiring ADR treatment will be formalized in later phase
 
 ## Files Created / Changed
 
+Core operating layer:
+
 - `AGENTS.md`
 - `PROJECT.md`
 - `.agents/policies/truth-first.md`
@@ -81,6 +88,8 @@ Architecture decisions requiring ADR treatment will be formalized in later phase
 - `.agents/policies/testing.md`
 - `.agents/policies/documentation.md`
 - `.agents/policies/change-management.md`
+- `.agents/policies/git-workflow.md`
+- `.agents/policies/release-management.md`
 - `.agents/workflows/phase-execution.md`
 - `.agents/workflows/research.md`
 - `.agents/workflows/architecture-decision.md`
@@ -97,9 +106,24 @@ Architecture decisions requiring ADR treatment will be formalized in later phase
 - `docs/AGENTS.md`
 - `research/AGENTS.md`
 
+Repository/GitHub governance:
+
+- `CONTRIBUTING.md`
+- `.github/CODEOWNERS`
+- `.github/labels.yml`
+- `.github/release.yml`
+- `.github/ISSUE_TEMPLATE/bug.yml`
+- `.github/ISSUE_TEMPLATE/feature.yml`
+- `.github/ISSUE_TEMPLATE/research.yml`
+- `.github/ISSUE_TEMPLATE/task.yml`
+- `.github/ISSUE_TEMPLATE/config.yml`
+- `.github/rulesets/cvortex-protected-branches.json`
+- `scripts/sync-git-governance.sh`
+- `scripts/bootstrap-github-metadata.sh`
+
 ## Last Validation Result
 
-Phase 00 bootstrap validation is performed by the bootstrap script after all files are created.
+Phase 00 bootstrap validation is performed by the bootstrap script after all core files are created.
 
 Required checks:
 
@@ -110,6 +134,9 @@ Required checks:
 - persistent state exists;
 - docs and research have scoped instructions;
 - `NEXT.md` contains only `01-project-knowledge-bootstrap`;
-- no prohibited product bootstrap artifacts exist.
+- no prohibited product bootstrap artifacts exist;
+- Git governance references resolve to real repository paths;
+- release policy does not create decorative tags/releases before a runnable milestone;
+- GitHub metadata contains no secrets or private user/job-search data.
 
 Expected result: PASS.
