@@ -1,0 +1,31 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking-change
+    - title: Security
+      labels:
+        - type:security
+    - title: Features
+      labels:
+        - type:feature
+    - title: Fixes
+      labels:
+        - type:bug
+    - title: Documentation
+      labels:
+        - type:docs
+    - title: Research
+      labels:
+        - type:research
+    - title: Internal changes
+      labels:
+        - type:refactor
+        - type:test
+        - type:chore
+    - title: Other changes
+      labels:
+        - '*'
