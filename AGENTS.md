@@ -129,14 +129,13 @@ Stop when:
 
 Do not advance to the next phase automatically.
 
-
 <!-- CVORTEX:GIT-WORKFLOW:BEGIN -->
 ## Git workflow
 
-For all repository changes, follow  and .
+For all repository changes, follow `.agents/policies/git-workflow.md` and `CONTRIBUTING.md`.
 
-Mandatory baseline: work on short-lived branches, target  for normal changes, promote  to  via release PR, and never force-push or delete protected branches.
+Mandatory baseline: work on short-lived branches, target `stage` for normal changes, promote `stage` to `main` via release PR, and never force-push or delete protected branches.
 
-The canonical GitHub ruleset is .
+The canonical GitHub ruleset is `.github/rulesets/cvortex-protected-branches.json`.
+Versioning, tags, and GitHub Releases follow `.agents/policies/release-management.md`.
 <!-- CVORTEX:GIT-WORKFLOW:END -->
-
