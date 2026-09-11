@@ -1,0 +1,11 @@
+# Default owner
+* @filatelist-hitech
+
+# Operating layer and governance
+/.agents/ @filatelist-hitech
+/.github/ @filatelist-hitech
+/scripts/ @filatelist-hitech
+
+# Documentation and research
+/docs/ @filatelist-hitech
+/research/ @filatelist-hitech
