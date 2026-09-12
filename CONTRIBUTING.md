@@ -35,10 +35,14 @@ The canonical mapping lives in `.github/roadmap.yml`.
 3. Implement behavior, tests, security controls and docs together.
 4. Run relevant validation.
 5. Open PR to `stage`.
-6. Assign roadmap metadata.
-7. Resolve required checks/review threads.
-8. Squash-merge ordinary branches.
-9. Promote validated `stage` to `main` only through release policy.
+6. Complete the PR body using `.github/pull_request_template.md`.
+7. Assign at least one assignee, canonical `type:*` and `area:*` labels, exactly one `priority:*`, roadmap placement and changelog choice.
+8. Add `## PR metadata / review checkpoint` and `## Governance / validation checkpoint` comments.
+9. Apply exactly one final `status:*` label, normally `status:review` while awaiting review.
+10. Run `bash scripts/check-pr-contract.sh <pr-number>` when available and require both Governance checks to be green.
+11. Resolve review threads and required checks.
+12. Squash-merge ordinary branches.
+13. Promote validated `stage` to `main` only through release policy.
 
 ## Branch naming
 
@@ -54,11 +58,29 @@ Use lowercase kebab-case. Include milestone/slice when it materially improves re
 
 Use Conventional Commit-style messages. Keep the scope domain-oriented (`feat(vacancies)`) rather than roadmap-oriented (`feat(m1.3)`), so history stays useful after milestones close.
 
-## Pull request checks
+## Pull request contract
 
-Before merge, verify applicable tests, authorization/cross-user isolation, migrations/backward compatibility, error handling, observability, docs, ADR impact, secret/private-data safety and untrusted-input handling.
+Before a PR is reported ready for review or merge, verify:
 
-The `Roadmap metadata` action also verifies mandatory milestone/slice/release placement.
+- at least one assignee;
+- at least one canonical `type:*` label;
+- at least one canonical `area:*` label;
+- exactly one `priority:*` label;
+- exactly one `status:*` label;
+- correct milestone/roadmap placement;
+- exactly one changelog path: release-notes intent or `skip-changelog`;
+- PR-template sections are present;
+- metadata/review checkpoint comment exists;
+- governance/validation checkpoint comment exists.
+
+Canonical label names live in `.github/labels.yml`. Do not invent near-duplicate labels in the GitHub UI.
+
+The Governance workflow exposes two checks:
+
+- `Roadmap metadata` for milestone/slice/release placement;
+- `PR contract` for the broader metadata/template/checkpoint contract.
+
+Before merge, also verify applicable tests, authorization/cross-user isolation, migrations/backward compatibility, error handling, observability, docs, ADR impact, secret/private-data safety and untrusted-input handling.
 
 ## GitHub metadata bootstrap
 
