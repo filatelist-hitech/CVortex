@@ -46,6 +46,8 @@ Normal text must meet WCAG AA contrast of **4.5:1** against its actual opaque ba
 
 `font.family.brand` is `Space Grotesk` with system fallbacks; no self-hosting or distribution right is assumed. Phase 08 must confirm acquisition, licence and loading strategy before shipping a font file.
 
+`font.tracking` uses DTCG `dimension` values in `rem` (`-0.02rem`, `0rem`, `0.02rem`) and must be emitted directly as CSS `letter-spacing`; no implicit unit conversion is permitted.
+
 | Role | Size / line height | Weight | Use |
 | --- | --- | --- | --- |
 | Display | 40 / tight | 700 | sparse page-level moments only |
