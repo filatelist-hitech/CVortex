@@ -62,7 +62,7 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 
 ## M1.1 implementation readiness
 
-M1.1 Access Core implementation and required validation are complete / PASS pending independent review. The feature branch has passing backend, frontend, migration, same-origin auth runtime, governance and diff checks. The historical frontend build failure is classified as NOT REPRODUCED / TRANSIENT with no asserted root cause. `NEXT.md` remains `m1-1-access-core` until independent review; M1.2 has not started.
+M1.1 Access Core implementation and the five confirmed independent-review fixes are complete / PASS pending a fresh independent review. Commit `9193b51` adds the real `/register#token=...` flow, PostgreSQL bootstrap serialization, executable security-matrix regressions, complete invitation CLI output and configurable login limiting. Backend/frontend tests, Pint, Larastan, production frontend build with `NODE_ENV=production`, Nginx `/register`, same-origin auth, PostgreSQL concurrency, isolated migration up/down/re-up, governance and diff checks pass. The compose-dev `NODE_ENV=development` build remains an environment-specific Next `/_global-error` failure; it is not used as the production-build result. `NEXT.md` remains `m1-1-access-core` until independent review; M1.2 has not started.
 
 ## Next authorized task
 
