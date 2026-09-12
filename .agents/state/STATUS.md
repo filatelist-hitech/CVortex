@@ -70,6 +70,8 @@ Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-1-access-cor
 
 Result: **PASS**.
 
+Reproducible command results are recorded in [M0 Runnable Core Validation Evidence](../evidence/m0-runnable-core-validation.md).
+
 Validated from tracked contents on the real Docker runtime and a genuinely
 fresh worktree: bootstrap/build/start, Nginx/browser shell, health behavior,
 PostgreSQL/Redis failure and recovery, PostgreSQL/private-storage persistence,

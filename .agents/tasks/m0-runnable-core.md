@@ -305,6 +305,8 @@ Verify at minimum:
 
 M0 cannot PASS by file inspection.
 
+Validation evidence: [M0 Runnable Core Validation Evidence](../evidence/m0-runnable-core-validation.md).
+
 Actually validate:
 
 - clean-checkout bootstrap through the documented Make workflow;
