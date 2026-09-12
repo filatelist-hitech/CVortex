@@ -69,7 +69,7 @@ Use [Lucide](https://lucide.dev/) as the single upstream icon source. It supplie
 - Icons inherit semantic `currentColor`; do not give them literal colors, gradients, or a state meaning that is unavailable in accompanying text. Keep their visual weight at 2 px across sizes; do not mix filled and outline variants in one control group.
 - A decorative icon is `aria-hidden`, non-focusable, and has adjacent text that carries the meaning. An informative icon needs an accessible name through its labelled control or visible text; an icon-only button requires an explicit accessible name, tooltip on pointer/keyboard focus, and the normal 44 × 44 px touch target.
 - Status, approval, blocking and provenance icons always appear with their required text label and recovery/action copy. An icon alone never represents confirmation, risk, error, or a destructive action.
-- In Figma, name instances `Icon / Lucide / {Name} / {16|20|24}` and preserve the source viewBox/stroke rather than outlining, recolouring, or detaching vectors without a documented exception.
+- In Figma, name instances `Icon / Lucide / {Name} / {16|20|24|32}` and preserve the source viewBox/stroke rather than outlining, recolouring, or detaching vectors without a documented exception.
 
 ### Layout, shape, motion and layers
 
