@@ -11,6 +11,7 @@ tags:
 related:
   - README.md
   - RESEARCH-PLAN.md
+  - PHASE-04-SUMMARY.md
 ---
 
 # CVortex Research Index
@@ -66,26 +67,31 @@ technical/DECISION-CANDIDATES.md
 
 Он не является ADR.
 
+**Repository check 2026-09-12:** Phase 03 completion artifacts/commit were not found on `stage`. Keep these rows `PLANNED` until technical research is actually executed or its artifacts are located and reconciled.
+
 ---
 
 # Phase 04 — Product / Integrations / Hiring Research
 
-| Area | IDs | Planned report | Status |
+Phase 04 was executed by explicit current task instruction even though Phase 03 is not evidenced as complete. This sequencing conflict is recorded in project state and blocks Phase 05 execution until reconciled.
+
+| Area | IDs | Actual report | Status |
 |---|---|---|---|
-| HeadHunter | R12-01 | `integrations/headhunter.md` | PLANNED |
-| LinkedIn / Indeed | R12-02 | `integrations/linkedin-indeed.md` | PLANNED |
-| RU/other job boards | R12-03 | `integrations/job-boards.md` | PLANNED |
-| ATS-hosted career platforms | R12-04 | `integrations/ats-platforms.md` | PLANNED |
-| Remote/international boards | R12-05 | `integrations/remote-job-sources.md` | PLANNED |
-| Generic career pages | R12-06 | `integrations/company-career-pages.md` | PLANNED |
-| Source fallback strategy | R12-07 | `integrations/fallback-strategy.md` | PLANNED |
-| ATS/resume parsing | R13-01..03 | `recruitment/ats-screening.md` | PLANNED |
-| Cover letters | R13-04 | `recruitment/cover-letters.md` | PLANNED |
-| Regional CV practices | R13-05 | `recruitment/regional-practices.md` | PLANNED |
-| Hiring workflows | R13-06 | `recruitment/hiring-workflows.md` | PLANNED |
-| Evidence quality | R13-07..08 | `recruitment/evidence-policy.md` | PLANNED |
-| Integration security extension | relevant R14-* | `security/integration-threats.md` | PLANNED |
-| ToS/data-use licensing | R17-04..06 | `integrations/platform-terms.md` | PLANNED |
+| Unified vacancy sources | R12-01..07 | `integrations/vacancy-sources-matrix.md` | REVIEWED |
+| ATS-hosted career platforms | R12-04, R12-06 | `integrations/ats-career-platforms.md` | REVIEWED |
+| Source/fallback strategy | R12-06..07 | `integrations/integration-strategies.md` | REVIEWED |
+| Platform Terms / data use | R12-*, R17-04..06 | `integrations/platform-terms.md` | REVIEWED |
+| ATS/resume parsing/screening | R13-01..03 | `recruitment/ats-and-screening.md` | REVIEWED |
+| Recruiting AI | R13-02..03 | `recruitment/recruiting-ai.md` | REVIEWED |
+| Resume practices | R13-01, R13-03, R13-05, R13-07 | `recruitment/resume-practices.md` | REVIEWED |
+| Cover letters | R13-04 | `recruitment/cover-letters.md` | REVIEWED |
+| Regional CV practices | R13-05 | `recruitment/market-comparison.md` | REVIEWED |
+| Hiring workflows | R13-06 | `recruitment/technical-hiring.md` | REVIEWED |
+| Employer-type evidence | R13-06, R13-08 | `recruitment/employer-type-comparison.md` | REVIEWED |
+| Integration security extension | relevant R14-* | `security/external-content-threats.md` | REVIEWED |
+| Phase synthesis | R12-*, R13-*, relevant R14/R17 | `PHASE-04-SUMMARY.md` | REVIEWED |
+
+Earlier Phase 02 planned filenames such as `integrations/headhunter.md`, `integrations/linkedin-indeed.md`, `recruitment/regional-practices.md` and `security/integration-threats.md` were consolidated into the reviewed artifacts above to avoid meaningless file sprawl. Their research questions remain covered.
 
 ---
 
@@ -139,6 +145,16 @@ R17 Platform terms
 ```
 
 Dependencies may alter this ordering when evidence reveals new blockers.
+
+Observed repository sequence currently differs:
+
+```text
+Phase 02 merged
+Phase 03 completion NOT FOUND
+Phase 04 completed by explicit current task
+```
+
+Do not silently mark Phase 03 complete.
 
 ---
 
@@ -205,6 +221,8 @@ R17-06
 ```
 
 Priority должна пересматриваться при обнаружении новых dependencies.
+
+Phase 04 has collected evidence for the R12/R13/integration-related R14/R17 items above, but this does not close missing Phase 03 technical questions.
 
 ---
 
@@ -287,6 +305,8 @@ security implications
 
 Generic URL fetching дополнительно блокируется результатами SSRF research.
 
+Phase 04 now provides source-specific evidence for this gate, but implementation remains prohibited.
+
 ---
 
 # Research completion metrics
@@ -310,28 +330,41 @@ conflicted
 
 ---
 
+# Phase 04 validation
+
+Verified in reviewed artifacts:
+
+- every named Vacancy Source is present in the unified matrix;
+- public, partner-only and customer-only APIs are distinguished;
+- documented APIs are separated from private/internal endpoints;
+- OAuth is not asserted without a relevant confirmed use case;
+- undocumented rate limits are marked unknown/not publicly documented;
+- ToS, API Terms, robots and CVortex interpretation are separated;
+- realistic fallback strategies are defined;
+- ATS parsing, automated screening, recruiting AI and skill matching are covered;
+- resume practices, cover letters and technical hiring are covered;
+- RU/EU/US/UK are compared without claiming homogeneity;
+- fintech/startup/enterprise differences remain low-confidence where evidence was insufficient;
+- external-content security findings are documented;
+- no fake universal ATS score is introduced;
+- no product code or accepted ADR is created by Phase 04.
+
+---
+
 # Current index state
 
 ```text
-Phase: 02 Research Plan
-
-Research questions:
-- defined
-
-Research execution:
-- not started
-
-Architecture decisions created by Phase 02:
-- none
-
-Product code:
-- none
+Phase 02: MERGED / repository evidence confirms research plan
+Phase 03: NOT VERIFIED / remains PLANNED
+Phase 04: REVIEWED / completed out of sequence by explicit current task
+Architecture decisions created by Phase 04: none
+Product code created by Phase 04: none
 ```
 
-## Next permitted phase
+## Next phase candidate
 
 ```text
-03-technical-research
+05-architecture-decision-freeze
 ```
 
-Phase 03 должен выполнять исследования из этого index, а не начинать реализацию stack.
+**BLOCKED:** do not start Phase 05 until missing Phase 03 technical research is completed or located and project state is reconciled.
