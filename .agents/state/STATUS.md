@@ -2,51 +2,69 @@
 
 ## Current Phase
 
-`01-project-knowledge-bootstrap`
+`04-product-integrations-hiring-research`
 
-Status: **completed**
+Status: **completed with sequencing blocker**
 
 ## Completed Phases
 
 - `00-ai-system-bootstrap`
 - `01-project-knowledge-bootstrap`
+- `02-research-plan` — confirmed by merged repository evidence
+- `04-product-integrations-hiring-research` — completed by explicit current task instruction
+
+`03-technical-research` is **not marked complete** because completion artifacts/commit were not found during this run.
 
 ## Current Repository State
 
-The repository contains the development-agent operating layer and
-repository/GitHub governance foundation created during Phase 00.
+The repository contains the development-agent operating layer and repository/GitHub governance foundation created during Phase 00.
 
-Phase 01 adds the initial CVortex project knowledge base and documentation
-skeleton for use by subsequent Codex sessions.
+Phase 01 added the initial CVortex project knowledge base and documentation skeleton.
 
-The project knowledge base currently includes:
+Phase 02 added the research plan/index covering technical, integration, recruitment, security and licensing questions.
 
-- project home;
-- documentation map;
-- product vision;
-- product principles;
-- product scope;
-- canonical glossary;
-- documentation section skeleton for architecture, ADRs, data, API, AI,
-  design, security, QA, operations, research, and archive.
+Phase 04 now adds reviewed evidence for:
 
-No product implementation has been created.
+- vacancy/job-board and ATS career-source capabilities;
+- API/auth/OAuth/feed classifications and source restrictions;
+- realistic vacancy ingestion fallbacks;
+- ATS parsing, screening, skill matching and recruiting AI;
+- resume and cover-letter practices;
+- technical hiring;
+- RU/EU/US/UK market comparison;
+- fintech/startup/enterprise evidence limits;
+- external-content/ingestion security threats.
 
-Phase 01 does not introduce:
+No product implementation has been created by Phase 04.
+
+Phase 04 does not introduce:
 
 - Laravel or Next.js product code;
 - npm/composer dependencies;
 - Docker Compose;
 - database migrations;
 - final ERD;
+- vacancy adapters or scraping;
+- browser extension implementation;
+- live OAuth/job-board connections;
+- Recruitment Knowledge Base tables;
 - concrete dependency versions;
 - permanent concrete LLM model mappings;
 - LLM pricing assumptions;
-- runtime product AI Skills.
+- runtime product AI Skills;
+- accepted architecture ADRs.
+
+## Sequencing Conflict
+
+Before this run, `STATUS.md` and `NEXT.md` were stale and still reported Phase 01 / Phase 02 even though Phase 02 research-plan changes had already been merged to `stage`.
+
+Repository history checked during Phase 04 did not show a completed Phase 03 technical-research change.
+
+Phase 04 was executed because the explicit current task required it. This does **not** imply that Phase 03 is complete.
 
 ## Accepted Decisions
 
-The following product directions are owner-approved inputs:
+The following product directions remain owner-approved inputs:
 
 - CVortex is a personal Job Search OS.
 - Truth-first is mandatory.
@@ -75,7 +93,24 @@ The following product directions are owner-approved inputs:
 - Git tags and GitHub Releases are created only from validated `main` commits and follow SemVer once releases begin.
 - No tag/release is required for documentation/repository bootstrap phases.
 
+## Phase 04 Research Conclusions — Not Accepted ADRs
+
+Evidence supports these later decision inputs:
+
+- public ATS job-board APIs/feeds are the cleanest automation surface;
+- partner/customer APIs are not public candidate APIs;
+- undocumented frontend endpoints must not be treated as integration APIs;
+- manual paste/file input remains a necessary universal fallback;
+- restrictive sources require source-specific automation/storage policy;
+- matching/screening is multi-dimensional/vendor-specific, not one universal ATS percentage;
+- external vacancy/web/document content remains untrusted data;
+- future URL import requires SSRF-aware security architecture.
+
+These findings are not architecture decisions until Phase 05 accepts them through the project decision process.
+
 ## Pending Architecture Decisions
+
+Existing pending decisions remain:
 
 - Canonical location and lifecycle of CVortex runtime/product LLM Skills.
 - Concrete provider/model mappings.
@@ -83,101 +118,74 @@ The following product directions are owner-approved inputs:
 - Dependency/library versions.
 - Detailed data model and final ERD.
 
-These must be resolved only in their appropriate future phases.
+Phase 04 adds decision inputs for:
+
+- vacancy source registry / adapter capability model;
+- source policy / retention metadata;
+- URL/browser/manual ingestion boundaries;
+- matching dimension model;
+- Recruitment Knowledge Base design;
+- external-content trust boundary and URL-fetch security architecture.
+
+These must be resolved only in their appropriate future architecture phases and only after missing technical research is reconciled.
 
 ## Relevant ADR Links
 
-No ADRs created during Phase 00.
+No accepted ADR was created by Phase 04.
 
-Architecture decisions requiring ADR treatment will be formalized in later phases.
+Architecture decisions requiring ADR treatment remain deferred to Phase 05 or later.
 
 ## Files Created / Changed
 
-Phase 01 project knowledge:
+Core operating/project layer from earlier phases remains unchanged except project state files.
 
-- `docs/00-Home/CVortex.md`
-- `docs/00-Home/Documentation-Map.md`
-- `docs/01-Product/Vision.md`
-- `docs/01-Product/Principles.md`
-- `docs/01-Product/Scope.md`
-- `docs/01-Product/Glossary.md`
-- documentation skeleton directories under `docs/`
+Phase 04 research artifacts:
 
-Core operating layer:
+- `research/integrations/vacancy-sources-matrix.md`
+- `research/integrations/ats-career-platforms.md`
+- `research/integrations/integration-strategies.md`
+- `research/integrations/platform-terms.md`
+- `research/recruitment/ats-and-screening.md`
+- `research/recruitment/recruiting-ai.md`
+- `research/recruitment/resume-practices.md`
+- `research/recruitment/cover-letters.md`
+- `research/recruitment/technical-hiring.md`
+- `research/recruitment/market-comparison.md`
+- `research/recruitment/employer-type-comparison.md`
+- `research/security/external-content-threats.md`
+- `research/PHASE-04-SUMMARY.md`
 
-- `AGENTS.md`
-- `PROJECT.md`
-- `.agents/policies/truth-first.md`
-- `.agents/policies/architecture.md`
-- `.agents/policies/research.md`
-- `.agents/policies/security.md`
-- `.agents/policies/testing.md`
-- `.agents/policies/documentation.md`
-- `.agents/policies/change-management.md`
-- `.agents/policies/git-workflow.md`
-- `.agents/policies/release-management.md`
-- `.agents/workflows/phase-execution.md`
-- `.agents/workflows/research.md`
-- `.agents/workflows/architecture-decision.md`
-- `.agents/workflows/implementation.md`
-- `.agents/workflows/review.md`
-- `.agents/templates/ADR.md`
-- `.agents/templates/RESEARCH.md`
-- `.agents/templates/TASK.md`
-- `.agents/templates/SKILL.md`
-- `.agents/templates/REVIEW.md`
+Updated navigation/state:
+
+- `research/RESEARCH-INDEX.md`
 - `.agents/state/STATUS.md`
 - `.agents/state/NEXT.md`
 - `.agents/state/BLOCKERS.md`
-- `docs/AGENTS.md`
-- `research/AGENTS.md`
-
-Repository/GitHub governance:
-
-- `CONTRIBUTING.md`
-- `.github/CODEOWNERS`
-- `.github/labels.yml`
-- `.github/release.yml`
-- `.github/ISSUE_TEMPLATE/bug.yml`
-- `.github/ISSUE_TEMPLATE/feature.yml`
-- `.github/ISSUE_TEMPLATE/research.yml`
-- `.github/ISSUE_TEMPLATE/task.yml`
-- `.github/ISSUE_TEMPLATE/config.yml`
-- `.github/rulesets/cvortex-protected-branches.json`
-- `scripts/sync-git-governance.sh`
-- `scripts/bootstrap-github-metadata.sh`
-
-### Phase 01 — Project Knowledge Bootstrap
-
-Documentation:
-
-- `docs/00-Home/CVortex.md`
-- `docs/00-Home/Documentation-Map.md`
-- `docs/01-Product/Vision.md`
-- `docs/01-Product/Principles.md`
-- `docs/01-Product/Scope.md`
-- `docs/01-Product/Glossary.md`
-- documentation skeleton under `docs/`
-
-Project state:
-
-- `.agents/state/STATUS.md`
-- `.agents/state/NEXT.md`
 
 ## Last Validation Result
 
-Phase 01 validation: **PASS**
+Phase 04 research validation: **PASS**.
 
 Validated:
 
-- required starter documentation exists;
-- project knowledge is split into focused Markdown documents;
-- required frontmatter is present;
-- documentation skeleton is represented in Git;
-- product vision, principles, scope, and glossary are captured;
-- no product code was introduced;
-- no dependencies were installed;
-- no concrete dependency versions were frozen;
-- no concrete LLM model mapping or pricing was frozen;
-- no premature architecture ADR was introduced;
-- next bounded phase is `02-research-plan`.
+- required named vacancy sources are represented in the matrix;
+- API/auth/OAuth/feed claims are evidence-scoped or marked unknown;
+- public/partner/customer/internal API distinctions are explicit;
+- restrictions and fallback strategies are documented;
+- recruitment topics and market comparisons are covered;
+- confidence and unresolved findings are recorded;
+- security research is present;
+- no fake universal ATS score is introduced;
+- no product code or accepted ADR is introduced.
+
+Phase sequence validation: **BLOCKED**.
+
+Reason: Phase 03 technical-research completion is not evidenced in the repository.
+
+## Next Phase
+
+Task-prescribed next phase:
+
+`05-architecture-decision-freeze`
+
+Execution status: **BLOCKED until Phase 03 technical research is completed or located and project state is reconciled.**
