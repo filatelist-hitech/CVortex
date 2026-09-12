@@ -61,6 +61,16 @@ Normal text must meet WCAG AA contrast of **4.5:1** against its actual opaque ba
 
 Never use text below 12 px. Reduce display hierarchy on compact screens before reducing body text. Long evidence excerpts use body size, relaxed line height, wrapping and a deliberate disclosure—not tiny type.
 
+### Iconography
+
+Use [Lucide](https://lucide.dev/) as the single upstream icon source. It supplies consistent SVG outlines under the ISC licence; Phase 07 installs no package or copied icon asset, and Phase 08 must pin the compatible package version before code consumption. Do not mix icon families or draw ad-hoc substitutes for an existing Lucide icon.
+
+- Use the 24 × 24 viewBox and 2 px stroke with round line caps/joins. Default rendered sizes are 16 px in dense table metadata, 20 px beside controls and body text, and 24 px for standalone icon buttons; use 32 px only for empty/error-state illustration accents.
+- Icons inherit semantic `currentColor`; do not give them literal colors, gradients, or a state meaning that is unavailable in accompanying text. Keep their visual weight at 2 px across sizes; do not mix filled and outline variants in one control group.
+- A decorative icon is `aria-hidden`, non-focusable, and has adjacent text that carries the meaning. An informative icon needs an accessible name through its labelled control or visible text; an icon-only button requires an explicit accessible name, tooltip on pointer/keyboard focus, and the normal 44 × 44 px touch target.
+- Status, approval, blocking and provenance icons always appear with their required text label and recovery/action copy. An icon alone never represents confirmation, risk, error, or a destructive action.
+- In Figma, name instances `Icon / Lucide / {Name} / {16|20|24}` and preserve the source viewBox/stroke rather than outlining, recolouring, or detaching vectors without a documented exception.
+
 ### Layout, shape, motion and layers
 
 - Space is the `space` scale (4 px base). Standard stacks are 8/12/16/24 px; 32+ is reserved for section separation. One-off values require a documented layout reason.
