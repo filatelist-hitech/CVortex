@@ -1,11 +1,11 @@
 ---
 title: Phase 06 Product Design
-status: awaiting-independent-review
+status: accepted
 owner: project
 created: 2026-09-12
 updated: 2026-09-12
 tags: [product, prd, requirements, mvp, phase-06]
-related: ["[[Vision]]", "[[Scope]]", "[[Glossary]]", "[[../02-Architecture/Phase-06-System-Design|System Design]]"]
+related: ["[[Vision]]", "[[Scope]]", "[[Glossary]]", "[[Roadmap]]", "[[../02-Architecture/Phase-06-System-Design|System Design]]"]
 ---
 
 # Phase 06 Product Design
@@ -44,7 +44,7 @@ Success means a user can explain any recommendation and candidate-facing stateme
 ```mermaid
 flowchart LR
   O[Invite and onboarding] --> C[Career Fact Base]
-  C --> I[Import resume] --> P[PENDING facts] --> R[Review] --> F[CONFIRMED facts]
+  C --> I[Import/paste career source] --> P[PENDING facts] --> R[Review] --> F[CONFIRMED facts]
   V[Add vacancy] --> A[Analysis and should-I-apply]
   F --> A --> RR[Resume recommendations] --> H[Approve, edit or reject]
   H --> CL[Cover letter] --> AP[Prepare application] --> M[Manual application confirmation]
@@ -52,14 +52,18 @@ flowchart LR
   EM -. employer context .-> RR
 ```
 
-The flow deliberately routes imported resumes and recruiter conversations through review: extraction can propose data, never certify it. Application confirmation is manual. Conversation import updates Employer Memory only as untrusted source material or user-confirmed facts.
+The flow deliberately routes imported career material and recruiter conversations through review: extraction can propose data, never certify it. Application confirmation is manual. Conversation import updates Employer Memory only as untrusted source material or user-confirmed facts.
 
-## Scope and roadmap
+## Scope
 
-**MVP:** invite-only accounts; Career Fact Base and review; controlled vacancy input and analysis; explainable matching; versioned resume/cover package; Truth Guard; manual application tracking; employer context; basic interview and outcome history; local-first web/PWA.
+**MVP direction:** invite-only accounts; Career Fact Base and review; controlled vacancy input and analysis; explainable matching; versioned resume/cover package; Truth Guard; manual application tracking; employer context; basic interview/outcome history; local-first web/PWA.
 
-**Post-MVP:** additional approved source adapters, richer analytics, browser/mobile clients, deeper research automation and measured semantic-search improvements.
+**Post-MVP direction:** additional approved source adapters, richer analytics, browser/mobile clients, deeper research automation and measured semantic-search improvements.
 
 **Explicitly out of scope:** automatic submissions or employer messages, fabricated/AI-detector-evasion content, native mobile, Kubernetes, microservices, Kafka, standalone vector DB, GraphQL, fine-tuning and event sourcing.
 
-`Foundation → Infrastructure → Auth → Career Foundation → Vacancies → Matching → Application Package → Employer Memory → Interview → Analytics/later capabilities`.
+## Implementation roadmap
+
+The canonical execution sequence is now [[Roadmap]].
+
+The former horizontal sequence `Foundation → Infrastructure → Auth → Career Foundation → Vacancies → Matching → Application Package → Employer Memory → Interview → Analytics` is retained only as historical conceptual decomposition. It is superseded as an implementation order by value-driven milestones and vertical slices.

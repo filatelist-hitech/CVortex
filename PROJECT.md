@@ -32,16 +32,7 @@ If a problem can be reliably solved with normal code, schema validation, rules o
 
 ### Provider-independent AI
 
-AI architecture separates:
-
-- Provider
-- ModelPolicy
-- Skill
-- Agent
-- Workflow
-- Tool
-
-Business logic must not depend directly on one LLM provider.
+AI architecture separates Provider, ModelPolicy, Skill, Agent, Workflow and Tool. Business logic must not depend directly on one LLM provider.
 
 ### Security-first
 
@@ -49,103 +40,45 @@ Vacancies, recruiter messages, websites and uploaded documents are untrusted inp
 
 ### Documentation-first
 
-Important architecture decisions are documented using ADRs.
-
-Project documentation is normal Markdown stored in Git and usable as an Obsidian Vault.
+Important architecture decisions are documented using ADRs. Project documentation is normal Markdown stored in Git and usable as an Obsidian Vault.
 
 ### No Premature Complexity
 
-Do not introduce without demonstrated need:
-
-- Kubernetes
-- microservices
-- Kafka
-- event sourcing
-- standalone vector databases
-- GraphQL
-- native mobile applications
-- fine-tuning
+Do not introduce without demonstrated need: Kubernetes, microservices, Kafka, event sourcing, standalone vector databases, GraphQL, native mobile applications or fine-tuning.
 
 ## Approved Stack Direction
 
 These directions are approved but do not imply fixed dependency versions.
 
-### Backend
-
-- PHP
-- Laravel
-- API-first architecture
-
-### Frontend
-
-- Next.js
-- React
-- TypeScript
-- responsive PWA
-
-### Data
-
-- PostgreSQL
-
-### Queue and Cache
-
-- Redis
-- Laravel Horizon
-
-### Web
-
-- Nginx
-
-### Documents
-
-- DOCX templates/generation
-- LibreOffice headless for PDF conversion
-
-### Design
-
-- Figma is the source of visual truth.
-
-### Documentation
-
-- Markdown
-- Git
-- Obsidian-compatible documentation structure
+- Backend: PHP, Laravel, API-first architecture.
+- Frontend: Next.js, React, TypeScript, responsive PWA.
+- Data: PostgreSQL.
+- Queue/cache: Redis + Laravel Horizon.
+- Web: Nginx.
+- Documents: DOCX templates/generation + LibreOffice headless PDF conversion.
+- Design: Figma is the reviewed visual/component source; Git-held design tokens are the machine-readable authority.
+- Documentation: Markdown + Git + Obsidian-compatible structure.
 
 ## Deployment Direction
 
-Initial deployment is local-first, targeting a Mac-based Docker Compose environment.
-
-The architecture should permit later migration to VPS/cloud infrastructure without unnecessary core rewrites.
-
-Docker Compose itself is not created during Phase 00.
+Initial deployment is local-first on Mac through Docker Compose. The architecture must permit later migration to VPS/cloud infrastructure without unnecessary core rewrites.
 
 ## API-first
 
-Desktop web, responsive PWA, future mobile clients and future browser integrations must consume a shared application API.
+Desktop web, responsive PWA, future mobile clients and future browser integrations consume the shared application API.
 
 ## Access Model
 
-Registration is invite-only.
-
-The system is multi-user.
-
-Initial roles:
-
-- admin
-- user
-
-Private user data must be isolated between users.
+Registration is invite-only. The system is multi-user. Initial roles are `admin` and `user`. Private user data is isolated between users; admin status is not an implicit private-data bypass.
 
 ## AI Architecture
 
-CVortex uses a provider-independent LLM architecture.
+CVortex uses provider-independent runtime AI. Concrete providers, models, model mappings and pricing are configuration/research concerns rather than permanent architecture facts.
 
-Concrete providers, models, model mappings and pricing are configuration/research concerns and must not be treated as permanent architecture facts.
+Canonical runtime/product LLM Skills live under `/runtime-ai/` according to ADR-0018. `.agents/` is reserved for development agents and repository execution tooling.
 
-## Pending Architecture Decision
+## Product Roadmap
 
-The canonical location and lifecycle for CVortex runtime/product LLM Skills is intentionally not defined during Phase 00.
+The canonical implementation sequence is `docs/01-Product/Roadmap.md`.
 
-`.agents/` is reserved for DEVELOPMENT AGENTS and must not become the canonical location for runtime CVortex Skills.
-
-The runtime Skill location will be decided during the AI Architecture phase.
+Completed Foundation Era Phases 00–07 remain authoritative history. Implementation now proceeds through value-driven milestones and vertical slices beginning with `M0 Runnable Core`, then `M1 First Value`.
