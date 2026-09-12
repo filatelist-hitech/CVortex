@@ -93,6 +93,18 @@ Agent operating-layer maintenance after Phase 05:
 
 This maintenance does not advance the product phase or change accepted architecture. It adds lazy context loading, single-agent/sequential defaults, explicit resource escalation rules, bounded review/research, short repository-backed task launches and non-redundant validation guidance.
 
+Future phase task specifications prepared after the resource-policy change:
+
+- `.agents/tasks/phase-06-product-data-ai-security-design.md`
+- `.agents/tasks/phase-07-design-foundation.md`
+- `.agents/tasks/phase-08-repository-bootstrap.md`
+- `.agents/tasks/phase-09-auth-multi-user.md`
+- `.agents/tasks/phase-10-career-foundation.md`
+- `.agents/tasks/phase-11-vacancies-matching.md`
+- `.agents/tasks/phase-12-application-package.md`
+
+These files are versioned execution specifications only. Their `status: ready` means the specification is bounded and reviewable; it does **not** authorize phase skipping. Execution remains controlled by `NEXT.md`, current blockers and completed prerequisites. Current `NEXT.md` remains Phase 06.
+
 ## Validation Result
 
 Phase 05 documentation/repository validation: **PASS**.
@@ -119,7 +131,20 @@ Agent operating-layer maintenance validation:
 - phase, research, review and testing workflows use targeted context/validation and avoid redundant work;
 - concrete model names/prices remain configuration concerns rather than architectural constants.
 
-No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed for Phase 05. This maintenance change is documentation/instruction-only and requires review of the resulting Git diff rather than application test suites.
+Phase task-specification review:
+
+- Phase 06–12 specifications preserve the original phase goals and STOP boundaries;
+- future specs do not override `NEXT.md` or authorize phase skipping;
+- Phase 06 uses targeted context instead of mandatory full research/documentation reloads;
+- future external/version-sensitive choices require targeted current evidence rather than stale prompt assumptions;
+- Truth-first `FACT → CLAIM → GENERATED CONTENT`, manual fact confirmation and Strict Truth Guard remain explicit across relevant phases;
+- multi-user/IDOR/cross-user negative testing is explicit for implemented private resources;
+- vacancy URL ingestion is constrained by Phase 04 evidence and SSRF controls;
+- automatic employer submission remains prohibited;
+- Phase 12 does not invent a next phase when none is defined;
+- no product code, migration, dependency or implementation was added by preparation of these task specs.
+
+No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed for Phase 05. The task-specification preparation is documentation/instruction-only and was reviewed through branch comparison and repository consistency checks; application test suites are not applicable.
 
 ## Next Phase
 
