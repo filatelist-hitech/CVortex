@@ -4,6 +4,47 @@ title: "task: "
 labels:
   - priority:p2
 body:
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: Roadmap placement
+      description: Select the intended delivery milestone. After issue creation, assign the matching native GitHub Milestone. Use unversioned only for genuine cross-cutting work.
+      options:
+        - M0 · Runnable Core
+        - M1 · First Value
+        - M2 · Real Application Package
+        - M3 · Imports & Integrations
+        - M4 · Employer Journey
+        - M5 · Outcomes & Analytics
+        - M6 · Distribution & Hardening
+        - Unversioned / cross-cutting
+    validations:
+      required: true
+
+  - type: dropdown
+    id: slice
+    attributes:
+      label: Slice
+      description: Required when the work belongs to a specific M1 vertical slice.
+      options:
+        - Not applicable
+        - M1.1 · Access Core
+        - M1.2 · Career Core
+        - M1.3 · Vacancy Core
+        - M1.4 · Application Draft
+        - Cross-cutting inside milestone
+    validations:
+      required: true
+
+  - type: input
+    id: target_version
+    attributes:
+      label: Target version
+      description: Use the roadmap target version, a prerelease, or `none` for unversioned work.
+      placeholder: v0.1.0
+    validations:
+      required: true
+
   - type: textarea
     id: goal
     attributes:

@@ -79,7 +79,33 @@ labels:
     color: 0E8A16
     description: Requirements are sufficiently clear to execute
 
+  # Roadmap placement
+  - name: roadmap:unversioned
+    color: EDEDED
+    description: Cross-cutting work intentionally outside a product milestone/version
+  - name: roadmap:cross-cutting
+    color: C5DEF5
+    description: Work spans multiple slices inside the assigned milestone
+  - name: slice:m1.1-access
+    color: 5319E7
+    description: M1.1 Access Core
+  - name: slice:m1.2-career
+    color: 0E8A16
+    description: M1.2 Career Core
+  - name: slice:m1.3-vacancy
+    color: 0969DA
+    description: M1.3 Vacancy Core
+  - name: slice:m1.4-application
+    color: 8250DF
+    description: M1.4 Application Draft
+
   # Release semantics
+  - name: release:promotion
+    color: 1D76DB
+    description: stage to main release promotion PR
+  - name: release:hotfix
+    color: B60205
+    description: urgent main hotfix release path
   - name: breaking-change
     color: B60205
     description: Backward-incompatible behavior or contract change

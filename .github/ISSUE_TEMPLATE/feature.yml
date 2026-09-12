@@ -5,6 +5,45 @@ labels:
   - type:feature
   - priority:p2
 body:
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: Roadmap milestone
+      description: Select the intended product milestone; assign the matching native GitHub Milestone after creation.
+      options:
+        - M0 · Runnable Core
+        - M1 · First Value
+        - M2 · Real Application Package
+        - M3 · Imports & Integrations
+        - M4 · Employer Journey
+        - M5 · Outcomes & Analytics
+        - M6 · Distribution & Hardening
+        - Not yet scheduled
+    validations:
+      required: true
+
+  - type: dropdown
+    id: slice
+    attributes:
+      label: Slice
+      description: Use an M1 slice when applicable; otherwise select Not applicable.
+      options:
+        - Not applicable
+        - M1.1 · Access Core
+        - M1.2 · Career Core
+        - M1.3 · Vacancy Core
+        - M1.4 · Application Draft
+        - Cross-cutting inside milestone
+    validations:
+      required: true
+
+  - type: input
+    id: target_version
+    attributes:
+      label: Target version
+      placeholder: v0.1.0
+      description: Proposed target only; `.github/roadmap.yml` and release policy remain authoritative.
+
   - type: textarea
     id: problem
     attributes:

@@ -1,7 +1,6 @@
 {
   "name": "CVortex protected integration branches",
   "target": "branch",
-  "source_type": "Repository",
   "enforcement": "active",
   "conditions": {
     "ref_name": {
@@ -27,6 +26,18 @@
         "dismiss_stale_reviews_on_push": false,
         "required_approving_review_count": 0,
         "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "do_not_enforce_on_create": true,
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [
+          {
+            "context": "Roadmap metadata"
+          }
+        ]
       }
     }
   ],

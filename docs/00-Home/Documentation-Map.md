@@ -4,68 +4,62 @@ status: accepted
 owner: product-owner
 created: 2026-09-12
 updated: 2026-09-12
-tags:
-  - documentation
-  - moc
-  - obsidian
+tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
   - "[[../01-Product/Vision|Vision]]"
   - "[[../01-Product/Principles|Principles]]"
   - "[[../01-Product/Scope|Scope]]"
+  - "[[../01-Product/Roadmap|Roadmap]]"
   - "[[../01-Product/Glossary|Glossary]]"
-  - "[[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]]"
-  - "[[../02-Architecture/Architecture-Baseline|Architecture Baseline]]"
-  - "[[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]]"
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
-  - "[[../07-Design/Design-Foundation|Design Foundation]]"
-  - "[[../07-Design/Figma-Handoff|Figma Handoff]]"
 ---
 
 # Documentation Map
 
-`docs/` is both the Git-tracked engineering documentation tree and the Obsidian vault for CVortex. Markdown remains the canonical portable format; Obsidian is a navigation and authoring interface, not a separate knowledge database.
+`docs/` is both the Git-tracked engineering documentation tree and the Obsidian vault for CVortex. Markdown remains canonical; Obsidian is an interface, not a separate knowledge database.
 
 ## Core documents
 
-- [[CVortex]] — project home and stable product summary.
-- [[../01-Product/Vision|Vision]] — product problem, value, and desired outcome.
-- [[../01-Product/Principles|Principles]] — non-negotiable product and engineering principles.
-- [[../01-Product/Scope|Scope]] — current scope, deferred work, and explicit non-goals.
-- [[../01-Product/Glossary|Glossary]] — canonical terminology used across product and engineering work.
-- [[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]] — authoritative PRD, requirements, flows, MVP scope and roadmap.
-- [[../02-Architecture/Architecture-Baseline|Architecture Baseline]] — frozen Phase 05 system boundaries and invariants.
-- [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] — C4 views, component boundaries, data flows and deployment design.
-- [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — conceptual ERD, ownership, provenance and audit model.
-- [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — provider-independent AI contracts and Truth Guard design.
+- [[CVortex]] — project home and stable summary.
+- [[../01-Product/Vision|Vision]] — problem, value and desired outcome.
+- [[../01-Product/Principles|Principles]] — non-negotiable product/engineering principles.
+- [[../01-Product/Scope|Scope]] — current product scope, deferred work and non-goals.
+- [[../01-Product/Roadmap|Roadmap]] — **canonical implementation sequence and milestone/value checkpoints**.
+- [[../01-Product/Glossary|Glossary]] — canonical terminology.
+- [[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]] — accepted PRD, requirements and user-flow baseline; its former embedded roadmap is superseded by [[../01-Product/Roadmap|Roadmap]].
+- [[../02-Architecture/Architecture-Baseline|Architecture Baseline]] — accepted system boundaries/invariants.
+- [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] — accepted C4/component/deployment design.
+- [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — accepted conceptual data, ownership, provenance and audit model.
+- [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
 - [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
-- [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative inventory and status of architecture decisions.
-- [[../07-Design/Design-Foundation|Design Foundation]] — Phase 07 visual, interaction and accessibility baseline; Git DTCG tokens are canonical machine-readable source.
-- [[../07-Design/Figma-Handoff|Figma Handoff]] — deterministic Figma bootstrap, review and Git/Figma drift procedure.
+- [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.
+- [[../07-Design/Design-Foundation|Design Foundation]] — visual/interaction/accessibility baseline and Git token authority.
+- [[../07-Design/Figma-Handoff|Figma Handoff]] — Figma bootstrap/review/drift procedure and current capability limitation.
 
 ## Documentation areas
 
 | Directory | Purpose | Current state |
 |---|---|---|
-| `00-Home/` | Home pages and maps of content | Active |
-| `01-Product/` | Vision, principles, scope, requirements, flows, roadmap | Active |
-| `02-Architecture/` | Architecture views and system diagrams | Active; Phase 05 baseline accepted |
-| `03-ADR/` | Architecture decision records and canonical index | Active; Phase 05 decisions accepted |
-| `04-Data/` | Conceptual data model, entities, provenance, ownership | Active; Phase 06 completed, independent re-review PASS |
-| `05-API/` | API conventions and contracts | Reserved |
-| `06-AI/` | Provider abstraction, model policy, skills, agents, prompts, evals | Active; Phase 06 completed, independent re-review PASS |
-| `07-Design/` | Design system, tokens, Figma integration | Active; Phase 07 completed, independent review PASS |
-| `08-Security/` | Threat model, security requirements, controls | Active; Phase 06 completed, independent re-review PASS |
-| `09-QA/` | Testing strategy, quality gates, evaluation strategy | Reserved |
-| `10-Operations/` | Local operations, deployment, observability | Reserved |
-| `11-Research/` | Research summaries promoted from raw research | Reserved |
-| `99-Archive/` | Deprecated or superseded documentation | Reserved |
+| `00-Home/` | Home pages and maps | Active |
+| `01-Product/` | Vision, principles, scope, PRD, roadmap | Active |
+| `02-Architecture/` | Architecture views and diagrams | Active; baseline accepted |
+| `03-ADR/` | Architecture decisions | Active; ADR-0001..0018 accepted |
+| `04-Data/` | Conceptual data/provenance/ownership | Active; Phase 06 accepted |
+| `05-API/` | API conventions/contracts | Reserved until implementation |
+| `06-AI/` | Provider/model-policy/skills/workflows/evals | Active; Phase 06 accepted |
+| `07-Design/` | Design system/tokens/Figma | Active; Phase 07 completed |
+| `08-Security/` | Threat model/security controls | Active; Phase 06 accepted |
+| `09-QA/` | Testing/evaluation strategy | Reserved until implementation |
+| `10-Operations/` | Local operations/deployment/observability | Reserved until M0 |
+| `11-Research/` | Promoted research summaries | Reserved |
+| `99-Archive/` | Deprecated/superseded docs | Reserved |
 
-## Documentation rules
+## Rules
 
-- Significant architecture decisions belong in ADRs rather than being silently embedded in prose.
-- Research-dependent facts must be verified in the research phases before becoming architecture facts.
-- Accepted project decisions are not changed silently. Conflicts must be called out explicitly.
-- Concrete library versions, external API capabilities, current prices, and LLM model mappings must not be assumed.
+- Significant architecture changes require ADR review; roadmap sequencing changes do not silently rewrite accepted architecture.
+- Research-dependent facts are verified before they become architecture/implementation facts.
+- Concrete versions, external API capabilities, prices and model mappings are freshness-sensitive.
 - Mermaid is preferred for engineering diagrams where practical.
-- Documents should remain readable in Git viewers without requiring Obsidian.
+- Documents remain readable in Git without Obsidian.
+- Current execution authority comes from `.agents/state/NEXT.md` + blockers + the active task spec, not from legacy phase files.

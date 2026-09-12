@@ -1,0 +1,105 @@
+name: Governance
+
+on:
+  pull_request:
+    branches:
+      - stage
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - labeled
+      - unlabeled
+      - milestoned
+      - demilestoned
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  roadmap-metadata:
+    name: Roadmap metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate roadmap and release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="$(jq -r '.pull_request.base.ref' "$GITHUB_EVENT_PATH")"
+          head="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+          milestone="$(jq -r '.pull_request.milestone.title // ""' "$GITHUB_EVENT_PATH")"
+          mapfile -t labels < <(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
+
+          has_label() {
+            local wanted="$1"
+            local label
+            for label in "${labels[@]:-}"; do
+              [[ "$label" == "$wanted" ]] && return 0
+            done
+            return 1
+          }
+
+          is_known_milestone() {
+            case "$1" in
+              "M0 · Runnable Core"|\
+              "M1 · First Value"|\
+              "M2 · Real Application Package"|\
+              "M3 · Imports & Integrations"|\
+              "M4 · Employer Journey"|\
+              "M5 · Outcomes & Analytics"|\
+              "M6 · Distribution & Hardening") return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          if [[ "$base" == "stage" ]]; then
+            if [[ -z "$milestone" ]]; then
+              if ! has_label "roadmap:unversioned"; then
+                echo "error: PRs to stage require a native M0-M6 GitHub Milestone or roadmap:unversioned." >&2
+                exit 1
+              fi
+            elif ! is_known_milestone "$milestone"; then
+              echo "error: unknown GitHub Milestone: $milestone" >&2
+              exit 1
+            fi
+
+            slice_count=0
+            for slice in slice:m1.1-access slice:m1.2-career slice:m1.3-vacancy slice:m1.4-application; do
+              if has_label "$slice"; then
+                slice_count=$((slice_count + 1))
+              fi
+            done
+
+            if [[ "$milestone" == "M1 · First Value" ]]; then
+              if [[ "$slice_count" -ne 1 ]] && ! has_label "roadmap:cross-cutting"; then
+                echo "error: M1 PRs require exactly one M1 slice label or roadmap:cross-cutting." >&2
+                exit 1
+              fi
+            elif [[ "$slice_count" -gt 0 ]]; then
+              echo "error: M1 slice labels may only be used with the M1 GitHub Milestone." >&2
+              exit 1
+            fi
+          fi
+
+          if [[ "$base" == "main" ]]; then
+            if [[ "$head" == "stage" ]]; then
+              has_label "release:promotion" || {
+                echo "error: stage → main PR requires release:promotion." >&2
+                exit 1
+              }
+            elif [[ "$head" == hotfix/* ]]; then
+              has_label "release:hotfix" || {
+                echo "error: hotfix → main PR requires release:hotfix." >&2
+                exit 1
+              }
+            else
+              echo "error: main accepts only stage release promotion or hotfix/* PRs." >&2
+              exit 1
+            fi
+          fi
+
+          echo "Roadmap metadata valid for $head → $base."

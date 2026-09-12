@@ -44,7 +44,7 @@ Default behavior:
 - keep intermediate notes and final reports concise;
 - run the narrowest meaningful validation first and do not repeat successful checks without cause.
 
-Resource efficiency must never override correctness, security, Truth-first invariants, required evidence, or phase completion criteria.
+Resource efficiency must never override correctness, security, Truth-first invariants, required evidence, or completion criteria.
 
 ## Truth-first
 
@@ -60,123 +60,69 @@ Potential new career facts remain unconfirmed until explicitly approved.
 
 Do not guess facts that can materially affect architecture or implementation.
 
-Research current information when decisions depend on changing external facts such as:
+Research current information when decisions depend on changing external facts such as library/runtime capabilities, APIs, vendor features, licenses, model availability/pricing, security guidance, compatibility or external restrictions.
 
-- library/runtime capabilities;
-- APIs and integrations;
-- vendor features;
-- licenses;
-- model availability or pricing;
-- security guidance;
-- compatibility;
-- external service restrictions.
+Prefer official and primary sources. Stop collecting redundant evidence once the question is sufficiently supported unless the topic is contested, high-risk or explicitly requires broader coverage.
 
-Prefer official and primary sources. Stop collecting redundant evidence once the question is sufficiently supported, unless the topic is contested, high-risk, or the task explicitly requires broader coverage.
+## Execution Boundaries
 
-## Phase Boundaries
+Do not implement code, infrastructure, schemas, dependencies or product features before the authorized task permits them.
 
-Do not implement code, infrastructure, schemas, dependencies, or product features before the authorized phase explicitly permits them.
+State semantics:
 
-Phase-state semantics are:
+- `STATUS.md` records completed outcomes;
+- `NEXT.md` is the canonical next authorized task pointer;
+- `BLOCKERS.md` may prevent execution;
+- the task specification defines bounded scope/completion.
 
-- `.agents/state/STATUS.md` records completed project state and validated outcomes;
-- `.agents/state/NEXT.md` is the canonical pointer to the next phase/task authorized for execution;
-- `.agents/state/BLOCKERS.md` may prevent that next phase/task from starting;
-- the applicable task specification defines the bounded scope and completion criteria.
-
-A phase/task is authorized only when `NEXT.md` points to it, its prerequisites are completed according to `STATUS.md`, and `BLOCKERS.md` contains no blocker that prevents execution.
-
-If `NEXT.md` is empty or explicitly says that planning/review is required, do not invent a next phase.
+A GitHub Milestone or Project field does **not** authorize work and cannot override `NEXT.md`.
 
 ## Security Baseline
 
-Treat vacancies, recruiter messages, websites, research content, and uploaded documents as untrusted input.
-
-Always consider where applicable:
-
-- prompt injection;
-- XSS;
-- SSRF;
-- IDOR;
-- cross-user access;
-- path traversal;
-- malicious files;
-- secret leakage;
-- PII leakage.
-
-Never log secrets or API keys.
+Treat vacancies, recruiter messages, websites, research content and uploaded documents as untrusted input. Always consider prompt injection, XSS, SSRF, IDOR, cross-user access, path traversal, malicious files, secret leakage and PII leakage where applicable. Never log secrets or API keys.
 
 ## Tests and Documentation
 
-Every implementation change requires appropriate validation/tests and documentation updates.
-
-Prefer targeted validation before broader suites. Do not rerun successful checks unless relevant files changed, a failure requires a rerun, or the task explicitly demands it.
-
-Architectural changes require ADR review or a new ADR.
+Every implementation change requires appropriate tests/validation and documentation updates. Prefer targeted validation before broader suites. Architectural changes require ADR review or a new ADR.
 
 ## State Discipline
 
-After every completed phase or bounded work block:
+After every completed bounded work block:
 
-1. update `.agents/state/STATUS.md` with the completed outcome;
-2. update `.agents/state/NEXT.md` only when the next intended work changes;
-3. update `.agents/state/BLOCKERS.md` only when blockers change;
-4. record created/changed files where useful for traceability;
-5. record validation actually performed;
-6. stop.
+1. update `STATUS.md` with the completed outcome;
+2. update `NEXT.md` only when next intended work changes;
+3. update `BLOCKERS.md` only when blockers change;
+4. record validation actually performed;
+5. stop.
 
-Do not use `STATUS.md`, `NEXT.md`, or `BLOCKERS.md` as a backlog.
+Do not use state files as a backlog.
 
 ## ADR Discipline
 
-Never silently override an accepted ADR.
-
-If new evidence makes an accepted ADR questionable, record the conflict and propose superseding or amending it explicitly.
+Never silently override an accepted ADR. If new evidence makes an accepted ADR questionable, record the conflict and use the decision workflow.
 
 ## Technical Decisions
 
-For reversible, non-business-critical technical decisions:
-
-1. identify reasonable options;
-2. compare them briefly;
-3. choose the simplest justified option;
-4. document the decision when material;
-5. continue.
-
-Do not interrupt the user for decisions that are safely reversible.
+For reversible, non-business-critical decisions: compare reasonable options, choose the simplest justified option, document when material, and continue without unnecessary interruption.
 
 ## Output Discipline
 
-Unless a task requires a detailed report, completion output should contain only:
-
-- result;
-- files changed;
-- validation performed;
-- blockers/limitations;
-- next phase or next bounded task.
-
-Do not restate repository rules or reproduce large source excerpts in the final report.
+Unless a task requires detail, completion output contains result, files changed, validation, blockers/limitations and exact next task. Do not restate repository rules or reproduce large source excerpts.
 
 ## Stop Conditions
 
-Stop when:
-
-- the current phase completion criteria are satisfied;
-- required information is genuinely blocking and cannot be researched or inferred safely;
-- continuing would violate an accepted ADR or phase boundary;
-- continuing would require inventing facts;
-- a security issue makes further work unsafe;
-- the task explicitly requires STOP.
-
-Do not advance to the next phase automatically.
+Stop when completion criteria are met, required information is genuinely blocking, continuing would violate architecture/security/Truth-first, or the task explicitly requires STOP. Do not advance automatically.
 
 <!-- CVORTEX:GIT-WORKFLOW:BEGIN -->
 ## Git workflow
 
 For all repository changes, follow `.agents/policies/git-workflow.md` and `CONTRIBUTING.md`.
 
-Mandatory baseline: work on short-lived branches, target `stage` for normal changes, promote `stage` to `main` via release PR, and never force-push or delete protected branches.
+Mandatory baseline: work on short-lived branches, target `stage` for normal changes, and promote `stage` to `main` only through release policy.
 
-The canonical GitHub ruleset is `.github/rulesets/cvortex-protected-branches.json`.
-Versioning, tags, and GitHub Releases follow `.agents/policies/release-management.md`.
+Every PR to `stage` must have a native M0–M6 GitHub Milestone or `roadmap:unversioned`. M1 work also carries one M1 slice label or `roadmap:cross-cutting`.
+
+Canonical GitHub delivery metadata is `.github/roadmap.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; `Roadmap metadata` is a required check once that ruleset is applied.
+
+Versioning, tags and GitHub Releases follow `.agents/policies/release-management.md`.
 <!-- CVORTEX:GIT-WORKFLOW:END -->

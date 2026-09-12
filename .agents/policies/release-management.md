@@ -2,137 +2,112 @@
 
 ## Purpose
 
-Define when CVortex may create Git tags and GitHub Releases, how versions are named, and what evidence is required before publishing a release.
+Define how CVortex milestones map to product versions, when tags/releases are allowed, and what evidence is required before publishing.
 
-## Current phase rule
+Canonical milestone/version mapping lives in `.github/roadmap.yml`. Product scope and milestone exit criteria live in `docs/01-Product/Roadmap.md`.
 
-Do not create a Git tag or GitHub Release for repository bootstrap, research-only phases, documentation-only phases, or intermediate `stage` state.
+## Milestone versus version
 
-A tag marks a reproducible product/runtime milestone, not the completion of an internal checklist.
+A GitHub Milestone is a delivery container. A version is a reproducible product/runtime release.
 
-## Versioning
+They are related but not identical:
 
-Use Semantic Versioning once releases begin:
+- finishing a task or slice does not create a version;
+- closing a GitHub Milestone does not automatically create a tag;
+- a release may be skipped when the milestone output is only an internal checkpoint;
+- tags are created only from validated `main` commits.
 
-`MAJOR.MINOR.PATCH`
+## Current mapping
 
-Examples:
+| Milestone | Product checkpoint | Target version | Release rule |
+| --- | --- | --- | --- |
+| M0 Runnable Core | technical runtime baseline | `v0.1.0-alpha.1` | optional prerelease after actual runtime validation |
+| M1 First Value | Preview 0.1 | `v0.1.0` | first required coherent product preview |
+| M2 Real Application Package | MVP 0.2 | `v0.2.0` | practical application-package MVP |
+| M3 Imports & Integrations | integration expansion | `v0.3.0` | normal minor release when accepted |
+| M4 Employer Journey | employer-context workflow | `v0.4.0` | normal minor release when accepted |
+| M5 Outcomes & Analytics | outcome-learning workflow | `v0.5.0` | normal minor release when accepted |
+| M6 Distribution & Hardening | distribution/operations baseline | `v0.6.0` | normal minor release when accepted |
 
-- `v0.1.0-alpha.1` — early technical preview before a stable MVP;
-- `v0.1.0` — first coherent pre-1.0 product milestone;
-- `v0.1.1` — backward-compatible bug/security fixes for that milestone;
-- `v0.2.0` — new backward-compatible capability set;
-- `v1.0.0` — first contract-stable production release.
+`v1.0.0` is a separate production-stability decision after M6. Completing M6 does not silently declare API/product contracts stable.
 
-While the product is below `1.0.0`, incompatible changes are allowed only when documented and clearly called out in release notes.
+## Semantic Versioning
 
-## First eligible release
+Use SemVer with `v` prefix:
 
-The first tag/release becomes eligible only after M0 / repository bootstrap reaches a runnable system milestone where the documented local stack can actually be started and validated.
+- `v0.N.0-alpha.K` for early prereleases;
+- `v0.N.0-beta.K` when feature scope is largely present but validation remains;
+- `v0.N.0-rc.K` for release candidates;
+- `v0.N.0` for accepted milestone releases;
+- `v0.N.PATCH` for backward-compatible bug/security fixes;
+- `v1.0.0` only after an explicit stability decision.
 
-Before that point, no version tag is required.
-
-If M0 is published as a technical preview, prefer:
-
-`v0.1.0-alpha.1`
-
-Do not create that tag merely because Phase 00-07 documentation exists.
+Do not tag every slice. M1.1–M1.4 are delivery slices inside the `v0.1.0` target, not four artificial product releases.
 
 ## Release source
 
-All release tags must point to a commit on `main`.
-
 Normal flow:
 
-1. short-lived branches merge into `stage`;
-2. validated `stage` is promoted to `main` through a release pull request;
-3. required validation passes on the exact `main` commit;
-4. create the version tag from that `main` commit;
-5. create the GitHub Release from the same tag;
-6. use generated release notes as a starting point and review them before publishing.
+1. bounded branches merge into `stage`;
+2. milestone exit criteria and relevant checks pass;
+3. `stage → main` release PR carries `release:promotion`;
+4. validation passes on the exact `main` commit;
+5. create the version tag from that `main` commit;
+6. create GitHub Release from the same tag;
+7. review generated release notes before publication.
 
-Never tag an arbitrary feature branch or unmerged `stage` commit as a release.
+Hotfix flow:
 
-## Tag rules
+1. `hotfix/*` from `main`;
+2. validate narrow fix;
+3. PR to `main` with `release:hotfix`;
+4. publish next PATCH version when warranted;
+5. propagate fix back to `stage`.
 
-- Use the `v` prefix: `v0.1.0`, not `0.1.0`.
-- Never move or reuse a published version tag.
-- Never delete and recreate a published tag to hide mistakes.
-- If a published release is bad, publish a correcting version.
-- Release tags must be unique and monotonically advance according to SemVer.
-- Do not create date-only tags for normal releases.
+Never tag `stage`, a feature branch or an arbitrary commit.
+
+## Release eligibility
+
+Release is allowed only when applicable checks are complete:
+
+- target commit is on `main`;
+- milestone exit criteria are actually met;
+- required CI/status checks pass;
+- no unresolved P0 blocker exists;
+- migrations/backward compatibility are understood;
+- security/authorization impact is reviewed;
+- documentation matches behavior;
+- accepted ADRs match released architecture;
+- no secret/private candidate data is present;
+- release notes accurately describe the change set.
+
+M0 may remain unreleased even after completion. If published, its preferred first tag is `v0.1.0-alpha.1`.
+
+M1 `v0.1.0` is not eligible until all four First Value slices form the end-to-end Preview 0.1 workflow.
+
+## Tags
+
+- Never move or reuse a published tag.
+- Never delete/recreate a published tag to hide a mistake.
+- Correct a bad release with a new version.
+- Use monotonically advancing SemVer.
+- Do not use date-only release tags.
 
 ## Release notes
 
-`.github/release.yml` defines the canonical generated-release-note grouping.
+`.github/release.yml` is the canonical generated-note grouping.
 
-Pull requests should carry meaningful type labels so release notes remain useful:
+Release promotion PRs are excluded from generated notes because they are containers for already reviewed changes, not product changes themselves.
 
-- `breaking-change`;
-- `type:security`;
-- `type:feature`;
-- `type:bug`;
-- `type:docs`;
-- `type:research`;
-- `type:refactor`;
-- `type:test`;
-- `type:chore`.
-
-Use `skip-changelog` only for changes that truly should not appear in release notes.
-
-Generated notes must be reviewed for:
-
-- breaking changes;
-- migrations or upgrade steps;
-- security implications;
-- known limitations;
-- rollback considerations;
-- documentation links;
-- accidentally exposed secrets or private data.
-
-## Release gate
-
-A release is allowed only when applicable checks are complete:
-
-- the target commit is on `main`;
-- required CI/status checks pass once CI exists;
-- migrations/backward compatibility are understood;
-- authorization/security impact is reviewed;
-- no known P0 blocker remains;
-- documentation reflects released behavior;
-- accepted ADRs match the released architecture;
-- no secrets, API keys, private career data, recruiter messages, or production data are present;
-- release notes accurately describe the change set.
-
-## Hotfix releases
-
-For an urgent production/release fix:
-
-1. branch `hotfix/*` from `main`;
-2. validate the narrow fix;
-3. merge through PR into `main`;
-4. immediately propagate the same fix back to `stage`;
-5. publish the next PATCH version when a release is warranted.
-
-Do not overwrite the previous release tag.
+Generated notes must be reviewed for breaking changes, migrations, security implications, known limitations, rollback notes and accidental private data.
 
 ## Prohibited behavior
 
 Do not:
 
-- tag every phase, commit, or merged PR;
-- publish empty/decorative releases;
-- create a release directly from `stage`;
-- reuse a tag name for different content;
-- publish before validation just to obtain downloadable artifacts;
-- treat a GitHub Release as proof that the software was actually validated.
-
-## Completion checks
-
-Release-management changes are complete only when:
-
-- this policy, `.github/release.yml`, and label taxonomy are consistent;
-- version/tag naming remains unambiguous;
-- the release source is `main`;
-- release notes can be traced back to reviewed PRs;
-- no release is created merely to mark internal progress.
+- create decorative versions for internal task completion;
+- equate a GitHub Milestone with a release artifact;
+- create a tag merely because a PR merged;
+- publish before validation;
+- claim `v1.0.0` because the roadmap reached M6;
+- use version labels as a substitute for the canonical roadmap mapping.
