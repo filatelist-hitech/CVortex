@@ -9,6 +9,7 @@ Canonical metadata:
 - roadmap: `docs/01-Product/Roadmap.md`;
 - GitHub milestone/project mapping: `.github/roadmap.yml`;
 - labels: `.github/labels.yml`;
+- PR template: `.github/pull_request_template.md`;
 - ruleset: `.github/rulesets/cvortex-protected-branches.json`;
 - release/version policy: `.agents/policies/release-management.md`.
 
@@ -75,6 +76,41 @@ For `M1 · First Value`, also assign exactly one of:
 
 Milestone/slice metadata describes delivery placement. It does not authorize work: `.agents/state/NEXT.md` remains the execution-authority pointer unless the current explicit user instruction authorizes a bounded override.
 
+## Mandatory PR preflight
+
+Opening a PR is not complete merely because GitHub accepts it or `Roadmap metadata` is green.
+
+Before reporting a PR as ready for review or complete, the acting agent must apply and verify the full PR contract:
+
+- at least one assignee;
+- at least one canonical `type:*` label;
+- at least one canonical `area:*` label;
+- exactly one canonical `priority:*` label;
+- exactly one canonical `status:*` label;
+- exactly one roadmap placement for `stage` PRs;
+- correct release-path label for `main` PRs;
+- exactly one changelog path: checked release-notes intent or `skip-changelog`;
+- PR body follows `.github/pull_request_template.md`;
+- top-level `## PR metadata / review checkpoint` comment exists;
+- top-level `## Governance / validation checkpoint` comment exists.
+
+Use only labels defined in `.github/labels.yml`. Do not invent near-duplicates in GitHub UI.
+
+When available, run:
+
+```bash
+bash scripts/check-pr-contract.sh <pr-number>
+```
+
+Apply metadata in this order so the final status-label event revalidates the complete PR state:
+
+1. PR body, assignee, type/area/priority, roadmap and changelog metadata;
+2. metadata/review checkpoint comment;
+3. governance/validation checkpoint comment;
+4. exactly one final `status:*` label, normally `status:review` while awaiting review.
+
+A green check from an earlier incomplete metadata state is not sufficient. Recheck the current head and current metadata before reporting completion.
+
 ## Short-lived branches
 
 Use lowercase kebab-case after the prefix:
@@ -123,8 +159,8 @@ Do not mix unrelated work into one commit merely to make a milestone look busy. 
 5. Implement tests/docs/security work required by the task.
 6. Run relevant validation.
 7. Open a PR to `stage`.
-8. Assign native GitHub Milestone or `roadmap:unversioned`.
-9. Assign M1 slice metadata when applicable.
+8. Apply complete PR metadata and checkpoint comments.
+9. Run the mandatory PR preflight.
 10. Resolve review threads and required checks.
 11. Prefer squash merge for ordinary short-lived branches.
 12. Promote validated `stage` to `main` through a release PR only when release policy permits it.
@@ -174,11 +210,11 @@ It protects `main` and `stage` by:
 - blocking deletion;
 - blocking force pushes/non-fast-forward updates;
 - requiring review-thread resolution;
-- requiring the `Roadmap metadata` GitHub Actions check.
+- requiring repository governance status checks configured by the canonical ruleset.
 
-The check validates milestone/slice placement for `stage` PRs and release/hotfix source metadata for `main` PRs.
+`Roadmap metadata` validates milestone/slice/release placement. `PR contract` validates the broader PR metadata/template/checkpoint contract when enabled by the workflow/ruleset.
 
-Apply the ruleset only after `.github/workflows/governance.yml` exists on `stage`; otherwise a required check could lock the repository. `scripts/apply-github-ruleset.sh` enforces this precondition and must verify the active ruleset after applying it.
+Apply the ruleset only after `.github/workflows/governance.yml` exists on `stage`; otherwise required checks could lock the repository. `scripts/apply-github-ruleset.sh` enforces its documented preconditions and verifies live state after application.
 
 A repository file describing the desired ruleset is not proof that GitHub currently enforces it. When governance behavior matters, verify the live ruleset state.
 
@@ -205,8 +241,8 @@ Development agents must not:
 - bypass governance checks by weakening labels/rulesets;
 - invent a milestone/version merely to satisfy CI;
 - create a release/tag from `stage` or a feature branch;
-- ask the user to perform routine branch creation when the correct branch can be derived safely.
+- ask the user to perform routine branch creation or PR metadata work when it can be derived safely.
 
 ## Completion checks
 
-A Git-related change is complete only when branch/base, roadmap placement, validation, documentation and release metadata are internally consistent.
+A Git-related change is complete only when branch/base, full PR contract, roadmap placement, validation, documentation and release metadata are internally consistent.

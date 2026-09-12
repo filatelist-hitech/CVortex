@@ -51,6 +51,8 @@ An explicitly requested external skill may supplement the repository workflow, b
 
 Before the first repository write, perform the Git preflight defined by the active workflow and `.agents/policies/git-workflow.md`. Do not write directly to `main` or `stage` even when the available tool technically permits it.
 
+Before reporting a pull request as ready for review or complete, perform the full PR preflight from `.agents/policies/git-workflow.md`. When available, run `bash scripts/check-pr-contract.sh <pr-number>`. A green roadmap check alone is not proof that assignee, taxonomy labels, status, changelog choice, template sections and checkpoint comments are complete.
+
 ## Resource Discipline
 
 Follow `.agents/policies/resource-usage.md`.
@@ -145,7 +147,9 @@ Agents performing a write task must create or verify the correct short-lived bra
 
 Every PR to `stage` must have a native M0–M6 GitHub Milestone or `roadmap:unversioned`. M1 work also carries one M1 slice label or `roadmap:cross-cutting`.
 
-Canonical GitHub delivery metadata is `.github/roadmap.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; `Roadmap metadata` is a required check once that ruleset is applied.
+Every PR must also satisfy the repository PR contract: assignee, canonical type/area labels, exactly one priority and status label, explicit changelog path, PR-template structure, and metadata/governance checkpoint comments. Set the final `status:*` label only after the other metadata and checkpoint comments are present, then verify the current PR state.
+
+Canonical GitHub delivery metadata is `.github/roadmap.yml`. Canonical labels are `.github/labels.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; repository governance checks are defined in `.github/workflows/governance.yml`.
 
 Versioning, tags and GitHub Releases follow `.agents/policies/release-management.md`.
 <!-- CVORTEX:GIT-WORKFLOW:END -->

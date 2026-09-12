@@ -23,14 +23,25 @@ RULESET_NAME="CVortex protected integration branches"
   exit 1
 }
 
-# Refuse to require a check that does not yet exist on the protected integration branch.
-if ! gh api "repos/$REPO/contents/.github/workflows/governance.yml?ref=stage" >/dev/null 2>&1; then
+# Refuse to require governance checks that do not yet exist on the protected integration branch.
+workflow_content="$(gh api "repos/$REPO/contents/.github/workflows/governance.yml?ref=stage" --jq '.content' 2>/dev/null || true)"
+if [[ -z "$workflow_content" ]]; then
   cat >&2 <<'EOF'
 error: .github/workflows/governance.yml is not present on stage.
-Do not apply the ruleset yet: requiring Roadmap metadata before the workflow exists can lock merges.
+Do not apply the ruleset yet: requiring governance checks before the workflow exists can lock merges.
 EOF
   exit 1
 fi
+
+workflow_text="$(printf '%s' "$workflow_content" | tr -d '\n' | base64 --decode)"
+grep -Fq 'name: Roadmap metadata' <<<"$workflow_text" || {
+  echo "error: Governance workflow on stage does not define Roadmap metadata" >&2
+  exit 1
+}
+grep -Fq 'name: PR contract' <<<"$workflow_text" || {
+  echo "error: Governance workflow on stage does not define PR contract" >&2
+  exit 1
+}
 
 RULESET_ID="$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" | head -n1)"
@@ -62,13 +73,15 @@ for required_rule in deletion non_fast_forward pull_request required_status_chec
   fi
 done
 
-roadmap_check_count="$(gh api "repos/$REPO/rulesets/$RULESET_ID" \
-  --jq '[.rules[] | select(.type == "required_status_checks") | .parameters.required_status_checks[]? | select(.context == "Roadmap metadata")] | length')"
+for required_check in 'Roadmap metadata' 'PR contract'; do
+  check_count="$(gh api "repos/$REPO/rulesets/$RULESET_ID" \
+    --jq "[.rules[] | select(.type == \"required_status_checks\") | .parameters.required_status_checks[]? | select(.context == \"$required_check\")] | length")"
 
-if [[ "$roadmap_check_count" -lt 1 ]]; then
-  echo "error: live ruleset does not require the Roadmap metadata status check" >&2
-  exit 1
-fi
+  if [[ "$check_count" -lt 1 ]]; then
+    echo "error: live ruleset does not require the $required_check status check" >&2
+    exit 1
+  fi
+done
 
 echo "ruleset verified: $RULESET_NAME (#$RULESET_ID)"
-echo "required status check verified: Roadmap metadata"
+echo "required status checks verified: Roadmap metadata, PR contract"

@@ -12,6 +12,8 @@ on:
       - edited
       - labeled
       - unlabeled
+      - assigned
+      - unassigned
       - milestoned
       - demilestoned
 
@@ -103,3 +105,103 @@ jobs:
           fi
 
           echo "Roadmap metadata valid for $head → $base."
+
+  pr-contract:
+    name: PR contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR metadata, template and checkpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="$(jq -r '.pull_request.base.ref' "$GITHUB_EVENT_PATH")"
+          head="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+          body="$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")"
+          milestone="$(jq -r '.pull_request.milestone.title // ""' "$GITHUB_EVENT_PATH")"
+          assignee_count="$(jq '.pull_request.assignees | length' "$GITHUB_EVENT_PATH")"
+          comments_url="$(jq -r '.pull_request.comments_url' "$GITHUB_EVENT_PATH")"
+          mapfile -t labels < <(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
+
+          fail() { echo "error: $*" >&2; exit 1; }
+          has_label() {
+            local wanted="$1" label
+            for label in "${labels[@]:-}"; do
+              [[ "$label" == "$wanted" ]] && return 0
+            done
+            return 1
+          }
+          count_prefix() {
+            local prefix="$1" count=0 label
+            for label in "${labels[@]:-}"; do
+              [[ "$label" == "$prefix"* ]] && count=$((count + 1))
+            done
+            printf '%d\n' "$count"
+          }
+          known_label() {
+            case "$1" in
+              type:bug|type:feature|type:docs|type:research|type:refactor|type:test|type:chore|type:security|\
+              area:backend|area:frontend|area:ai|area:data|area:infra|area:design|area:docs|\
+              priority:p0|priority:p1|priority:p2|priority:p3|\
+              status:blocked|status:needs-decision|status:needs-research|status:ready|status:review|\
+              roadmap:unversioned|roadmap:cross-cutting|\
+              slice:m1.1-access|slice:m1.2-career|slice:m1.3-vacancy|slice:m1.4-application|\
+              release:promotion|release:hotfix|breaking-change|skip-changelog) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          for label in "${labels[@]:-}"; do
+            known_label "$label" || fail "non-canonical label: $label"
+          done
+
+          [[ "$assignee_count" -ge 1 ]] || fail "at least one assignee is required"
+          [[ "$(count_prefix 'type:')" -ge 1 ]] || fail "at least one type:* label is required"
+          [[ "$(count_prefix 'area:')" -ge 1 ]] || fail "at least one area:* label is required"
+          [[ "$(count_prefix 'priority:')" -eq 1 ]] || fail "exactly one priority:* label is required"
+          [[ "$(count_prefix 'status:')" -eq 1 ]] || fail "exactly one status:* label is required"
+
+          for heading in \
+            '## Summary' \
+            '## Roadmap / release metadata' \
+            '## Related work' \
+            '## Change type' \
+            '## Scope' \
+            '## Truth / provenance' \
+            '## Security / authorization' \
+            '## Validation' \
+            '## Release notes' \
+            '## Notes / risks'; do
+            grep -Fq "$heading" <<<"$body" || fail "missing PR template heading: $heading"
+          done
+
+          release_notes_checked=0
+          grep -Eiq '^[[:space:]]*-[[:space:]]*\[[xX]\][[:space:]]+This change should appear in (product[[:space:]]+)?release notes' <<<"$body" && release_notes_checked=1
+          skip_changelog=0
+          has_label skip-changelog && skip_changelog=1
+          [[ $((release_notes_checked + skip_changelog)) -eq 1 ]] || fail "choose exactly one changelog path"
+
+          if [[ "$base" == "stage" ]]; then
+            [[ "$head" =~ ^(feature|fix|chore|docs|ci)/[a-z0-9][a-z0-9._-]*$ ]] || fail "invalid stage source branch: $head"
+            if [[ -z "$milestone" ]]; then
+              has_label roadmap:unversioned || fail "stage PR without milestone requires roadmap:unversioned"
+            else
+              ! has_label roadmap:unversioned || fail "milestone PR must not use roadmap:unversioned"
+            fi
+          elif [[ "$base" == "main" ]]; then
+            if [[ "$head" == "stage" ]]; then
+              has_label release:promotion || fail "stage → main requires release:promotion"
+            elif [[ "$head" == hotfix/* ]]; then
+              has_label release:hotfix || fail "hotfix/* → main requires release:hotfix"
+            else
+              fail "main accepts only stage or hotfix/* sources"
+            fi
+          fi
+
+          comments_json="$(curl --fail --silent --show-error -H 'Accept: application/vnd.github+json' "${comments_url}?per_page=100")"
+          metadata_checkpoint="$(jq '[.[] | select((.body // "") | contains("## PR metadata / review checkpoint"))] | length' <<<"$comments_json")"
+          governance_checkpoint="$(jq '[.[] | select((.body // "") | contains("## Governance / validation checkpoint"))] | length' <<<"$comments_json")"
+          [[ "$metadata_checkpoint" -ge 1 ]] || fail "missing PR metadata / review checkpoint comment"
+          [[ "$governance_checkpoint" -ge 1 ]] || fail "missing Governance / validation checkpoint comment"
+
+          echo "PR contract valid for $head → $base."
