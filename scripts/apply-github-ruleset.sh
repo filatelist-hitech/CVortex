@@ -24,8 +24,11 @@ RULESET_NAME="CVortex protected integration branches"
 }
 
 # Refuse to require governance checks that do not yet exist on the protected integration branch.
-workflow_content="$(gh api "repos/$REPO/contents/.github/workflows/governance.yml?ref=stage" --jq '.content' 2>/dev/null || true)"
-if [[ -z "$workflow_content" ]]; then
+workflow_text="$(gh api \
+  -H 'Accept: application/vnd.github.raw+json' \
+  "repos/$REPO/contents/.github/workflows/governance.yml?ref=stage" \
+  2>/dev/null || true)"
+if [[ -z "$workflow_text" ]]; then
   cat >&2 <<'EOF'
 error: .github/workflows/governance.yml is not present on stage.
 Do not apply the ruleset yet: requiring governance checks before the workflow exists can lock merges.
@@ -33,7 +36,6 @@ EOF
   exit 1
 fi
 
-workflow_text="$(printf '%s' "$workflow_content" | tr -d '\n' | base64 --decode)"
 grep -Fq 'name: Roadmap metadata' <<<"$workflow_text" || {
   echo "error: Governance workflow on stage does not define Roadmap metadata" >&2
   exit 1
