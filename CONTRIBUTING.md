@@ -2,100 +2,102 @@
 
 ## Branch model
 
-CVortex uses a lightweight staging workflow.
+CVortex uses a staging workflow with roadmap-aware delivery metadata.
 
 | Branch | Purpose | Typical source | PR target |
 | --- | --- | --- | --- |
 | `main` | Stable/release state | `stage`, `hotfix/*` | — |
 | `stage` | Integration and staging | short-lived branches | `main` for release |
 | `feature/*` | Product capability | `stage` | `stage` |
-| `fix/*` | Non-emergency bug fix | `stage` | `stage` |
-| `chore/*` | Tooling, repository, maintenance | `stage` | `stage` |
-| `docs/*` | Documentation-only change | `stage` | `stage` |
-| `ci/*` | CI/CD work | `stage` | `stage` |
-| `hotfix/*` | Urgent production/release fix | `main` | `main`, then back to `stage` |
+| `fix/*` | Non-emergency defect | `stage` | `stage` |
+| `chore/*` | Tooling/repository/maintenance | `stage` | `stage` |
+| `docs/*` | Documentation-only | `stage` | `stage` |
+| `ci/*` | CI/CD | `stage` | `stage` |
+| `hotfix/*` | Urgent released-state fix | `main` | `main`, then back to `stage` |
 
-Do not develop directly on `main` or `stage` after the repository bootstrap.
+Do not develop directly on `main` or `stage`.
+
+## Roadmap placement
+
+Every PR to `stage` must use either:
+
+- one native GitHub Milestone from `M0 · Runnable Core` through `M6 · Distribution & Hardening`; or
+- `roadmap:unversioned` for truly cross-cutting work without a product-version target.
+
+M1 PRs also use exactly one M1 slice label unless `roadmap:cross-cutting` is justified.
+
+The canonical mapping lives in `.github/roadmap.yml`.
 
 ## Workflow
 
-1. Synchronize local `stage`.
-2. Create a short-lived branch from `stage`.
-3. Keep the change bounded to one concern.
-4. Add or update tests when behavior changes.
-5. Update documentation and ADRs when architecture or accepted decisions change.
-6. Open a pull request to `stage`.
-7. Promote validated staging state to `main` through a separate release PR.
-
-For an urgent hotfix, branch from `main`, merge the fix to `main`, then merge or cherry-pick the same fix back to `stage` immediately.
+1. Synchronize `stage`.
+2. Create a bounded short-lived branch.
+3. Implement behavior, tests, security controls and docs together.
+4. Run relevant validation.
+5. Open PR to `stage`.
+6. Assign roadmap metadata.
+7. Resolve required checks/review threads.
+8. Squash-merge ordinary branches.
+9. Promote validated `stage` to `main` only through release policy.
 
 ## Branch naming
 
-Use lowercase kebab-case after the prefix, for example:
+Use lowercase kebab-case. Include milestone/slice when it materially improves recognition:
 
-- `feature/vacancy-import`
-- `fix/employer-memory-conflict`
-- `chore/repository-foundation`
-- `docs/truth-guard-adr`
-- `ci/backend-tests`
-- `hotfix/credential-redaction`
+- `chore/m0-runnable-core`
+- `feature/m1.2-career-facts`
+- `feature/m1.3-vacancy-paste`
+- `fix/m1.4-truth-guard`
+- `docs/github-governance`
 
 ## Commits
 
-Prefer Conventional Commit-style messages:
-
-- `feat(scope): ...`
-- `fix(scope): ...`
-- `docs(scope): ...`
-- `test(scope): ...`
-- `refactor(scope): ...`
-- `build(scope): ...`
-- `ci(scope): ...`
-- `chore(scope): ...`
-
-Keep commits reviewable. Do not mix unrelated refactors with behavior changes merely because the keyboard was already warm.
+Use Conventional Commit-style messages. Keep the scope domain-oriented (`feat(vacancies)`) rather than roadmap-oriented (`feat(m1.3)`), so history stays useful after milestones close.
 
 ## Pull request checks
 
-Before merge, verify as applicable:
+Before merge, verify applicable tests, authorization/cross-user isolation, migrations/backward compatibility, error handling, observability, docs, ADR impact, secret/private-data safety and untrusted-input handling.
 
-- tests pass;
-- authorization and cross-user isolation are covered;
-- migrations are safe and backward compatibility is considered;
-- error handling and observability are adequate;
-- documentation is current;
-- an ADR is updated or added for architectural changes;
-- no secret, token, personal resume, recruiter message, or production data is present;
-- untrusted external content is not treated as agent/system instructions.
+The `Roadmap metadata` action also verifies mandatory milestone/slice/release placement.
 
-## Labels
+## GitHub metadata bootstrap
 
-The canonical repository label taxonomy is stored in `.github/labels.yml`.
-
-Synchronize labels with GitHub using:
+Canonical labels:
 
 ```bash
 bash scripts/bootstrap-github-metadata.sh
 ```
 
-Use labels for change type, technical/product area, priority, workflow state, and release-note grouping. Do not invent near-duplicate labels ad hoc in the GitHub UI.
+Canonical Milestones + GitHub Project:
+
+```bash
+gh auth refresh -s project
+bash scripts/bootstrap-github-roadmap.sh
+```
+
+Canonical protected-branch ruleset, only after the governance workflow exists on `stage`:
+
+```bash
+bash scripts/apply-github-ruleset.sh
+```
+
+Do not invent near-duplicate labels or milestones manually in the UI.
 
 ## Releases and tags
 
-Versioning, tags, and GitHub Releases follow `.agents/policies/release-management.md`.
+Follow `.agents/policies/release-management.md`.
 
 Key rules:
 
-- do not tag every phase, commit, or pull request;
-- release tags are created only from `main`;
-- use Semantic Versioning with a `v` prefix;
-- do not move or reuse published tags;
-- no GitHub Release is required during the current repository/documentation bootstrap;
-- the first release becomes eligible only when a runnable milestone has actually been validated;
-- `.github/release.yml` defines generated release-note grouping.
+- release tags come only from `main`;
+- milestone completion and version publication are separate decisions;
+- M1 targets `v0.1.0`, M2 targets `v0.2.0`, and later milestones advance the pre-1.0 minor line;
+- M0 may optionally publish `v0.1.0-alpha.1` after real runtime validation;
+- M1.1–M1.4 do not create four fake releases;
+- `v1.0.0` requires a separate stability decision after M6.
 
 ## Merge policy
 
-Prefer **squash merge** for ordinary short-lived branches to keep history readable. Release PRs from `stage` to `main` may use a normal merge when preserving the release boundary is useful.
+Prefer squash merge for ordinary short-lived branches. `stage → main` release PRs may use a normal merge when preserving the release boundary is useful.
 
-Never force-push `main` or `stage` as part of normal work.
+Never force-push `main` or `stage`.

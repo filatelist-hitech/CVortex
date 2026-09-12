@@ -1,0 +1,82 @@
+schema: 1
+repository: filatelist-hitech/CVortex
+
+project:
+  owner: filatelist-hitech
+  title: "CVortex Roadmap"
+  visibility: private
+  description: "Value-driven delivery board for CVortex milestones, slices and target versions."
+
+milestones:
+  - key: M0
+    title: "M0 · Runnable Core"
+    target_version: "v0.1.0-alpha.1"
+    release_mode: "optional-prerelease"
+    description: "Runnable Laravel/Next.js/PostgreSQL/Redis/Horizon/Nginx/Docker baseline."
+  - key: M1
+    title: "M1 · First Value"
+    target_version: "v0.1.0"
+    release_mode: "preview"
+    description: "First complete truthful workflow from confirmed career facts to vacancy analysis, resume recommendations and cover draft."
+  - key: M2
+    title: "M2 · Real Application Package"
+    target_version: "v0.2.0"
+    release_mode: "mvp"
+    description: "Versioned application package, Employer Memory foundation, deterministic DOCX/PDF and READY_TO_APPLY."
+  - key: M3
+    title: "M3 · Imports & Integrations"
+    target_version: "v0.3.0"
+    release_mode: "minor"
+    description: "Safe resume-file imports and policy-approved vacancy source integrations."
+  - key: M4
+    title: "M4 · Employer Journey"
+    target_version: "v0.4.0"
+    release_mode: "minor"
+    description: "Recruiter conversations, advanced Employer Memory and interview preparation/history."
+  - key: M5
+    title: "M5 · Outcomes & Analytics"
+    target_version: "v0.5.0"
+    release_mode: "minor"
+    description: "Outcome tracking and evidence-based job-search analytics."
+  - key: M6
+    title: "M6 · Distribution & Hardening"
+    target_version: "v0.6.0"
+    release_mode: "minor"
+    description: "VPS/cloud path, backup/restore, observability, operational hardening and PWA polish."
+
+slices:
+  - key: M1.1
+    milestone: M1
+    label: "slice:m1.1-access"
+    title: "Access Core"
+  - key: M1.2
+    milestone: M1
+    label: "slice:m1.2-career"
+    title: "Career Core"
+  - key: M1.3
+    milestone: M1
+    label: "slice:m1.3-vacancy"
+    title: "Vacancy Core"
+  - key: M1.4
+    milestone: M1
+    label: "slice:m1.4-application"
+    title: "Application Draft"
+
+project_fields:
+  delivery:
+    type: single_select
+    options: "Backlog,Ready,In progress,Review,Blocked,Done"
+  slice:
+    type: single_select
+    options: "None,M1.1,M1.2,M1.3,M1.4"
+  target_version:
+    type: text
+  priority:
+    type: single_select
+    options: "P0,P1,P2,P3"
+
+version_policy:
+  m0_release_is_optional: true
+  slices_create_tags: false
+  release_tags_from_main_only: true
+  production_stability_gate: "v1.0.0 is a separate explicit release decision after M6; it is not implied by completing M6."

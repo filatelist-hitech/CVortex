@@ -2,18 +2,24 @@
 
 ## Purpose
 
-Define the mandatory Git and GitHub workflow for CVortex development agents and contributors.
+Define the mandatory Git/GitHub workflow for CVortex and connect branch governance to the value-driven roadmap.
 
-Human-facing contribution details live in `CONTRIBUTING.md`. The importable GitHub repository ruleset lives in `.github/rulesets/cvortex-protected-branches.json`.
+Canonical metadata:
 
-## Protected long-lived branches
+- roadmap: `docs/01-Product/Roadmap.md`;
+- GitHub milestone/project mapping: `.github/roadmap.yml`;
+- labels: `.github/labels.yml`;
+- ruleset: `.github/rulesets/cvortex-protected-branches.json`;
+- release/version policy: `.agents/policies/release-management.md`.
+
+## Long-lived branches
 
 ### `main`
 
 - Stable/release state only.
 - Normal product development never starts from `main`.
-- Changes arrive through a pull request from `stage`.
-- Emergency fixes may use `hotfix/*` branched from `main`.
+- Normal release changes arrive from `stage`.
+- Urgent fixes may arrive from `hotfix/*` created from `main`.
 - Never force-push or delete `main`.
 
 ### `stage`
@@ -23,113 +29,142 @@ Human-facing contribution details live in `CONTRIBUTING.md`. The importable GitH
 - Changes arrive through pull requests.
 - Never force-push or delete `stage`.
 
+## Roadmap placement
+
+Every PR targeting `stage` must have exactly one delivery placement:
+
+1. a native GitHub Milestone matching `M0` through `M6`; or
+2. `roadmap:unversioned` when the work is intentionally cross-cutting and does not target a product milestone/version.
+
+Do not use `roadmap:unversioned` to avoid choosing an obvious milestone.
+
+For `M1 · First Value`, also assign exactly one of:
+
+- `slice:m1.1-access`;
+- `slice:m1.2-career`;
+- `slice:m1.3-vacancy`;
+- `slice:m1.4-application`;
+- or `roadmap:cross-cutting` when the change genuinely spans slices.
+
+Milestone/slice metadata describes delivery placement. It does not authorize work: `.agents/state/NEXT.md` remains the execution-authority pointer.
+
 ## Short-lived branches
 
 Use lowercase kebab-case after the prefix:
 
-- `feature/*` — product capability;
-- `fix/*` — non-emergency defect fix;
-- `chore/*` — tooling, repository or maintenance work;
-- `docs/*` — documentation-only changes;
-- `ci/*` — CI/CD changes;
-- `hotfix/*` — urgent release fix created from `main`.
+- `feature/*`;
+- `fix/*`;
+- `chore/*`;
+- `docs/*`;
+- `ci/*`;
+- `hotfix/*`.
 
-Examples:
+When a branch clearly belongs to a roadmap unit, include the milestone/slice token for quick recognition, for example:
 
-- `feature/vacancy-import`
-- `fix/employer-memory-conflict`
-- `chore/git-governance`
-- `docs/truth-guard-adr`
-- `ci/backend-tests`
-- `hotfix/credential-redaction`
+- `chore/m0-runnable-core`;
+- `feature/m1.2-career-facts`;
+- `feature/m1.3-vacancy-paste`;
+- `fix/m1.4-truth-guard`.
+
+Do not force milestone numbers into generic cross-cutting branches.
+
+## Commits
+
+Prefer Conventional Commit-style messages such as `feat(vacancies): ...` and `fix(auth): ...`.
+
+Commit scope should describe the code/domain area, not the roadmap number. Milestones change over time; code history should remain meaningful after the roadmap moves on.
+
+Do not mix unrelated work into one commit merely to make a milestone look busy. Humanity already invented project dashboards for that illusion.
 
 ## Standard workflow
 
-1. Read repository instructions and current project state before making changes.
+1. Read `PROJECT.md`, current state and task spec.
 2. Synchronize local `stage`.
-3. Create a short-lived branch from `stage`.
-4. Keep the branch bounded to one concern.
-5. Implement the change together with applicable tests and documentation.
-6. Run relevant validation locally.
-7. Use reviewable Conventional Commit-style commits.
-8. Open a pull request into `stage`.
-9. Resolve review threads and required checks before merge.
+3. Create a bounded short-lived branch.
+4. Implement tests/docs/security work required by the task.
+5. Run relevant validation.
+6. Open a PR to `stage`.
+7. Assign native GitHub Milestone or `roadmap:unversioned`.
+8. Assign M1 slice metadata when applicable.
+9. Resolve review threads and required checks.
 10. Prefer squash merge for ordinary short-lived branches.
-11. Promote validated `stage` to `main` through a separate release pull request.
+11. Promote validated `stage` to `main` through a release PR only when release policy permits it.
 
-## Hotfix workflow
+## PRs to `main`
 
-1. Branch `hotfix/*` from current `main`.
-2. Implement only the urgent fix and its required validation.
-3. Open a pull request into `main`.
-4. After merge, immediately propagate the same fix back to `stage` through a pull request or cherry-pick on a short-lived branch.
-5. Confirm `main` and `stage` no longer diverge on the hotfix.
+Normal promotion:
 
-## Commit policy
+```text
+stage → main
+label: release:promotion
+```
 
-Prefer Conventional Commit-style messages:
+Hotfix:
 
-- `feat(scope): ...`
-- `fix(scope): ...`
-- `docs(scope): ...`
-- `test(scope): ...`
-- `refactor(scope): ...`
-- `build(scope): ...`
-- `ci(scope): ...`
-- `chore(scope): ...`
+```text
+hotfix/* → main
+label: release:hotfix
+```
 
-Do not mix unrelated refactors, formatting sweeps or generated files into a functional change unless they are required by that change.
+No other source branch should target `main` under normal operation.
 
-## Pull request requirements
+After a hotfix merge, propagate the fix back to `stage` immediately.
 
-Before merge, verify as applicable:
+## GitHub Project
 
-- relevant tests pass;
-- authorization and cross-user isolation are considered;
-- migrations and backward compatibility are considered;
-- error handling and observability are adequate;
-- documentation is current;
-- an ADR is updated or added when an accepted architectural decision changes;
-- no secrets, tokens, credentials, private career data, recruiter messages or production data are committed;
-- external vacancy, recruiter, website and imported-document content remains untrusted input;
-- review conversations are resolved.
+The recommended planning surface is the native GitHub Project `CVortex Roadmap` linked to this repository.
+
+Use native GitHub Milestone for `M0–M6`. Project custom fields are:
+
+- `Delivery`: Backlog / Ready / In progress / Review / Blocked / Done;
+- `Slice`: None / M1.1 / M1.2 / M1.3 / M1.4;
+- `Target version`: text SemVer target;
+- `Priority`: P0 / P1 / P2 / P3.
+
+Do not duplicate private career data, recruiter messages or secrets into GitHub Project fields/cards.
+
+Repository-managed desired state lives in `.github/roadmap.yml`; synchronize it with `scripts/bootstrap-github-roadmap.sh`.
 
 ## Repository ruleset
 
-The canonical importable ruleset is:
-
-`.github/rulesets/cvortex-protected-branches.json`
+The canonical importable/applyable ruleset is `.github/rulesets/cvortex-protected-branches.json`.
 
 It protects `main` and `stage` by:
 
-- requiring pull requests;
-- blocking branch deletion;
-- blocking non-fast-forward updates / force pushes;
-- requiring review conversations to be resolved;
-- requiring zero approving reviews while CVortex is a solo-maintained repository.
+- requiring PRs;
+- blocking deletion;
+- blocking force pushes/non-fast-forward updates;
+- requiring review-thread resolution;
+- requiring the `Roadmap metadata` GitHub Actions check.
 
-Do not add required status checks to the ruleset until the corresponding GitHub Actions checks exist and are stable. Once CI exists, update both the ruleset and this policy in the same change.
+The check validates milestone/slice placement for `stage` PRs and release/hotfix source metadata for `main` PRs.
+
+Apply the ruleset only after `.github/workflows/governance.yml` exists on `stage`; otherwise a required check could lock the repository. `scripts/apply-github-ruleset.sh` enforces this precondition.
+
+## Security and quality
+
+Before merge, verify as applicable:
+
+- tests pass;
+- authorization and cross-user isolation are considered;
+- migrations/backward compatibility are considered;
+- error handling and observability are adequate;
+- documentation is current;
+- ADRs are updated for accepted architecture changes;
+- no secrets, credentials, private career data, recruiter messages or production data are committed;
+- external content remains untrusted input.
 
 ## Mandatory agent behavior
 
 Development agents must not:
 
-- develop directly on `main` or `stage` after repository bootstrap;
+- push product work directly to `main` or `stage`;
 - force-push protected branches;
-- silently rewrite published branch history;
-- bypass a failing validation by weakening the ruleset;
-- merge architectural changes without updating the relevant ADR/documentation;
-- commit secrets or private user/job-search data.
-
-If repository state conflicts with this policy, stop the write operation, report the conflict, and resolve it explicitly rather than guessing.
+- silently rewrite published history;
+- bypass governance checks by weakening labels/rulesets;
+- invent a milestone/version merely to satisfy CI;
+- create a release/tag from `stage` or a feature branch.
 
 ## Completion checks
 
-A Git-related change is complete only when:
-
-- the intended branch/base branch is correct;
-- validation relevant to the change has run;
-- documentation is synchronized;
-- the protected-branch rules remain enforceable;
-- no secret/private data was introduced;
-- branch history remains understandable and traceable.
+A Git-related change is complete only when branch/base, roadmap placement, validation, documentation and release metadata are internally consistent.

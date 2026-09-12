@@ -82,3 +82,17 @@ Canonical runtime/product LLM Skills live under `/runtime-ai/` according to ADR-
 The canonical implementation sequence is `docs/01-Product/Roadmap.md`.
 
 Completed Foundation Era Phases 00–07 remain authoritative history. Implementation now proceeds through value-driven milestones and vertical slices beginning with `M0 Runnable Core`, then `M1 First Value`.
+
+## Delivery Governance
+
+GitHub delivery metadata is repository-managed rather than an undocumented UI convention:
+
+- `.github/roadmap.yml` maps native GitHub Milestones `M0–M6` to target SemVer versions and M1 slice labels;
+- `.github/labels.yml` defines canonical roadmap/slice/release labels;
+- `.github/workflows/governance.yml` validates PR roadmap metadata;
+- `.github/rulesets/cvortex-protected-branches.json` requires the governance check on protected integration branches;
+- `.agents/policies/git-workflow.md` defines branch/PR behavior;
+- `.agents/policies/release-management.md` defines version/tag/release behavior;
+- `docs/10-Operations/GitHub-Governance.md` documents GitHub Milestones and Project configuration.
+
+Execution authority still comes from `.agents/state/NEXT.md`; a GitHub Milestone is planning metadata, not permission to skip tasks.
