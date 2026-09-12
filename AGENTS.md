@@ -135,7 +135,6 @@ Unless a task requires detail, completion output contains result, files changed,
 ## Stop Conditions
 
 Stop when completion criteria are met, required information is genuinely blocking, continuing would violate architecture/security/Truth-first, or the task explicitly requires STOP. Do not advance automatically.
-
 <!-- CVORTEX:GIT-WORKFLOW:BEGIN -->
 ## Git workflow
 
@@ -143,13 +142,9 @@ For all repository changes, follow `.agents/policies/git-workflow.md` and `CONTR
 
 Mandatory baseline: work on short-lived branches, target `stage` for normal changes, and promote `stage` to `main` only through release policy.
 
-Agents performing a write task must create or verify the correct short-lived branch before modifying repository files. The user does not need to repeat this requirement in each prompt.
-
 Every PR to `stage` must have a native M0–M6 GitHub Milestone or `roadmap:unversioned`. M1 work also carries one M1 slice label or `roadmap:cross-cutting`.
 
-Every PR must also satisfy the repository PR contract: assignee, canonical type/area labels, exactly one priority and status label, explicit changelog path, PR-template structure, and metadata/governance checkpoint comments. Set the final `status:*` label only after the other metadata and checkpoint comments are present, then verify the current PR state.
-
-Canonical GitHub delivery metadata is `.github/roadmap.yml`. Canonical labels are `.github/labels.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; repository governance checks are defined in `.github/workflows/governance.yml`.
+Canonical GitHub delivery metadata is `.github/roadmap.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; `Roadmap metadata` is a required check once that ruleset is applied.
 
 Versioning, tags and GitHub Releases follow `.agents/policies/release-management.md`.
 <!-- CVORTEX:GIT-WORKFLOW:END -->

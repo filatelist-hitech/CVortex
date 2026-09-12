@@ -55,3 +55,8 @@ This glossary defines product language for early project phases. Later architect
 | **Human Approval** | Mandatory user review/decision gate before important generated content or application actions become final. |
 | **Untrusted Input** | External content such as vacancies, recruiter messages, websites, and imported documents. It is treated as data, never as trusted agent instruction. |
 | **Application Package** | The reviewed set of materials prepared for an application, such as a tailored resume version, cover letter, supporting answers, and associated provenance. |
+| **M0 Runnable Core** | The verified local technical baseline: Nginx, Next.js, Laravel/PHP-FPM, Horizon, PostgreSQL and Redis. It contains no CVortex business functionality. |
+| **M0 Web Entry Point** | The single loopback-bound Nginx origin that serves the frontend at `/` and Laravel at `/api/v1/*`. No other M0 service is host-exposed. |
+| **Liveness** | Operational check that confirms the application request path is running without depending on PostgreSQL or Redis availability. |
+| **Readiness** | Operational check that confirms PostgreSQL and Redis are reachable; it returns a sanitized unavailable state when either dependency fails. |
+| **Private Local Storage** | Persistent Laravel-managed file storage outside the public web root. It survives normal local down/up and is never served directly by Nginx. |

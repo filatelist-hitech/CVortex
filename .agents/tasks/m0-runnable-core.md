@@ -1,6 +1,6 @@
 ---
 title: CVortex M0 — Runnable Core
-status: ready
+status: completed
 milestone: m0-runnable-core
 owner: project
 created: 2026-09-12
@@ -331,26 +331,26 @@ Do not report a check as executed unless it was actually run.
 
 ## Completion criteria
 
-- [ ] real stack builds and starts;
-- [ ] clean checkout initializes with only Git, Docker/Compose and Make on the host;
-- [ ] source uses bind mounts with container-managed dependencies;
-- [ ] browser reaches CVortex through Nginx;
-- [ ] only Nginx is host-facing;
-- [ ] frontend and backend are real applications;
-- [ ] PostgreSQL, Redis and Horizon are operational;
-- [ ] health failure/recovery behavior passes;
-- [ ] PostgreSQL and private storage survive ordinary down/up;
-- [ ] Redis is not treated as durable product state;
-- [ ] root `.env.example` / `.env` is the single local M0 configuration contract;
-- [ ] Make workflow is usable and non-destructive by default;
-- [ ] frontend production build succeeds while local runtime remains `next dev`;
-- [ ] backend/frontend deterministic quality checks pass;
-- [ ] minimal GitHub Actions quality workflow exists;
-- [ ] `composer.lock` and `package-lock.json` are committed;
-- [ ] Docker images use explicit supported non-`latest` tags;
-- [ ] compatibility decisions that constrain runtime, image or package selection are recorded;
-- [ ] no business functionality or speculative production deployment leaked into M0;
-- [ ] docs/state reflect actual implementation.
+- [x] real stack builds and starts;
+- [x] clean checkout initializes with only Git, Docker/Compose and Make on the host;
+- [x] source uses bind mounts with container-managed dependencies;
+- [x] browser reaches CVortex through Nginx;
+- [x] only Nginx is host-facing;
+- [x] frontend and backend are real applications;
+- [x] PostgreSQL, Redis and Horizon are operational;
+- [x] health failure/recovery behavior passes;
+- [x] PostgreSQL and private storage survive ordinary down/up;
+- [x] Redis is not treated as durable product state;
+- [x] root `.env.example` / `.env` is the single local M0 configuration contract;
+- [x] Make workflow is usable and non-destructive by default;
+- [x] frontend production build succeeds while local runtime remains `next dev`;
+- [x] backend/frontend deterministic quality checks pass;
+- [x] minimal GitHub Actions quality workflow exists;
+- [x] `composer.lock` and `package-lock.json` are committed;
+- [x] Docker images use explicit supported non-`latest` tags;
+- [x] compatibility decisions that constrain runtime, image or package selection are recorded;
+- [x] no business functionality or speculative production deployment leaked into M0;
+- [x] docs/state reflect actual implementation.
 
 ## State update
 

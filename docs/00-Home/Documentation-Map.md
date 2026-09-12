@@ -13,6 +13,8 @@ related:
   - "[[../01-Product/Roadmap|Roadmap]]"
   - "[[../01-Product/Glossary|Glossary]]"
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
+  - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
+  - "[[../10-Operations/Local-Development|Local Development]]"
 ---
 
 # Documentation Map
@@ -30,12 +32,15 @@ related:
 - [[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]] — accepted PRD, requirements and user-flow baseline; its former embedded roadmap is superseded by [[../01-Product/Roadmap|Roadmap]].
 - [[../02-Architecture/Architecture-Baseline|Architecture Baseline]] — accepted system boundaries/invariants.
 - [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] — accepted C4/component/deployment design.
+- [[../02-Architecture/M0-Runtime|M0 Runtime]] — implemented local runtime topology, version baseline, health, persistence and exposure boundaries.
 - [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — accepted conceptual data, ownership, provenance and audit model.
 - [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
 - [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
 - [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.
 - [[../07-Design/Design-Foundation|Design Foundation]] — visual/interaction/accessibility baseline and Git token authority.
 - [[../07-Design/Figma-Handoff|Figma Handoff]] — Figma bootstrap/review/drift procedure and current capability limitation.
+- [[../10-Operations/Local-Development|Local Development]] — clean bootstrap and stable Make interface.
+- [[../10-Operations/M0-Runbook|M0 Runbook]] — health diagnosis, recovery and validation commands.
 
 ## Documentation areas
 
@@ -46,12 +51,12 @@ related:
 | `02-Architecture/` | Architecture views and diagrams | Active; baseline accepted |
 | `03-ADR/` | Architecture decisions | Active; ADR-0001..0018 accepted |
 | `04-Data/` | Conceptual data/provenance/ownership | Active; Phase 06 accepted |
-| `05-API/` | API conventions/contracts | Reserved until implementation |
+| `05-API/` | API conventions/contracts | Reserved; M0 `/api/v1` boundary is documented in M0 Runtime |
 | `06-AI/` | Provider/model-policy/skills/workflows/evals | Active; Phase 06 accepted |
 | `07-Design/` | Design system/tokens/Figma | Active; Phase 07 completed |
 | `08-Security/` | Threat model/security controls | Active; Phase 06 accepted |
-| `09-QA/` | Testing/evaluation strategy | Reserved until implementation |
-| `10-Operations/` | Local operations/deployment/observability | Reserved until M0 |
+| `09-QA/` | Testing/evaluation strategy | Reserved; M0 checks live with applications/CI |
+| `10-Operations/` | Local operations/deployment/observability | Active; M0 local runtime documented |
 | `11-Research/` | Promoted research summaries | Reserved |
 | `99-Archive/` | Deprecated/superseded docs | Reserved |
 

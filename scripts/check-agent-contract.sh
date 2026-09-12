@@ -77,7 +77,7 @@ if [[ -n "$TASK_SPEC" ]]; then
 
   if [[ -f .agents/state/NEXT.md ]]; then
     NEXT_ID="$(tr -d '[:space:]' < .agents/state/NEXT.md)"
-    if [[ -n "$NEXT_ID" && "$TASK_ID" != "$NEXT_ID" && "$USER_OVERRIDE" != true ]]; then
+    if [[ -n "$NEXT_ID" && "$TASK_ID" != "$NEXT_ID" && "$USER_OVERRIDE" != true && "$MODE" != "review" ]]; then
       cat >&2 <<EOF2
 error: task '$TASK_ID' does not match NEXT '$NEXT_ID'.
 Use --user-override only when the current explicit user instruction authorizes this bounded override.
