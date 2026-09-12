@@ -4,16 +4,15 @@
 
 `04-product-integrations-hiring-research`
 
-Status: **completed with sequencing blocker**
+Status: **completed**
 
 ## Completed Phases
 
 - `00-ai-system-bootstrap`
 - `01-project-knowledge-bootstrap`
-- `02-research-plan` — confirmed by merged repository evidence
-- `04-product-integrations-hiring-research` — completed by explicit current task instruction
-
-`03-technical-research` is **not marked complete** because completion artifacts/commit were not found during this run.
+- `02-research-plan`
+- `03-technical-research`
+- `04-product-integrations-hiring-research`
 
 ## Current Repository State
 
@@ -23,7 +22,24 @@ Phase 01 added the initial CVortex project knowledge base and documentation skel
 
 Phase 02 added the research plan/index covering technical, integration, recruitment, security and licensing questions.
 
-Phase 04 now adds reviewed evidence for:
+Phase 03 adds reviewed technical evidence for:
+
+- PHP, Laravel and PostgreSQL;
+- Redis, queues and Horizon;
+- authentication, authorization, encryption and rate limiting;
+- OpenAI API, current model catalog and pricing;
+- Structured Outputs, prompt caching and Batch;
+- PHP OpenAI integration options;
+- Next.js, React, TypeScript and Tailwind CSS;
+- component primitives;
+- testing stack;
+- DOCX generation and LibreOffice headless conversion;
+- design-token tooling;
+- Figma MCP and Code Connect.
+
+Technical alternatives remain decision candidates rather than accepted ADRs.
+
+Phase 04 adds reviewed evidence for:
 
 - vacancy/job-board and ATS career-source capabilities;
 - API/auth/OAuth/feed classifications and source restrictions;
@@ -54,13 +70,23 @@ Phase 04 does not introduce:
 - runtime product AI Skills;
 - accepted architecture ADRs.
 
-## Sequencing Conflict
+## Sequencing Reconciliation
 
-Before this run, `STATUS.md` and `NEXT.md` were stale and still reported Phase 01 / Phase 02 even though Phase 02 research-plan changes had already been merged to `stage`.
+Phase 04 was merged before Phase 03 because Phase 03 artifacts were not yet
+present in `stage` at the time Phase 04 was executed.
 
-Repository history checked during Phase 04 did not show a completed Phase 03 technical-research change.
+Phase 03 technical research has now been completed and reconciled into the
+project state.
 
-Phase 04 was executed because the explicit current task required it. This does **not** imply that Phase 03 is complete.
+The temporary Phase 05 prerequisite blocker is therefore resolved.
+
+The project sequence is now logically complete through Phase 04:
+
+`00 → 01 → 02 → 03 → 04`
+
+No Phase 03 or Phase 04 research finding becomes an accepted architecture
+decision merely because the sequencing gap has been reconciled.
+
 
 ## Accepted Decisions
 
@@ -127,7 +153,7 @@ Phase 04 adds decision inputs for:
 - Recruitment Knowledge Base design;
 - external-content trust boundary and URL-fetch security architecture.
 
-These must be resolved only in their appropriate future architecture phases and only after missing technical research is reconciled.
+These must be resolved only in their appropriate future architecture phases.
 
 ## Relevant ADR Links
 
@@ -138,6 +164,22 @@ Architecture decisions requiring ADR treatment remain deferred to Phase 05 or la
 ## Files Created / Changed
 
 Core operating/project layer from earlier phases remains unchanged except project state files.
+
+Phase 03 technical research artifacts:
+
+- `research/technical/01-BACKEND-RUNTIME-DATA.md`
+- `research/technical/02-LARAVEL-AUTH-SECURITY.md`
+- `research/technical/03-REDIS-QUEUES-HORIZON.md`
+- `research/technical/04-OPENAI-API-MODELS.md`
+- `research/technical/05-OPENAI-PHP-INTEGRATION.md`
+- `research/technical/06-FRONTEND-STACK.md`
+- `research/technical/07-COMPONENT-PRIMITIVES.md`
+- `research/technical/08-TESTING-STACK.md`
+- `research/technical/09-DOCUMENT-PIPELINE.md`
+- `research/technical/10-DESIGN-TOKENS-FIGMA.md`
+- `research/technical/DECISION-CANDIDATES.md`
+- `research/technical/README.md`
+- `research/technical/SOURCES.md`
 
 Phase 04 research artifacts:
 
@@ -178,14 +220,22 @@ Validated:
 - no fake universal ATS score is introduced;
 - no product code or accepted ADR is introduced.
 
-Phase sequence validation: **BLOCKED**.
+Phase sequence validation: **PASS**.
 
-Reason: Phase 03 technical-research completion is not evidenced in the repository.
+Validated:
+
+- Phase 03 technical research artifacts are now present;
+- Phase 03 decision candidates remain non-ADR recommendations;
+- Phase 04 research remains present and unchanged;
+- the temporary sequencing blocker has been resolved;
+- no product implementation was introduced;
+- no premature accepted ADR was introduced.
 
 ## Next Phase
 
-Task-prescribed next phase:
-
 `05-architecture-decision-freeze`
 
-Execution status: **BLOCKED until Phase 03 technical research is completed or located and project state is reconciled.**
+Execution status: **READY**.
+
+Phase 05 may now evaluate Phase 03 and Phase 04 evidence together before
+accepting architecture decisions.
