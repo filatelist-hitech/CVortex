@@ -1,10 +1,18 @@
 # CVortex Project State
 
-## Current Phase
+## Last Completed Phase
 
 `05-architecture-decision-freeze`
 
 Status: **completed**
+
+## Next Authorized Phase
+
+`06-product-data-ai-security-design`
+
+Execution status: **READY**.
+
+Execution authority is defined by `NEXT.md`, constrained by completed prerequisites recorded here and active blockers in `BLOCKERS.md`.
 
 ## Completed Phases
 
@@ -15,141 +23,49 @@ Status: **completed**
 - `04-product-integrations-hiring-research`
 - `05-architecture-decision-freeze`
 
-## Phase 05 Outcome
+## Current Architecture Baseline
 
-Phase 03 and Phase 04 evidence has been converted into an accepted architecture baseline. The canonical inventory is [Architecture Decision Index](../../docs/03-ADR/INDEX.md); the compact system view is [Phase 05 Architecture Baseline](../../docs/02-Architecture/Architecture-Baseline.md).
+Phase 03 and Phase 04 evidence was reconciled in Phase 05. Current architecture authority is:
 
-Accepted ADRs are authoritative within their scopes. Future changes to accepted decisions require an explicit amending or superseding ADR. Concrete dependency versions, LLM provider/model mappings, prices and implementation details remain changeable unless a later ADR deliberately freezes them.
+- `docs/03-ADR/INDEX.md`;
+- `docs/02-Architecture/Architecture-Baseline.md`;
+- `PROJECT.md`.
 
-No product code, application skeleton, dependency, migration, Docker Compose stack, ERD, OpenAPI specification, Figma screen or runtime Skill was created.
+All 17 Phase 05 ADRs are accepted.
 
-## Accepted Decisions
+## Resolved Historical Conflicts
 
-| ADR | Decision | Nature |
-|---|---|---|
-| [ADR-0001](../../docs/03-ADR/ADR-0001-laravel-core-backend.md) | Laravel as the Core Application Backend | OWNER_CONSTRAINT |
-| [ADR-0002](../../docs/03-ADR/ADR-0002-postgresql-primary-database.md) | PostgreSQL as the Primary Durable Database | OWNER_CONSTRAINT |
-| [ADR-0003](../../docs/03-ADR/ADR-0003-redis-queues-horizon.md) | Redis-backed Laravel Queues and Horizon | OWNER_CONSTRAINT |
-| [ADR-0004](../../docs/03-ADR/ADR-0004-api-first-contract.md) | Shared API-first Application Boundary | OWNER_CONSTRAINT |
-| [ADR-0005](../../docs/03-ADR/ADR-0005-local-first-docker-compose.md) | Local-first Docker Compose Deployment Baseline | OWNER_CONSTRAINT |
-| [ADR-0006](../../docs/03-ADR/ADR-0006-monorepo-strategy.md) | Incremental Monorepo Strategy | DERIVED_ARCHITECTURAL_DECISION |
-| [ADR-0007](../../docs/03-ADR/ADR-0007-multi-user-ownership.md) | Shared-schema Multi-user Ownership and Isolation | OWNER_CONSTRAINT |
-| [ADR-0008](../../docs/03-ADR/ADR-0008-invite-only-access.md) | Invite-only Registration Boundary | OWNER_CONSTRAINT |
-| [ADR-0009](../../docs/03-ADR/ADR-0009-strict-truth-guard.md) | Strict Truth Guard and Provenance Invariant | OWNER_CONSTRAINT |
-| [ADR-0010](../../docs/03-ADR/ADR-0010-provider-independent-llm.md) | Provider-independent LLM Boundary | OWNER_CONSTRAINT |
-| [ADR-0011](../../docs/03-ADR/ADR-0011-logical-model-policy.md) | Logical Capability-based Model Policy | OWNER_CONSTRAINT |
-| [ADR-0012](../../docs/03-ADR/ADR-0012-git-markdown-obsidian.md) | Git Markdown Documentation with Obsidian as Interface | OWNER_CONSTRAINT |
-| [ADR-0013](../../docs/03-ADR/ADR-0013-figma-visual-source.md) | Figma as the Reviewed Visual Source of Truth | OWNER_CONSTRAINT |
-| [ADR-0014](../../docs/03-ADR/ADR-0014-git-design-tokens.md) | Git-held DTCG Tokens as Machine-readable Canonical Source | RESEARCH_BACKED_DECISION |
-| [ADR-0015](../../docs/03-ADR/ADR-0015-file-storage-abstraction.md) | File Storage Abstraction with Local Initial Backend | DERIVED_ARCHITECTURAL_DECISION |
-| [ADR-0016](../../docs/03-ADR/ADR-0016-deterministic-document-rendering.md) | Deterministic DOCX-to-PDF Rendering Pipeline | OWNER_CONSTRAINT |
-| [ADR-0017](../../docs/03-ADR/ADR-0017-untrusted-external-content.md) | Untrusted External Content Boundary | RESEARCH_BACKED_DECISION |
+- The previous Phase 03 prerequisite blocker is resolved and is not active.
+- The Phase 04 summary retains its original missing-Phase-03 observation only as historical research provenance.
+- `research/technical/DECISION-CANDIDATES.md` is dated Phase 03 research input, not current architecture.
 
-## Conflicts Resolved
+## Deferred, Non-blocking Work
 
-- The previous `BLOCKERS.md` still claimed Phase 03 was missing. Current repository contents, commit state and the already-reconciled status prove Phase 03 complete; the stale blocker was removed.
-- `research/technical/DECISION-CANDIDATES.md` describes OpenAI as the owner-fixed first provider, while higher-priority `PROJECT.md` makes it only a possible first implementation choice. The accepted baseline follows `PROJECT.md`: provider/model selection is mutable configuration. Research remains unchanged as dated evidence.
-- The Phase 04 summary's missing-Phase-03 note is retained as historical context; later repository state explicitly reconciled it.
+Deferred decisions are assigned to later phases rather than treated as blockers:
 
-No pre-Phase-05 accepted ADR existed, so no ADR was superseded.
+- Phase 06: product/data/AI/security design, provenance, audit, threat model, runtime AI Skill location;
+- Phase 07: design foundation, component primitives, token/Figma workflow;
+- Phase 08+: concrete runtime/dependency versions, queue worker details, document library/build choices;
+- later only if justified: semantic-search implementation or specialized storage.
 
-## Deferred Decisions
+## Prepared Task Specifications
 
-Deferred to Phase 06 or later, without blocking Phase 06:
+Reviewed task specs exist for Phases 06–12 under `.agents/tasks/`.
 
-- final ERD, database tables and API/OpenAPI contracts;
-- authentication package and invitation endpoint details;
-- runtime/product LLM Skill canonical location and lifecycle; `.agents/` remains reserved for development agents;
-- concrete provider adapters, model mappings, prices and routing thresholds;
-- dependency/runtime versions and compatibility validation;
-- queue topology, supervisors and retry parameters;
-- component primitive library;
-- design-token transformation/synchronization tooling;
-- document generator library and exact LibreOffice build;
-- detailed threat model, retention rules and ingestion adapters;
-- future semantic-search implementation.
+Their `status: ready` means the specification is bounded and executable when project state permits it. It does not authorize phase skipping.
 
-## Files Created / Changed
+## Validation State
 
-Phase 05 deliverables:
+- Phase 03: reviewed;
+- Phase 04: reviewed;
+- Phase 05: completed;
+- accepted ADRs: 17;
+- active blockers for Phase 06: none;
+- `NEXT.md`: `06-product-data-ai-security-design`;
+- product implementation through Phase 05: none.
 
-- `docs/02-Architecture/Architecture-Baseline.md`
-- `docs/03-ADR/INDEX.md`
-- `docs/03-ADR/ADR-0001-laravel-core-backend.md` through `ADR-0017-untrusted-external-content.md`
-- `docs/00-Home/Documentation-Map.md`
-- `research/RESEARCH-INDEX.md` (navigation/current phase state only; research evidence unchanged)
+## Repository Notes
 
-Agent operating-layer maintenance after Phase 05:
+Historical Git merge topology may differ between `main` and `stage`. Normal development uses current `stage`; promotion to `main` is handled separately by Git/release policy.
 
-- `AGENTS.md`
-- `.agents/policies/resource-usage.md`
-- `.agents/policies/testing.md`
-- `.agents/workflows/phase-execution.md`
-- `.agents/workflows/research.md`
-- `.agents/workflows/review.md`
-- `.agents/tasks/README.md`
-- `.agents/templates/TASK.md`
-- `.agents/state/STATUS.md`
-
-This maintenance does not advance the product phase or change accepted architecture. It adds lazy context loading, single-agent/sequential defaults, explicit resource escalation rules, bounded review/research, short repository-backed task launches and non-redundant validation guidance.
-
-Future phase task specifications prepared after the resource-policy change:
-
-- `.agents/tasks/phase-06-product-data-ai-security-design.md`
-- `.agents/tasks/phase-07-design-foundation.md`
-- `.agents/tasks/phase-08-repository-bootstrap.md`
-- `.agents/tasks/phase-09-auth-multi-user.md`
-- `.agents/tasks/phase-10-career-foundation.md`
-- `.agents/tasks/phase-11-vacancies-matching.md`
-- `.agents/tasks/phase-12-application-package.md`
-
-These files are versioned execution specifications only. Their `status: ready` means the specification is bounded and reviewable; it does **not** authorize phase skipping. Execution remains controlled by `NEXT.md`, current blockers and completed prerequisites. Current `NEXT.md` remains Phase 06.
-
-## Validation Result
-
-Phase 05 documentation/repository validation: **PASS**.
-
-Validated:
-
-- 17 unique ADR IDs; every required ADR exists and is `accepted`;
-- every accepted ADR has frontmatter, decision nature, Context, Options, Comparison, Decision, Consequences and References;
-- the ADR Index links exactly once to every ADR and local Markdown/research links resolve;
-- related ADR IDs resolve and no supersession metadata is inconsistent;
-- ModelPolicy uses logical capability tiers and mutable provider/model configuration;
-- no concrete provider/model mapping or price is frozen as architecture;
-- architecture/home/research-index/state documentation is consistent with the ADR set;
-- owner constraints and research-vs-source conflicts are explicitly preserved/resolved;
-- no product code, migration, dependency or implementation scaffold was added;
-- `git diff --check` passes and the only pre-existing unrelated file remains untracked and untouched.
-
-Agent operating-layer maintenance validation:
-
-- current product phase remains unchanged;
-- no accepted ADR was modified;
-- no product code/dependency/schema/infrastructure was added;
-- root instructions reference the new resource policy and repository-backed task specs;
-- phase, research, review and testing workflows use targeted context/validation and avoid redundant work;
-- concrete model names/prices remain configuration concerns rather than architectural constants.
-
-Phase task-specification review:
-
-- Phase 06–12 specifications preserve the original phase goals and STOP boundaries;
-- future specs do not override `NEXT.md` or authorize phase skipping;
-- Phase 06 uses targeted context instead of mandatory full research/documentation reloads;
-- future external/version-sensitive choices require targeted current evidence rather than stale prompt assumptions;
-- Truth-first `FACT → CLAIM → GENERATED CONTENT`, manual fact confirmation and Strict Truth Guard remain explicit across relevant phases;
-- multi-user/IDOR/cross-user negative testing is explicit for implemented private resources;
-- vacancy URL ingestion is constrained by Phase 04 evidence and SSRF controls;
-- automatic employer submission remains prohibited;
-- Phase 12 does not invent a next phase when none is defined;
-- no product code, migration, dependency or implementation was added by preparation of these task specs.
-
-No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed for Phase 05. The task-specification preparation is documentation/instruction-only and was reviewed through branch comparison and repository consistency checks; application test suites are not applicable.
-
-## Next Phase
-
-`06-product-data-ai-security-design`
-
-Execution status: **READY**.
-
-Do not advance automatically.
+Required CI checks remain deferred until stable workflows exist.
