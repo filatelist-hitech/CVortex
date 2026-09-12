@@ -1,3 +1,4 @@
 # Blockers
 
-Phase 07 has no active blocker.
+No active blockers prevent starting:
+`08-repository-bootstrap`
