@@ -71,14 +71,27 @@ Deferred to Phase 06 or later, without blocking Phase 06:
 
 ## Files Created / Changed
 
+Phase 05 deliverables:
+
 - `docs/02-Architecture/Architecture-Baseline.md`
 - `docs/03-ADR/INDEX.md`
 - `docs/03-ADR/ADR-0001-laravel-core-backend.md` through `ADR-0017-untrusted-external-content.md`
 - `docs/00-Home/Documentation-Map.md`
 - `research/RESEARCH-INDEX.md` (navigation/current phase state only; research evidence unchanged)
+
+Agent operating-layer maintenance after Phase 05:
+
+- `AGENTS.md`
+- `.agents/policies/resource-usage.md`
+- `.agents/policies/testing.md`
+- `.agents/workflows/phase-execution.md`
+- `.agents/workflows/research.md`
+- `.agents/workflows/review.md`
+- `.agents/tasks/README.md`
+- `.agents/templates/TASK.md`
 - `.agents/state/STATUS.md`
-- `.agents/state/NEXT.md`
-- `.agents/state/BLOCKERS.md`
+
+This maintenance does not advance the product phase or change accepted architecture. It adds lazy context loading, single-agent/sequential defaults, explicit resource escalation rules, bounded review/research, short repository-backed task launches and non-redundant validation guidance.
 
 ## Validation Result
 
@@ -97,7 +110,16 @@ Validated:
 - no product code, migration, dependency or implementation scaffold was added;
 - `git diff --check` passes and the only pre-existing unrelated file remains untracked and untouched.
 
-No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed instead.
+Agent operating-layer maintenance validation:
+
+- current product phase remains unchanged;
+- no accepted ADR was modified;
+- no product code/dependency/schema/infrastructure was added;
+- root instructions reference the new resource policy and repository-backed task specs;
+- phase, research, review and testing workflows use targeted context/validation and avoid redundant work;
+- concrete model names/prices remain configuration concerns rather than architectural constants.
+
+No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed for Phase 05. This maintenance change is documentation/instruction-only and requires review of the resulting Git diff rather than application test suites.
 
 ## Next Phase
 
