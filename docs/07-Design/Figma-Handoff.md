@@ -15,9 +15,23 @@ related:
 
 ## Capability outcome
 
-No callable Figma MCP/canvas tool or connected Figma file is available in the current execution environment. No Figma write, import, sync, or review operation was attempted or claimed. This deterministic manual bootstrap is therefore the Phase 07 handoff; it is sufficient without blocking the phase.
+A connected Figma Starter plan created the live file below on 2026-09-12. The plan reached its Figma MCP call limit immediately afterwards: the canvas could not be read or written. No page, token, component, import, sync or visual-review operation is claimed. This deterministic manual bootstrap therefore remains the usable handoff until the Figma MCP limit is available again.
 
 Under ADR-0013, a human-reviewed Figma file becomes the visual/component source of truth. Under ADR-0014, [`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) remains the only machine-readable authority. A live Figma connection is not a build dependency.
+
+## Live file record
+
+| Field | Recorded value |
+| --- | --- |
+| Figma file | [CVortex Design System](https://www.figma.com/design/2D7jymN0KxoUMUodh6v8Hd) |
+| File key | `2D7jymN0KxoUMUodh6v8Hd` |
+| Git token source commit | `39ba7bef7baf6c48554eb66888ac60adb2fb6dcf` |
+| Token file SHA-256 | `72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7` |
+| Date | `2026-09-12` |
+| Reviewer | Not recorded — no human canvas review was performed |
+| Verdict | `BLOCKED` — Figma Starter-plan MCP rate limit prevented canvas discovery, token import, component creation and visual review |
+
+The file URL records a real created artifact, not a reviewed baseline. Populate `00 Cover` with the same values only after canvas access resumes; until then, do not label the Figma file or its components as `reviewed`.
 
 ## Canonical file and pages
 
