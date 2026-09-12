@@ -65,7 +65,7 @@ Never use text below 12 px. Reduce display hierarchy on compact screens before r
 
 - Space is the `space` scale (4 px base). Standard stacks are 8/12/16/24 px; 32+ is reserved for section separation. One-off values require a documented layout reason.
 - `radius.sm` is small controls; `md` is inputs/cards; `lg` is modal/panel; `pill` is badges only. Do not use pills for primary data containers.
-- Motion only supports feedback: opacity, transform, disclosure, progress and non-blocking skeletons. Use `motion.fast/standard/slow`; do not animate layout shifts, critical state changes, or route progress as a delay.
+- Motion only supports feedback: opacity, transform, disclosure, progress and non-blocking skeletons. Use `motion.duration.fast`, `motion.duration.standard` and `motion.duration.slow`; do not animate layout shifts, critical state changes, or route progress as a delay.
 - Under `prefers-reduced-motion: reduce`, remove non-essential transforms and looping effects; retain an immediate static state and textual progress. Loading longer than a brief transition needs a status message/skeleton, with a determinate progress value when known.
 - Layers are semantic only: `base` content, `sticky` navigation, `popover` menus/tooltips, `modal` dialog plus overlay, `toast` temporary announcements. New z-index literals are prohibited.
 
