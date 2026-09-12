@@ -23,63 +23,151 @@ related:
 
 Реализовать authentication/authorization foundation CVortex поверх M0, не переходя к Career, Vacancy или Application functionality.
 
-После Phase 09 система должна поддерживать безопасный invite-only multi-user access, role boundaries, ownership foundation, auditable invitation lifecycle и secret-storage foundation, достаточные для последующих domain phases.
+После Phase 09 система должна поддерживать безопасный invite-only multi-user access, first-party session authentication, роли `admin`/`user`, ownership foundation, auditable invitation lifecycle, user disable/enable lifecycle, безопасную работу с паролями, minimal encrypted-secret primitive, minimal admin UI и automated auth/security regression suite.
+
+Phase 09 является infrastructure/security foundation и не реализует карьерный домен CVortex.
 
 ## Execution mode
 
-Следуй `/AGENTS.md`, applicable scoped `AGENTS.md`, resource policy, accepted ADR и Phase 06/08 contracts.
+Следуй `/AGENTS.md`, applicable scoped `AGENTS.md`, resource policy, accepted ADR, Phase 06 contracts, Phase 07 design foundation и Phase 08 implementation structure/configuration.
 
 Default:
 
 - один агент;
 - sequential implementation;
 - targeted context;
-- deterministic authorization before convenience abstractions;
-- narrow tests while iterating;
+- deterministic authorization before abstractions;
+- narrow tests during iteration;
 - final auth/security regression suite before completion;
-- no subagents unless correctness requires it.
+- no subagents unless correctness genuinely requires them.
+
+Не загружай unrelated docs/research рекурсивно.
+
+## Authoritative product decisions
+
+Следующие решения зафиксированы владельцем продукта и не являются implementation choices.
+
+### Authentication
+
+First-party web client использует Laravel Sanctum SPA authentication поверх Laravel session cookies.
+
+```text
+Next.js → Nginx → Laravel → Sanctum SPA auth → Laravel session
+```
+
+Обязательны CSRF protection и server-side authenticated user context.
+
+Не использовать в Phase 09:
+
+- Personal Access Tokens;
+- bearer auth для frontend;
+- JWT;
+- OAuth;
+- localStorage auth tokens;
+- native/mobile auth;
+- browser-extension auth.
+
+Future native/browser-extension authentication — отдельное architecture decision.
+
+### Identity
+
+Email — единственный login identity.
+
+- email required;
+- normalized server-side;
+- case-insensitive uniqueness semantics;
+- comparison rules едины для `User.email` и `Invitation.target_email`;
+- username отсутствует;
+- email mutation в Phase 09 отсутствует.
+
+Frontend не определяет canonical normalization самостоятельно.
+
+### Email verification
+
+Отдельная email-verification flow в Phase 09 не реализуется.
+
+Valid invitation позволяет создать account без отдельного подтверждения mailbox ownership.
+
+Это intentional MVP limitation. Перед self-service password recovery, email security notifications, public registration или широким production onboarding решение должно быть пересмотрено отдельной задачей.
+
+### Registration result
+
+После успешной регистрации пользователь автоматически получает authenticated session.
+
+```text
+validate invitation
+→ validate registration input
+→ atomically create User
+→ atomically consume Invitation
+→ emit audit events
+→ establish authenticated session
+→ regenerate session identifier
+→ return authenticated user state
+```
+
+### Admin privacy boundary
+
+`admin` является системной ролью, но НЕ получает автоматического доступа к private domain data других пользователей.
+
+Admin может управлять invitations, users, user status, user roles и SYSTEM-scoped security primitives, где явно разрешено.
+
+Admin не получает ownership bypass для будущих Career Facts, Career Profiles, Vacancies, Applications, Resumes, Cover Letters, Conversations, Employer Memory, Interviews, user-owned secrets и других private user resources.
+
+Не создавать hidden superuser bypass.
 
 ## Minimum context
 
-Прочитай:
+Перед реализацией прочитай:
 
 1. `PROJECT.md`.
-2. current state.
-3. accepted ADR по invite-only, multi-user ownership/isolation, API-first, PostgreSQL, security boundaries.
-4. Phase 06 Ownership/Data/Security design.
-5. current backend/frontend scoped `AGENTS.md`.
-6. current API/auth research only for package/capability questions not already decided.
-7. current Phase 08 implementation structure/configuration.
+2. `.agents/state/STATUS.md`.
+3. `.agents/state/NEXT.md`.
+4. applicable scoped `AGENTS.md`.
+5. accepted ADR по invite-only, multi-user ownership/isolation, API-first, PostgreSQL и security boundaries.
+6. Phase 06 Ownership/Data/Security design.
+7. Phase 07 design system foundation.
+8. Phase 08 implementation/configuration.
 
-Не перечитывай unrelated research/docs.
+Используй documentation indexes/maps. Не перечитывай unrelated research.
 
-## Current dependency research
+## Targeted dependency research
 
-Если authentication package/session strategy не frozen accepted ADR, проверь current official Laravel-supported approach and compatibility with current framework version before choosing package/configuration.
+Проверь официальные current sources только для freshness-sensitive implementation details:
 
-Не придумывай OAuth/token flow только потому, что он распространён. Выбери минимально sufficient first-party web auth consistent with API/PWA architecture and future clients.
+- current Laravel-supported Sanctum SPA/session setup;
+- session configuration;
+- CSRF requirements;
+- secure cookie configuration;
+- password hashing primitives;
+- session invalidation capabilities;
+- rate limiting;
+- encryption primitives.
 
-Material architecture changes требуют ADR; ordinary implementation/package configuration does not.
+Research не переоткрывает продуктовые решения выше. Если current framework capabilities конфликтуют с accepted architecture, зафиксируй конфликт и используй ADR discipline.
 
 # Scope
 
 Реализовать только:
 
+- bootstrap первого admin;
 - invite-only registration;
 - invitation lifecycle;
-- login;
-- logout;
-- authenticated session/API boundary;
+- login/logout/current authenticated user;
+- password change;
+- operator password recovery primitive;
+- authenticated session boundary;
 - roles `admin` and `user`;
+- ACTIVE/DISABLED user lifecycle;
+- admin role management;
+- admin enable/disable management;
 - authorization policies/foundation;
 - ownership enforcement patterns;
-- invitation expiry;
-- invitation usage limits;
-- optional invitation target email;
-- safe password handling;
-- encrypted secrets foundation;
-- security/audit events relevant to auth;
-- rate limiting/abuse controls appropriate to auth;
+- invitation expiry and usage limits;
+- optional target email;
+- encrypted-secret foundation;
+- auth/security audit events;
+- auth rate limiting and enumeration resistance;
+- minimal auth/admin frontend;
 - OpenAPI/auth documentation;
 - automated authorization/security tests.
 
@@ -87,153 +175,371 @@ Material architecture changes требуют ADR; ordinary implementation/packag
 
 НЕ реализовывать:
 
-- CareerProfile/CareerFact;
-- vacancies;
-- applications;
-- resumes/cover letters;
-- Employer Memory;
+- CareerProfile/CareerTrack/CareerFact;
+- vacancies/companies domain/applications;
+- resumes/cover letters/Employer Memory/interviews;
 - runtime LLM workflows;
-- provider credentials UI beyond generic encrypted-secret foundation if needed;
-- social login;
-- SSO/SAML;
-- passwordless magic links unless explicitly accepted requirement exists;
-- MFA unless Phase 06 requirements make it MVP-blocking;
+- provider-specific credentials UI;
+- OpenAI-specific credential type;
+- social login/OAuth/SSO/SAML;
+- magic links;
+- MFA;
+- username login;
+- email change;
+- account deletion;
+- email verification;
+- email delivery;
+- self-service forgot-password;
+- device/session-management UI;
+- PAT/JWT/native/browser-extension auth;
 - organization/team tenancy;
-- complex RBAC/permissions matrix beyond MVP roles;
+- generic permission engine/complex RBAC;
 - billing/subscriptions;
-- public self-registration;
+- public registration;
 - Phase 10 functionality.
 
-# Identity Model
+# Domain model and glossary
 
-Implement identity model consistent with Phase 06 conceptual design.
-
-Minimum concepts:
+Minimum production concepts:
 
 ```text
 User
 Invitation
-Role (admin | user)
-UserSetting only if Phase 09 genuinely owns an auth/security setting
+Role
 AuditEvent
-EncryptedSecret / credential abstraction only if design calls for it
+EncryptedSecret
 ```
 
-Do not create generic ACL tables or permission engines without requirement.
+Framework session storage may add implementation-specific persistence according to accepted configuration.
 
 ## User
 
-Minimum design/implementation concerns:
+Authentication principal и ownership root, не CareerProfile.
 
-- stable identifier;
-- role;
-- email/login identity according to requirements;
-- password hash, never plaintext/reversible password;
-- active/disabled semantics if required by PRD;
-- timestamps;
-- ownership root for future private resources;
-- no user-controlled role escalation.
+Minimum conceptual fields:
+
+```text
+id
+email
+password_hash
+role
+status
+created_at
+updated_at
+```
+
+User status:
+
+```text
+ACTIVE
+DISABLED
+```
+
+DISABLED user cannot login or continue using authenticated application access. Ownership data не удаляется.
 
 ## Roles
 
-MVP roles:
+Exactly:
 
 ```text
 admin
 user
 ```
 
-Define exact privileges.
+Не создавать generic ACL/RBAC tables без отдельного requirement.
 
-`admin` does not automatically mean unrestricted access to private candidate data unless Phase 06 requirements explicitly permit it. If admin support access exists, document scope and audit it.
+### user privileges
 
-Do not implement hidden superuser bypasses.
+Normal user может login/logout, читать собственный current-user state, менять собственный password и использовать только own private resources/secrets через ownership authorization.
 
-# Invitation Model
+Normal user не может создавать/revoke invitations, читать admin invitation list, управлять другими users, менять roles/status или управлять SYSTEM secrets.
 
-Invitation must support minimum:
+### admin privileges
 
-- creator/admin actor;
-- secure invitation token or equivalent;
-- token hash/storage strategy;
-- created_at;
-- expires_at;
-- revoked_at where applicable;
-- used_at / usage tracking;
-- usage limit;
-- current usage count or equivalent deterministic mechanism;
-- optional target email;
-- status derived from actual state;
-- audit events.
+Admin может создавать/list/revoke invitations, просматривать minimal user administration list, менять role другого пользователя, enable/disable другого пользователя и управлять SYSTEM-owned secrets, если secret API реализован.
+
+Admin user list может показывать только account/security metadata:
+
+```text
+id
+email
+role
+status
+created_at
+last_login_at if implemented
+```
+
+Никакой private career/job-search data.
+
+# Last-admin invariant
+
+Система всегда должна иметь минимум одного ACTIVE admin.
+
+Запрещено:
+
+- demote последнего active admin;
+- disable последнего active admin.
+
+Инвариант enforce server-side и покрыть tests.
+
+# Role changes
+
+Только admin может менять role другого пользователя:
+
+```text
+user → admin
+admin → user
+```
+
+Role mutation должна пройти authorization, проверить last-admin invariant, быть transactional, invalidировать active sessions target user согласно session policy и создать AuditEvent.
+
+User не может self-escalate через payload/API. Role/status/owner fields должны быть защищены от mass assignment.
+
+# User disable / enable
+
+Только admin может менять status другого пользователя.
+
+Disable:
+
+- проверяет last-admin invariant;
+- блокирует future login;
+- invalidates target user sessions;
+- создаёт audit event.
+
+Enable:
+
+- возвращает возможность login;
+- не создаёт session автоматически;
+- создаёт audit event.
+
+# Bootstrap first admin
+
+Первый admin создаётся operator-controlled CLI command.
+
+Не использовать default credentials, committed seed password, «first registered becomes admin» или public bootstrap endpoint.
+
+CLI должен безопасно принимать email/password, не печатать/логировать plaintext password, применять те же validation/hashing rules, создавать ACTIVE admin и безопасно обрабатывать повторный bootstrap.
+
+# Invitation model
+
+Minimum concepts:
+
+```text
+id
+created_by_user_id
+token_hash
+target_email nullable
+max_uses
+uses_count
+expires_at
+revoked_at nullable
+created_at
+updated_at
+```
+
+Status derived from actual state. Не хранить mutable duplicated status, если его можно вычислить надёжно.
+
+Canonical derived statuses:
+
+```text
+ACTIVE
+EXHAUSTED
+EXPIRED
+REVOKED
+```
+
+## Targeted invitation
+
+```text
+target_email != null
+max_uses = 1
+```
+
+Нельзя создать targeted invite с `max_uses > 1`.
+
+## Generic invitation
+
+```text
+target_email = null
+max_uses = 1..10
+```
+
+Default `max_uses = 1`.
+
+## Expiry
+
+Expiry обязательна.
+
+```text
+default lifetime = 7 days
+maximum lifetime = 30 days
+```
+
+Frontend time не authoritative. Expiry проверяется server-side.
+
+## Atomicity
+
+Invariant:
+
+```text
+uses_count <= max_uses
+```
+
+Два concurrent requests на последний remaining use не должны создать два accounts.
+
+Проверка invitation, account creation и consumption должны использовать transaction/locking/atomic update strategy, соответствующую PostgreSQL/Laravel implementation.
 
 ## Token security
 
-Invitation secret/token:
+Token:
 
-- generated cryptographically securely;
-- should not be stored in reusable plaintext if hash verification is feasible;
-- must not be logged;
-- must not appear in audit event payload after required creation response;
-- must be protected from reuse beyond configured limit;
-- expiry checked server-side;
-- revocation checked server-side.
+- cryptographically secure;
+- не хранится reusable plaintext;
+- проверяется через safe hash/storage strategy;
+- не логируется;
+- не попадает в audit/error payload;
+- не восстанавливается из DB representation.
 
-Define safe behavior for leaked/expired/revoked tokens.
+Plaintext token выдаётся только один раз в successful invitation creation response.
 
-## Optional target email
+После этого API никогда не возвращает token снова. Если token потерян: revoke old invitation → create new invitation.
 
-If invitation has target email:
+## Invitation delivery
 
-- registration identity must match according to normalized comparison rules;
-- mismatch returns safe validation error;
-- do not leak unnecessary account existence data.
+Phase 09 не отправляет email. Frontend после create показывает one-time token или registration URL и copy action. Delivery manual/out-of-band.
 
-If no target email, invitation may register allowed account according to requirements.
+## Target email
 
-# Registration Workflow
+Если `target_email != null`, normalized registration email должен совпадать. Mismatch возвращает safe validation error без account-enumeration leakage.
 
-Implement deterministic invite-only workflow conceptually:
+Если `target_email == null`, любой valid normalized email может зарегистрироваться при соблюдении invitation limits.
+
+## Invitation administration
+
+Admin UI/API позволяет create/list/revoke ACTIVE invitation.
+
+List показывает metadata:
 
 ```text
-admin creates invitation
-→ invitation token delivered out-of-band/manual flow
-→ user opens registration
-→ server validates token state/expiry/usage/email constraint
-→ validates registration input
-→ creates user atomically
-→ consumes invitation atomically
-→ emits audit events
-→ establishes authenticated state if product flow requires it
+id
+derived status
+target_email nullable
+uses_count
+max_uses
+created_by
+created_at
+expires_at
+revoked_at
 ```
 
-Race conditions must not permit invitation overuse.
+Plaintext token не показывается повторно. Expired/exhausted/revoked invitations сохраняются как operational history.
 
-Use transaction/locking/atomic update strategy appropriate to database implementation.
+# Registration
 
-No public registration endpoint should allow account creation without valid invitation.
+Minimum input:
 
-# Login / Logout
+```text
+invitation_token
+email
+password
+password_confirmation
+```
 
-Implement secure login/logout according to chosen supported auth strategy.
+Не собирать first/last/display name или Career data.
 
-Minimum controls:
+Canonical workflow:
 
-- password verification through framework primitives;
-- session/token rotation where relevant;
-- logout invalidation;
-- rate limiting;
-- generic authentication errors avoiding useful credential enumeration where appropriate;
-- CSRF protection for cookie/session-based state-changing requests;
-- secure cookie flags per environment strategy;
-- no tokens/API secrets in logs.
+```text
+validate token/state/expiry/revocation/remaining usage/target email
+→ validate normalized email uniqueness
+→ validate password
+→ transaction
+→ create User(role=user, status=ACTIVE)
+→ consume invitation atomically
+→ create required audit events
+→ commit
+→ establish authenticated Laravel session
+→ regenerate session identifier
+→ return current-user state
+```
 
-If frontend/backend are same-site through Nginx in local architecture, prefer simplest secure first-party flow consistent with accepted design.
+Public account creation без valid invitation невозможен. Invitation registration никогда не создаёт admin.
 
-# Authorization Foundation
+# Login / logout / sessions
 
-Authorization must be enforced server-side.
+Login input:
 
-Create clear patterns/policies for future owned resources.
+```text
+email
+password
+```
+
+Server normalizes email, rejects DISABLED users, validates password using framework primitive, applies rate limiting, regenerates session identifier after success и emits audit/security events.
+
+Invalid email и invalid password должны по возможности иметь indistinguishable external behavior.
+
+Ordinary logout завершает current session only.
+
+Несколько simultaneous sessions разрешены, например Mac browser + iPhone PWA.
+
+Phase 09 не реализует active-device/session list, remote logout one session или logout-all UI.
+
+## Security-triggered session invalidation
+
+Следующие события invalidates existing sessions target user:
+
+```text
+user disabled
+role changed
+operator password recovery
+```
+
+Password change требует current password; после success current session safely rotates/re-authenticates, а остальные sessions invalidated.
+
+Role changes не должны позволять старым sessions продолжать работать со старым security context.
+
+Custom `Remember me` в Phase 09 не реализуется.
+
+# Password policy
+
+```text
+minimum length = 15
+maximum supported input = 128
+```
+
+Разрешать spaces/passphrases и Unicode там, где framework implementation безопасно поддерживает его.
+
+Не требовать artificial composition rules (uppercase/lowercase/digit/special combination) и periodic forced rotation.
+
+Password никогда не хранится plaintext, не reversible-encrypted и не логируется. Exact hashing algorithm/cost выбирается по current official framework/security research.
+
+# Password change
+
+Authenticated user меняет password через:
+
+```text
+current_password
+new_password
+new_password_confirmation
+```
+
+После success: hash updated, audit emitted, current session rotated/re-authenticated, other sessions invalidated.
+
+User не может менять чужой password. Admin не устанавливает user password через normal admin UI/API.
+
+# Password recovery
+
+Self-service Forgot Password не реализуется.
+
+Для MVP создать operator-controlled CLI recovery mechanism.
+
+Он должен безопасно resolve target user, принимать compliant new password, не выводить/log plaintext, invalidate all existing sessions и создать security/audit record без credential material.
+
+Перед production self-service recovery отдельно решить email verification + reset-token lifecycle.
+
+# Authorization foundation
+
+Authorization enforced server-side.
 
 Invariant:
 
@@ -243,380 +549,406 @@ private resource owned by User B,
 including nested and indirect relationships.
 ```
 
-Never trust `user_id`, owner IDs, role or tenant-like identifiers supplied by frontend.
+Не доверять `user_id`, owner IDs, role или tenant-like identifiers из frontend/request body как authoritative ownership.
 
-Owner is derived from authenticated user and server-side relationships.
+Создать reusable conventions для query scoping, resource loading, policies, nested authorization, admin operations, ownership и tests. Избегать scattered ad-hoc owner comparisons.
 
-## Policy pattern
+## 404 vs 403
 
-Define conventions for:
+Если User A обращается по ID к private resource User B, отвечать как `404 Not Found`, чтобы не подтверждать существование чужого resource.
 
-- query scoping;
-- route model binding / resource loading;
-- authorization policy checks;
-- nested resource authorization;
-- not-found vs forbidden behavior where information disclosure matters;
-- admin access;
-- tests.
+Для known capability boundary, например normal user вызывает admin API, использовать `403 Forbidden`.
 
-Avoid scattered ad-hoc owner comparisons.
+Применять convention последовательно и покрыть tests.
 
-# Ownership Test Fixtures
+## Ownership test fixture
 
-Create minimal private dummy/test resource only if required to prove ownership pattern without prematurely implementing Phase 10 domain model.
+Не создавать production Career/Vacancy/Application entities ради Phase 09 test.
 
-Prefer framework-level authorization test fixture or dedicated test-only model/schema where cleanly isolated.
+Предпочесть framework-level authorization fixture или isolated test-only model/schema. Production generic resource использовать только если действительно требуется и documented why.
 
-Do not create fake Career/Vacancy production domain just to test ownership.
+# Encrypted secrets foundation
 
-If a real production resource is required for foundation, use the smallest architecture-approved generic resource and document why.
+Реализовать minimal persisted `EncryptedSecret` primitive.
 
-# Encrypted Secrets Foundation
+Conceptually:
 
-Phase 09 should establish reusable safe secret handling for future system-managed/BYOK credentials without implementing full LLM provider UI.
+```text
+EncryptedSecret
+- id
+- ownership_scope: USER | SYSTEM
+- user_id nullable according to scope
+- type
+- name
+- encrypted_value
+- created_at
+- updated_at
+```
 
-Define/implement minimum safe primitive according to Phase 06 design:
+Exact schema соответствует Phase 06 data design/repository conventions.
 
-- encryption at rest using framework-supported encryption/key management boundary;
-- owner/type/name metadata separated from encrypted secret value;
-- masked presentation;
-- secret value never returned after storage unless architecture explicitly requires one-time reveal;
-- rotation/update path;
-- deletion;
-- authorization;
-- audit event without plaintext secret;
-- redaction from logs/errors/serialization;
-- no secret in frontend persistence.
+Secret value:
 
-If full generic secret storage would be premature, implement only the infrastructure/contract that Phase 10+ can safely extend. Do not build a generic vault product.
+- encrypted at rest;
+- metadata separated from ciphertext;
+- never returned plaintext after storage;
+- never logged/serialized into errors/frontend persistence/audit;
+- no plaintext reveal endpoint.
 
-# Audit Events
+Allowed operations: create, update/rotate, delete, read masked metadata.
 
-Implement audit events minimum for:
+USER secret принадлежит одному User; только owner имеет allowed user-secret operations. Admin не получает secret-value bypass.
 
-- invitation created;
-- invitation revoked;
-- invitation used;
-- invitation expired only if explicit event generation is useful and deterministic;
-- user registered;
-- login success/failure only according to privacy/volume policy;
-- logout where useful;
-- role changed;
-- user disabled/enabled if supported;
-- encrypted credential/secret added/rotated/deleted;
-- critical admin authorization actions.
+SYSTEM secret управляется explicit admin/system authorization boundary. Normal user не может mutate SYSTEM secret.
 
-Audit entries must not contain passwords, invitation token plaintext, session identifiers, API keys or secret values.
+Не добавлять provider-specific semantics.
 
-# API Design
+# Audit policy
 
-Update OpenAPI/contracts for implemented endpoints only.
+Persistent AuditEvent использовать для successful/security-significant state changes минимум:
 
-Expected surface may include:
+```text
+invitation.created
+invitation.revoked
+invitation.used
+user.registered
+user.login_succeeded
+user.logged_out
+user.role_changed
+user.disabled
+user.enabled
+user.password_changed
+user.password_recovered
+secret.created
+secret.rotated
+secret.deleted
+admin.critical_action
+```
 
-- invitation administration;
-- registration;
-- login/logout/current user/session state;
-- minimal user/admin endpoints required by MVP.
+Exact naming следует existing event conventions.
 
-Follow accepted API version/error/pagination conventions.
+Invitation expiry является derived state; не создавать background event/job только из-за наступления `expires_at`.
 
-Do not create speculative endpoints for future domains.
+Не записывать каждую invalid-password attempt как permanent AuditEvent. Login failures идут в structured security logging/rate-limit telemetry/observability с privacy-safe metadata.
 
-## Validation errors
+Audit payload никогда не содержит passwords, hashes, invitation plaintext token, session IDs, CSRF/auth tokens, API keys, secret plaintext или unnecessary PII.
 
-Use consistent structured errors.
+# API design
 
-Do not reveal:
+Документировать только реально реализованные endpoints в `/api/v1` согласно accepted response/error conventions.
 
-- whether arbitrary email has an account more than necessary;
-- invitation token internals;
-- password/hash information;
-- authorization internals.
+Expected logical capabilities:
 
-# Frontend Scope
+Public/auth:
 
-Implement only frontend required to exercise Phase 09 auth flows if frontend implementation is part of current architecture.
+```text
+register using invitation
+login
+logout
+current user/session
+change password
+```
 
-Minimum possible screens/patterns:
+Admin:
+
+```text
+create/list/revoke invitation
+list users
+change user role
+disable user
+enable user
+```
+
+Secrets — только если implementation exposes API in this phase:
+
+```text
+USER secret metadata/create/rotate/delete
+admin SYSTEM secret operations
+```
+
+Не создавать speculative future endpoints.
+
+# Frontend scope
+
+Minimum public/authenticated surfaces:
 
 - login;
 - invite registration;
-- logged-in shell/current-user state;
+- logged-in app shell/current-user state;
 - logout;
-- admin invitation management only if required for MVP execution.
+- password change.
 
-Use Phase 07 design tokens/components principles.
+Minimum admin surfaces:
 
-Do not build Career/Vacancy dashboard placeholders with fake business data.
+- invitation list;
+- create invitation;
+- one-time token/URL presentation;
+- revoke invitation;
+- minimal user list;
+- change role;
+- enable/disable user.
 
-# Security Requirements
+Не строить Career/Vacancy/Application placeholders или fake business data.
 
-## Passwords
+Use Phase 07 design system/Figma source of truth. Обработать loading/empty/success/error/validation/unauthorized/disabled/destructive confirmation, keyboard/focus accessibility и responsive behavior.
 
-- framework-supported secure hash;
-- password validation according to requirements;
-- never log/store plaintext;
-- no reversible encryption for passwords.
+# Security requirements
 
-## Sessions / Tokens
+## Sessions/cookies
 
-- secure lifecycle;
-- CSRF defense when relevant;
-- rotation/fixation protection;
-- appropriate cookie attributes;
-- no localStorage auth secret if accepted first-party session architecture does not require it.
+Обязательно:
+
+- fixation protection;
+- regeneration after auth;
+- CSRF;
+- appropriate SameSite strategy;
+- HttpOnly where applicable;
+- Secure cookies in secure environments;
+- no auth secret in localStorage;
+- logout invalidation;
+- security-change invalidation.
+
+Document exact environment settings.
 
 ## Rate limiting
 
-At minimum consider:
+Применить минимум к login, invitation validation/registration и admin invitation creation where abuse relevant.
 
-- login;
-- registration/invitation validation;
-- invitation creation if abuse relevant.
+Exact thresholds — configurable implementation/security choice based on current guidance. Не спрашивать пользователя requests/minute без реальной необходимости.
 
-Rate limiting must not rely solely on user-controlled identifiers.
+Не основывать rate limiting только на attacker-controlled identifier.
 
-## IDOR / Cross-user
+## Account enumeration
 
-Authorization tests must include direct IDs, nested resources, enumeration/list endpoints and mutation paths where available.
+Не раскрывать лишнее через различия invalid email/password, disabled account, invitation mismatch, existing email там, где disclosure не нужен UX.
 
-## Mass assignment
+Authenticated admin UI может показывать system accounts согласно роли.
 
-Protect role/owner/security fields from request mass assignment.
+## IDOR / cross-user
 
-## Email/account enumeration
-
-Review response differences and rate limits.
+Проверить direct IDs, lists, nested access, mutation/delete, secrets ownership, indirect relations и guessed identifiers.
 
 ## Logging
 
-Ensure redaction for:
+Redact passwords, invitation tokens, session IDs, CSRF/security tokens, API keys и secret plaintext.
 
-- passwords;
-- invitation tokens;
-- auth/session tokens;
-- encrypted secret plaintext;
-- CSRF/security tokens where applicable.
+# Database / migrations
 
-# Database / Migrations
+Создавать только schema, необходимую auth/security foundation.
 
-Phase 09 may create migrations required for auth/multi-user foundation.
+Учитывать accepted ID convention, normalized email uniqueness, foreign keys, invitation hash indexes, usage/expiry queries, ownership references, secret scope constraints, timestamps, rollback и M0 compatibility.
 
-For each migration consider:
+Database constraints должны усиливать invariants где разумно.
 
-- UUID/ID convention from data design;
-- uniqueness;
-- normalized email uniqueness if applicable;
-- invitation token hash indexes;
-- expiry/status query indexes where justified;
-- foreign keys;
-- owner references;
-- timestamps;
-- rollback behavior;
-- backward compatibility from M0 empty baseline.
+Не создавать Phase 10+ tables.
 
-Do not create Phase 10+ domain tables.
+# Deterministic before AI
 
-# Deterministic Before AI
+LLM не используется нигде в Phase 09.
 
-No LLM should be needed for authentication/authorization logic.
-
-Do not introduce AI into:
-
-- invitation validation;
-- role decisions;
-- authorization;
-- secret handling;
-- rate limiting;
-- audit semantics.
+Не использовать AI для login, password/invitation validation, normalization, authorization, roles, secrets, rate limiting или audit semantics.
 
 # Tests
 
-Automated tests are mandatory.
-
-## Invitation tests
-
-Cover minimum:
-
-- valid invitation registration;
-- invalid token;
-- expired invitation;
-- revoked invitation;
-- invitation reuse beyond allowed usage;
-- usage count boundary;
-- optional target email match;
-- target email mismatch;
-- concurrent/double-use behavior where practical;
-- registration without invitation rejected.
-
-## Authentication tests
-
-Cover:
-
-- valid login;
-- invalid credentials;
-- logout invalidates authenticated state;
-- unauthenticated protected access rejected;
-- session/CSRF behavior appropriate to implementation;
-- rate limiting where deterministic to test.
-
-## Role tests
-
-Cover:
-
-- normal user cannot perform admin invitation operations;
-- admin can perform explicitly allowed admin operations;
-- role cannot be escalated through request payload;
-- unauthorized role mutations rejected.
-
-## Ownership tests
-
-Mandatory invariant tests:
-
-```text
-user A cannot read user B resource
-user A cannot update user B resource
-user A cannot delete user B resource
-user A cannot enumerate user B resource
-user A cannot access nested user B resource through indirect ID
-```
-
-Use real authorization boundary, not mocked policy return values.
-
-## Secret tests
-
-If encrypted-secret foundation implemented:
-
-- plaintext not stored;
-- serialization/API never returns plaintext;
-- owner isolation;
-- rotate/update works;
-- delete works;
-- audit contains metadata but not value;
-- logs/test output do not expose secret.
-
-# Validation
-
-Run actual project commands from repository.
-
-Minimum:
-
-- backend unit/feature/integration tests relevant to auth;
-- frontend auth tests if frontend changed;
-- lint/static/type checks;
-- migration up/down or documented safe rollback validation;
-- OpenAPI validation if repository tooling exists;
-- `make test`/targeted equivalent according to M0 workflow;
-- final cross-user negative suite.
-
-Do not rerun full suites unnecessarily during iteration, but final Phase 09 acceptance requires relevant regression checks.
-
-# Documentation
-
-Update:
-
-- auth/authorization design docs with actual implementation choices;
-- OpenAPI;
-- local setup if auth env changes;
-- security docs if controls became concrete;
-- data model/ERD implementation mapping if relevant;
-- documentation map/index;
-- state.
-
-If implementation differs materially from Phase 06 design, reconcile explicitly and use ADR when architecture changes.
-
-# Completion Criteria
-
-Phase 09 PASS only if:
-
-## Authentication
-
-- invite-only registration works;
-- login works;
-- logout works;
-- public registration without invitation blocked;
-- auth state usable by frontend/API boundary.
+Automated tests mandatory.
 
 ## Invitations
 
-- expiry enforced server-side;
-- revocation enforced;
-- usage limit enforced atomically;
-- optional target email enforced;
-- token handled securely;
-- invitation reuse test passes.
+Cover:
 
-## Roles
+- targeted and generic successful registration;
+- invalid/expired/revoked/exhausted token;
+- normalized target-email match/mismatch;
+- targeted `max_uses > 1` rejected;
+- generic `max_uses` boundaries 1..10;
+- default expiry 7 days;
+- lifetime >30 days rejected;
+- registration without invitation rejected;
+- token one-time reveal and no later retrieval;
+- concurrent last-use boundary;
+- `uses_count` never exceeds `max_uses`.
 
-- admin/user roles implemented;
-- server-side role authorization implemented;
-- user cannot self-escalate role.
+## Registration/authentication
 
-## Ownership
+Cover:
 
-- reusable ownership authorization pattern exists;
-- direct/nested/list/mutation cross-user tests cover the foundation;
-- user A cannot read or mutate user B resources.
+- created role always `user`;
+- created status ACTIVE;
+- duplicate normalized email safely rejected;
+- automatic authenticated session;
+- session ID regeneration;
+- invitation/user atomicity;
+- valid login;
+- invalid email/password generic behavior;
+- disabled user cannot login;
+- current-user protected access;
+- logout current session only;
+- another valid session survives ordinary logout;
+- CSRF/fixation/rate limiting.
+
+## Passwords
+
+Cover min<15 rejected, passphrase/spaces accepted, max semantics, current password required, successful change, other sessions invalidated, password never serialized/logged.
+
+## Roles/status
+
+Cover normal user cannot access admin API; self-escalation rejected; admin can promote/demote when invariant allows; last active admin cannot be demoted/disabled; role/status changes invalidate target sessions and are audited; re-enabled user can login.
+
+## Ownership/admin privacy
+
+Mandatory:
+
+```text
+User A cannot read/update/delete/enumerate User B resource
+User A cannot access nested User B resource through indirect ID
+admin role alone does not bypass private-resource ownership
+```
+
+Use real authorization boundary, not mocked policy returns.
+
+Private foreign resource unauthorized lookup → 404. Normal-user admin capability denial → 403.
 
 ## Secrets
 
-- encrypted secret foundation exists to the level required by design;
-- secrets masked/redacted;
+Cover plaintext not stored/returned, user-owner isolation, admin cannot read another user's plaintext secret, SYSTEM admin boundary, normal user cannot mutate SYSTEM secret, rotate/delete, safe masking, audit/log redaction.
+
+## Bootstrap/recovery
+
+Where testable: bootstrap CLI creates ACTIVE admin, applies password policy and does not output plaintext; operator recovery validates target/new password, invalidates sessions and audits safely.
+
+# Validation
+
+Run actual project commands.
+
+Minimum:
+
+- targeted backend auth tests;
+- invitation concurrency tests;
+- authorization negative suite;
+- secret tests;
+- frontend auth/admin tests if changed;
+- lint/static analysis/type checks;
+- migration up/down or documented safe rollback validation;
+- OpenAPI validation;
+- relevant `make test` targets;
+- final cross-user regression suite.
+
+Use narrow validation during iteration; run complete relevant Phase 09 regression before PASS. Never claim a command/test ran if it did not.
+
+# Documentation
+
+Update auth/authorization/session/invitation/role/status/ownership/secrets/security docs, OpenAPI, local setup when auth env changes, data-model implementation mapping/ERD where applicable, documentation map/index and project state.
+
+Document limitations explicitly:
+
+- no email verification;
+- no self-service password reset;
+- no email change/account deletion;
+- no MFA;
+- no PAT/native auth;
+- no session-management UI.
+
+If implementation materially differs from Phase 06 design, reconcile explicitly and use ADR only for real architecture changes.
+
+# Completion criteria
+
+Phase 09 PASS only if:
+
+## Bootstrap/Auth
+
+- first admin can be created securely via operator CLI;
+- no default credentials;
+- registration never creates admin;
+- Sanctum/session auth works;
+- invite-only registration/login/logout/current-user work;
+- automatic login after registration works;
+- CSRF/session protections work;
+- public registration without invitation blocked.
+
+## Identity/Invitations
+
+- email is sole login identity with deterministic normalization/uniqueness;
+- username/email mutation endpoints absent;
+- targeted invites single-use;
+- generic invites 1..10;
+- default uses=1, default expiry=7d, max lifetime=30d;
+- expiry/revocation/usage enforced server-side;
+- concurrent overuse impossible;
+- token one-time reveal only;
+- invitation history preserved.
+
+## Roles/Status/Sessions
+
+- admin/user enforced server-side;
+- self-escalation impossible;
+- last ACTIVE admin protected;
+- ACTIVE/DISABLED works;
+- disabled user cannot authenticate;
+- required security changes invalidate sessions;
+- ordinary logout affects current session only;
+- no remember-me feature introduced.
+
+## Passwords/Recovery
+
+- minimum 15/passphrases supported;
+- password change requires current password;
+- self-service forgot-password absent;
+- operator recovery exists;
+- plaintext password never stored/logged.
+
+## Authorization/Secrets/Audit
+
+- reusable ownership pattern exists;
+- direct/nested/list/mutation negative tests pass;
+- private foreign resource → 404; forbidden admin capability → 403;
+- admin is not private-data superuser;
+- encrypted USER/SYSTEM secret primitive exists with owner/system authorization;
 - no plaintext round-trip/logging;
-- owner authorization enforced.
+- required security mutations auditable without secret material.
 
-## Audit
-
-- required auth/security events are auditable;
-- no sensitive secret material in audit payload.
-
-## API / Frontend
+## API/Frontend/Validation
 
 - implemented endpoints documented in OpenAPI;
-- frontend auth surfaces, if required, use design foundation and do not expose secrets;
-- errors are structured and safe.
-
-## Tests / Validation
-
-- mandatory automated tests pass;
-- migrations validated;
-- relevant lint/type/static checks pass;
+- login/invite registration/auth shell/logout/password/admin invitation/admin user surfaces exist;
+- no fake Career/Vacancy UI;
+- mandatory tests/migrations/lint/static/type checks pass;
 - no validation falsely claimed.
 
 ## Scope
 
-- no Career/Vacancy/Application domain implementation;
-- no runtime AI feature implementation;
+- no Career/Vacancy/Application implementation;
+- no runtime AI;
+- no OAuth/JWT/PAT/native auth;
 - Phase 10 not started.
 
 # State update
 
 After PASS:
 
-- `STATUS.md`: Phase 09 completed, auth strategy, migrations, tests, security controls, known limitations;
-- `NEXT.md`: expected `10-career-foundation`;
-- `BLOCKERS.md`: only real blockers.
+- `STATUS.md`: Phase 09 completed, auth/session/invitation/role/status/password/recovery/ownership/secrets strategy, migrations, tests, limitations;
+- `NEXT.md`: `10-career-foundation`;
+- `BLOCKERS.md`: real blockers only.
 
-If cross-user isolation tests fail, Phase 09 cannot be completed.
+If cross-user isolation, last-admin invariant, invitation atomicity, secret redaction or mandatory session security fails, Phase 09 cannot be marked PASS.
 
-# Final Report
+# Final report
 
-Concise output:
+Выведи кратко:
 
-1. Result.
+1. Result — PASS/PARTIAL/BLOCKED.
 2. Files/migrations/endpoints changed.
-3. Auth/session strategy actually implemented.
-4. Invitation/role/ownership/security controls.
+3. Implemented auth/session/invitation/role/status model.
+4. Security/ownership/secrets/audit controls.
 5. Validation/tests actually executed.
-6. Blockers/limitations.
-7. Exact next phase.
+6. Real blockers/limitations.
+7. Completed phase and exact next phase.
+
+Не повторяй содержание этой specification.
 
 # STOP
 
-After Phase 09 stop.
+После Phase 09 остановись.
 
-Do not create CareerProfile/CareerFact.
-Do not implement resume import.
-Do not implement vacancy ingestion.
-Do not start Phase 10 in the same session.
+Не создавать CareerProfile/CareerFact/CareerTrack, resume import, vacancy ingestion, applications или runtime LLM functionality.
+
+Не начинать Phase 10 в этой session.
