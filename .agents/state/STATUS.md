@@ -60,6 +60,10 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 - the M0 technical shell consumes a maintainable semantic subset of Phase 07 design tokens;
 - Figma live file exists but canvas review remains limited by previously recorded MCP Starter-plan capability/rate limitation.
 
+## M1.1 implementation readiness
+
+M1.1 Access Core implementation and required validation are complete / PASS pending independent review. The feature branch has passing backend, frontend, migration, same-origin auth runtime, governance and diff checks. The historical frontend build failure is classified as NOT REPRODUCED / TRANSIENT with no asserted root cause. `NEXT.md` remains `m1-1-access-core` until independent review; M1.2 has not started.
+
 ## Next authorized task
 
 `m1-1-access-core`
