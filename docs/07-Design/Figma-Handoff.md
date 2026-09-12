@@ -25,7 +25,8 @@ Under ADR-0013, a human-reviewed Figma file becomes the visual/component source 
 | --- | --- |
 | Figma file | [CVortex Design System](https://www.figma.com/design/2D7jymN0KxoUMUodh6v8Hd) |
 | File key | `2D7jymN0KxoUMUodh6v8Hd` |
-| Git token revision | `624c53c` |
+| Git token source commit | `39ba7bef7baf6c48554eb66888ac60adb2fb6dcf` |
+| Token file SHA-256 | `72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7` |
 | Date | `2026-09-12` |
 | Reviewer | Not recorded — no human canvas review was performed |
 | Verdict | `BLOCKED` — Figma Starter-plan MCP rate limit prevented canvas discovery, token import, component creation and visual review |

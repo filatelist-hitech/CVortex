@@ -27,7 +27,7 @@ Execution authority is defined by `NEXT.md` and active blockers in `BLOCKERS.md`
 
 `07-design-foundation` is **completed**. Independent review verdict: **PASS**. It establishes a documentation/token baseline only: Git-held DTCG 2025.10 tokens at `brand/tokens/cvortex.tokens.json`, dark-first visual semantics, typography, layout/motion/layer rules, component taxonomy, truth-first status patterns, accessibility acceptance criteria, and a deterministic Figma bootstrap/handoff.
 
-Figma visual/component authority and Git machine-token authority remain aligned with accepted ADR-0013 and ADR-0014. A live [CVortex Design System](https://www.figma.com/design/2D7jymN0KxoUMUodh6v8Hd) file was created with Git token revision `624c53c` recorded in the handoff, but the connected Starter plan reached its Figma MCP call limit before canvas discovery or writes. The file is not a reviewed baseline: no pages, token import, components or visual review are claimed, and the reproducible manual bootstrap remains documented.
+Figma visual/component authority and Git machine-token authority remain aligned with accepted ADR-0013 and ADR-0014. A live [CVortex Design System](https://www.figma.com/design/2D7jymN0KxoUMUodh6v8Hd) file was created with reachable Git token source commit `39ba7bef7baf6c48554eb66888ac60adb2fb6dcf` and token-file SHA-256 `72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7` recorded in the handoff, but the connected Starter plan reached its Figma MCP call limit before canvas discovery or writes. The file is not a reviewed baseline: no pages, token import, components or visual review are claimed, and the reproducible manual bootstrap remains documented.
 
 ### Validation and known limitations
 
