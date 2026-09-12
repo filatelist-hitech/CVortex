@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Hash;
 
 class BootstrapFirstAdmin extends Command
 {
+    private const BOOTSTRAP_LOCK_NAMESPACE = 1129735762;
+
+    private const BOOTSTRAP_LOCK_KEY = 1;
+
     protected $signature = 'user:bootstrap-admin {email}';
 
     protected $description = 'Create the first active admin account.';
@@ -26,6 +30,13 @@ class BootstrapFirstAdmin extends Command
         }
         try {
             DB::transaction(function () use ($emails, $audit, $password): void {
+                if (DB::getDriverName() === 'pgsql') {
+                    DB::select(
+                        'SELECT pg_advisory_xact_lock(?, ?)',
+                        [self::BOOTSTRAP_LOCK_NAMESPACE, self::BOOTSTRAP_LOCK_KEY],
+                    );
+                }
+
                 if (User::query()->where('role', User::ROLE_ADMIN)->exists()) {
                     throw new \RuntimeException('An admin account already exists.');
                 }

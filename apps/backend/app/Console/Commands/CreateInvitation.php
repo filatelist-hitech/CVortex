@@ -14,12 +14,13 @@ class CreateInvitation extends Command
     public function handle(InvitationService $invitations): int
     {
         try {
-            ['token' => $token] = $invitations->create($this->option('email'), (int) $this->option('expires'));
+            ['invitation' => $invitation, 'token' => $token] = $invitations->create($this->option('email'), (int) $this->option('expires'));
         } catch (\Throwable $exception) {
             $this->error($exception->getMessage());
 
             return self::FAILURE;
         }
+        $this->line('Invitation ULID: '.$invitation->id);
         $this->line('Invitation URL (show once): /register#token='.$token);
 
         return self::SUCCESS;

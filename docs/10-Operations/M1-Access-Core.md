@@ -38,18 +38,22 @@ docker compose exec backend php artisan user:disable <user-ulid>
 docker compose exec backend php artisan user:enable <user-ulid>
 ```
 
-Invitation expiry is 7 days by default, constrained to 1–30 days. Tokens are 32 random bytes represented as hex, HMAC-SHA-256 protected at rest, printed only once and expected in `/register#token=<value>`. The frontend removes the fragment from history before it sends the registration body.
+`invitation:create` prints the invitation ULID for a later `invitation:revoke` call and prints the one-time registration URL on a separate line. Invitation expiry is 7 days by default, constrained to 1–30 days. Tokens are 32 random bytes represented as hex, HMAC-SHA-256 protected at rest, printed only once and expected in `/register#token=<value>`. The `/register` Client Component reads the fragment into transient in-memory state, immediately removes it with `history.replaceState`, and submits it only in the registration body; it never copies the token to a query string, persistent browser storage or a referrer-bearing navigation.
 
 ## Data and audit
 
 Invitation consumption locks its row in one transaction, verifies status/target email/unique email, creates the user, consumes the one allowed use and appends audit events. Audit events are application append-only and contain actor type (`USER`, `OPERATOR`, `SYSTEM`), optional user actor, subject and safe metadata. Passwords, invitation tokens, session IDs and CSRF/auth tokens are excluded.
 
-This implementation configuration follows current Laravel 13 Sanctum SPA documentation: stateful API middleware, CSRF cookie bootstrap and cookie sessions. PostgreSQL row locking (`SELECT … FOR UPDATE`) serializes one-time consumption. Next.js App Router supports `history.replaceState` for fragment removal. A clean Docker runtime validation exercises CSRF registration, authenticated `/me`, disabled-session invalidation and two concurrent registrations with a one-time invitation.
+The first-admin command acquires a fixed PostgreSQL transaction-level advisory lock, then re-checks for an existing admin inside the transaction before inserting. This serializes only the bootstrap invariant, releases automatically at transaction end, and avoids distributed-lock infrastructure. SQLite test runs skip the PostgreSQL-specific lock because their single-process test database has no equivalent; the real Docker PostgreSQL concurrency harness covers the database boundary.
+
+Login abuse limiting is centralized in the named Laravel `login` limiter. Project defaults are 5 attempts per 60 seconds, configurable through `AUTH_LOGIN_RATE_LIMIT_ATTEMPTS` and `AUTH_LOGIN_RATE_LIMIT_DECAY_SECONDS`; these are CVortex operating defaults, not values mandated by Laravel. The limiter key is the normalized email plus source IP, so distinct identities do not share a bucket. Laravel returns `429` when the configured limit is exceeded.
+
+This implementation configuration follows current Laravel 13 Sanctum SPA documentation: stateful API middleware, CSRF cookie bootstrap and cookie sessions. PostgreSQL row locking (`SELECT … FOR UPDATE`) serializes one-time invitation consumption. Next.js App Router supports `history.replaceState` for fragment removal. The executable validation is split between the focused PHPUnit/frontend regressions and `scripts/test-access-core-postgres-concurrency.sh`, which creates and removes an isolated temporary PostgreSQL database for simultaneous bootstrap and invitation-consumption attempts. Validation counts are intentionally not hard-coded here because they change with the test matrix.
 
 ## M1.1 readiness record
 
-Current validation is PASS for PHPUnit (22 tests / 88 assertions), Pint, Larastan, frontend lint, typecheck, Vitest, production build, clean `origin/stage` production build, same-origin auth runtime, migration up, full rollback/down safety, repeated migration up, agent-contract governance checks and `git diff --check`.
+Current validation is recorded in the PR #23 validation/checkpoint evidence and must be refreshed after each review-fix run. This document describes the behavior and validation commands, but intentionally does not hard-code test or assertion counts.
 
-The previously observed frontend `/_global-error` `useContext(null)` build failure is **NOT REPRODUCED / TRANSIENT**: the required production build passes on both the feature branch and clean `origin/stage`. No root cause is asserted. Compose missing-variable warnings reproduce on the baseline and remain pre-existing environment noise.
+The compose development container sets a non-standard `NODE_ENV=development`, which can reproduce the historical frontend `/_global-error` `useContext(null)` failure during `next build`. The required production command passes with `NODE_ENV=production`; no product-code root cause is asserted for the development-environment failure. Compose missing-variable warnings reproduce on the baseline and remain pre-existing environment noise.
 
 The frontend package-manager metadata mismatch and absent `pnpm-lock.yaml` are tracked separately as pre-existing repository debt and are outside M1.1 scope.

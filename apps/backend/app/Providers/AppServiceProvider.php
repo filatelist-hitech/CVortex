@@ -25,7 +25,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('login', function (Request $request): Limit {
-            return Limit::perMinute(5)->by('login:'.$request->ip().'|'.app(EmailNormalizer::class)->normalize((string) $request->input('email')));
+            return Limit::perSecond(
+                (int) config('auth.login_rate_limit.attempts'),
+                (int) config('auth.login_rate_limit.decay_seconds'),
+            )->by('login:'.$request->ip().'|'.app(EmailNormalizer::class)->normalize((string) $request->input('email')));
         });
 
         Route::pattern('id', '[0-9A-HJKMNP-TV-Z]{26}');

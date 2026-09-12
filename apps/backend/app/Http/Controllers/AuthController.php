@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -38,22 +37,14 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'max:128'],
         ]);
         $email = $emails->normalize($data['email']);
-        $key = 'login:'.$request->ip().'|'.$email;
-        if (RateLimiter::tooManyAttempts($key, 5)) {
-            throw ValidationException::withMessages(['email' => 'Too many login attempts. Try again later.']);
-        }
-
         $user = User::query()->where('email', $email)->first();
         if ($user === null || ! Hash::check($data['password'], $user->password)) {
-            RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['email' => 'The provided credentials are incorrect.']);
         }
         if (! $user->isActive()) {
-            RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['email' => 'This account is disabled.']);
         }
 
-        RateLimiter::clear($key);
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
         Log::info('auth.login.succeeded', $audit->safeLogContext(['user_id' => $user->id]));

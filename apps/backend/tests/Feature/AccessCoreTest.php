@@ -12,7 +12,6 @@ use App\Services\UserStatusService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -32,10 +31,11 @@ class AccessCoreTest extends TestCase
         parent::setUp();
         config(['sanctum.stateful' => ['localhost']]);
         config(['session.driver' => 'database']);
-        RateLimiter::clear('login:127.0.0.1|missing@example.test');
-        RateLimiter::clear('login:127.0.0.1|login@example.test');
-        RateLimiter::clear('login:::1|missing@example.test');
-        RateLimiter::clear('login:::1|login@example.test');
+        foreach (['missing@example.test', 'login@example.test', 'limit@example.test', 'isolated@example.test', 'sessions@example.test', 'flow@example.test', 'enable@example.test'] as $email) {
+            foreach (['127.0.0.1', '::1'] as $ip) {
+                $this->clearLoginLimiter($ip, $email);
+            }
+        }
         Schema::create('test_private_resources', function ($table): void {
             $table->ulid('id')->primary();
             $table->ulid('owner_id')->index();
@@ -43,6 +43,13 @@ class AccessCoreTest extends TestCase
         });
         Route::middleware(['auth:sanctum', 'active-user'])->prefix('api/v1/_test')->group(function (): void {
             Route::get('/private', fn (Request $request) => ['data' => \DB::table('test_private_resources')->where('owner_id', $request->user()->id)->get()]);
+            Route::post('/private', function (Request $request) {
+                $data = $request->validate(['value' => ['required', 'string']]);
+                $id = (string) Str::ulid();
+                \DB::table('test_private_resources')->insert(['id' => $id, 'owner_id' => $request->user()->id, 'value' => $data['value']]);
+
+                return response()->json(['data' => \DB::table('test_private_resources')->where('id', $id)->first()], 201);
+            });
             Route::get('/private/{id}', function (Request $request, string $id) {
                 $resource = \DB::table('test_private_resources')->where('id', $id)->first();
                 abort_if($resource === null || ! app(OwnershipPolicy::class)->owns($request->user(), $resource->owner_id), 404);
@@ -167,6 +174,23 @@ class AccessCoreTest extends TestCase
         app(UserStatusService::class)->disable($admin);
     }
 
+    public function test_disabling_user_invalidates_multiple_database_sessions(): void
+    {
+        $user = User::query()->create(['email' => 'sessions@example.test', 'password' => Hash::make('a very long safe passphrase')]);
+        $first = $this->loginSession($user);
+        $second = $this->loginSession($user);
+
+        $this->assertGreaterThanOrEqual(2, \DB::table('sessions')->where('user_id', $user->id)->count());
+        app(UserStatusService::class)->disable($user);
+        $this->assertSame(0, \DB::table('sessions')->where('user_id', $user->id)->count());
+        $this->app['auth']->forgetGuards();
+        $firstResponse = $this->withCookie(config('session.cookie'), $first)->getJson('/api/v1/me');
+        $this->assertContains($firstResponse->status(), [401, 403]);
+        $this->app['auth']->forgetGuards();
+        $secondResponse = $this->withCookie(config('session.cookie'), $second)->getJson('/api/v1/me');
+        $this->assertContains($secondResponse->status(), [401, 403]);
+    }
+
     public function test_expired_revoked_and_exhausted_invitations_are_rejected(): void
     {
         ['invitation' => $expired, 'token' => $expiredToken] = app(InvitationService::class)->create(null, 1);
@@ -200,10 +224,24 @@ class AccessCoreTest extends TestCase
     {
         $user = User::query()->create(['email' => 'login@example.test', 'password' => Hash::make('a very long safe passphrase')]);
         foreach ([['missing@example.test', 'wrong'], ['login@example.test', 'wrong']] as [$email, $password]) {
-            $this->withoutMiddleware(ThrottleRequests::class)->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password])->assertUnprocessable()->assertJsonPath('errors.email.0', 'The provided credentials are incorrect.');
+            $this->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password])->assertUnprocessable()->assertJsonPath('errors.email.0', 'The provided credentials are incorrect.');
         }
         $user->forceFill(['status' => User::STATUS_DISABLED])->save();
-        $this->withoutMiddleware(ThrottleRequests::class)->postJson('/api/v1/auth/login', ['email' => 'login@example.test', 'password' => 'a very long safe passphrase'])->assertUnprocessable()->assertJsonPath('errors.email.0', 'This account is disabled.');
+        $this->postJson('/api/v1/auth/login', ['email' => 'login@example.test', 'password' => 'a very long safe passphrase'])->assertUnprocessable()->assertJsonPath('errors.email.0', 'This account is disabled.');
+    }
+
+    public function test_login_rate_limit_is_configurable_deterministic_and_isolated_by_email_and_ip(): void
+    {
+        config(['auth.login_rate_limit.attempts' => 2, 'auth.login_rate_limit.decay_seconds' => 60]);
+        $this->clearLoginLimiter('127.0.0.1', 'limit@example.test');
+        $this->clearLoginLimiter('127.0.0.1', 'isolated@example.test');
+
+        $payload = ['email' => 'limit@example.test', 'password' => 'wrong password'];
+        $this->postJson('/api/v1/auth/login', $payload)->assertUnprocessable();
+        $this->postJson('/api/v1/auth/login', $payload)->assertUnprocessable();
+        $this->postJson('/api/v1/auth/login', $payload)->assertTooManyRequests();
+
+        $this->postJson('/api/v1/auth/login', ['email' => 'isolated@example.test', 'password' => 'wrong password'])->assertUnprocessable();
     }
 
     public function test_login_regenerates_session_and_controller_uses_stateful_session_boundary(): void
@@ -236,10 +274,15 @@ class AccessCoreTest extends TestCase
         \DB::table('test_private_resources')->insert(['id' => $id, 'owner_id' => $owner->id, 'value' => 'private']);
 
         $this->as($owner)->getJson('/api/v1/_test/private/'.$id)->assertOk();
+        $this->as($owner)->putJson('/api/v1/_test/private/'.$id, ['value' => 'updated', 'owner_id' => $foreign->id, 'user_id' => $admin->id])->assertNoContent();
+        $this->assertDatabaseHas('test_private_resources', ['id' => $id, 'owner_id' => $owner->id, 'value' => 'updated']);
         $this->as($foreign)->getJson('/api/v1/_test/private/'.$id)->assertNotFound();
         $this->as($foreign)->getJson('/api/v1/_test/private')->assertExactJson(['data' => []]);
         $this->as($admin)->getJson('/api/v1/_test/private/'.$id)->assertNotFound();
+        $this->as($foreign)->putJson('/api/v1/_test/private/'.$id, ['value' => 'tampered', 'owner_id' => $owner->id, 'user_id' => $owner->id])->assertNotFound();
         $this->as($foreign)->deleteJson('/api/v1/_test/private/'.$id)->assertNotFound();
+        $this->as($foreign)->postJson('/api/v1/_test/private', ['value' => 'foreign-owned', 'owner_id' => $owner->id, 'user_id' => $owner->id])->assertCreated()->assertJsonPath('data.owner_id', $foreign->id);
+        $this->as($owner)->postJson('/api/v1/_test/private', ['value' => 'owner-owned', 'owner_id' => $foreign->id, 'user_id' => $admin->id])->assertCreated()->assertJsonPath('data.owner_id', $owner->id);
         $this->as($foreign)->getJson('/api/v1/_test/known-capability')->assertForbidden();
         $this->assertDatabaseHas('test_private_resources', ['id' => $id, 'owner_id' => $owner->id]);
     }
@@ -273,12 +316,28 @@ class AccessCoreTest extends TestCase
     public function test_operator_invitation_command_shows_token_once_without_persisting_it(): void
     {
         $this->artisan('invitation:create --email=invitee@example.test --expires=7')
+            ->expectsOutputToContain('Invitation ULID: ')
             ->expectsOutputToContain('Invitation URL (show once): /register#token=')
             ->assertExitCode(0);
         $invitation = Invitation::query()->sole();
         $this->assertSame('invitee@example.test', $invitation->target_email);
         $this->assertNotEmpty($invitation->token_hash);
         $this->assertArrayNotHasKey('token_hash', $invitation->toArray());
+    }
+
+    public function test_operator_can_capture_invitation_ulid_revoke_it_and_registration_is_rejected(): void
+    {
+        $this->assertSame(0, Artisan::call('invitation:create --expires=7'));
+        $output = Artisan::output();
+        preg_match('/Invitation ULID: ([0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26})/', $output, $idMatches);
+        preg_match('/\/register#token=([a-f0-9]{64})/', $output, $tokenMatches);
+        $this->assertCount(2, $idMatches);
+        $this->assertCount(2, $tokenMatches);
+
+        $this->artisan('invitation:revoke '.$idMatches[1])->expectsOutput('Invitation revoked.')->assertExitCode(0);
+        $this->expectException(ValidationException::class);
+        app(InvitationService::class)->register($tokenMatches[1], 'revoked@example.test', 'a very long safe passphrase');
+        $this->assertDatabaseMissing('users', ['email' => 'revoked@example.test']);
     }
 
     public function test_operator_can_revoke_an_invitation_and_a_rejected_rerevoke_changes_nothing(): void
@@ -296,6 +355,25 @@ class AccessCoreTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         return $this->actingAs($user, 'web');
+    }
+
+    private function loginSession(User $user): string
+    {
+        $this->clearLoginLimiter('127.0.0.1', $user->email);
+        $this->clearLoginLimiter('::1', $user->email);
+        $csrf = $this->csrfCookies();
+        $response = $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->withHeader('Origin', 'http://localhost')
+            ->withCookie(config('session.cookie'), $csrf['session'])
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'a very long safe passphrase']);
+        $response->assertOk();
+
+        return (string) $response->getCookie(config('session.cookie'))?->getValue();
+    }
+
+    private function clearLoginLimiter(string $ip, string $email): void
+    {
+        RateLimiter::clear(md5('loginlogin:'.$ip.'|'.$email));
     }
 
     /** @return array{csrf: string, session: string, session_token: string} */

@@ -4,6 +4,11 @@ use App\Models\User;
 
 return [
 
+    'login_rate_limit' => [
+        'attempts' => (int) env('AUTH_LOGIN_RATE_LIMIT_ATTEMPTS', 5),
+        'decay_seconds' => (int) env('AUTH_LOGIN_RATE_LIMIT_DECAY_SECONDS', 60),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
