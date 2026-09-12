@@ -50,21 +50,30 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 
 ## Current repository state
 
-- no Laravel/Next.js application exists yet;
-- no Docker Compose M0 exists yet;
+- M0 Runnable Core is completed / PASS;
+- a real Laravel 13 API and Next.js 16 technical shell run through loopback-bound Nginx;
+- Docker Compose provides Nginx, frontend, backend/PHP-FPM, Horizon, PostgreSQL and Redis with only Nginx host-exposed;
+- root Make/configuration workflows, health probes, request correlation, persistent PostgreSQL/private storage and disposable Redis are implemented;
+- deterministic backend/frontend checks and the minimal GitHub Actions quality workflow are implemented;
 - no product migrations/domain code exist yet;
 - runtime AI directory remains an architecture/canonical-location baseline rather than implemented Skills;
-- Phase 07 design tokens exist and may be consumed by M0;
+- the M0 technical shell consumes a maintainable semantic subset of Phase 07 design tokens;
 - Figma live file exists but canvas review remains limited by previously recorded MCP Starter-plan capability/rate limitation.
 
 ## Next authorized task
 
-`m0-runnable-core`
+`m1-1-access-core`
 
-Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m0-runnable-core.md`.
+Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-1-access-core.md`.
 
-## Validation of roadmap-reset branch
+## M0 validation
 
-Documentation/task migration only. No product runtime behavior, dependency, migration or infrastructure change is claimed by the reset itself.
+Result: **PASS**.
 
-Before executing M0, review the actual diff and ensure all legacy specs are preserved and `NEXT.md` points only to M0.
+Reproducible command results are recorded in [M0 Runnable Core Validation Evidence](../evidence/m0-runnable-core-validation.md).
+
+Validated from tracked contents on the real Docker runtime and a genuinely
+fresh worktree: bootstrap/build/start, Nginx/browser shell, health behavior,
+PostgreSQL/Redis failure and recovery, PostgreSQL/private-storage persistence,
+Redis disposal, host exposure, backend/frontend quality checks and production
+frontend build.

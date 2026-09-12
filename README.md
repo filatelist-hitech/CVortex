@@ -4,6 +4,59 @@
 
 CVortex is a personal Job Search OS for adapting resumes to vacancies, generating cover letters, preserving employer context, preparing for interviews, and tracking the effectiveness of a job search.
 
+## Project status
+
+CVortex is in active pre-release development.
+
+The current completed implementation milestone is **M0 · Runnable Core**: a reproducible local technical baseline with Laravel, Next.js, PostgreSQL, Redis/Horizon, Nginx and Docker Compose.
+
+M0 is **not the MVP**. It establishes the runtime foundation only.
+
+The accepted release roadmap is:
+
+| Milestone | Product checkpoint | Target version | Release mode |
+|---|---|---|---|
+| M0 · Runnable Core | Runnable technical baseline | `v0.1.0-alpha.1` | Optional prerelease |
+| M1 · First Value | First truthful end-to-end workflow / Preview 0.1 | `v0.1.0` | Preview |
+| M2 · Real Application Package | First practical application package | `v0.2.0` | MVP |
+| M3 · Imports & Integrations | Safe imports and supported source integrations | `v0.3.0` | Minor |
+| M4 · Employer Journey | Employer/recruiter context and interview workflow | `v0.4.0` | Minor |
+| M5 · Outcomes & Analytics | Evidence-based job-search analytics | `v0.5.0` | Minor |
+| M6 · Distribution & Hardening | VPS/cloud path and operational hardening | `v0.6.0` | Minor |
+
+Release tags are created from validated `main` commits only. Completing a milestone on `stage` does not itself create a Git tag or GitHub Release. `v1.0.0` remains a separate explicit stability decision after M6.
+
+See [docs/01-Product/Roadmap.md](docs/01-Product/Roadmap.md) and [.github/roadmap.yml](.github/roadmap.yml) for the canonical roadmap and release metadata.
+
+## M0 quick start
+
+Host prerequisites:
+
+- Git;
+- Docker with Compose;
+- Make.
+
+From a clean checkout:
+
+```bash
+make init
+make up
+```
+
+CVortex is exposed through Nginx on the loopback interface at `http://127.0.0.1:8080` by default. Override the port with `CVORTEX_PORT` in the root `.env` when needed.
+
+Useful commands:
+
+```bash
+make test
+make lint
+make logs SERVICE=backend
+make shell SERVICE=backend
+make down
+```
+
+`make down` is intentionally non-destructive for the persistent PostgreSQL and private-storage state defined by M0.
+
 ## Project principles
 
 - **Truth-first:** candidate statements must be grounded in confirmed career facts.
@@ -14,18 +67,18 @@ CVortex is a personal Job Search OS for adapting resumes to vacancies, generatin
 - **Local-first / API-first:** local Docker Compose first, with a path to VPS/cloud later.
 - **Security-first:** vacancies, recruiter messages, websites, and imported documents are untrusted input.
 
-## Stack direction
+## Current stack
 
-- Backend: PHP 8.4+ / Laravel
+- Backend: PHP / Laravel
 - Frontend: Next.js / React / TypeScript
 - Database: PostgreSQL
 - Queue/cache: Redis + Laravel Horizon
 - Web: Nginx
-- Documents: DOCX templates + LibreOffice headless to PDF
 - Infrastructure: Docker Compose
-- Mobile MVP: responsive PWA
+- Documents: DOCX templates + LibreOffice headless to PDF are planned for M2
+- Distribution: responsive web first; broader PWA/distribution hardening belongs to later milestones
 
-Concrete dependency and model versions are intentionally not fixed here before research.
+Exact runtime and dependency versions are pinned in the implementation artifacts and lockfiles rather than duplicated here. The repository files are the version authority for the current runtime.
 
 ## Branches
 
