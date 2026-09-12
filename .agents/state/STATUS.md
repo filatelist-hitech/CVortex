@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-`04-product-integrations-hiring-research`
+`05-architecture-decision-freeze`
 
 Status: **completed**
 
@@ -13,229 +13,96 @@ Status: **completed**
 - `02-research-plan`
 - `03-technical-research`
 - `04-product-integrations-hiring-research`
+- `05-architecture-decision-freeze`
 
-## Current Repository State
+## Phase 05 Outcome
 
-The repository contains the development-agent operating layer and repository/GitHub governance foundation created during Phase 00.
+Phase 03 and Phase 04 evidence has been converted into an accepted architecture baseline. The canonical inventory is [Architecture Decision Index](../../docs/03-ADR/INDEX.md); the compact system view is [Phase 05 Architecture Baseline](../../docs/02-Architecture/Architecture-Baseline.md).
 
-Phase 01 added the initial CVortex project knowledge base and documentation skeleton.
+Accepted ADRs are authoritative within their scopes. Future changes to accepted decisions require an explicit amending or superseding ADR. Concrete dependency versions, LLM provider/model mappings, prices and implementation details remain changeable unless a later ADR deliberately freezes them.
 
-Phase 02 added the research plan/index covering technical, integration, recruitment, security and licensing questions.
-
-Phase 03 adds reviewed technical evidence for:
-
-- PHP, Laravel and PostgreSQL;
-- Redis, queues and Horizon;
-- authentication, authorization, encryption and rate limiting;
-- OpenAI API, current model catalog and pricing;
-- Structured Outputs, prompt caching and Batch;
-- PHP OpenAI integration options;
-- Next.js, React, TypeScript and Tailwind CSS;
-- component primitives;
-- testing stack;
-- DOCX generation and LibreOffice headless conversion;
-- design-token tooling;
-- Figma MCP and Code Connect.
-
-Technical alternatives remain decision candidates rather than accepted ADRs.
-
-Phase 04 adds reviewed evidence for:
-
-- vacancy/job-board and ATS career-source capabilities;
-- API/auth/OAuth/feed classifications and source restrictions;
-- realistic vacancy ingestion fallbacks;
-- ATS parsing, screening, skill matching and recruiting AI;
-- resume and cover-letter practices;
-- technical hiring;
-- RU/EU/US/UK market comparison;
-- fintech/startup/enterprise evidence limits;
-- external-content/ingestion security threats.
-
-No product implementation has been created by Phase 04.
-
-Phase 04 does not introduce:
-
-- Laravel or Next.js product code;
-- npm/composer dependencies;
-- Docker Compose;
-- database migrations;
-- final ERD;
-- vacancy adapters or scraping;
-- browser extension implementation;
-- live OAuth/job-board connections;
-- Recruitment Knowledge Base tables;
-- concrete dependency versions;
-- permanent concrete LLM model mappings;
-- LLM pricing assumptions;
-- runtime product AI Skills;
-- accepted architecture ADRs.
-
-## Sequencing Reconciliation
-
-Phase 04 was merged before Phase 03 because Phase 03 artifacts were not yet
-present in `stage` at the time Phase 04 was executed.
-
-Phase 03 technical research has now been completed and reconciled into the
-project state.
-
-The temporary Phase 05 prerequisite blocker is therefore resolved.
-
-The project sequence is now logically complete through Phase 04:
-
-`00 → 01 → 02 → 03 → 04`
-
-No Phase 03 or Phase 04 research finding becomes an accepted architecture
-decision merely because the sequencing gap has been reconciled.
-
+No product code, application skeleton, dependency, migration, Docker Compose stack, ERD, OpenAPI specification, Figma screen or runtime Skill was created.
 
 ## Accepted Decisions
 
-The following product directions remain owner-approved inputs:
+| ADR | Decision | Nature |
+|---|---|---|
+| [ADR-0001](../../docs/03-ADR/ADR-0001-laravel-core-backend.md) | Laravel as the Core Application Backend | OWNER_CONSTRAINT |
+| [ADR-0002](../../docs/03-ADR/ADR-0002-postgresql-primary-database.md) | PostgreSQL as the Primary Durable Database | OWNER_CONSTRAINT |
+| [ADR-0003](../../docs/03-ADR/ADR-0003-redis-queues-horizon.md) | Redis-backed Laravel Queues and Horizon | OWNER_CONSTRAINT |
+| [ADR-0004](../../docs/03-ADR/ADR-0004-api-first-contract.md) | Shared API-first Application Boundary | OWNER_CONSTRAINT |
+| [ADR-0005](../../docs/03-ADR/ADR-0005-local-first-docker-compose.md) | Local-first Docker Compose Deployment Baseline | OWNER_CONSTRAINT |
+| [ADR-0006](../../docs/03-ADR/ADR-0006-monorepo-strategy.md) | Incremental Monorepo Strategy | DERIVED_ARCHITECTURAL_DECISION |
+| [ADR-0007](../../docs/03-ADR/ADR-0007-multi-user-ownership.md) | Shared-schema Multi-user Ownership and Isolation | OWNER_CONSTRAINT |
+| [ADR-0008](../../docs/03-ADR/ADR-0008-invite-only-access.md) | Invite-only Registration Boundary | OWNER_CONSTRAINT |
+| [ADR-0009](../../docs/03-ADR/ADR-0009-strict-truth-guard.md) | Strict Truth Guard and Provenance Invariant | OWNER_CONSTRAINT |
+| [ADR-0010](../../docs/03-ADR/ADR-0010-provider-independent-llm.md) | Provider-independent LLM Boundary | OWNER_CONSTRAINT |
+| [ADR-0011](../../docs/03-ADR/ADR-0011-logical-model-policy.md) | Logical Capability-based Model Policy | OWNER_CONSTRAINT |
+| [ADR-0012](../../docs/03-ADR/ADR-0012-git-markdown-obsidian.md) | Git Markdown Documentation with Obsidian as Interface | OWNER_CONSTRAINT |
+| [ADR-0013](../../docs/03-ADR/ADR-0013-figma-visual-source.md) | Figma as the Reviewed Visual Source of Truth | OWNER_CONSTRAINT |
+| [ADR-0014](../../docs/03-ADR/ADR-0014-git-design-tokens.md) | Git-held DTCG Tokens as Machine-readable Canonical Source | RESEARCH_BACKED_DECISION |
+| [ADR-0015](../../docs/03-ADR/ADR-0015-file-storage-abstraction.md) | File Storage Abstraction with Local Initial Backend | DERIVED_ARCHITECTURAL_DECISION |
+| [ADR-0016](../../docs/03-ADR/ADR-0016-deterministic-document-rendering.md) | Deterministic DOCX-to-PDF Rendering Pipeline | OWNER_CONSTRAINT |
+| [ADR-0017](../../docs/03-ADR/ADR-0017-untrusted-external-content.md) | Untrusted External Content Boundary | RESEARCH_BACKED_DECISION |
 
-- CVortex is a personal Job Search OS.
-- Truth-first is mandatory.
-- Generated Content → Claims → confirmed Career Facts.
-- Employer-facing statements must remain consistent.
-- Human approval is required before employer-facing actions.
-- Deterministic solutions are preferred before LLM use.
-- AI architecture must be provider-independent.
-- Initial architecture direction is local-first and API-first.
-- Registration is invite-only.
-- The system is multi-user.
-- MVP roles are admin and user.
-- Backend direction: Laravel.
-- Frontend direction: Next.js / React / TypeScript.
-- Data direction: PostgreSQL.
-- Queue/cache direction: Redis + Horizon.
-- Web direction: Nginx.
-- Document direction: DOCX + LibreOffice headless → PDF.
-- Initial client direction: responsive PWA.
-- Figma is the visual source of truth.
-- Documentation is Markdown stored in Git and usable as an Obsidian Vault.
-- `.agents/` is reserved for DEVELOPMENT AGENTS.
-- `main` is the stable/release branch and `stage` is the integration branch.
-- Normal changes use short-lived branches and pull requests into `stage`.
-- Release promotion flows from validated `stage` to `main` through a pull request.
-- Git tags and GitHub Releases are created only from validated `main` commits and follow SemVer once releases begin.
-- No tag/release is required for documentation/repository bootstrap phases.
+## Conflicts Resolved
 
-## Phase 04 Research Conclusions — Not Accepted ADRs
+- The previous `BLOCKERS.md` still claimed Phase 03 was missing. Current repository contents, commit state and the already-reconciled status prove Phase 03 complete; the stale blocker was removed.
+- `research/technical/DECISION-CANDIDATES.md` describes OpenAI as the owner-fixed first provider, while higher-priority `PROJECT.md` makes it only a possible first implementation choice. The accepted baseline follows `PROJECT.md`: provider/model selection is mutable configuration. Research remains unchanged as dated evidence.
+- The Phase 04 summary's missing-Phase-03 note is retained as historical context; later repository state explicitly reconciled it.
 
-Evidence supports these later decision inputs:
+No pre-Phase-05 accepted ADR existed, so no ADR was superseded.
 
-- public ATS job-board APIs/feeds are the cleanest automation surface;
-- partner/customer APIs are not public candidate APIs;
-- undocumented frontend endpoints must not be treated as integration APIs;
-- manual paste/file input remains a necessary universal fallback;
-- restrictive sources require source-specific automation/storage policy;
-- matching/screening is multi-dimensional/vendor-specific, not one universal ATS percentage;
-- external vacancy/web/document content remains untrusted data;
-- future URL import requires SSRF-aware security architecture.
+## Deferred Decisions
 
-These findings are not architecture decisions until Phase 05 accepts them through the project decision process.
+Deferred to Phase 06 or later, without blocking Phase 06:
 
-## Pending Architecture Decisions
-
-Existing pending decisions remain:
-
-- Canonical location and lifecycle of CVortex runtime/product LLM Skills.
-- Concrete provider/model mappings.
-- Concrete model pricing configuration.
-- Dependency/library versions.
-- Detailed data model and final ERD.
-
-Phase 04 adds decision inputs for:
-
-- vacancy source registry / adapter capability model;
-- source policy / retention metadata;
-- URL/browser/manual ingestion boundaries;
-- matching dimension model;
-- Recruitment Knowledge Base design;
-- external-content trust boundary and URL-fetch security architecture.
-
-These must be resolved only in their appropriate future architecture phases.
-
-## Relevant ADR Links
-
-No accepted ADR was created by Phase 04.
-
-Architecture decisions requiring ADR treatment remain deferred to Phase 05 or later.
+- final ERD, database tables and API/OpenAPI contracts;
+- authentication package and invitation endpoint details;
+- runtime/product LLM Skill canonical location and lifecycle; `.agents/` remains reserved for development agents;
+- concrete provider adapters, model mappings, prices and routing thresholds;
+- dependency/runtime versions and compatibility validation;
+- queue topology, supervisors and retry parameters;
+- component primitive library;
+- design-token transformation/synchronization tooling;
+- document generator library and exact LibreOffice build;
+- detailed threat model, retention rules and ingestion adapters;
+- future semantic-search implementation.
 
 ## Files Created / Changed
 
-Core operating/project layer from earlier phases remains unchanged except project state files.
-
-Phase 03 technical research artifacts:
-
-- `research/technical/01-BACKEND-RUNTIME-DATA.md`
-- `research/technical/02-LARAVEL-AUTH-SECURITY.md`
-- `research/technical/03-REDIS-QUEUES-HORIZON.md`
-- `research/technical/04-OPENAI-API-MODELS.md`
-- `research/technical/05-OPENAI-PHP-INTEGRATION.md`
-- `research/technical/06-FRONTEND-STACK.md`
-- `research/technical/07-COMPONENT-PRIMITIVES.md`
-- `research/technical/08-TESTING-STACK.md`
-- `research/technical/09-DOCUMENT-PIPELINE.md`
-- `research/technical/10-DESIGN-TOKENS-FIGMA.md`
-- `research/technical/DECISION-CANDIDATES.md`
-- `research/technical/README.md`
-- `research/technical/SOURCES.md`
-
-Phase 04 research artifacts:
-
-- `research/integrations/vacancy-sources-matrix.md`
-- `research/integrations/ats-career-platforms.md`
-- `research/integrations/integration-strategies.md`
-- `research/integrations/platform-terms.md`
-- `research/recruitment/ats-and-screening.md`
-- `research/recruitment/recruiting-ai.md`
-- `research/recruitment/resume-practices.md`
-- `research/recruitment/cover-letters.md`
-- `research/recruitment/technical-hiring.md`
-- `research/recruitment/market-comparison.md`
-- `research/recruitment/employer-type-comparison.md`
-- `research/security/external-content-threats.md`
-- `research/PHASE-04-SUMMARY.md`
-
-Updated navigation/state:
-
-- `research/RESEARCH-INDEX.md`
+- `docs/02-Architecture/Architecture-Baseline.md`
+- `docs/03-ADR/INDEX.md`
+- `docs/03-ADR/ADR-0001-laravel-core-backend.md` through `ADR-0017-untrusted-external-content.md`
+- `docs/00-Home/Documentation-Map.md`
+- `research/RESEARCH-INDEX.md` (navigation/current phase state only; research evidence unchanged)
 - `.agents/state/STATUS.md`
 - `.agents/state/NEXT.md`
 - `.agents/state/BLOCKERS.md`
 
-## Last Validation Result
+## Validation Result
 
-Phase 04 research validation: **PASS**.
-
-Validated:
-
-- required named vacancy sources are represented in the matrix;
-- API/auth/OAuth/feed claims are evidence-scoped or marked unknown;
-- public/partner/customer/internal API distinctions are explicit;
-- restrictions and fallback strategies are documented;
-- recruitment topics and market comparisons are covered;
-- confidence and unresolved findings are recorded;
-- security research is present;
-- no fake universal ATS score is introduced;
-- no product code or accepted ADR is introduced.
-
-Phase sequence validation: **PASS**.
+Phase 05 documentation/repository validation: **PASS**.
 
 Validated:
 
-- Phase 03 technical research artifacts are now present;
-- Phase 03 decision candidates remain non-ADR recommendations;
-- Phase 04 research remains present and unchanged;
-- the temporary sequencing blocker has been resolved;
-- no product implementation was introduced;
-- no premature accepted ADR was introduced.
+- 17 unique ADR IDs; every required ADR exists and is `accepted`;
+- every accepted ADR has frontmatter, decision nature, Context, Options, Comparison, Decision, Consequences and References;
+- the ADR Index links exactly once to every ADR and local Markdown/research links resolve;
+- related ADR IDs resolve and no supersession metadata is inconsistent;
+- ModelPolicy uses logical capability tiers and mutable provider/model configuration;
+- no concrete provider/model mapping or price is frozen as architecture;
+- architecture/home/research-index/state documentation is consistent with the ADR set;
+- owner constraints and research-vs-source conflicts are explicitly preserved/resolved;
+- no product code, migration, dependency or implementation scaffold was added;
+- `git diff --check` passes and the only pre-existing unrelated file remains untracked and untouched.
+
+No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed instead.
 
 ## Next Phase
 
-`05-architecture-decision-freeze`
+`06-product-data-ai-security-design`
 
 Execution status: **READY**.
 
-Phase 05 may now evaluate Phase 03 and Phase 04 evidence together before
-accepting architecture decisions.
+Do not advance automatically.
