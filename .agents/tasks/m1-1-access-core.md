@@ -17,916 +17,201 @@ related:
 
 # CVortex M1.1 — Access Core
 
-## 1. Objective
+## Observable outcome
 
-Deliver the minimum secure access foundation required before CVortex stores private Career data.
+Before CVortex stores private Career data, it has a small working access layer. An operator can bootstrap the first admin and manage one-time invitations from CLI. An invited person can register in the web app, sign in, reach a minimal authenticated shell and sign out. Disabled accounts lose access on existing sessions, and cross-user isolation is already enforced and tested.
 
-Observable outcome:
+Keep this slice smaller than the legacy Phase 09 plan. Career, Vacancy, Application and runtime AI stay out.
 
-- an operator can bootstrap the first admin through CLI;
-- an operator can create and revoke one-time invitations through CLI;
-- an invited person can register through the web UI;
-- a registered user can sign in, load an authenticated shell/current-user state and sign out;
-- ACTIVE/DISABLED account state is enforced on every authenticated request;
-- ownership/isolation conventions exist and are proven with negative cross-user tests before Career resources are introduced;
-- the implementation remains deliberately smaller than the legacy Phase 09 hardened-auth plan.
+## Execution gate
 
-This task does **not** implement Career, Vacancy, Application or runtime AI capabilities.
+Implement this task only when `.agents/state/NEXT.md` is `m1-1-access-core`, or when the current user gives a bounded override allowed by `.agents/policies/git-workflow.md`. Otherwise stop before product changes. Editing this document does not authorize implementation.
 
----
+Before implementation, read `PROJECT.md`, current state, this task, relevant scoped `AGENTS.md`, Git/documentation policies and accepted auth/security ADRs. Run the repository write preflight when available and work on a short-lived branch based on current `stage`. Never write product changes directly to `main` or `stage`.
 
-## 2. Execution authority and preflight
+Accepted project decisions outrank external guidance. If current official framework/security research conflicts with one, identify the conflict and update or propose the relevant ADR before changing architecture.
 
-### 2.1 Mandatory execution gate
+## Scope
 
-This task may be implemented only when either:
+`legacy/phase-09-hardened-pr17.md` is requirement evidence, not active scope. M1.1 includes only the access foundation First Value needs.
 
-```text
-.agents/state/NEXT.md == m1-1-access-core
-```
+Deferred unless a concrete M1.1 security blocker proves otherwise: broad admin UX, role management, persisted secret/BYOK/provider-credential management, email verification/recovery, device/session UI, user deletion, speculative soft deletes, Career/Vacancy/Application data and runtime AI. Do not pull legacy features back in merely because they were designed earlier.
 
-or the current user explicitly authorizes this bounded task as an override under the Git workflow policy.
+## Authentication model
 
-If neither condition is true:
+The first-party path is fixed:
 
 ```text
-STOP
-Do not make product implementation changes.
+Next.js → same-origin Nginx → Laravel → Sanctum SPA/session auth
 ```
 
-Editing/refining this task document itself is documentation work and does not authorize M1.1 product implementation.
+Use secure session cookies and CSRF protection for state-changing authenticated requests. Regenerate the session ID after successful login and registration. Do not store auth material in browser persistent storage or introduce JWT/PAT/bearer, OAuth or future-client flows in this slice.
 
-### 2.2 Repository preflight
+Middleware order, cookie names and exact Sanctum configuration are implementation details. Verify them against current official Laravel/Sanctum documentation. If this model lacks accepted ADR coverage, add or update the ADR during implementation.
 
-Before the first implementation write:
+## Domain vocabulary
 
-1. read `PROJECT.md`;
-2. read `.agents/state/NEXT.md`;
-3. read this task in full;
-4. read relevant scoped `AGENTS.md` files, if present;
-5. read `.agents/policies/git-workflow.md` and `.agents/policies/documentation.md`;
-6. inspect accepted ADRs/security docs that govern authentication, sessions, IDs and API conventions;
-7. run the repository write preflight required by Git policy when available;
-8. work only on a bounded short-lived branch based on current `stage`.
+**Operator** is a human with trusted deployment/CLI access. It is not an application role, fake superuser record or private-data bypass. Operator actions are explicit CLI operations and are audited where required below.
 
-Do not write directly to `main` or `stage`.
+**User** is an application identity with a stable ID, normalized email, password hash, `admin|user` role, `ACTIVE|DISABLED` status and timestamps. Email is the only login identity in M1.1. `admin` is an account/security capability marker, not private-data god mode. Use a non-sequential public stable ID; choose UUID or ULID after checking current Laravel conventions and accepted project decisions.
 
-### 2.3 Source precedence
+**Invitation** authorizes exactly one registration. Targeted invitations have `target_email != null`; generic invitations have `target_email == null`; both have `max_uses=1`. Multi-use invitations are deferred. Default expiry is 7 days and maximum expiry is 30 days. Derive status from primary data rather than storing a second mutable status. Precedence is `REVOKED → EXPIRED → EXHAUSTED → ACTIVE`.
 
-Use accepted project sources before external guidance.
+**AuditEvent** is a production append-only record with event identifier/type, `actor_type=USER|OPERATOR|SYSTEM`, nullable `actor_user_id`, optional subject, safe metadata and timestamp. Normal application code cannot edit or delete existing events. Do not create fake User rows for CLI operators.
 
-If current official framework/security research conflicts with an accepted project decision:
+**Ownership** is a server-authoritative relationship between a User and a private resource. The client is never its authority. Prove the convention with an isolated test-only fixture; do not invent a production `OwnedResource`, Career model or Vacancy model for these tests.
 
-1. do not silently override the project decision;
-2. identify the conflict;
-3. update or propose the relevant ADR/documentation before changing architecture.
+## Security invariants
 
----
-
-## 3. Source decision inventory
-
-`legacy/phase-09-hardened-pr17.md` preserves the broader hardened authentication plan. M1.1 extracts only the subset needed for First Value.
-
-Deferred unless required to close a concrete M1.1 security gap:
-
-- broad admin UX;
-- generic persisted secret management;
-- BYOK/provider credential management;
-- email-based password recovery;
-- device/session management UI;
-- role-management UI/API;
-- Career/Vacancy/Application data.
-
-Do not re-import legacy scope merely because it already exists in an older plan.
-
----
-
-## 4. Fixed authentication architecture
-
-First-party path:
+These must hold regardless of controller or UI shape:
 
 ```text
-Next.js
-→ same-origin Nginx
-→ Laravel
-→ Sanctum SPA/session authentication
+User A cannot read, mutate, delete or enumerate private resources owned by User B.
+Admin does not bypass private-resource ownership.
+Client user_id / owner_id / role / scope values do not authorize anything.
+DISABLED users cannot keep using an authenticated session.
+Registration cannot leave a partial User when invitation consumption fails.
+Sensitive auth/invitation values never enter normal logs, audit metadata or serialized responses.
 ```
 
-Required invariants:
+Return `404` for a foreign private resource. Use `403` when the resource/capability is intentionally known but the authenticated principal lacks the required capability.
 
-- secure session cookie;
-- CSRF protection for state-changing authenticated requests;
-- session ID regeneration after successful authentication and registration;
-- no authentication secrets in `localStorage`;
-- no JWT/PAT/bearer-token auth for the first-party web app;
-- no OAuth/future-client auth flow in this slice.
+## Email identity
 
-Framework-specific middleware order, cookie names and exact Sanctum configuration are implementation details and must be chosen after checking current official Laravel/Sanctum documentation.
+Use one normalization/comparison boundary for registration, login, targeted invitation matching, uniqueness checks and operator commands that accept email. Prefer a dedicated `EmailNormalizer`-style boundary to repeated controller cleanup.
 
-If the accepted architecture does not yet have ADR coverage for this authentication model, create or update the relevant ADR during implementation. A task file is not a substitute for a durable architecture decision.
+Verify the exact rule against current Laravel/PostgreSQL behavior and accepted project conventions, then document it. Do not guess RFC edge cases. If an email already belongs to a User, registration fails without consuming the invitation; invitations do not merge or recover accounts.
 
----
+## Operator flows
 
-## 5. Canonical domain vocabulary
+### First admin
 
-Use these terms consistently. Do not introduce synonyms for the same concepts.
+Provide a dedicated CLI command that creates the first `ACTIVE admin`. It has no default credentials, committed seed credential, public bootstrap endpoint or “first registrant becomes admin” shortcut. Sensitive input must not appear in logs. Successful bootstrap appends an OPERATOR audit event.
 
-### 5.1 Operator
+If an admin already exists, the command fails safely and changes nothing. It does not create another admin, reset an existing account or promote an arbitrary user. General role mutation is outside M1.1.
 
-An **Operator** is a human with trusted deployment/CLI access.
+### Invitations
 
-Operator is **not**:
+Creation and revocation are CLI operations. No admin invitation API/UI is needed.
 
-- an application `User` role;
-- an implicit superuser record;
-- a bypass into private user data.
+Generate tokens cryptographically, persist only a verification-safe form and reveal plaintext once at creation. Existing tokens cannot be retrieved later in plaintext and must be excluded from logs, audit metadata, serialized responses and exceptions.
 
-Operator actions are explicit operational actions performed through CLI commands and recorded through the audit actor model where applicable.
+A targeted invitation requires normalized registration email to match normalized `target_email`. A generic invitation accepts any valid unregistered email. Rejected registration does not consume the invitation. Revocation updates primary state such as `revoked_at` and appends the appropriate audit event.
 
-### 5.2 User
+### Disable/enable
 
-A **User** is an authenticated application identity.
+Provide operator CLI commands equivalent to `user:disable` and `user:enable`. Disabling invalidates active sessions. Status is also enforced on every authenticated request so a stale session cannot preserve access.
 
-Canonical semantics:
+Never allow an operation to leave zero ACTIVE admins. Disabling the sole ACTIVE admin fails closed with no partial change.
 
-```text
-User
-- stable_id
-- normalized_email
-- password_hash
-- role: admin | user
-- status: ACTIVE | DISABLED
-- timestamps
-```
+## Invitation URL
 
-Email is the only login identity in M1.1.
+Treat the invitation token as browser-sensitive data. Preferred transport is `/register#token=<value>`. The frontend reads the fragment locally, moves it to transient registration state, immediately removes it from the visible URL/history with `history.replaceState` or equivalent, then sends it only in the registration request body.
 
-`admin` is an account/security capability marker. It is **not** private-data god mode.
+Do not use a normal query parameter by default because it can leak through access logs, analytics, history or referrers. If the selected Next.js architecture makes fragment handling unsafe or impractical, stop and document the alternative and its mitigations before implementation.
 
-An admin must not gain access to another user's private future resources merely because `role=admin`.
+## Registration
 
-### 5.3 Invitation
+The web form accepts invitation token, email, password and password confirmation. It does not accept role, user ID, owner ID, status or scope.
 
-An **Invitation** authorizes exactly one registration in M1.1.
-
-Supported forms:
-
-Targeted:
-
-```text
-target_email != null
-max_uses = 1
-```
-
-Generic:
-
-```text
-target_email = null
-max_uses = 1
-```
-
-Multi-use invitations are deferred.
-
-Invitation status is derived, not stored as a mutable status column.
-
-Canonical precedence:
-
-```text
-REVOKED
-→ EXPIRED
-→ EXHAUSTED
-→ ACTIVE
-```
-
-Primary state comes from data such as:
-
-- `revoked_at`;
-- `expires_at`;
-- one-time consumption state/usage count;
-- creation timestamps.
-
-Default expiry:
-
-```text
-7 days
-```
-
-Maximum expiry:
-
-```text
-30 days
-```
-
-### 5.4 AuditEvent
-
-`AuditEvent` is a production, append-only application concept for security/business mutations implemented by this slice.
-
-Minimum semantics:
-
-```text
-AuditEvent
-- stable/event identifier
-- event_type
-- actor_type: USER | OPERATOR | SYSTEM
-- actor_user_id: nullable
-- subject type/id where applicable
-- safe metadata JSON where useful
-- occurred_at
-```
-
-Normal application code must not edit or delete existing audit events.
-
-Retention/archival policy is outside M1.1.
-
-### 5.5 Ownership
-
-**Ownership** means a server-authoritative relationship between an authenticated `User` and a private resource.
-
-The client must never be the authority for ownership.
-
-Do not create a generic production `OwnedResource` model in M1.1. Use a small test-only/isolated ownership fixture to prove the policy convention before Career resources exist.
-
----
-
-## 6. Global security invariants
-
-The following invariants are non-negotiable:
-
-```text
-User A cannot read, mutate, delete or enumerate
-private resources owned by User B.
-```
-
-```text
-Admin role does not bypass private-data ownership.
-```
-
-```text
-Frontend-supplied user_id / owner_id / role / scope
-is never an authorization source.
-```
-
-```text
-DISABLED users cannot continue using an existing authenticated session.
-```
-
-```text
-Plaintext password, invitation token, session identifier,
-CSRF/auth token or other secret is never persisted in audit/log output.
-```
-
-```text
-Registration cannot partially create a User if invitation consumption fails.
-```
-
-Foreign private resource behavior:
-
-```text
-resource owned by another user → 404
-known resource/capability but insufficient role → 403
-```
-
-This prevents resource-existence disclosure while retaining meaningful capability errors.
-
----
-
-## 7. Email identity rules
-
-Email is required and unique according to one canonical normalization/comparison path.
-
-Create or use a single `EmailNormalizer`-style boundary shared by:
-
-- registration;
-- login;
-- invitation target matching;
-- uniqueness checks;
-- operator CLI where email is accepted.
-
-Do not duplicate ad hoc normalization logic across controllers, commands or validators.
-
-Before implementation, verify current Laravel/PostgreSQL behavior and accepted project conventions, then document the exact normalization/comparison rule.
-
-Do not silently guess RFC edge-case behavior.
-
-If an email is already registered:
-
-- a new registration attempt is rejected;
-- the invitation is not consumed;
-- no account merge/recovery occurs through the invitation flow.
-
----
-
-## 8. Stable identifiers
-
-Use non-sequential externally safe stable user identifiers.
-
-Choose the Laravel-friendly concrete representation only after implementation research and accepted project conventions are checked.
-
-Preferred direction:
-
-```text
-UUID or ULID
-```
-
-Do not expose auto-increment database identifiers as the intended public stable identity merely for convenience.
-
----
-
-## 9. Operator bootstrap
-
-Implement a dedicated operator-controlled CLI command for creating the first admin.
-
-Required behavior:
-
-- no default credentials;
-- no committed seed password;
-- no public bootstrap endpoint;
-- no `first registered user becomes admin` behavior;
-- plaintext password must not be logged;
-- successful creation produces an appropriate `AuditEvent` with `actor_type=OPERATOR`;
-- the created user is `ACTIVE` with `role=admin`.
-
-### 9.1 Repeat behavior
-
-If an admin already exists, the bootstrap command must fail safely and make no changes.
-
-Do not:
-
-- silently create another admin;
-- overwrite an existing admin password;
-- promote an arbitrary account.
-
-Separate recovery or additional-admin workflows belong to later scoped work unless a proven blocker requires otherwise.
-
-### 9.2 Role mutation
-
-M1.1 does not provide user-to-admin promotion or general role mutation through CLI, API or UI.
-
----
-
-## 10. Invitation management
-
-Invitation creation and revocation are operator CLI operations in M1.1.
-
-Do not build an admin API or admin UI solely to make the `admin` enum feel busy.
-
-### 10.1 Token rules
-
-Invitation token must be:
-
-- generated cryptographically securely;
-- stored only as a safe hash/verification form;
-- shown in plaintext only once at creation;
-- impossible to retrieve later in plaintext;
-- excluded from logs, audit metadata, serialized API responses and exceptions.
-
-### 10.2 Targeted invitation
-
-For a targeted invitation:
-
-```text
-target_email != null
-```
-
-Registration succeeds only when the normalized registration email matches the normalized target email.
-
-Mismatch rejects registration and does not consume the invitation.
-
-### 10.3 Generic invitation
-
-For a generic invitation:
-
-```text
-target_email = null
-```
-
-The registrant may supply any valid, currently unregistered email.
-
-Generic invitations remain one-time in M1.1.
-
-### 10.4 Revocation
-
-Revocation marks the invitation through canonical primary data such as `revoked_at`.
-
-Do not persist a separately mutable `status` field that can drift from source data.
-
-### 10.5 Invite URL transport
-
-Treat the invitation token as a secret.
-
-Preferred browser transport:
-
-```text
-/register#token=<secret>
-```
-
-The frontend must:
-
-1. read the fragment locally;
-2. move the token into transient registration state;
-3. immediately remove the token from the visible URL/history using `history.replaceState` or equivalent;
-4. submit the token only in the registration request body.
-
-The token must not be placed in a normal query string by default, because query parameters may leak through access logs, analytics, browser history or referrers.
-
-If the current Next.js routing architecture makes the fragment approach materially unsafe or unworkable, stop and document the alternative plus its logging/referrer mitigations before implementation.
-
----
-
-## 11. Registration flow
-
-Web registration input is exactly:
-
-```text
-invitation token
-email
-password
-password confirmation
-```
-
-No role, user ID, owner ID, status or scope input is accepted from the client.
-
-### 11.1 Atomic transaction
-
-The database portion of successful registration is one transaction:
+The database portion is one transaction:
 
 ```text
 lock/validate invitation
 → validate target email when applicable
-→ verify email is not registered
-→ create ACTIVE User with role=user
-→ consume one-time invitation
-→ append AuditEvent(s)
-→ COMMIT
+→ verify email is unregistered
+→ create ACTIVE role=user
+→ consume invitation
+→ append required AuditEvent(s)
+→ commit
 ```
 
-Only after successful commit:
+Only after commit, establish the authenticated session, regenerate its ID and continue to the authenticated shell.
 
-```text
-establish authenticated session
-→ regenerate session ID
-→ continue to authenticated shell
-```
+Two concurrent attempts using one invitation must produce exactly one successful registration. The losing request fails safely, creates no partial User and cannot over-consume the invitation. Use database constraints, locking and transaction semantics rather than timing assumptions.
 
-If any transaction step fails, no partial User/invitation state may remain.
+## Login, logout and account state
 
-### 11.2 Concurrent use
+Login accepts email/password, uses canonical email normalization and framework-supported verification, applies configurable abuse rate limiting and regenerates the session ID on success. Unknown email and wrong password use the same generic credential error. Once valid credentials identify an existing account, the app may report that it is disabled.
 
-For two concurrent attempts using the same one-time invitation:
+Multiple sessions per user are allowed. Normal logout invalidates only the current session. Keep the architecture capable of future invalidate-all behavior without redesigning auth.
 
-- exactly one may commit successfully;
-- the other must fail safely as no longer available;
-- no duplicate/partial User may be created;
-- the invitation must not be over-consumed.
+Successful login/logout belong in structured security/application logs as appropriate, not permanent AuditEvent rows by default. Choose rate-limit thresholds from current official Laravel/security guidance rather than arbitrary architecture constants.
 
-Use database locking/constraints/transaction semantics, not LLM reasoning or best-effort application timing.
+Password policy remains 15–128 characters, spaces/passphrases allowed, no mandatory character-class composition and no periodic rotation. Use current framework-supported hashing after compatibility/security verification. Plaintext credentials are never persisted, logged, audited or reversibly encrypted. Self-service recovery and email verification are deferred.
 
----
+## Authorization foundation
 
-## 12. Login flow
+Create one reusable server-side ownership/policy convention for future private resources and prove it with the isolated fixture. Tests must show owner access; foreign-user `404` for read/mutate/delete/enumerate; no admin ownership bypass; `403` for known capability denial where applicable; no self-role escalation; and no authorization based on client `user_id`/`owner_id`.
 
-Login input:
+Authenticated identity comes from the server-side session/principal. Resource ownership comes from a trusted server-side relationship.
 
-```text
-email
-password
-```
+## Audit
 
-Required behavior:
+Append events for first-admin bootstrap, invitation create/revoke/consume, registration, disable/enable and any other security mutation explicitly added to this slice. Actor semantics must distinguish USER, OPERATOR and SYSTEM.
 
-- use the canonical email normalization path;
-- use framework-supported password verification;
-- apply abuse rate limiting;
-- regenerate session ID after success;
-- do not reveal whether an unknown email exists;
-- do not authenticate a DISABLED user.
+Add explicit redaction/serialization tests for credentials, invitation tokens, session/CSRF/auth values, API keys and future provider credentials. Do not rely on developer memory as a security control.
 
-Error semantics:
+## HTTP/UI surface
 
-- unknown email and wrong password use the same generic credential error;
-- after credentials are correctly verified for an existing account, a disabled-account message may be returned;
-- do not expose unnecessary identity enumeration details.
+Build only login, invite registration, authenticated shell/current-user state and logout. `/app` may show current email, role, status and logout. Do not add fake Career dashboards or placeholder business navigation.
 
-Exact rate-limit thresholds must be configurable and chosen after checking current official Laravel/security guidance. Do not hardcode arbitrary numbers into architecture merely to satisfy the task text.
+Expose one minimal current-user contract such as `/me` following accepted API conventions. Return only safe identity data needed by the shell: stable ID, email, role and status.
 
-Successful login/logout belong in structured security/application logging as appropriate, not permanent `AuditEvent` records by default.
+Follow the accepted Phase 07 design/accessibility foundation for keyboard, focus, loading, validation, error and permission states. No admin invitation UI/API is required.
 
----
+## Deterministic boundary and research
 
-## 13. Session and disabled-account behavior
+M1.1 needs no LLM. Use framework auth primitives, database constraints/transactions, validators, policies/middleware and deterministic tests.
 
-Multiple simultaneous sessions are allowed.
+Before fixing framework-specific details, verify official primary sources for the selected versions of Laravel auth/sessions, Sanctum SPA auth/CSRF, hashing, rate limiting, session invalidation/storage, PostgreSQL locking/constraints for one-time consumption and Next.js fragment handling. Record architecture-affecting conclusions in durable docs/ADR. Do not pin unrelated dependencies, LLM models or prices.
 
-Normal logout invalidates the current session only.
+## Validation
 
-The architecture must permit future invalidate-all behavior without redesigning authentication.
+Automated coverage must prove failure paths as well as happy paths.
 
-### 13.1 DISABLED enforcement
+- Bootstrap: first creation, safe repeat failure, no default credential path, no sensitive output.
+- Invitations: targeted/generic success, normalized email match/mismatch, invalid/expired/revoked/exhausted cases, one-time reveal, non-plaintext persistence, no retrieval/leak, duplicate-email no-consume behavior, and exactly one winner under concurrent use.
+- Registration: invitation required, `ACTIVE role=user`, no client-selected role/status, rollback on failure, session only after commit, regenerated session ID.
+- Login/session: normalized login, no identity enumeration for unknown/wrong credentials, disabled login blocked, disabled existing session blocked, current-session logout, multiple sessions, CSRF behavior and deterministic rate-limit tests.
+- Disable/enable: session invalidation, re-enable, sole-active-admin protection and no partial change on rejected disable.
+- Authorization: owner success, foreign `404`, foreign mutation/delete/enumeration blocked, no admin bypass, applicable `403`, no mass-assignment/self-escalation and no client-controlled ownership.
+- Audit: expected mutations append events with correct actors; normal flows cannot update/delete events; sensitive values are absent from audit/log/serialization.
 
-A user's `status` is checked/enforced on every authenticated request, not only at login.
+Run migration up/down checks required by project policy, relevant backend tests, frontend tests/typecheck/lint/build for touched code and repository governance/security checks. Never report a validation step as executed unless it actually ran.
 
-A DISABLED user must lose authenticated access even if session invalidation fails or a stale session survives unexpectedly.
+## Documentation
 
-Implement operator CLI commands sufficient for this slice:
+Update durable Markdown for auth/session architecture, current-user API, authorization conventions, operator CLI, invitation lifecycle, audit semantics and project state. Add/update ADRs for material architecture decisions. Document implemented behavior only.
 
-```text
-user:disable
-user:enable
-```
+## Completion criteria
 
-Disabling a user must invalidate their active sessions using the framework/session architecture available to the application.
+M1.1 is PASS only when:
 
-### 13.2 Last active admin invariant
+- [ ] execution authority and repository preflight were respected;
+- [ ] first-admin bootstrap and safe repeat behavior work;
+- [ ] operator CLI creates/revokes one-time targeted and generic invitations;
+- [ ] invitation tokens are secure, stored non-plaintext, shown once and excluded from normal leak paths;
+- [ ] registration is atomic, duplicate email cannot consume an invitation, and concurrent token use cannot create two accounts;
+- [ ] registration establishes a regenerated session only after commit;
+- [ ] login/logout/current-user work through same-origin Sanctum session auth + CSRF;
+- [ ] email normalization/comparison is centralized and documented;
+- [ ] public user identity is stable and non-sequential;
+- [ ] roles/status cannot be client-escalated and DISABLED is enforced on every authenticated request;
+- [ ] disable/enable invalidates sessions and preserves at least one ACTIVE admin;
+- [ ] ownership convention and negative tests pass with no admin bypass;
+- [ ] AuditEvent is append-only with USER/OPERATOR/SYSTEM actor semantics;
+- [ ] sensitive values are absent from logs, audit and serialized output;
+- [ ] required tests, migrations, app checks and repository validation pass;
+- [ ] docs/API/security/ADR state match implementation;
+- [ ] deferred admin, secret-management, AI and Career scope did not leak into M1.1.
 
-The system must not allow an operation that leaves zero ACTIVE admins.
+## State update
 
-Therefore attempting to disable the sole ACTIVE admin must fail closed and make no changes.
+After every applicable criterion and required validation passes, set `.agents/state/NEXT.md` to `m1-2-career-core` if repository workflow permits it. If validation is incomplete or failing, keep M1.1 authorized and record the real blocker.
 
-No delete-user operation is part of M1.1.
+## STOP
 
-No soft-delete lifecycle is introduced for `User` or `Invitation` in this slice.
+Stop and report the blocker instead of improvising if M1.1 lacks authority; an accepted architecture decision must change without ADR reconciliation; the session design cannot enforce DISABLED safely; invitation handling would knowingly leak sensitive values without accepted mitigation; one-time consumption cannot be atomic; cross-user isolation cannot be enforced; tests would require inventing Career/Vacancy/Application objects; or an adjacent feature would materially expand this slice.
 
----
-
-## 14. Password policy
-
-Use current framework-supported password hashing after official compatibility/security verification.
-
-Password policy:
-
-```text
-minimum: 15 characters
-maximum: 128 characters
-spaces/passphrases: allowed
-mandatory uppercase/lowercase/digit/symbol composition: no
-periodic rotation: no
-```
-
-Plaintext passwords must never be:
-
-- persisted;
-- logged;
-- audited;
-- reversibly encrypted.
-
-Self-service forgot-password/email recovery is outside M1.1.
-
-Do not add email verification in M1.1.
-
----
-
-## 15. Authorization foundation
-
-Create one reusable server-side ownership/policy convention suitable for future private domain resources.
-
-Prove it using a small test-only/isolated ownership fixture rather than inventing production Career/Vacancy models.
-
-Required behavior:
-
-- authenticated identity comes from the server-side session/principal;
-- owner identity comes from the trusted resource relationship;
-- client-provided ownership identifiers are ignored/rejected for authorization purposes;
-- User A accessing User B's private fixture receives `404`;
-- User A cannot mutate/delete/enumerate User B's private fixture;
-- admin role does not bypass the same ownership rule;
-- role mass assignment/self-escalation is impossible through request payloads.
-
-Do not introduce a generic production `OwnedResource` abstraction without a real domain need.
-
----
-
-## 16. Audit requirements
-
-Persist append-only `AuditEvent` entries only for security/business mutations actually implemented by M1.1.
-
-Expected event families include:
-
-- first admin bootstrapped;
-- invitation created;
-- invitation revoked;
-- invitation consumed;
-- user registered;
-- user disabled;
-- user enabled;
-- other operator/admin security mutations if they become explicitly part of this slice.
-
-Do not persist permanent audit events merely for every successful login/logout unless an accepted security decision later requires it.
-
-### 16.1 Actor model
-
-Use:
-
-```text
-actor_type = USER | OPERATOR | SYSTEM
-actor_user_id = nullable
-```
-
-Do not create fake `User` rows to represent CLI operators.
-
-### 16.2 Secret exclusion
-
-Audit/log metadata must never contain:
-
-- plaintext passwords;
-- invitation tokens;
-- session IDs;
-- CSRF/auth tokens;
-- API keys or future provider secrets.
-
-Use explicit serialization/redaction rules and tests.
-
----
-
-## 17. Minimal HTTP/UI surface
-
-Build only what First Value requires.
-
-### 17.1 Web UI
-
-Required screens/surfaces:
-
-- login;
-- invite registration;
-- authenticated shell;
-- logout action.
-
-Authenticated shell should remain intentionally minimal, for example:
-
-```text
-/app
-- normalized/current email
-- role
-- status
-- logout
-```
-
-Do not create fake Career dashboards or placeholder business navigation.
-
-Follow the accepted design/accessibility foundation for:
-
-- keyboard interaction;
-- focus handling;
-- loading state;
-- validation state;
-- error state;
-- permission state.
-
-### 17.2 Current-user contract
-
-Expose one minimal current-user endpoint/contract such as `/me` according to accepted API conventions.
-
-Return only safe identity data required by the shell, for example:
-
-```text
-stable id
-email
-role
-status
-```
-
-Do not serialize password/security/internal fields.
-
-### 17.3 Admin surface
-
-No admin invitation UI/API is required in M1.1.
-
-The `admin` role may exist without a rich runtime admin surface in this slice.
-
----
-
-## 18. Deterministic-before-AI boundary
-
-No LLM is needed for M1.1 authentication, authorization, invitation consumption, rate limiting, validation, ownership or audit logic.
-
-Use:
-
-- database constraints;
-- transactions/locking;
-- framework authentication primitives;
-- validators;
-- policies/middleware;
-- deterministic tests.
-
-Do not add AI merely because CVortex is an AI-enabled product.
-
----
-
-## 19. Required implementation research
-
-Before fixing framework-specific implementation details, verify current official primary sources for the installed/selected versions of:
-
-- Laravel authentication/session behavior;
-- Laravel Sanctum SPA/session authentication;
-- CSRF handling;
-- password hashing support/configuration;
-- rate limiting;
-- session invalidation/storage behavior;
-- PostgreSQL constraints/locking behavior relevant to invitation consumption;
-- Next.js behavior needed for safe invitation fragment handling.
-
-Prefer official documentation and primary sources.
-
-Record material conclusions in code comments only when useful and in durable project docs/ADR when they affect architecture.
-
-Do not pin models, prices or unrelated dependencies during this task.
-
----
-
-## 20. Required tests
-
-Automated coverage must prove behavior, not merely exercise happy paths.
-
-### 20.1 Bootstrap
-
-- first admin can be created safely;
-- no default/seed credential path exists;
-- repeat bootstrap with an existing admin makes no changes;
-- plaintext password is absent from command/log/audit output.
-
-### 20.2 Invitations
-
-- targeted invitation valid path;
-- targeted normalized email match;
-- targeted email mismatch rejected without consumption;
-- generic invitation accepts an unregistered valid email;
-- invalid token rejected;
-- expired invitation rejected;
-- revoked invitation rejected;
-- exhausted invitation rejected;
-- token stored only in non-plaintext form;
-- token shown only at creation;
-- token cannot be retrieved later;
-- token absent from serialization/audit/log output;
-- concurrent use of one one-time invitation allows exactly one successful registration;
-- duplicate email registration rejects without consuming invitation.
-
-### 20.3 Registration
-
-- registration without invitation rejected;
-- valid registration creates `ACTIVE role=user`;
-- role/status cannot be client-selected;
-- transaction rollback prevents partial User/invitation state;
-- registration establishes a session only after commit;
-- session ID is regenerated.
-
-### 20.4 Login/logout/session
-
-- normalized email login succeeds;
-- wrong password and unknown email do not enumerate identity;
-- disabled account cannot log in;
-- disabled authenticated account cannot continue accessing protected routes;
-- current-session logout works;
-- multiple sessions can coexist unless one is explicitly invalidated;
-- CSRF/session protections behave as intended;
-- deterministic rate-limit behavior is tested without coupling tests to arbitrary production thresholds.
-
-### 20.5 Disable/enable
-
-- operator can disable a normal ACTIVE user;
-- disable invalidates active sessions;
-- disabled user is blocked on subsequent authenticated requests;
-- operator can re-enable the account;
-- sole ACTIVE admin cannot be disabled;
-- failed last-admin disable makes no partial changes.
-
-### 20.6 Authorization
-
-Using the isolated ownership fixture:
-
-- owner can access own private resource;
-- foreign user receives `404`;
-- foreign user cannot mutate/delete/enumerate the resource;
-- admin also cannot bypass foreign ownership;
-- capability failure where existence is intentionally known returns `403`;
-- mass-assignment/self-role escalation is blocked;
-- client `user_id`/`owner_id` values do not control authorization.
-
-### 20.7 Audit/redaction
-
-- expected security/business mutations append audit events;
-- actor type/user linkage is correct for USER/OPERATOR paths;
-- audit events are not updated/deleted through normal application flows;
-- sensitive values are absent from audit/log/serialized output.
-
-### 20.8 Database and app validation
-
-Run as applicable:
-
-- migrations up;
-- migrations down/rollback safety expected by project policy;
-- backend automated tests;
-- frontend tests/type checks/lint/build checks relevant to touched code;
-- repository governance/security checks required by the project.
-
----
-
-## 21. Documentation deliverables
-
-Update durable Markdown documentation to match the implemented behavior.
-
-At minimum verify/update as applicable:
-
-- auth/session architecture docs;
-- API/current-user contract docs;
-- security/authorization conventions;
-- operator CLI usage;
-- invitation lifecycle;
-- audit-event semantics;
-- project state/NEXT transition;
-- relevant ADR for material architecture decisions.
-
-Do not create documentation that describes behavior not actually implemented.
-
-Do not leave accepted architecture only in chat history or this task file when an ADR is required by documentation policy.
-
----
-
-## 22. Non-goals / hard scope boundaries
-
-Do not implement in M1.1 unless a concrete, documented security blocker makes it unavoidable:
-
-- Career models or UI;
-- Vacancy models or UI;
-- Application generation;
-- runtime AI/LLM features;
-- generic `EncryptedSecret` persistence/API/UI;
-- BYOK;
-- system-managed provider secret UI;
-- admin dashboard;
-- admin invitation UI/API;
-- rich admin user management;
-- role promotion/demotion workflows;
-- active-device/session UI;
-- logout-all UI;
-- email verification;
-- forgot-password email flow;
-- account merge through invitation;
-- multi-use invitations;
-- generic production `OwnedResource` abstraction;
-- user deletion;
-- soft-delete lifecycle added merely for completeness.
-
-If an attractive adjacent feature appears, record it as follow-up work and continue with M1.1. Do not expand this slice opportunistically.
-
----
-
-## 23. Acceptance criteria
-
-M1.1 is PASS only when all applicable criteria are satisfied:
-
-- [ ] execution authority/preflight was respected;
-- [ ] first admin bootstrap works safely and repeat execution fails closed;
-- [ ] operator CLI can create/revoke one-time targeted or generic invitations;
-- [ ] invitation token is cryptographically secure, hashed at rest and shown once;
-- [ ] invite token does not leak through normal URL query logging, audit or serialization paths;
-- [ ] invited registration works atomically;
-- [ ] concurrent use of the same invitation cannot create two accounts;
-- [ ] duplicate email cannot consume an invitation;
-- [ ] registration auto-establishes a regenerated authenticated session after commit;
-- [ ] login/logout/current-user flow works;
-- [ ] same-origin Sanctum session + CSRF is the implemented auth model;
-- [ ] canonical email normalization/comparison is centralized and documented;
-- [ ] stable non-sequential public user identity is used according to accepted project conventions;
-- [ ] roles/status exist and cannot be client-escalated;
-- [ ] DISABLED is enforced on every authenticated request;
-- [ ] operator disable/enable path works and invalidates sessions;
-- [ ] at least one ACTIVE admin is preserved;
-- [ ] reusable ownership convention exists and negative tests pass;
-- [ ] foreign private resource access returns `404`;
-- [ ] admin has no private-data ownership bypass;
-- [ ] AuditEvent is append-only at application level and supports USER/OPERATOR/SYSTEM actors;
-- [ ] secrets are absent from logs/audit/serialized output;
-- [ ] no generic secrets/BYOK/admin-console/Career scope leaked in prematurely;
-- [ ] required tests and repository validation pass;
-- [ ] docs/API/security/ADR state match the implementation.
-
----
-
-## 24. State transition
-
-Only after every acceptance criterion and required validation passes:
-
-```text
-.agents/state/NEXT.md = m1-2-career-core
-```
-
-Perform this transition only if the repository workflow allows the acting agent to update state as part of task completion.
-
-If validation is incomplete or failing, do not advance `NEXT.md`.
-
----
-
-## 25. STOP conditions
-
-STOP and report the blocker instead of improvising when any of the following is true:
-
-- M1.1 lacks execution authority and no explicit current-user override exists;
-- implementation would require changing an accepted architecture decision without ADR/documentation reconciliation;
-- safe session invalidation for DISABLED accounts cannot be achieved with the accepted architecture;
-- invitation token handling would knowingly expose plaintext secrets in logs/audit/history without an accepted mitigation;
-- atomic one-time invitation consumption cannot be guaranteed;
-- authorization cannot prevent cross-user private-resource access;
-- implementation requires adding Career/Vacancy/Application domain objects merely to make M1.1 tests pass;
-- a requested adjacent feature would materially expand M1.1 beyond this task.
-
-Do not begin M1.2 Career implementation from this task.
+Do not begin M1.2 from this task.
