@@ -112,6 +112,8 @@ jobs:
     steps:
       - name: Validate PR metadata, template and checkpoints
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -198,7 +200,10 @@ jobs:
             fi
           fi
 
-          comments_json="$(curl --fail --silent --show-error -H 'Accept: application/vnd.github+json' "${comments_url}?per_page=100")"
+          comments_json="$(curl --fail --silent --show-error \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "${comments_url}?per_page=100")"
           metadata_checkpoint="$(jq '[.[] | select((.body // "") | contains("## PR metadata / review checkpoint"))] | length' <<<"$comments_json")"
           governance_checkpoint="$(jq '[.[] | select((.body // "") | contains("## Governance / validation checkpoint"))] | length' <<<"$comments_json")"
           [[ "$metadata_checkpoint" -ge 1 ]] || fail "missing PR metadata / review checkpoint comment"
