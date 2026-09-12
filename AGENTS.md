@@ -23,8 +23,10 @@ Before a phase or substantial task:
 
 1. Read `PROJECT.md`.
 2. Read `.agents/state/STATUS.md`.
-3. Read the current task specification when one exists under `.agents/tasks/`.
-4. Read only scoped `AGENTS.md`, policies, ADRs and documentation directly relevant to the task.
+3. Read `.agents/state/NEXT.md`.
+4. Read `.agents/state/BLOCKERS.md`.
+5. Read the current task specification when one exists under `.agents/tasks/`.
+6. Read only scoped `AGENTS.md`, policies, ADRs and documentation directly relevant to the task.
 
 Do **not** recursively load `.agents/`, `docs/`, or `research/` by default. Use indexes, links, filenames and targeted search to locate the smallest sufficient context. Read additional material only when it materially affects correctness.
 
@@ -73,9 +75,18 @@ Prefer official and primary sources. Stop collecting redundant evidence once the
 
 ## Phase Boundaries
 
-Do not implement code, infrastructure, schemas, dependencies, or product features before the current phase explicitly permits them.
+Do not implement code, infrastructure, schemas, dependencies, or product features before the authorized phase explicitly permits them.
 
-The current allowed phase is defined in `.agents/state/STATUS.md`.
+Phase-state semantics are:
+
+- `.agents/state/STATUS.md` records completed project state and validated outcomes;
+- `.agents/state/NEXT.md` is the canonical pointer to the next phase/task authorized for execution;
+- `.agents/state/BLOCKERS.md` may prevent that next phase/task from starting;
+- the applicable task specification defines the bounded scope and completion criteria.
+
+A phase/task is authorized only when `NEXT.md` points to it, its prerequisites are completed according to `STATUS.md`, and `BLOCKERS.md` contains no blocker that prevents execution.
+
+If `NEXT.md` is empty or explicitly says that planning/review is required, do not invent a next phase.
 
 ## Security Baseline
 
@@ -107,12 +118,14 @@ Architectural changes require ADR review or a new ADR.
 
 After every completed phase or bounded work block:
 
-1. update `.agents/state/STATUS.md`;
+1. update `.agents/state/STATUS.md` with the completed outcome;
 2. update `.agents/state/NEXT.md` only when the next intended work changes;
 3. update `.agents/state/BLOCKERS.md` only when blockers change;
-4. record created/changed files;
+4. record created/changed files where useful for traceability;
 5. record validation actually performed;
 6. stop.
+
+Do not use `STATUS.md`, `NEXT.md`, or `BLOCKERS.md` as a backlog.
 
 ## ADR Discipline
 
