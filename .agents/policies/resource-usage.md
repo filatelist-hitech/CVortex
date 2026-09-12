@@ -27,6 +27,16 @@ advanced / high effort
 
 Concrete provider/model names and prices are not architectural constants and must not be frozen here.
 
+## External orchestration
+
+Repository-native workflows are the default execution layer.
+
+External orchestration frameworks, plugin review modes, teams, parallel agents and equivalent mechanisms are opt-in. Do not activate them because a request uses a generic verb such as `review`, `audit`, `check`, `verify`, `research` or `inspect`.
+
+External orchestration is authorized only when the current explicit user/task instruction names or clearly opts into that framework, or when a repository task spec explicitly declares it. Even then, repository scope, Git, security and STOP rules still apply.
+
+If extra orchestration appears useful but is not authorized, report the exact escalation need instead of activating it automatically.
+
 ## Context Budget
 
 Load context lazily.
@@ -144,6 +154,7 @@ Do not escalate merely because prose quality could be prettier.
 
 - Recursively loading the whole repository without need.
 - Spawning multiple agents for routine tasks.
+- Activating external orchestration without explicit authorization.
 - Using the strongest/highest-effort mode as a default.
 - Repeating successful tests or research without a reason.
 - Duplicating long task specifications in chat prompts.
@@ -155,6 +166,7 @@ Before completing a task, confirm:
 
 - context read was task-relevant rather than exhaustive;
 - unnecessary subagents/parallelism were not used;
+- no external orchestration was activated without authorization;
 - validation was sufficient but not needlessly repeated;
 - output is concise;
 - any escalation was justified by a concrete need.

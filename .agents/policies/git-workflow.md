@@ -12,6 +12,33 @@ Canonical metadata:
 - ruleset: `.github/rulesets/cvortex-protected-branches.json`;
 - release/version policy: `.agents/policies/release-management.md`.
 
+## Mandatory write preflight
+
+Before the first repository write, the acting agent must determine:
+
+- current execution mode;
+- authorized task or explicit current-user override;
+- current branch;
+- expected base branch;
+- expected PR target;
+- whether the task is read-only or write-enabled.
+
+For normal write tasks, run the repository preflight when available:
+
+```bash
+bash scripts/check-agent-contract.sh <mode> [task-spec] --write
+```
+
+If the current user explicitly authorizes a bounded task different from `.agents/state/NEXT.md`, add `--user-override` and record that override in the completion report.
+
+The user does not need to repeat branch instructions in each prompt.
+
+If a write-enabled task starts on `main` or `stage`, the agent must not modify files there. It must synchronize the correct base, derive a bounded branch name, create/switch to that branch, and only then write.
+
+If the current short-lived branch is unrelated to the authorized task, stop before writes unless the explicit current user instruction authorizes that branch.
+
+Tool capability is not authorization. A connector/API that can technically write to `main` or `stage` must still obey this policy.
+
 ## Long-lived branches
 
 ### `main`
@@ -46,7 +73,7 @@ For `M1 · First Value`, also assign exactly one of:
 - `slice:m1.4-application`;
 - or `roadmap:cross-cutting` when the change genuinely spans slices.
 
-Milestone/slice metadata describes delivery placement. It does not authorize work: `.agents/state/NEXT.md` remains the execution-authority pointer.
+Milestone/slice metadata describes delivery placement. It does not authorize work: `.agents/state/NEXT.md` remains the execution-authority pointer unless the current explicit user instruction authorizes a bounded override.
 
 ## Short-lived branches
 
@@ -58,6 +85,17 @@ Use lowercase kebab-case after the prefix:
 - `docs/*`;
 - `ci/*`;
 - `hotfix/*`.
+
+When branch creation is unambiguous, the agent creates it automatically rather than asking the user to do Git housekeeping.
+
+Choose the prefix from the actual change:
+
+- `feature/*` for product capability;
+- `fix/*` for defects;
+- `chore/*` for repository/tooling/agent-operating work;
+- `docs/*` for documentation-only work;
+- `ci/*` for CI-only work;
+- `hotfix/*` only for urgent released-state fixes based on `main`.
 
 When a branch clearly belongs to a roadmap unit, include the milestone/slice token for quick recognition, for example:
 
@@ -79,16 +117,17 @@ Do not mix unrelated work into one commit merely to make a milestone look busy. 
 ## Standard workflow
 
 1. Read `PROJECT.md`, current state and task spec.
-2. Synchronize local `stage`.
-3. Create a bounded short-lived branch.
-4. Implement tests/docs/security work required by the task.
-5. Run relevant validation.
-6. Open a PR to `stage`.
-7. Assign native GitHub Milestone or `roadmap:unversioned`.
-8. Assign M1 slice metadata when applicable.
-9. Resolve review threads and required checks.
-10. Prefer squash merge for ordinary short-lived branches.
-11. Promote validated `stage` to `main` through a release PR only when release policy permits it.
+2. Run the mandatory write preflight before modifying files.
+3. Synchronize local `stage` for normal work.
+4. Create/switch to the bounded short-lived branch automatically when needed.
+5. Implement tests/docs/security work required by the task.
+6. Run relevant validation.
+7. Open a PR to `stage`.
+8. Assign native GitHub Milestone or `roadmap:unversioned`.
+9. Assign M1 slice metadata when applicable.
+10. Resolve review threads and required checks.
+11. Prefer squash merge for ordinary short-lived branches.
+12. Promote validated `stage` to `main` through a release PR only when release policy permits it.
 
 ## PRs to `main`
 
@@ -139,7 +178,9 @@ It protects `main` and `stage` by:
 
 The check validates milestone/slice placement for `stage` PRs and release/hotfix source metadata for `main` PRs.
 
-Apply the ruleset only after `.github/workflows/governance.yml` exists on `stage`; otherwise a required check could lock the repository. `scripts/apply-github-ruleset.sh` enforces this precondition.
+Apply the ruleset only after `.github/workflows/governance.yml` exists on `stage`; otherwise a required check could lock the repository. `scripts/apply-github-ruleset.sh` enforces this precondition and must verify the active ruleset after applying it.
+
+A repository file describing the desired ruleset is not proof that GitHub currently enforces it. When governance behavior matters, verify the live ruleset state.
 
 ## Security and quality
 
@@ -163,7 +204,8 @@ Development agents must not:
 - silently rewrite published history;
 - bypass governance checks by weakening labels/rulesets;
 - invent a milestone/version merely to satisfy CI;
-- create a release/tag from `stage` or a feature branch.
+- create a release/tag from `stage` or a feature branch;
+- ask the user to perform routine branch creation when the correct branch can be derived safely.
 
 ## Completion checks
 

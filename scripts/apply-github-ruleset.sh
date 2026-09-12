@@ -43,4 +43,32 @@ else
   echo "ruleset updated: $RULESET_NAME (#$RULESET_ID)"
 fi
 
-echo "Required status check: Roadmap metadata"
+# Re-resolve the live ruleset after mutation and verify GitHub actually enforces
+# the repository-managed desired state. A successful API mutation alone is not proof.
+RULESET_ID="$(gh api "repos/$REPO/rulesets" \
+  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" | head -n1)"
+
+[[ -n "$RULESET_ID" ]] || {
+  echo "error: ruleset was not found after apply" >&2
+  exit 1
+}
+
+for required_rule in deletion non_fast_forward pull_request required_status_checks; do
+  count="$(gh api "repos/$REPO/rulesets/$RULESET_ID" \
+    --jq "[.rules[] | select(.type == \"$required_rule\")] | length")"
+  if [[ "$count" -lt 1 ]]; then
+    echo "error: live ruleset is missing required rule: $required_rule" >&2
+    exit 1
+  fi
+done
+
+roadmap_check_count="$(gh api "repos/$REPO/rulesets/$RULESET_ID" \
+  --jq '[.rules[] | select(.type == "required_status_checks") | .parameters.required_status_checks[]? | select(.context == "Roadmap metadata")] | length')"
+
+if [[ "$roadmap_check_count" -lt 1 ]]; then
+  echo "error: live ruleset does not require the Roadmap metadata status check" >&2
+  exit 1
+fi
+
+echo "ruleset verified: $RULESET_NAME (#$RULESET_ID)"
+echo "required status check verified: Roadmap metadata"

@@ -7,6 +7,16 @@ updated:
 tags:
   - task
 related:
+execution:
+  workflow: implementation
+  orchestration: native
+  agents: 1
+  parallelism: false
+git:
+  write: true
+  base: stage
+  target: stage
+  branch: auto
 ---
 
 # Task
@@ -38,6 +48,25 @@ Describe one system or user-visible state that must exist after this task. Prefe
 - ...
 
 Reference repository-wide policies/ADRs instead of copying them wholesale.
+
+## Execution Contract
+
+Frontmatter is machine-readable task routing metadata.
+
+Defaults for implementation tasks:
+
+- `execution.workflow: implementation`;
+- `execution.orchestration: native`;
+- `execution.agents: 1`;
+- `execution.parallelism: false`;
+- `git.write: true`;
+- `git.base: stage`;
+- `git.target: stage`;
+- `git.branch: auto`.
+
+Change these only when the task genuinely requires another repository-native workflow. Review tasks normally use `workflow: review` and `git.write: false`.
+
+`orchestration: native` means external orchestration/framework skills are not authorized by default. If a task intentionally requires one, name it explicitly in the task and justify the resource cost.
 
 ## Requirements / Invariants
 
@@ -78,7 +107,6 @@ List actual runnable checks that prove the observable outcome.
 Use binary observable checks.
 
 - [ ] ...
-- [ ] ...
 
 ## STOP
 
@@ -88,9 +116,19 @@ Stop when this bounded outcome is complete. Do not begin the next slice or specu
 
 ```text
 Execute `.agents/tasks/<this-task>.md`.
-Follow `AGENTS.md` and current project state.
-Use one agent, sequential execution and task-relevant context only.
+Follow the repository task router and the workflow declared by the task.
+Use repository-native execution unless this task explicitly opts into another named framework.
 Complete the bounded task, update required docs/state, then STOP.
+```
+
+For review tasks use:
+
+```text
+Review `.agents/tasks/<this-task>.md`.
+Follow the repository task router and `.agents/workflows/review.md`.
+Repository-native review only.
+Do not modify files.
+STOP after the verdict.
 ```
 
 ## Result
