@@ -14,7 +14,9 @@ related:
   - "[[../01-Product/Principles|Principles]]"
   - "[[../01-Product/Scope|Scope]]"
   - "[[../01-Product/Glossary|Glossary]]"
+  - "[[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]]"
   - "[[../02-Architecture/Architecture-Baseline|Architecture Baseline]]"
+  - "[[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]]"
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
 ---
 
@@ -29,7 +31,12 @@ related:
 - [[../01-Product/Principles|Principles]] — non-negotiable product and engineering principles.
 - [[../01-Product/Scope|Scope]] — current scope, deferred work, and explicit non-goals.
 - [[../01-Product/Glossary|Glossary]] — canonical terminology used across product and engineering work.
+- [[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]] — authoritative PRD, requirements, flows, MVP scope and roadmap.
 - [[../02-Architecture/Architecture-Baseline|Architecture Baseline]] — frozen Phase 05 system boundaries and invariants.
+- [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] — C4 views, component boundaries, data flows and deployment design.
+- [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — conceptual ERD, ownership, provenance and audit model.
+- [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — provider-independent AI contracts and Truth Guard design.
+- [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
 - [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative inventory and status of architecture decisions.
 
 ## Documentation areas
@@ -40,11 +47,11 @@ related:
 | `01-Product/` | Vision, principles, scope, requirements, flows, roadmap | Active |
 | `02-Architecture/` | Architecture views and system diagrams | Active; Phase 05 baseline accepted |
 | `03-ADR/` | Architecture decision records and canonical index | Active; Phase 05 decisions accepted |
-| `04-Data/` | Conceptual data model, entities, provenance, ownership | Reserved |
+| `04-Data/` | Conceptual data model, entities, provenance, ownership | Active; Phase 06 design accepted |
 | `05-API/` | API conventions and contracts | Reserved |
-| `06-AI/` | Provider abstraction, model policy, skills, agents, prompts, evals | Reserved |
+| `06-AI/` | Provider abstraction, model policy, skills, agents, prompts, evals | Active; Phase 06 design accepted |
 | `07-Design/` | Design system, tokens, Figma integration | Reserved |
-| `08-Security/` | Threat model, security requirements, controls | Reserved |
+| `08-Security/` | Threat model, security requirements, controls | Active; Phase 06 threat model accepted |
 | `09-QA/` | Testing strategy, quality gates, evaluation strategy | Reserved |
 | `10-Operations/` | Local operations, deployment, observability | Reserved |
 | `11-Research/` | Research summaries promoted from raw research | Reserved |

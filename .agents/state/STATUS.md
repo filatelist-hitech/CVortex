@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-`05-architecture-decision-freeze`
+`06-product-data-ai-security-design`
 
 Status: **completed**
 
@@ -14,6 +14,27 @@ Status: **completed**
 - `03-technical-research`
 - `04-product-integrations-hiring-research`
 - `05-architecture-decision-freeze`
+- `06-product-data-ai-security-design`
+
+## Phase 06 Outcome
+
+Phase 06 converts the accepted architecture baseline into an authoritative product, system, conceptual-data, AI and threat-model design without product code, migrations, dependencies or deployment artifacts. The documents cover requirements, MVP workflows, C4 views, component and deployment boundaries, conceptual ERD/ownership/provenance/audit, provider-independent AI contracts, Strict Truth Guard, and security controls.
+
+ADR-0018 selects `/runtime-ai/` as the canonical repository location for product runtime AI Skills, prompts and eval fixtures. It is intentionally separate from development-agent-only `.agents/`; the directory contains only a boundary README, not runtime code or prompts.
+
+## Phase 06 Validation
+
+Phase 06 documentation/design validation: **PASS**.
+
+Executed:
+
+- `git diff --check`;
+- Ruby frontmatter and Markdown-link check for 31 documentation files;
+- Ruby Obsidian wiki-link check;
+- targeted Phase 06 coverage check for requirement identifiers, fact lifecycle, Truth Guard outcomes and required threat categories;
+- scope check confirming only documentation/state changes plus the required `/runtime-ai/README.md` boundary artifact.
+
+No repository-provided Mermaid validator exists. Mermaid remains source-only design documentation and was checked structurally through the surrounding documentation consistency checks.
 
 ## Phase 05 Outcome
 
@@ -44,6 +65,7 @@ No product code, application skeleton, dependency, migration, Docker Compose sta
 | [ADR-0015](../../docs/03-ADR/ADR-0015-file-storage-abstraction.md) | File Storage Abstraction with Local Initial Backend | DERIVED_ARCHITECTURAL_DECISION |
 | [ADR-0016](../../docs/03-ADR/ADR-0016-deterministic-document-rendering.md) | Deterministic DOCX-to-PDF Rendering Pipeline | OWNER_CONSTRAINT |
 | [ADR-0017](../../docs/03-ADR/ADR-0017-untrusted-external-content.md) | Untrusted External Content Boundary | RESEARCH_BACKED_DECISION |
+| [ADR-0018](../../docs/03-ADR/ADR-0018-runtime-ai-skills-location.md) | Repository Runtime AI Skills Location | DERIVED_ARCHITECTURAL_DECISION |
 
 ## Conflicts Resolved
 
@@ -59,7 +81,7 @@ Deferred to Phase 06 or later, without blocking Phase 06:
 
 - final ERD, database tables and API/OpenAPI contracts;
 - authentication package and invitation endpoint details;
-- runtime/product LLM Skill canonical location and lifecycle; `.agents/` remains reserved for development agents;
+- concrete runtime Skill file layout and loader implementation; `.agents/` remains reserved for development agents and `/runtime-ai/` is canonical;
 - concrete provider adapters, model mappings, prices and routing thresholds;
 - dependency/runtime versions and compatibility validation;
 - queue topology, supervisors and retry parameters;
@@ -75,6 +97,13 @@ Deferred to Phase 06 or later, without blocking Phase 06:
 - `docs/03-ADR/INDEX.md`
 - `docs/03-ADR/ADR-0001-laravel-core-backend.md` through `ADR-0017-untrusted-external-content.md`
 - `docs/00-Home/Documentation-Map.md`
+- `docs/01-Product/Phase-06-Product-Design.md`
+- `docs/02-Architecture/Phase-06-System-Design.md`
+- `docs/04-Data/Phase-06-Data-Design.md`
+- `docs/06-AI/Phase-06-AI-Design.md`
+- `docs/08-Security/Threat-Model.md`
+- `docs/03-ADR/ADR-0018-runtime-ai-skills-location.md`
+- `runtime-ai/README.md`
 - `research/RESEARCH-INDEX.md` (navigation/current phase state only; research evidence unchanged)
 - `.agents/state/STATUS.md`
 - `.agents/state/NEXT.md`
