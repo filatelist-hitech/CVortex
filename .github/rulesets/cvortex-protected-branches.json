@@ -12,12 +12,8 @@
     }
   },
   "rules": [
-    {
-      "type": "deletion"
-    },
-    {
-      "type": "non_fast_forward"
-    },
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
     {
       "type": "pull_request",
       "parameters": {
@@ -34,9 +30,8 @@
         "do_not_enforce_on_create": true,
         "strict_required_status_checks_policy": false,
         "required_status_checks": [
-          {
-            "context": "Roadmap metadata"
-          }
+          { "context": "Roadmap metadata" },
+          { "context": "PR contract" }
         ]
       }
     }
