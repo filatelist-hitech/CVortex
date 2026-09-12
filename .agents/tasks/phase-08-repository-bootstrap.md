@@ -22,169 +22,349 @@ related:
 
 ## Goal
 
-Создать первый реально запускаемый technical baseline CVortex: рабочий monorepo, local-first Docker Compose environment и M0, на котором последующие bounded phases смогут безопасно реализовывать продукт.
+Создать первый **реально запускаемый technical baseline CVortex**:
 
-M0 считается готовым только если stack фактически поднимается и базовые connectivity/health checks проходят.
-
-Phase 08 впервые разрешает product-adjacent technical implementation, но не business features.
-
-## Execution mode
-
-Следуй `/AGENTS.md`, `.agents/policies/resource-usage.md`, `.agents/workflows/phase-execution.md`, accepted ADR и Phase 06–07 design outputs.
-
-Default:
-
-- один агент;
-- sequential implementation;
-- task-relevant context only;
-- current-version research только для конкретных dependency/runtime choices;
-- narrow validation while iterating;
-- full M0 smoke validation before completion;
-- no subagents unless correctness genuinely requires parallel work.
-
-## Minimum context
-
-Прочитай:
-
-1. `PROJECT.md`.
-2. current `STATUS.md`, `NEXT.md`, `BLOCKERS.md`.
-3. accepted ADR, относящиеся к Laravel, PostgreSQL, Redis/Horizon, API-first, Docker Compose, monorepo, file storage, documentation and design tokens.
-4. Phase 06 architecture/deployment/API boundaries.
-5. Phase 07 design foundation только настолько, насколько она влияет на frontend bootstrap/tokens.
-6. relevant technical research через indexes, только для version/package decisions.
-7. existing repository tooling, `.editorconfig`, Git workflow, Make/scripts conventions.
-
-Не перечитывай весь research corpus.
-
-## Current-version rule
-
-Перед фиксацией exact runtime/framework/package versions проверь актуальные official support/compatibility data.
-
-Не брать версии из старых prompts как источник истины.
-
-Зафиксируй выбранные версии в implementation/configuration только после compatibility verification.
-
-Не превращай конкретные версии в вечные architecture invariants.
-
-# Scope
-
-Разрешено создать реальную monorepo structure и technical bootstrap.
-
-Ожидаемый shape conceptually:
-
-```text
-apps/
-  backend/
-  frontend/
-packages/          # only if immediately used
-services/          # only if an accepted design requires one now
-infra/
-docs/
-research/
-brand/
-```
-
-Не создавай пустые каталоги ради symmetry. `services/` и `packages/` появляются только при реальной Phase 08 необходимости.
-
-## Required bootstrap
-
+- минимальный monorepo;
 - Laravel backend;
 - Next.js frontend;
-- React/TypeScript strict;
 - PostgreSQL;
 - Redis;
 - Laravel Horizon;
 - Nginx;
 - Docker Compose;
-- local filesystem storage abstraction baseline;
-- health/readiness endpoints;
+- private local file storage;
 - deterministic developer workflow;
-- basic logging/error handling baseline;
-- scoped `AGENTS.md` where directory-specific rules are materially useful.
+- health/readiness contracts;
+- минимальный logging/security baseline;
+- реально выполненную M0 validation.
 
-# Non-goals
+Phase 08 впервые разрешает technical implementation, но **не разрешает business features**.
 
-На Phase 08 НЕ:
+M0 считается готовым только тогда, когда stack фактически собирается, запускается и проходит обязательные acceptance checks.
 
-- реализовывать authentication flows;
-- реализовывать invitations;
-- создавать Career/Vacancy/Application business models;
-- реализовывать runtime AI workflows;
-- подключать job boards;
-- создавать domain migrations;
-- реализовывать Employer Memory;
-- создавать resume/cover letter generation;
-- добавлять microservices;
-- добавлять Kubernetes;
-- добавлять Kafka;
-- добавлять standalone vector DB;
-- добавлять GraphQL;
-- реализовывать native mobile;
-- реализовывать speculative generic platform/framework abstractions;
-- начинать Phase 09.
+# 1. Execution mode
 
-Framework-required/internal bootstrap artifacts допустимы только если действительно нужны для запуска выбранного supported stack. Не использовать их как скрытый способ начать Phase 09.
+Следуй:
 
-# Monorepo Structure
+- `/AGENTS.md`;
+- `/PROJECT.md`;
+- `.agents/policies/resource-usage.md`;
+- `.agents/workflows/phase-execution.md`;
+- current project state;
+- accepted ADR;
+- Phase 06 architecture;
+- Phase 07 design foundation.
 
-Создай минимальную понятную structure.
+Default execution policy:
 
-## `apps/backend`
+- один агент;
+- sequential execution;
+- task-relevant context only;
+- current-version research только там, где решение зависит от актуального ecosystem;
+- narrow validation во время работы;
+- полный M0 smoke suite перед completion;
+- no subagents unless correctness genuinely requires them.
 
-Laravel core application/API.
+Не перечитывай весь documentation/research corpus.
 
-Responsibilities at M0:
+Используй indexes, documentation map и ссылки для открытия только релевантных sections.
 
-- boot framework;
-- `/api/...` health/readiness endpoint according to accepted API conventions;
-- database connectivity;
-- Redis connectivity;
-- queue/Horizon baseline;
-- filesystem abstraction configuration;
-- safe configuration handling;
-- deterministic test/lint commands.
+# 2. Instruction precedence
 
-Не добавлять domain modules раньше Phase 09+.
+Используй следующий порядок:
 
-## `apps/frontend`
+```text
+/AGENTS.md
+→ applicable scoped AGENTS.md
+→ accepted ADR
+→ PROJECT.md / accepted design documents
+→ this Phase 08 task spec
+→ implementation details
+```
 
-Next.js/React frontend/PWA foundation.
+Если этот task spec конфликтует с accepted ADR:
 
-At M0:
+1. не меняй решение молча;
+2. зафиксируй конфликт;
+3. определи authoritative source;
+4. если действительно требуется изменение архитектуры, используй существующий ADR amendment/supersession process.
 
-- application boots;
-- TypeScript strict enabled;
-- base routing/layout only;
-- health/API connectivity surface if needed;
-- consume Phase 07 design tokens/foundations in the minimum non-speculative way;
-- no business pages.
+# 3. Minimum context
 
-Не строить dashboard, auth screens или vacancy UI заранее.
+Перед реализацией прочитай только необходимое:
 
-## `infra`
+1. `/AGENTS.md`;
+2. `/PROJECT.md`;
+3. `.agents/state/STATUS.md`;
+4. `.agents/state/NEXT.md`;
+5. `.agents/state/BLOCKERS.md`;
+6. accepted ADR по:
+   - Laravel;
+   - PostgreSQL;
+   - Redis/Horizon;
+   - API-first;
+   - Docker Compose/local-first deployment;
+   - monorepo;
+   - file storage;
+   - documentation;
+   - design system;
+7. Phase 06 architecture/deployment/API boundaries;
+8. Phase 07 design foundation только в части frontend bootstrap и design tokens;
+9. relevant technical research через indexes;
+10. existing repository conventions.
 
-Container/development infrastructure only.
+Не загружай Phase 03–04 research целиком.
 
-Минимально:
+# 4. Current-version rule
 
+Перед фиксацией exact runtime/framework/package versions проведи targeted research по актуальным официальным источникам.
+
+Проверить compatibility минимум для:
+
+- PHP;
+- Laravel;
+- Laravel Horizon;
+- PostgreSQL;
+- Redis;
+- Node.js;
+- Next.js;
+- React;
+- TypeScript;
+- frontend testing packages;
+- Docker images.
+
+Rules:
+
+- official documentation / support matrices имеют приоритет;
+- не брать версии из старых prompts как источник истины;
+- не использовать Docker tag `latest`;
+- использовать explicit supported version tags;
+- concrete versions фиксировать в implementation/configuration;
+- Composer dependencies фиксировать через `composer.lock`;
+- npm dependencies фиксировать через `package-lock.json`;
+- Docker image digests в Phase 08 не обязательны, если существующий supply-chain ADR этого не требует;
+- concrete versions не превращать в вечные architecture invariants.
+
+Кратко зафиксировать источники compatibility verification в Phase 08 state/final report.
+
+# 5. Accepted M0 topology
+
+## 5.1 M0 Web Entry Point
+
+CVortex M0 использует **single-origin architecture**.
+
+Единственный host-facing HTTP entry point:
+
+```text
+http://localhost:8080
+```
+
+Default port configurable через:
+
+```text
+CVORTEX_PORT=8080
+```
+
+Docker port binding должен быть loopback-only:
+
+```text
+127.0.0.1:${CVORTEX_PORT:-8080}:80
+```
+
+Не публиковать M0 на `0.0.0.0` по умолчанию.
+
+Conceptual topology:
+
+```text
+Browser
+   │
+   ▼
+127.0.0.1:${CVORTEX_PORT}
+   │
+   ▼
+ Nginx
+   │
+   ├── /             → Next.js
+   │
+   └── /api/v1/*     → Laravel / PHP-FPM
+```
+
+PostgreSQL, Redis, PHP-FPM и Horizon не имеют host-facing ports.
+
+Если accepted API ADR определяет более конкретный routing contract, следуй ему, не создавая параллельную схему.
+
+# 6. Docker networks
+
+Использовать две logical Compose networks:
+
+```text
+edge
+internal
+```
+
+Expected membership:
+
+```text
+edge
+├── nginx
+├── frontend
+└── backend
+
+internal
+├── backend
+├── horizon
+├── postgres
+└── redis
+```
+
+Requirements:
+
+- PostgreSQL не подключать к `edge`;
+- Redis не подключать к `edge`;
+- Horizon не публиковать наружу;
+- backend является controlled bridge между HTTP layer и data layer;
+- internal services не имеют host port mappings.
+
+Не создавать дополнительные сети без реальной необходимости.
+
+# 7. Repository structure
+
+Создай минимальную repository structure.
+
+Expected shape:
+
+```text
+/
+├── compose.yaml
+├── Makefile
+├── .env.example
+│
+├── apps/
+│   ├── backend/
+│   │   ├── AGENTS.md
+│   │   └── Dockerfile
+│   │
+│   └── frontend/
+│       ├── AGENTS.md
+│       └── Dockerfile
+│
+├── infra/
+│   ├── AGENTS.md
+│   └── nginx/
+│       └── nginx.conf
+│
+├── docs/
+├── research/
+└── brand/
+```
+
+`packages/` и `services/` создавать только если accepted design действительно требует их **сейчас**.
+
+Не создавать пустые директории ради симметрии.
+
+Не создавать дополнительные `Dockerfile.dev`, `Dockerfile.prod`, `docker-compose.override.yml` и аналогичные файлы без доказанной необходимости.
+
+# 8. Compose conventions
+
+Использовать Compose project name:
+
+```yaml
+name: cvortex
+```
+
+Не задавать вручную `container_name`.
+
+Canonical service names:
+
+```text
+nginx
+frontend
+backend
+horizon
+postgres
+redis
+```
+
+Использовать Compose service discovery.
+
+Не hardcode IP addresses.
+
+# 9. Dockerfile strategy
+
+Для backend и frontend использовать по одному Dockerfile.
+
+Multi-stage build использовать там, где он реально упрощает:
+
+- dependencies;
+- development;
+- build;
+- runtime.
+
+Не создавать несколько Dockerfile только ради разделения сред.
+
+Runtime processes запускать non-root where practical.
+
+Root допустим в build/setup stages, если это технически необходимо.
+
+# 10. Host prerequisites
+
+Developer не должен устанавливать локально:
+
+- PHP;
+- Composer;
+- Node.js;
+- npm;
+- PostgreSQL;
+- Redis.
+
+Ожидаемые host prerequisites:
+
+- Git;
+- Docker;
 - Docker Compose;
-- Nginx config;
-- local service configuration;
-- development container/build files;
-- documented volume/network strategy;
-- no production orchestration platform.
+- Make.
 
-## `packages` / `services`
+Dependency installation выполняется внутри container/build environment.
 
-Создавать только если Phase 06/07 accepted design прямо требует shared runtime package at bootstrap.
+Использовать:
 
-Runtime AI Skills canonical directory из Phase 06 должен быть respected, но не наполняй его product skills раньше соответствующей phase.
+```text
+composer install
+npm ci
+```
 
-# Scoped AGENTS.md
+с lock files.
 
-Создай scoped instructions только там, где они снижают future ambiguity.
+# 11. Development mounts
 
-Ожидаемые candidates:
+Local developer runtime должен поддерживать нормальный iterative workflow.
+
+Использовать:
+
+```text
+host source
+→ bind mount
+→ application container
+```
+
+При этом container-specific dependencies не должны смешиваться с macOS dependencies.
+
+Использовать container/named volumes для:
+
+```text
+vendor/
+node_modules/
+```
+
+или эквивалентную безопасную схему.
+
+Production-like build проверяется отдельно validation-командами.
+
+# 12. Scoped AGENTS.md
+
+Создай scoped instructions только там, где они реально снижают ambiguity.
+
+Ожидаются:
 
 ```text
 apps/backend/AGENTS.md
@@ -192,182 +372,542 @@ apps/frontend/AGENTS.md
 infra/AGENTS.md
 ```
 
-Каждый scoped file должен быть коротким router/contract, а не дублировать root `AGENTS.md`.
+Они должны быть короткими router/contracts и не дублировать root `/AGENTS.md`.
 
-## Backend scoped instructions
+## Backend AGENTS
 
-Покрыть минимум:
+Минимум:
 
 - Laravel conventions;
 - API-first;
-- multi-user authorization expectations для будущих phases;
-- tests/security/docs requirement;
-- no direct provider coupling;
-- migrations only in phases that permit them;
-- deterministic before AI.
+- deterministic before AI;
+- future multi-user authorization expectations;
+- tests/security/docs;
+- no direct LLM provider coupling;
+- domain migrations только в разрешающих phases;
+- no speculative domain implementation.
 
-## Frontend scoped instructions
+## Frontend AGENTS
 
-Покрыть минимум:
+Минимум:
 
-- Next.js/React/TypeScript strict;
-- Phase 07 design system source;
+- Next.js / React;
+- TypeScript strict;
+- Phase 07 design system as source;
 - accessibility;
+- responsive PWA-first;
 - no invented backend contracts;
 - API client boundary;
-- no secrets in frontend;
-- responsive PWA-first.
+- no secrets in frontend.
 
-## Infra scoped instructions
+## Infra AGENTS
 
-Покрыть минимум:
+Минимум:
 
 - local-first Docker Compose;
-- secrets/config separation;
-- no production secrets in repo;
+- configuration/secrets separation;
+- no production secrets in repository;
 - no Kubernetes without ADR;
-- health/readiness and reproducibility.
+- reproducibility;
+- health/readiness;
+- least exposed ports.
 
-# Backend Bootstrap
+# 13. Backend bootstrap
 
-## Laravel
+Создай supported Laravel application, compatible с актуальным project/runtime constraints.
 
-Создай Laravel application using currently supported version compatible with project constraints.
+Runtime:
 
-Минимально configure:
+```text
+Nginx
+→ FastCGI
+→ PHP-FPM
+→ Laravel
+```
+
+Не использовать `php artisan serve` как architectural runtime.
+
+Configure minimum:
 
 - environment/config separation;
-- PostgreSQL default application DB;
-- Redis cache/queue where appropriate;
+- PostgreSQL default application database;
+- Redis;
+- Redis-backed Laravel queue;
 - Horizon;
-- filesystem abstraction with local initial driver;
-- CORS/session/API settings only to the extent required by Phase 08 architecture;
-- timezone/locale strategy if already decided;
-- application name/configuration.
+- local private filesystem abstraction;
+- `/api/v1` routing according to accepted API contract;
+- request correlation;
+- safe logging/error handling;
+- deterministic test/lint commands.
 
-Не включай demo/domain code.
+Не добавлять demo/domain functionality.
 
-## Health endpoints
+# 14. Framework starter artifacts
 
-Создай deterministic endpoints suitable for local smoke checks.
+После Laravel bootstrap удалить starter artifacts, относящиеся к будущей authentication/domain functionality, если они не нужны M0 runtime.
 
-Раздели при необходимости:
+Phase 08 не должна вводить CVortex auth/domain schema.
 
-- liveness: process/app responds;
-- readiness: required dependencies reachable.
+В частности не оставлять только потому, что framework scaffold их создал:
 
-Не возвращай secrets/config details.
+- premature User/auth domain implementation;
+- unnecessary users migration;
+- password reset domain artifacts;
+- authentication flows.
 
-Readiness может проверять PostgreSQL/Redis in a bounded safe way.
+Framework-internal artifacts допустимы только если реально необходимы для выбранного supported runtime.
 
-Определи stable response schema and status behavior.
+`make migrate` должен работать, но Phase 08 не должна содержать CVortex domain migrations.
 
-## Queue / Horizon
+# 15. Health contract
 
-Bootstrap Redis-backed Laravel queues and Horizon according to accepted ADR.
+Создать:
 
-Минимально:
+```text
+GET /api/v1/health/live
+GET /api/v1/health/ready
+```
 
-- connection works;
-- worker/Horizon can start;
-- no business jobs required;
-- queue names/topology remain minimal;
-- no speculative complex retries/topologies.
+## Liveness
 
-Horizon access/control considerations должны быть documented; не exposing administrative dashboard publicly by accident.
+`/api/v1/health/live`
 
-# Frontend Bootstrap
+Проверяет только:
 
-Создай supported Next.js application with React and TypeScript strict.
+> способен ли Laravel process обработать HTTP request.
 
-Минимально:
+Не проверяет:
 
-- app boots;
-- lint/type-check/test baseline;
-- environment-aware API base configuration;
-- no server/client secret leakage;
-- base error/loading boundaries as appropriate;
-- Phase 07 foundational tokens available in a maintainable form;
-- no full component library implementation.
-
-Если PWA tooling требует dependency choice not yet accepted, не добавляй package purely for checkbox completion. Document deferred PWA installability work if M0 does not require it.
-
-# PostgreSQL
-
-Configure local PostgreSQL service.
-
-Requirements:
-
-- persistent volume;
-- healthcheck;
-- application credentials from environment/secrets mechanism;
-- no hardcoded production-like password;
-- no public exposure unless local developer need is explicitly justified;
-- UTF-8/default settings appropriate to framework;
-- connectivity validated.
-
-Не создавай domain schema/migrations.
-
-# Redis / Horizon
-
-Configure Redis for local stack.
-
-Requirements:
-
-- persistence choice documented;
-- local network exposure minimized;
-- backend connectivity validated;
-- queue/Horizon connectivity validated;
-- no secrets printed in logs.
-
-# Nginx
-
-Nginx должен быть local web entry point according to accepted deployment design.
-
-Configure only needed routing, e.g. frontend/backend paths as architecture specifies.
-
-Requirements:
-
-- no accidental directory listing;
-- bounded body size defaults/documented future upload implications;
-- security headers baseline where appropriate;
-- correct proxy headers;
-- no internal service exposure through unintended routes.
-
-Не over-engineer production TLS/CDN config in local M0.
-
-# Docker Compose
-
-Compose должен запускать минимально required local stack.
-
-Expected services according to design may include:
-
-- nginx;
-- frontend;
-- backend/php runtime;
 - PostgreSQL;
 - Redis;
-- Horizon/queue worker.
+- Horizon;
+- filesystem.
 
-LibreOffice/document renderer включай в M0 только если Phase 06 deployment baseline requires it running now; иначе подготовь clearly bounded container/service foundation/documentation for later document phase. Не создавай fake health success for a service that is not actually used.
+Success:
 
-## Container principles
+```http
+200
+```
 
-- reproducible builds;
-- explicit working directories;
-- non-root where practical;
-- least exposed ports;
-- named volumes;
-- environment files not committed with secrets;
-- predictable service names;
-- healthchecks;
-- startup dependency assumptions documented rather than hidden in sleep loops.
+Body:
 
-# Developer Workflow
+```json
+{
+  "status": "live"
+}
+```
 
-Provide stable developer commands via `Makefile` or existing project convention.
+## Readiness
 
-Required interface:
+`/api/v1/health/ready`
+
+Проверяет обязательные synchronous M0 dependencies:
+
+- PostgreSQL;
+- Redis.
+
+Success:
+
+```http
+200
+```
+
+```json
+{
+  "status": "ready"
+}
+```
+
+Failure:
+
+```http
+503
+```
+
+```json
+{
+  "status": "not_ready"
+}
+```
+
+Не возвращать:
+
+- DSN;
+- usernames;
+- passwords;
+- hostnames;
+- stack traces;
+- exception messages;
+- configuration;
+- dependency versions;
+- sensitive diagnostics.
+
+Dependency probes должны иметь bounded timeout.
+
+Не фиксируй произвольное конкретное timeout value без проверки framework capabilities.
+
+# 16. Readiness failure semantics
+
+Обязательный observable behavior:
+
+## PostgreSQL down
+
+```text
+live  → 200
+ready → 503
+```
+
+## Redis down
+
+```text
+live  → 200
+ready → 503
+```
+
+После восстановления зависимости:
+
+```text
+ready → 200
+```
+
+без необходимости restart backend, если используемый framework/runtime сам не требует этого.
+
+Raw exception не должен попадать в health response.
+
+# 17. Horizon / Queue
+
+Использовать один backend image для разных runtime roles:
+
+```text
+backend
+→ php-fpm
+
+horizon
+→ php artisan horizon
+```
+
+На Phase 08 очередь только:
+
+```text
+default
+```
+
+Не создавать преждевременно:
+
+- critical;
+- llm;
+- research;
+- documents;
+- imports;
+- сложные retry topologies.
+
+Horizon process должен реально стартовать и подключаться к Redis.
+
+Horizon dashboard:
+
+```text
+runtime     → yes
+public UI   → no
+```
+
+`/horizon` не должен быть доступен пользователю через host-facing Nginx routing.
+
+Не считать Horizon обязательной dependency Laravel readiness endpoint.
+
+Horizon/container health проверяется отдельно.
+
+# 18. Frontend bootstrap
+
+Создай supported Next.js + React frontend.
+
+Requirements:
+
+- TypeScript strict;
+- application boots;
+- base layout/routing;
+- ESLint;
+- typecheck;
+- Vitest;
+- React Testing Library;
+- минимум один реальный baseline frontend test;
+- environment-safe API access;
+- Phase 07 foundational tokens доступны в минимальной maintainable форме;
+- no business pages;
+- no fake navigation;
+- no auth screens;
+- no vacancy/application UI.
+
+Frontend local runtime:
+
+```text
+next dev
+```
+
+через Nginx.
+
+Обязательная final validation отдельно выполняет production build.
+
+# 19. M0 frontend page
+
+Route `/` должен быть только minimal branded technical shell.
+
+Допустимое содержимое концептуально:
+
+```text
+CVortex
+
+Your career, in context.
+
+Technical baseline is running.
+```
+
+Использовать существующие Phase 07 foundations/tokens.
+
+Не создавать:
+
+- Dashboard;
+- login;
+- vacancies UI;
+- application cards;
+- fake data;
+- API status dashboard;
+- speculative product navigation.
+
+API connectivity проверяется automated smoke validation, а не декоративным indicator.
+
+# 20. Frontend API boundary
+
+Browser API base:
+
+```text
+/api/v1
+```
+
+Использовать same-origin relative URLs.
+
+Не передавать frontend:
+
+```text
+http://backend:...
+http://localhost:8000
+internal Docker hostnames
+```
+
+Не создавать публичную переменную backend host, если она не нужна.
+
+Frontend не должен знать Docker service topology.
+
+# 21. CORS / sessions baseline
+
+Phase 08 не реализует authentication.
+
+Single-origin architecture означает:
+
+- не включать permissive `Access-Control-Allow-Origin: *`;
+- не проектировать cross-origin architecture;
+- не создавать authentication cookies;
+- не проектировать session auth заранее.
+
+Использовать safe framework defaults только там, где они реально нужны.
+
+# 22. PostgreSQL
+
+Configure local PostgreSQL.
+
+Requirements:
+
+- persistent named volume;
+- healthcheck;
+- credentials из environment;
+- explicit supported image version;
+- UTF-8/default framework-compatible setup;
+- no public host port;
+- connectivity реально validated.
+
+Не создавать CVortex domain schema.
+
+# 23. Redis
+
+Configure Redis для:
+
+- cache/queue where appropriate;
+- Laravel queue;
+- Horizon.
+
+Phase 08 Redis state считается **disposable**.
+
+Не требуется persistence acceptance для Redis.
+
+Requirements:
+
+- no host port;
+- explicit supported image version;
+- backend connectivity;
+- Horizon connectivity;
+- secrets не выводятся в logs.
+
+Не добавлять persistence только ради симметрии с PostgreSQL.
+
+# 24. Private Local Storage
+
+Создать framework storage abstraction с initial local backend.
+
+Использовать persistent named Docker volume.
+
+Properties:
+
+- private;
+- не находится в public web root;
+- не обслуживается Nginx;
+- survives `docker compose down`;
+- path не строится напрямую из arbitrary user input;
+- future per-user ownership design не блокируется.
+
+Не реализовывать:
+
+- resume uploads;
+- generated document domain;
+- download API;
+- document rendering workflow.
+
+LibreOffice/document renderer в Phase 08 **не запускать**.
+
+Зафиксировать его как deferred dependency будущей document phase.
+
+# 25. Nginx
+
+Nginx — единственный local web entry point.
+
+Routing:
+
+```text
+/            → frontend
+/api/v1/*    → backend
+```
+
+Использовать корректные proxy/FastCGI headers согласно выбранному runtime.
+
+Requirements:
+
+- no directory listing;
+- `server_tokens off`;
+- no accidental private storage access;
+- no internal metadata exposure;
+- bounded/documented request body defaults;
+- no production TLS/CDN configuration.
+
+Минимальные security headers, где совместимо:
+
+- `X-Content-Type-Options: nosniff`;
+- sensible `Referrer-Policy`;
+- frame protection.
+
+Не вводить сложную Content-Security-Policy без реального анализа Next.js runtime.
+
+# 26. Request correlation
+
+Добавить простой backend request correlation.
+
+Behavior:
+
+```text
+incoming X-Request-ID
+        │
+        ├── valid → reuse
+        │
+        └── absent/invalid → generate
+```
+
+`request_id`:
+
+- присутствует в application logs;
+- возвращается response header;
+- не содержит sensitive data.
+
+Не добавлять:
+
+- OpenTelemetry stack;
+- distributed tracing backend;
+- monitoring platform.
+
+# 27. Debug behavior
+
+Local development может использовать:
+
+```text
+APP_DEBUG=true
+```
+
+если это соответствует Laravel local-development conventions.
+
+Но:
+
+- health endpoints всегда sanitized;
+- operational responses не содержат stack traces/secrets;
+- `.env.example` явно показывает, что debug — local setting;
+- final validation выполняется в контролируемой environment.
+
+# 28. Configuration ownership
+
+Canonical local configuration contract:
+
+```text
+/.env.example
+/.env
+```
+
+`.env`:
+
+- gitignored;
+- создаётся локально;
+- не содержит committed production secrets.
+
+Docker Compose allowlists variables в конкретные services.
+
+Backend-only secrets не должны попадать в frontend.
+
+Frontend получает только действительно public configuration.
+
+Не создавать конкурирующие configuration sources без необходимости:
+
+```text
+apps/backend/.env
+apps/frontend/.env.local
+infra/.env
+```
+
+если root configuration contract полностью решает задачу.
+
+# 29. `.env.example`
+
+Должен содержать safe placeholders и необходимые M0 variables.
+
+Минимально документировать:
+
+- application environment;
+- debug;
+- CVortex local port;
+- Laravel application settings;
+- database name/user/password placeholders;
+- Redis connection;
+- filesystem configuration;
+- frontend-safe variables, если они действительно нужны.
+
+Не добавлять:
+
+- реальные API keys;
+- production credentials;
+- BYOK credentials;
+- OpenAI keys;
+- recruiter/career data.
+
+System-managed/BYOK LLM credentials не реализуются в Phase 08.
+
+# 30. Developer workflow
+
+Root `Makefile` является stable developer interface.
+
+Required:
 
 ```text
 make init
@@ -381,281 +921,873 @@ make shell
 make migrate
 ```
 
-Commands must have clear semantics.
+# 31. `make init`
 
-## `make init`
+Contract:
 
-Bootstrap local prerequisites/config without silently destroying existing data.
+```text
+make init
+├── создаёт .env из .env.example только если .env отсутствует
+├── генерирует APP_KEY только если отсутствует
+├── build required images
+├── устанавливает locked Composer dependencies
+├── устанавливает locked npm dependencies
+└── подготавливает required dependency/storage volumes
+```
 
-## `make up`
+Не должен:
 
-Start stack reproducibly.
+- запускать stack;
+- удалять persistent data;
+- выполнять migrations автоматически;
+- выполнять reset;
+- перезаписывать существующий `.env` без explicit user action.
 
-## `make down`
+Команда должна быть idempotent enough для повторного безопасного использования.
 
-Stop stack. Do not delete persistent volumes by default.
+# 32. `make up`
 
-## `make restart`
+Запускает local stack reproducibly.
 
-Predictable restart.
+Developer runtime frontend:
 
-## `make test`
+```text
+next dev
+```
 
-Run relevant backend/frontend tests or aggregated baseline checks.
+Backend:
 
-## `make lint`
+```text
+PHP-FPM
+```
 
-Run formatter/lint/type/static checks available at M0.
+Не должен выполнять destructive initialization.
 
-## `make logs`
+# 33. `make down`
 
-Useful aggregate logs without exposing secrets.
+Останавливает stack.
 
-## `make shell`
+Не удаляет persistent volumes по умолчанию.
 
-Document which service shell it opens, or provide explicit target/argument if needed.
+# 34. `make restart`
 
-## `make migrate`
+Предсказуемо перезапускает stack без удаления persistent state.
 
-Run framework migrations. At Phase 08 there should be no CVortex domain migrations. Command exists for future phases and framework necessities.
+# 35. `make test`
 
-# Configuration and Secrets
+Запускает aggregated M0 test suite минимум для:
 
-Define `.env.example`/equivalent with safe placeholders.
+- backend framework tests;
+- backend health tests;
+- frontend tests.
 
-Requirements:
+Не должен скрывать failures.
 
-- no real API keys;
-- no credentials committed;
-- document required variables;
-- backend-only secrets never exposed through public frontend prefixes;
-- system-managed/BYOK LLM credentials are NOT implemented in Phase 08;
-- secret handling path remains compatible with future Phase 09/AI design.
+# 36. `make lint`
 
-# File Storage Foundation
+Запускает relevant static/quality checks:
 
-Implement accepted storage abstraction baseline with local initial backend only to the extent needed for framework readiness.
+Backend:
 
-Do not implement resume uploads or document workflows.
+- Laravel Pint check или equivalent project formatter validation.
 
-Define/configure:
+Frontend:
 
-- local storage root;
-- separation from public web root where private files will live;
-- future per-user ownership expectation;
-- generated file path strategy at conceptual/config level;
-- no user-controlled raw filesystem path.
+- ESLint;
+- TypeScript typecheck.
 
-# API Boundary
+Не устанавливать additional quality stack только ради количества инструментов.
 
-Respect Phase 06 API-first design.
+# 37. `make logs`
 
-At M0 only health/readiness and minimum bootstrap API behavior should exist.
+Default:
 
-If `/api/v1` is accepted convention, follow it. Do not invent a parallel prefix.
+```bash
+make logs
+```
 
-Document error response baseline only as needed; do not implement speculative endpoint framework.
+показывает aggregate stack logs.
 
-# Logging / Observability Baseline
+Поддержать:
 
-Configure minimally useful structured/application logs.
+```bash
+make logs SERVICE=backend
+```
 
-Requirements:
+или эквивалентный parameterized interface.
 
-- environment-aware level;
-- no secrets;
-- no raw credentials;
-- no private candidate/recruiter fixtures;
-- request correlation concept if simple and justified;
-- startup/dependency failures observable.
+Не создавать отдельную Make target для каждого service без необходимости.
 
-Do not add full monitoring stack in M0.
+Не выводить secrets.
 
-# Security
+# 38. `make shell`
 
-Treat bootstrap as security-sensitive foundation.
+Default:
 
-Check minimum:
+```bash
+make shell
+```
 
-- services not unnecessarily exposed to host/public interfaces;
-- no default credentials suitable for production committed;
-- no debug secret dumps;
-- frontend env cannot receive backend secrets;
-- Horizon/admin surfaces not publicly reachable without future authorization;
-- local file storage not web-public by default for private assets;
-- Nginx proxy configuration does not expose internal metadata/files;
-- dependency install scripts are standard/verified official paths;
-- no arbitrary curl|sh unless justified and reviewed.
+открывает backend application container shell.
 
-# Tests and Validation
+Поддержать parameterized form:
 
-M0 is complete only after actual execution, not file inspection alone.
+```bash
+make shell SERVICE=frontend
+make shell SERVICE=postgres
+```
 
-Use narrow checks during development, then final smoke suite.
+или эквивалент.
+
+# 39. `make migrate`
+
+Выполняет framework migrations явным действием.
+
+На Phase 08:
+
+- no CVortex domain migrations;
+- command должен быть работоспособным;
+- migrations не должны запускаться скрыто через `make up`.
+
+# 40. Testing baseline
 
 ## Backend
 
-Run actual framework tests/lint/static checks available.
+Использовать существующий supported Laravel testing stack.
 
-Validate:
+Минимум:
 
-- application boots;
-- health endpoint responds;
-- readiness behavior correct when dependencies up;
-- safe failure behavior if dependency unavailable where practical;
-- PostgreSQL connection;
-- Redis connection;
-- queue/Horizon boot.
+- PHPUnit/framework tests;
+- health endpoint tests;
+- readiness behavior tests where practical;
+- request correlation tests where appropriate;
+- Pint/check baseline.
+
+Не добавлять на Phase 08 без existing accepted decision:
+
+- PHPStan/Larastan;
+- Rector;
+- heavyweight architecture testing packages.
 
 ## Frontend
 
-Run actual:
+Минимум:
 
-- install/build or equivalent;
+- Vitest;
+- React Testing Library;
+- ESLint;
+- TypeScript strict;
+- production build;
+- минимум один meaningful baseline UI test.
+
+Не добавлять без необходимости:
+
+- Playwright;
+- Storybook;
+- visual regression framework.
+
+Infrastructure smoke является actual Compose/HTTP validation, а не browser E2E framework.
+
+# 41. Startup policy
+
+Не использовать arbitrary sleep loops:
+
+```text
+sleep 10 && ...
+```
+
+Services должны стартовать reasonably independently.
+
+Readiness показывает фактическое состояние зависимостей.
+
+Strict dependency gating использовать только там, где service физически не может корректно стартовать без dependency.
+
+Например Horizon может использовать Redis health condition.
+
+Не строить unnecessarily rigid startup chain:
+
+```text
+postgres
+→ redis
+→ backend
+→ frontend
+→ nginx
+```
+
+если она не требуется.
+
+# 42. Persistence acceptance
+
+PostgreSQL и Private Local Storage считаются persistent M0 state.
+
+Redis persistence не входит в M0 acceptance.
+
+Final validation должна фактически проверить persistence.
+
+Scenario:
+
+```text
+1. создать временный marker в PostgreSQL
+2. создать временный marker в private storage
+3. docker compose down
+4. docker compose up
+5. убедиться, что оба marker сохранились
+6. удалить test markers
+```
+
+Не считать наличие `volumes:` в YAML достаточным доказательством persistence.
+
+# 43. Clean bootstrap acceptance
+
+Проверить developer journey максимально близко к clean checkout:
+
+```text
+clean repository state
+→ make init
+→ make up
+→ stack becomes healthy
+```
+
+Не должно существовать undocumented manual bootstrap actions вроде:
+
+```text
+"сначала вручную создай этот каталог"
+"зайди в container и выполни..."
+"один раз скопируй неизвестный config"
+```
+
+Все обязательные host prerequisites должны быть задокументированы.
+
+# 44. Security baseline
+
+Проверить минимум:
+
+- единственный host-facing HTTP service — Nginx;
+- host binding только loopback;
+- PostgreSQL не имеет host port;
+- Redis не имеет host port;
+- PHP-FPM не имеет host port;
+- Horizon не имеет host port;
+- Horizon dashboard не доступен с host;
+- no real credentials committed;
+- no backend secrets exposed to frontend;
+- private storage не доступен через Nginx;
+- no directory listing;
+- no raw exception output from operational endpoints;
+- no debug secret dumps;
+- no arbitrary `curl | sh` install flow без justification;
+- standard/official dependency installation paths;
+- no private candidate/recruiter data fixtures;
+- logs не содержат secrets.
+
+# 45. Untrusted input
+
+Phase 08 ещё не реализует vacancy/resume imports, но foundation не должна создавать unsafe assumptions.
+
+Помнить project rule:
+
+- vacancy content;
+- recruiter messages;
+- uploaded documents;
+- imported documents;
+- external web/API content
+
+являются DATA, а не trusted instructions.
+
+Не создавать в M0 generic execution/evaluation abstractions, которые позже могут случайно интерпретировать external text как code/instruction.
+
+# 46. CI
+
+Новый CI pipeline **не входит в Phase 08**, если accepted project decision не требует его уже сейчас.
+
+Не создавать GitHub Actions или другую CI систему только ради checklist.
+
+Однако developer commands должны быть CI-friendly:
+
+```text
+make test
+make lint
+docker compose config
+build commands
+smoke commands
+```
+
+Будущая CI должна иметь возможность вызывать существующий deterministic interface.
+
+# 47. No premature tooling
+
+Не добавлять без proven need:
+
+- Kubernetes;
+- microservices;
+- Kafka;
+- standalone vector DB;
+- GraphQL;
+- native mobile;
+- Elasticsearch;
+- event sourcing;
+- fine-tuning;
+- service mesh;
+- monitoring stack;
+- OpenTelemetry stack;
+- browser E2E framework;
+- Storybook;
+- speculative shared packages;
+- generic plugin framework.
+
+# 48. Validation strategy
+
+Во время implementation используй narrow checks.
+
+Перед completion выполнить полный M0 validation.
+
+## Configuration
+
+```text
+docker compose config
+```
+
+должен пройти.
+
+## Build
+
+Проверить:
+
+- backend image build;
+- frontend image build;
+- frontend production build.
+
+## Backend quality
+
+Выполнить реальные:
+
+- tests;
+- formatting/check;
+- health contract tests.
+
+## Frontend quality
+
+Выполнить реальные:
+
+- tests;
 - lint;
 - TypeScript check;
-- baseline tests if configured;
-- server startup/response.
+- production build.
 
-## Compose / Infrastructure
+## Runtime
 
-Run actual:
+Фактически выполнить:
 
-- config validation;
-- image build;
-- stack start;
-- service health state;
-- Nginx route smoke check;
-- backend API smoke;
-- frontend smoke;
-- PostgreSQL smoke;
-- Redis smoke;
-- Horizon/worker smoke.
+```text
+docker compose up
+```
 
-Do not claim M0 ready if stack was not actually started in available environment.
+и проверить required services.
 
-If environment/tool restriction prevents running Docker, mark Phase `PARTIAL/BLOCKED` rather than inventing success.
+# 49. Mandatory runtime acceptance
 
-## Make commands
+Подтвердить:
 
-Execute required Make targets where safe and meaningful, at minimum validate command syntax/help and run central targets used for M0 acceptance.
+```text
+✓ Nginx running
+✓ frontend running
+✓ backend/PHP-FPM running
+✓ PostgreSQL running/healthy
+✓ Redis running/healthy
+✓ Horizon running
+```
 
-# Documentation
+HTTP:
 
-Update only affected docs:
+```text
+✓ GET / responds
+✓ GET /api/v1/health/live  → 200
+✓ GET /api/v1/health/ready → 200
+```
 
-- local development setup;
-- repository structure;
-- architecture/deployment docs if implementation reveals necessary non-architectural detail;
-- environment/configuration reference;
-- M0 runbook/troubleshooting;
-- documentation map/index;
-- state.
+Dependencies:
 
-Do not rewrite Phase 06 design without a real inconsistency.
+```text
+✓ backend can reach PostgreSQL
+✓ backend can reach Redis
+✓ Horizon can reach Redis
+```
 
-# Scoped architecture changes
+# 50. Mandatory failure/recovery acceptance
 
-If implementation discovers that an accepted ADR cannot be implemented as written:
+Фактически проверить, где execution environment это позволяет.
 
-- stop that decision path;
-- record evidence;
-- do not silently choose alternative;
-- use ADR amendment/supersession flow only if the architecture truly changes.
+## PostgreSQL failure
 
-Normal package/version/config choices do not each require ADR.
+```text
+PostgreSQL unavailable
 
-# Completion Criteria
+/api/v1/health/live
+→ 200
 
-Phase 08 PASS only if:
+/api/v1/health/ready
+→ 503
+```
 
-## Repository
+Восстановить PostgreSQL:
 
-- monorepo structure exists and is minimal;
-- backend/frontend/infra locations match accepted architecture;
-- unnecessary empty `packages/services` directories not created;
-- scoped AGENTS exist where useful and do not duplicate root rules.
+```text
+/api/v1/health/ready
+→ 200
+```
 
-## Backend
+## Redis failure
 
-- supported Laravel app boots;
-- PostgreSQL configured and reachable;
-- Redis configured and reachable;
-- Horizon/queue baseline starts;
-- local filesystem storage baseline configured;
-- health/readiness endpoint(s) work;
-- no domain features implemented.
+```text
+Redis unavailable
 
-## Frontend
+/api/v1/health/live
+→ 200
 
-- supported Next.js/React app boots;
-- TypeScript strict enabled;
-- lint/type-check/build baseline works;
-- Phase 07 foundation is consumable without implementing full product UI.
+/api/v1/health/ready
+→ 503
+```
 
-## Infrastructure
+Восстановить Redis:
 
-- Docker Compose config valid;
-- stack actually builds/starts in available execution environment;
-- Nginx entry point works;
-- persistent volumes defined appropriately;
-- internal services exposure minimized;
-- healthchecks provide useful status.
+```text
+/api/v1/health/ready
+→ 200
+```
 
-## Developer UX
+Readiness failure должен быть bounded, а не зависать indefinitely.
 
-- required `make` targets exist with predictable semantics;
-- setup documentation is sufficient for a clean local bootstrap;
-- `.env.example` safe and complete enough for M0.
+# 51. Required Make validation
+
+Проверить интерфейс:
+
+```text
+make init
+make up
+make down
+make restart
+make test
+make lint
+make logs
+make shell
+make migrate
+```
+
+Где команда имеет observable behavior, выполнить её реально, а не только проверить наличие строки в Makefile.
+
+# 52. PASS contract
+
+Phase 08 имеет статус **PASS только если выполнены все mandatory acceptance criteria**.
+
+## Configuration
+
+- `docker compose config` проходит.
+
+## Build
+
+- backend image строится;
+- frontend image строится;
+- frontend production build проходит.
+
+## Code quality
+
+- backend tests проходят;
+- backend formatting/check проходит;
+- frontend tests проходят;
+- frontend lint проходит;
+- frontend typecheck проходит.
+
+## Runtime
+
+- stack реально запущен;
+- Nginx отвечает;
+- frontend отвечает;
+- backend API отвечает;
+- liveness = `200`;
+- readiness = `200`;
+- PostgreSQL reachable;
+- Redis reachable;
+- Horizon running.
+
+## Failure semantics
+
+- PostgreSQL down → readiness `503`;
+- Redis down → readiness `503`;
+- liveness остаётся `200`;
+- после recovery readiness возвращается к `200`.
+
+## Persistence
+
+- PostgreSQL survives `down/up`;
+- private file storage survives `down/up`.
 
 ## Security
 
-- no secrets committed;
-- no real/private career data fixtures;
+- только Nginx host-facing;
+- Nginx bound to loopback;
+- PostgreSQL/Redis not exposed;
+- Horizon UI not exposed;
 - frontend receives no backend secrets;
-- local storage/Horizon/internal services not unintentionally public.
+- private storage not publicly reachable.
 
-## Validation
+## Developer UX
 
-- backend tests/checks actually executed;
-- frontend checks actually executed;
-- stack smoke actually executed;
-- failures resolved or Phase not declared complete.
+- required Make targets существуют и работают согласно contract.
 
 ## Scope
 
-- no auth functionality beyond framework-neutral bootstrap;
-- no Career/Vacancy/Application domain implementation;
-- no domain migrations;
-- no Phase 09 work started.
+- no authentication;
+- no invitations;
+- no Career domain;
+- no Vacancy domain;
+- no Application domain;
+- no CVortex domain migrations;
+- no runtime AI workflows;
+- no Phase 09 implementation.
 
-# State update
+# 53. Result semantics
 
-After PASS:
+Допустимы только:
 
-- `STATUS.md`: Phase 08 completed, exact versions/config choices, validation actually run, known limitations;
-- `NEXT.md`: canonical Phase 09, expected `09-auth-multi-user`;
-- `BLOCKERS.md`: only real blockers.
+```text
+PASS
+PARTIAL
+BLOCKED
+```
 
-If M0 cannot actually start, do not advance state to completed.
+## PASS
 
-# Final Report
+Все mandatory acceptance criteria выполнены.
 
-Keep concise:
+Known limitation допустим только если он не нарушает completion criteria.
 
-1. Result: PASS/PARTIAL/BLOCKED.
-2. Files/directories created/changed.
-3. Runtime/framework versions actually selected and source of compatibility verification, briefly.
-4. Services successfully started.
-5. Validation commands actually executed and result.
-6. Known limitations/blockers.
-7. Exact next phase.
+## PARTIAL
+
+Implementation существует, но:
+
+- обязательная validation failed;
+- обязательная validation не была выполнена;
+- один или несколько acceptance criteria не доказаны.
+
+Никакого:
+
+```text
+PASS with failing tests
+```
+
+## BLOCKED
+
+Completion невозможно из-за конкретного external/tool/environment blocker.
+
+Если Docker нельзя фактически запустить в execution environment:
+
+```text
+PARTIAL
+```
+
+или:
+
+```text
+BLOCKED
+```
+
+в зависимости от причины.
+
+Никогда не объявлять PASS по одному inspection файлов.
+
+# 54. Documentation
+
+Обновить только документацию, которую Phase 08 реально затрагивает.
+
+Минимально:
+
+- local development setup;
+- repository structure;
+- environment/configuration reference;
+- M0 deployment/runtime description;
+- M0 runbook;
+- troubleshooting;
+- documentation map/index;
+- project state.
+
+Не переписывать Phase 06 architecture без реального inconsistency.
+
+# 55. Glossary
+
+В глобальный project glossary добавить только долговечные понятия:
+
+## M0
+
+Первый реально запускаемый technical baseline CVortex без business features.
+
+## M0 Web Entry Point
+
+Единственный host-facing HTTP origin локального M0, реализованный через Nginx.
+
+## Liveness
+
+Способность application process обработать request независимо от состояния PostgreSQL/Redis.
+
+## Readiness
+
+Способность backend обслуживать requests, требующие обязательных M0 dependencies.
+
+## Private Local Storage
+
+Непубличное persistent file storage CVortex, доступное через storage abstraction и не обслуживаемое напрямую web server.
+
+Не добавлять в global glossary implementation trivia вроде network/service names или Make target semantics.
+
+Их описывать в operations documentation.
+
+# 56. ADR policy
+
+Не создавать новые ADR заранее только для фиксации implementation details Phase 08.
+
+Не нужны отдельные ADR для:
+
+- default port 8080;
+- npm;
+- bind mounts;
+- Compose network names;
+- Make target defaults;
+- Redis disposable state в M0;
+- конкретной health response schema.
+
+Новый ADR / ADR amendment требуется только если implementation обнаруживает:
+
+- настоящий architectural conflict;
+- необходимость изменить accepted architectural decision;
+- долгосрочное решение, которое нельзя корректно зафиксировать обычной implementation/operations documentation.
+
+Не менять accepted architecture молча.
+
+# 57. State update
+
+## Если PASS
+
+Обновить:
+
+### `STATUS.md`
+
+Зафиксировать:
+
+- Phase 08 completed;
+- фактически выбранные runtime/framework versions;
+- основные runtime/config decisions;
+- реально выполненную validation;
+- known limitations.
+
+### `NEXT.md`
+
+Exact next phase:
+
+```text
+09-auth-multi-user
+```
+
+или каноническое имя Phase 09 из current project state.
+
+### `BLOCKERS.md`
+
+Только реальные существующие blockers.
+
+## Если PARTIAL/BLOCKED
+
+Phase 08 остаётся current/incomplete.
+
+`STATUS.md` должен честно отражать текущее состояние.
+
+`NEXT.md` должен указывать **bounded recovery task внутри Phase 08**, а не Phase 09.
+
+`BLOCKERS.md` содержит только фактические blockers.
+
+Не продвигать project state к Phase 09 без PASS.
+
+# 58. Non-goals
+
+На Phase 08 НЕ:
+
+- authentication;
+- login/logout;
+- invitations;
+- admin/user implementation;
+- CareerProfile;
+- CareerTrack;
+- CareerFact;
+- Claim Registry;
+- Vacancy;
+- Company;
+- Application;
+- Employer Memory;
+- resume import;
+- resume generation;
+- cover letters;
+- document rendering;
+- LibreOffice runtime;
+- runtime LLM integration;
+- OpenAI provider;
+- LLM credentials;
+- job-board integration;
+- domain migrations;
+- browser extension;
+- PWA installability packages purely for checkbox completion;
+- dashboard;
+- full design system implementation;
+- CI unless already required by accepted decision;
+- speculative infrastructure;
+- Phase 09 work.
+
+Framework-required artifacts допустимы только если реально необходимы для M0 runtime.
+
+# 59. Completion checklist
+
+Перед финальным ответом самостоятельно проверить:
+
+```text
+Repository
+[ ] minimal monorepo exists
+[ ] no speculative empty packages/services
+[ ] scoped AGENTS are concise
+
+Versions
+[ ] current official compatibility checked
+[ ] explicit supported versions used
+[ ] no :latest tags
+[ ] lock files committed
+
+Networking
+[ ] only Nginx exposed
+[ ] loopback binding
+[ ] edge/internal separation
+[ ] PostgreSQL not exposed
+[ ] Redis not exposed
+[ ] Horizon not exposed
+
+Backend
+[ ] Laravel boots
+[ ] PHP-FPM works
+[ ] PostgreSQL works
+[ ] Redis works
+[ ] Horizon works
+[ ] health/live works
+[ ] health/ready works
+[ ] request correlation works
+
+Frontend
+[ ] Next.js boots
+[ ] TypeScript strict
+[ ] tests pass
+[ ] lint passes
+[ ] typecheck passes
+[ ] production build passes
+[ ] no product UI
+
+Storage
+[ ] private storage configured
+[ ] storage not web-public
+[ ] storage persistent
+
+Failure semantics
+[ ] PostgreSQL failure tested
+[ ] Redis failure tested
+[ ] recovery tested
+[ ] liveness remains correct
+
+Developer workflow
+[ ] make init
+[ ] make up
+[ ] make down
+[ ] make restart
+[ ] make test
+[ ] make lint
+[ ] make logs
+[ ] make shell
+[ ] make migrate
+
+Persistence
+[ ] PostgreSQL down/up tested
+[ ] private storage down/up tested
+
+Security
+[ ] no secrets committed
+[ ] no backend secrets in frontend
+[ ] no Horizon dashboard exposure
+[ ] no directory listing
+[ ] sanitized operational errors
+
+Documentation
+[ ] development setup updated
+[ ] operations/runtime docs updated
+[ ] glossary updated
+[ ] project state updated
+
+Scope
+[ ] no auth
+[ ] no business domain
+[ ] no domain migrations
+[ ] no Phase 09
+```
+
+# 60. Final Report
+
+Keep concise.
+
+Output only:
+
+## 1. Result
+
+```text
+PASS / PARTIAL / BLOCKED
+```
+
+## 2. Runtime
+
+- exact runtime/framework versions actually selected;
+- brief compatibility source references.
+
+## 3. Changes
+
+- major files/directories created;
+- major files/directories changed.
+
+Do not reproduce full file contents.
+
+## 4. Services
+
+List only services actually started successfully.
+
+## 5. Validation
+
+List commands actually executed and PASS/FAIL.
+
+Never claim a command was executed if it was not.
+
+## 6. Security
+
+Briefly list relevant security checks actually performed.
+
+## 7. Limitations / Blockers
+
+Only real limitations/blockers.
+
+## 8. State
+
+- current phase status;
+- exact next bounded task.
+
+Do not repeat the contents of generated documentation.
 
 # STOP
 
 After Phase 08 stop.
 
 Do not implement authentication.
-Do not create Career/Vacancy/Application features.
+
+Do not create Career/Vacancy/Application domain functionality.
+
+Do not create runtime AI functionality.
+
 Do not start Phase 09.
+
 Do not add speculative infrastructure after M0 acceptance.
