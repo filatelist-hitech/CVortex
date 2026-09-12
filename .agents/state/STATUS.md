@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-`01-project-knowledge-bootstrap`
+`03-technical-research`
 
 Status: **completed**
 
@@ -10,6 +10,8 @@ Status: **completed**
 
 - `00-ai-system-bootstrap`
 - `01-project-knowledge-bootstrap`
+- `02-research-plan`
+- `03-technical-research`
 
 ## Current Repository State
 
@@ -164,20 +166,118 @@ Project state:
 - `.agents/state/STATUS.md`
 - `.agents/state/NEXT.md`
 
+
+## Phase 02 — Research Plan
+
+Status: **completed**
+
+Phase 02 created the research planning foundation for subsequent evidence-based
+technical and product research.
+
+Research planning artifacts:
+
+- `research/README.md`
+- `research/RESEARCH-PLAN.md`
+- `research/RESEARCH-INDEX.md`
+
+Phase 02 established:
+
+- research categories and priorities;
+- decision questions influenced by research;
+- preferred source hierarchy;
+- freshness sensitivity;
+- blocking vs non-blocking research questions;
+- separation between research evidence and architecture decisions.
+
+No product implementation was introduced.
+
+## Phase 03 — Technical Research
+
+Status: **completed**
+
+Phase 03 executed the technical portion of the research plan.
+
+Topics researched include:
+
+- PHP runtime;
+- Laravel framework;
+- PostgreSQL;
+- Redis;
+- Laravel Horizon;
+- authentication;
+- authorization;
+- encryption;
+- rate limiting;
+- queue architecture;
+- OpenAI API;
+- current model catalog and pricing;
+- Structured Outputs;
+- prompt caching;
+- batch processing;
+- PHP OpenAI/API client options;
+- Next.js;
+- React;
+- TypeScript;
+- Tailwind CSS;
+- component primitive options;
+- backend/frontend/E2E testing;
+- DOCX generation;
+- LibreOffice headless conversion;
+- design-token tooling;
+- Figma MCP;
+- Figma Code Connect.
+
+Technical research artifacts:
+
+- `research/technical/01-BACKEND-RUNTIME-DATA.md`
+- `research/technical/02-LARAVEL-AUTH-SECURITY.md`
+- `research/technical/03-REDIS-QUEUES-HORIZON.md`
+- `research/technical/04-OPENAI-API-MODELS.md`
+- `research/technical/05-OPENAI-PHP-INTEGRATION.md`
+- `research/technical/06-FRONTEND-STACK.md`
+- `research/technical/07-COMPONENT-PRIMITIVES.md`
+- `research/technical/08-TESTING-STACK.md`
+- `research/technical/09-DOCUMENT-PIPELINE.md`
+- `research/technical/10-DESIGN-TOKENS-FIGMA.md`
+- `research/technical/DECISION-CANDIDATES.md`
+- `research/technical/README.md`
+- `research/technical/SOURCES.md`
+
+Phase 03 intentionally did NOT:
+
+- implement Laravel or Next.js;
+- install Composer or npm dependencies;
+- create Docker Compose;
+- create migrations;
+- implement authentication;
+- implement queue workers;
+- implement OpenAI integration;
+- create accepted architecture ADRs for pending technical choices;
+- freeze provider/model mappings as permanent architecture.
+
+Technical alternatives and candidate decisions are recorded in:
+
+- `research/technical/DECISION-CANDIDATES.md`
+
+These candidates remain pending until the appropriate architecture decision
+phase unless the direction was already explicitly approved by the product owner.
+
 ## Last Validation Result
 
-Phase 01 validation: **PASS**
+Phase 03 validation: **PASS**
 
 Validated:
 
-- required starter documentation exists;
-- project knowledge is split into focused Markdown documents;
-- required frontmatter is present;
-- documentation skeleton is represented in Git;
-- product vision, principles, scope, and glossary are captured;
-- no product code was introduced;
-- no dependencies were installed;
-- no concrete dependency versions were frozen;
-- no concrete LLM model mapping or pricing was frozen;
-- no premature architecture ADR was introduced;
-- next bounded phase is `02-research-plan`.
+- Phase 02 research planning artifacts remain present;
+- technical research is stored under `research/technical/`;
+- required Phase 03 technical topics were researched;
+- research reports contain evidence and citations;
+- `research/technical/DECISION-CANDIDATES.md` exists;
+- technical alternatives remain decision candidates rather than silently accepted ADRs;
+- owner-approved stack directions remain unchanged;
+- no product code was introduced by Phase 03;
+- no dependencies were installed by Phase 03;
+- no database migrations were created by Phase 03;
+- no permanent concrete LLM model mapping was frozen;
+- no premature implementation was started;
+- next bounded phase is `04-product-integrations-hiring-research`.
