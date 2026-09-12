@@ -3,9 +3,9 @@
 Every project phase follows:
 
 ```text
-READ
+READ MINIMUM CONTEXT
 ↓
-INSPECT
+INSPECT TARGET
 ↓
 RESEARCH if needed
 ↓
@@ -15,7 +15,7 @@ DOCUMENT
 ↓
 IMPLEMENT if phase permits
 ↓
-VALIDATE
+VALIDATE NARROWLY
 ↓
 UPDATE DOCS
 ↓
@@ -24,66 +24,88 @@ UPDATE STATE
 STOP
 ```
 
-## 1. READ
+## 1. READ MINIMUM CONTEXT
 
-Read:
+Always read:
 
-- `AGENTS.md`
-- `PROJECT.md`
-- `.agents/state/STATUS.md`
-- `.agents/state/NEXT.md`
-- relevant scoped instructions
-- relevant accepted ADRs
+- `PROJECT.md`;
+- `.agents/state/STATUS.md`;
+- current task spec under `.agents/tasks/` when one exists.
 
-## 2. INSPECT
+Then read only directly relevant scoped instructions, policies, accepted ADRs, docs and research.
 
-Inspect the current repository before proposing or changing anything.
+Do not recursively load `.agents/`, `docs/`, `research/` or source trees by default. Use indexes, links and targeted search to locate context.
 
-Do not assume files, features or decisions exist.
+Follow `.agents/policies/resource-usage.md`.
+
+## 2. INSPECT TARGET
+
+Inspect the current repository area affected by the task before proposing or changing anything.
+
+Do not assume files, features or decisions exist. Avoid broad repository scans when a targeted path/search is sufficient.
 
 ## 3. RESEARCH
 
 Research only where current external knowledge materially affects the decision.
 
-Follow `.agents/policies/research.md`.
+Follow `.agents/policies/research.md` and `.agents/workflows/research.md`.
+
+Work sequentially by default. Stop collecting redundant evidence once confidence is sufficient unless the topic is contested, high-risk or requires broad coverage.
 
 ## 4. DECIDE
 
 For reversible technical decisions:
 
-- identify options;
-- compare them;
+- identify reasonable options;
+- compare them briefly;
 - choose the simplest justified option;
 - document material choices.
+
+Escalate model/effort/context only when the simpler pass is insufficient for correctness.
 
 ## 5. DOCUMENT
 
 Record architecture decisions before implementation when appropriate.
 
+Keep task-local notes concise. Do not duplicate stable project rules into new documents.
+
 ## 6. IMPLEMENT
 
 Implement only when the active phase explicitly allows implementation.
 
-## 7. VALIDATE
+Use one agent and sequential execution by default. Subagents require a concrete justification under `.agents/policies/resource-usage.md`.
 
-Run appropriate deterministic checks and tests.
+## 7. VALIDATE NARROWLY
+
+Run the narrowest meaningful deterministic checks/tests first.
+
+Do not repeat successful validation unless relevant files changed, a failure requires confirmation, or a required broader final check remains.
 
 Never claim validation that was not actually performed.
 
 ## 8. UPDATE DOCS
 
-Update documentation affected by the work.
+Update only documentation made stale by the work.
+
+Do not perform unrelated documentation rewrites or formatting sweeps.
 
 ## 9. UPDATE STATE
 
 Update:
 
-- STATUS.md
-- NEXT.md
-- BLOCKERS.md when required
-- changed files
-- validation performed
+- `STATUS.md` after every completed bounded block;
+- `NEXT.md` only if the next intended task/phase changed;
+- `BLOCKERS.md` only if blockers changed;
+- changed files and validation actually performed.
 
 ## 10. STOP
+
+Report concisely:
+
+- result;
+- files changed;
+- validation;
+- blockers/limitations;
+- next bounded task/phase.
 
 Do not automatically begin the next phase.
