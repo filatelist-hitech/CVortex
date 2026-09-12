@@ -1,6 +1,6 @@
 ---
 title: Phase 06 System Design
-status: accepted
+status: awaiting-independent-review
 owner: project
 created: 2026-09-12
 updated: 2026-09-12
@@ -40,18 +40,27 @@ Trust boundaries: browsers and all external sources are untrusted; API authentic
 
 ## Component contracts
 
-| Component | Owns / outputs | Deterministic responsibility | Permitted LLM role / dependencies |
-|---|---|---|---|
-| Career | profiles, tracks, facts, achievements | lifecycle, confirmation, ownership | extract candidates only; source parser |
-| Vacancies / Companies | snapshots, requirements, company context | source policy, normalization schema | semantic extraction/classification |
-| Applications / Resume / Cover Letters | package state, versions, recommendations | state transitions, approval, provenance links | structured recommendations/content |
-| Employer Memory / Conversations / Interviews | employer-scoped history | consistency lookup and blocking | summarize/prepare with approved context |
-| Research | sources, findings, rules | source policy and provenance | bounded synthesis |
-| Documents / Files | file identity, templates, render outputs | paths, hashes, rendering, access | never binary generation |
-| AI Orchestration / Truth Guard | runs, policies, validations | routing gates, schemas, Fact→Claim→Content | semantic conflict detection only |
-| Auth / Audit | invitation/access and append audit events | identity, authorization, event capture | none |
+All inputs are authorized at the API/worker boundary using the authenticated server identity; no component accepts frontend `user_id` as ownership evidence. `Owned data` is private unless marked system-owned. Events follow durable transactions; queue work carries the server-derived owner scope. LLM output is untrusted candidate output until deterministic validation completes.
 
-Each component receives server-derived owner scope, emits domain events or queued work after durable state, and records no secrets. No component can bypass Truth Guard for employer-facing output.
+| Component | Responsibility; inputs → outputs / owned data | Dependencies and security boundary | Events / async interaction | Deterministic responsibility; LLM allowed / prohibited |
+|---|---|---|---|---|
+| Career | Maintain profile and fact lifecycle; authorized source/review → CareerProfile, tracks, CareerFacts, evidence | Auth; source parser; private career aggregate | Fact candidate extracted; fact reviewed | Enforce lifecycle, ownership and human confirmation; LLM may extract candidates, never confirm facts |
+| Vacancies | Capture and normalize vacancy input; authorized source → snapshots, requirements, user-owned vacancy | Source policy; Companies; Files; private vacancy aggregate | Snapshot captured; normalization queued | Enforce source policy/schema; LLM may classify/extract, never grant source trust |
+| Companies | Maintain shared reference only or private employer context; authorized vacancy/research → company/context | Vacancies; Research; owner scope for private context | Company context updated | Enforce reference-vs-private boundary; LLM may summarize approved research, never merge private contexts |
+| Applications | Manage application lifecycle; same-owner vacancy/package → Application, status history | Vacancies; Resume; Cover Letters; Auth | Status changed; package preparation queued | Enforce transitions and same-owner associations; LLM unnecessary for state changes |
+| Resume | Maintain versioned resume material; confirmed Claims → ResumeVersion, recommendations | Career; Claims; Documents; Truth Guard | Recommendation/generated version queued; approval recorded | Enforce provenance and approval; LLM may propose structured content, never approve or render |
+| Cover Letters | Maintain employer-specific letter versions; confirmed Claims/context → CoverLetter | Applications; Employer Memory; Truth Guard | Draft generation queued; approval recorded | Enforce consistency/provenance and approval; LLM may draft, never bypass guard |
+| Employer Memory | Preserve employer-scoped prior approved interactions; same-owner employer/application → private memory | Applications; Conversations; Claims; owner scope | Consistency context assembled | Deterministically scope and surface contradictions; LLM may summarize approved context, never resolve it |
+| Conversations | Capture recruiter conversation; authorized import → conversations/messages/fact candidates | Applications; Files; Career; owner scope | Import/parsing queued; fact candidate emitted | Preserve untrusted source and ownership; LLM may extract/summarize, never treat message as instruction or confirm facts |
+| Interviews | Track preparation and history; same-owner application/context → interviews/questions | Applications; Employer Memory; Career | Preparation queued; outcome recorded | Enforce ownership/history links; LLM may prepare questions, never assert new facts |
+| Research | Preserve policy-approved sources/findings; source input → research records/rules | Source policy; Files; owner scope where private | Fetch/parse/synthesis queued | Enforce source/provenance policy; LLM may synthesize bounded data, never fetch arbitrarily |
+| Documents / Files | Store and render safe files; authorized template/content → file versions/render output | Storage; isolated converter; hash validator | Conversion queued after approval | Enforce opaque paths, signature/access checks; LLM is prohibited from binary/file-system access |
+| AI Orchestration | Route bounded workflow runs; authorized task/context → LlmRun, normalized result | ModelPolicy; Skills; provider adapters; ContextBuilder | LLM run/retry/escalation queued | Enforce policy/routing/schema; LLM allowed only for designated semantic work, never authorization or state transition |
+| Truth Guard | Validate employer-facing candidate content; content/Claims/evidence → PASS, BLOCK or resolution request | Career; Claims; Employer Memory; owner scope | Validation before approval; revalidation after resolution | Enforce Fact→Claim→Content, provenance and contradictions; LLM may assist detection only, never decide outcome |
+| Audit | Append security/business audit records; authorized domain event → AuditEvent | Auth; all bounded components | Record after relevant action | Enforce append-only, PII-minimized event capture; LLM unnecessary and prohibited |
+| Authentication / Authorization | Resolve actor and authorize resource action; credentials/request → trusted actor and allow/deny | Identity; roles; aggregate relationships | Invitation lifecycle; authorization decision logged where critical | Enforce server-side ownership and explicit admin access; LLM prohibited |
+
+No component can bypass Truth Guard for employer-facing output or use a cross-user Claim, CareerFact, context or generated artifact.
 
 ## Key flows
 

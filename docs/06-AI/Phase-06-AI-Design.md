@@ -1,6 +1,6 @@
 ---
 title: Phase 06 AI Architecture
-status: accepted
+status: awaiting-independent-review
 owner: project
 created: 2026-09-12
 updated: 2026-09-12
@@ -28,4 +28,23 @@ Each LLM run records safe run/user/workflow/agent/skill/skill-version/prompt-ver
 
 ## Strict Truth Guard
 
-Truth Guard is a deterministic cross-cutting policy, not an AI persona. Candidate content follows `CONFIRMED Fact → Claim → Content`; extraction creates only `PENDING`. In STRICT mode missing provenance, unsupported/overstated fact, invented date/duration/responsibility, or confirmed employer contradiction yields `BLOCK` or `USER_RESOLUTION_REQUIRED`. Semantic detection may use a model, but fact status, linkage, schema, ownership, required fields and contradiction identifiers are ordinary code checks.
+Truth Guard is a deterministic cross-cutting policy, not an AI persona. Candidate content follows `CONFIRMED Career Fact → Claim → Generated Content`; extraction creates only `PENDING`, and an LLM can never confirm a Career Fact. Before candidate-facing content is eligible for approval or employer-facing use, the guard verifies every statement's Claim, ClaimEvidence, confirmed-fact state, ownership, provenance reference, schema and employer-consistency identifiers.
+
+In `STRICT` mode the fail-closed invariant is:
+
+```text
+missing provenance
+OR invalid provenance
+OR Claim without valid CONFIRMED Career Fact evidence
+= BLOCK
+```
+
+`USER_RESOLUTION_REQUIRED` is never an alternative outcome for missing or invalid provenance. It is reserved for a resolvable, valid-evidence case: semantic ambiguity, a contradiction between confirmed employer-specific values, a conflict between confirmed values, or an explicit choice among valid alternatives. After the user resolves it, the content and resolution re-enter Truth Guard; approval remains impossible until it returns `PASS`.
+
+| Condition | Deterministic outcome | May an LLM decide it? |
+|---|---|---|
+| Missing/invalid provenance; missing ClaimEvidence; `PENDING`, rejected or deprecated evidence; unsupported or overstated fact; invented date, duration or responsibility | `BLOCK` | No |
+| Valid confirmed evidence with semantic ambiguity or conflicting confirmed employer value | `USER_RESOLUTION_REQUIRED`, then revalidate | Only assist detection/explanation |
+| All statements have owner-scoped, valid ClaimEvidence to `CONFIRMED` Career Facts and no unresolved contradiction | `PASS` | No |
+
+Semantic detection may use a model, but fact status, linkage, provenance validity, ownership, required fields, resolution state and contradiction identifiers are ordinary code checks.

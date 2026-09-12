@@ -1,3 +1,3 @@
 # Blockers
 
-No active blockers.
+Phase 07 has no active blocker.

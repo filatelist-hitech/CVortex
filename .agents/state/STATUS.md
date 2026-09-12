@@ -24,23 +24,15 @@ Execution authority is defined by `NEXT.md` and active blockers in `BLOCKERS.md`
 
 ## Phase 06 Outcome
 
-Phase 06 converts the accepted architecture baseline into an authoritative product, system, conceptual-data, AI and threat-model design without product code, migrations, dependencies or deployment artifacts. The documents cover requirements, MVP workflows, C4 views, component and deployment boundaries, conceptual ERD/ownership/provenance/audit, provider-independent AI contracts, Strict Truth Guard, and security controls.
+`06-product-data-ai-security-design` is **completed**. Independent re-review verdict: **PASS** (Critical/High/Medium/Low: 0/0/0/0). The accepted Phase 05 ADR baseline remains authoritative.
 
-ADR-0018 selects `/runtime-ai/` as the canonical repository location for product runtime AI Skills, prompts and eval fixtures. It is intentionally separate from development-agent-only `.agents/`; the directory contains only a boundary README, not runtime code or prompts.
+No product code, migration, dependency or infrastructure artifact was created in this documentation-design phase.
 
-## Phase 06 Validation
+### Validation and known limitations
 
-Phase 06 documentation/design validation: **PASS**.
+Validated: `git diff --check`; `git diff --check stage...HEAD`; Markdown-link and frontmatter checks; independent review of Truth Guard, ownership isolation, threat/audit matrices, component contracts and conceptual claim reuse.
 
-Executed:
-
-- `git diff --check`;
-- Ruby frontmatter and Markdown-link check for 31 documentation files;
-- Ruby Obsidian wiki-link check;
-- targeted Phase 06 coverage check for requirement identifiers, fact lifecycle, Truth Guard outcomes and required threat categories;
-- scope check confirming only documentation/state changes plus the required `/runtime-ai/README.md` boundary artifact.
-
-No repository-provided Mermaid validator exists. Mermaid remains source-only design documentation and was checked structurally through the surrounding documentation consistency checks.
+Known limitations: Phase 06 is documentation-only; implementation and runtime tests are intentionally deferred. No repository-local Mermaid renderer/validator is available.
 
 ## Phase 05 Outcome
 
@@ -83,7 +75,7 @@ No pre-Phase-05 accepted ADR existed, so no ADR was superseded.
 
 ## Deferred Decisions
 
-Deferred to later bounded phases; none blocks the recorded completion of Phase 06:
+Deferred to later bounded phases:
 
 - physical database tables and API/OpenAPI contracts;
 - authentication package and invitation endpoint details;
@@ -134,8 +126,6 @@ Validated:
 
 No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed instead.
 
-## Historical Phase 05 Next Phase
+## Next Bounded Work
 
-`06-product-data-ai-security-design` — completed
-
-Current next phase is `07-design-foundation` as recorded above and in `NEXT.md`.
+`07-design-foundation` — authorised but not started.

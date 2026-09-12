@@ -47,11 +47,11 @@ related:
 | `01-Product/` | Vision, principles, scope, requirements, flows, roadmap | Active |
 | `02-Architecture/` | Architecture views and system diagrams | Active; Phase 05 baseline accepted |
 | `03-ADR/` | Architecture decision records and canonical index | Active; Phase 05 decisions accepted |
-| `04-Data/` | Conceptual data model, entities, provenance, ownership | Active; Phase 06 design accepted |
+| `04-Data/` | Conceptual data model, entities, provenance, ownership | Active; Phase 06 remediation awaiting independent review |
 | `05-API/` | API conventions and contracts | Reserved |
-| `06-AI/` | Provider abstraction, model policy, skills, agents, prompts, evals | Active; Phase 06 design accepted |
+| `06-AI/` | Provider abstraction, model policy, skills, agents, prompts, evals | Active; Phase 06 remediation awaiting independent review |
 | `07-Design/` | Design system, tokens, Figma integration | Reserved |
-| `08-Security/` | Threat model, security requirements, controls | Active; Phase 06 threat model accepted |
+| `08-Security/` | Threat model, security requirements, controls | Active; Phase 06 remediation awaiting independent review |
 | `09-QA/` | Testing strategy, quality gates, evaluation strategy | Reserved |
 | `10-Operations/` | Local operations, deployment, observability | Reserved |
 | `11-Research/` | Research summaries promoted from raw research | Reserved |

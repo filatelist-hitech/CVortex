@@ -1,6 +1,6 @@
 ---
 title: Phase 06 Product Design
-status: accepted
+status: awaiting-independent-review
 owner: project
 created: 2026-09-12
 updated: 2026-09-12
