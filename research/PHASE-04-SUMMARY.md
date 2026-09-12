@@ -19,6 +19,37 @@ Evidence collected for all requested vacancy-source classes and named platforms,
 
 No product code, adapter, scraper, browser extension, migration, OAuth connection, final ERD or accepted architecture ADR was created.
 
+## Canonical preliminary source tiers
+
+Exactly one research tier is assigned per required source. Fallback methods are separate from tier classification.
+
+| Source | Tier |
+|---|---|
+| HeadHunter | TIER A |
+| LinkedIn | TIER D |
+| Indeed | TIER C |
+| Habr Career | TIER A |
+| SuperJob | TIER A |
+| Glassdoor | TIER U |
+| Wellfound | TIER D |
+| Greenhouse | TIER B |
+| Lever | TIER B |
+| Workday | TIER C |
+| Ashby | TIER B |
+| SmartRecruiters | TIER B |
+| Teamtailor | TIER C |
+| Personio | TIER B |
+| Remote OK | TIER A |
+| We Work Remotely | TIER D |
+| Dice | TIER D |
+| ZipRecruiter | TIER C |
+| Company career pages | TIER B |
+
+Notes:
+- Habr Career is TIER A conditionally: application approval/purpose/storage terms still apply.
+- Glassdoor is TIER U because current API access eligibility and exact current Terms fit require revalidation; manual capture remains the practical fallback.
+- Company career pages are TIER B as a category because structured public ATS APIs/feeds/JSON-LD are feasible; an individual site can later downgrade to C/D/U after policy evidence.
+
 ## Integration approaches realistically available
 
 ### Official integration
@@ -145,6 +176,7 @@ Phase 05 may decide, but Phase 04 does not accept:
 Checked before completion:
 
 - every named vacancy source appears in the matrix;
+- every named source has one canonical preliminary tier in this summary;
 - API existence is not inferred from private/internal endpoints;
 - partner/customer/public API distinctions are explicit;
 - OAuth is not listed as useful where only unrelated OAuth exists;
