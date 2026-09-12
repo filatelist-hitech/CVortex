@@ -1,13 +1,5 @@
 # Blockers
 
-## Phase 05 prerequisite gap
+No active blockers prevent starting `06-product-data-ai-security-design`.
 
-`03-technical-research` completion is not present in the checked `stage` repository state or commit history, while Phase 02 is merged and Phase 04 has now been completed by explicit task instruction.
-
-Impact:
-
-- do not start `05-architecture-decision-freeze` yet;
-- do not freeze runtime, dependency, auth, LLM provider/model, document, frontend or Figma decisions whose Phase 03 evidence is still missing;
-- first complete Phase 03 technical research or locate/reconcile its actual artifacts if they exist elsewhere.
-
-This is a real sequencing blocker, not a backlog item.
+The previous Phase 03 prerequisite blocker was stale and is resolved: Phase 03 artifacts are present, the phase sequence is reconciled, and Phase 05 has completed its architecture freeze.

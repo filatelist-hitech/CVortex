@@ -1,6 +1,6 @@
 ---
 title: CVortex Research Index
-status: draft
+status: reviewed
 owner: project
 created: 2026-09-12
 updated: 2026-09-12
@@ -33,23 +33,20 @@ Research result `REVIEWED` не означает автоматически `acc
 
 # Phase 03 — Technical Research
 
-| Area | IDs | Planned report | Status |
+| Area | IDs | Actual report | Status |
 |---|---|---|---|
-| Backend/runtime | R01-* | `technical/backend-runtime.md` | PLANNED |
-| Laravel ecosystem | R02-* | `technical/laravel.md` | PLANNED |
-| PostgreSQL | R03-* | `technical/postgresql.md` | PLANNED |
-| Redis/Horizon | R04-* | `technical/redis-horizon.md` | PLANNED |
-| Auth | R05-* | `technical/auth.md` | PLANNED |
-| API architecture | R06-* | `technical/api-architecture.md` | PLANNED |
-| Files/documents | R07-* | `technical/files-documents.md` | PLANNED |
-| OpenAI API/models/pricing | R08-* | `technical/openai-api.md` | PLANNED |
-| Provider abstraction | R09-* | `technical/provider-abstraction.md` | PLANNED |
-| Prompt caching/batch | R10-* | `technical/prompt-caching-batch.md` | PLANNED |
-| Figma/MCP/design tokens | R11-* | `technical/figma-design-tokens.md` | PLANNED |
-| Security technical baseline | R14-* | `security/technical-threats.md` | PLANNED |
-| Testing/tooling | R15-* | `technical/testing-tooling.md` | PLANNED |
-| PWA/frontend | R16-* | `technical/frontend-pwa.md` | PLANNED |
-| Technical licensing | R17-* | `technical/licensing.md` | PLANNED |
+| Backend/runtime/PostgreSQL | R01-*, R02-*, R03-* | `technical/01-BACKEND-RUNTIME-DATA.md` | REVIEWED |
+| Laravel auth/security | R02-*, R05-*, R14-* | `technical/02-LARAVEL-AUTH-SECURITY.md` | REVIEWED |
+| Redis/queues/Horizon | R04-* | `technical/03-REDIS-QUEUES-HORIZON.md` | REVIEWED |
+| OpenAI API/models/cost controls | R08-*, R10-* | `technical/04-OPENAI-API-MODELS.md` | REVIEWED |
+| PHP/OpenAI provider integration | R09-* | `technical/05-OPENAI-PHP-INTEGRATION.md` | REVIEWED |
+| PWA/frontend | R16-* | `technical/06-FRONTEND-STACK.md` | REVIEWED |
+| Component primitives | R16-* | `technical/07-COMPONENT-PRIMITIVES.md` | REVIEWED |
+| Testing/tooling | R15-* | `technical/08-TESTING-STACK.md` | REVIEWED |
+| Files/documents | R07-* | `technical/09-DOCUMENT-PIPELINE.md` | REVIEWED |
+| Figma/MCP/design tokens | R11-*, R17-* | `technical/10-DESIGN-TOKENS-FIGMA.md` | REVIEWED |
+| Decision synthesis | R01-*..R17-* | `technical/DECISION-CANDIDATES.md` | REVIEWED |
+| Source register | R01-*..R17-* | `technical/SOURCES.md` | REVIEWED |
 
 Expected synthesis:
 
@@ -67,13 +64,13 @@ technical/DECISION-CANDIDATES.md
 
 Он не является ADR.
 
-**Repository check 2026-09-12:** Phase 03 completion artifacts/commit were not found on `stage`. Keep these rows `PLANNED` until technical research is actually executed or its artifacts are located and reconciled.
+**Repository reconciliation 2026-09-12:** Phase 03 artifacts were subsequently added to `stage`, reviewed and reconciled before Phase 05. The reports remain research evidence; their recommendations became architecture only where an accepted Phase 05 ADR says so.
 
 ---
 
 # Phase 04 — Product / Integrations / Hiring Research
 
-Phase 04 was executed by explicit current task instruction even though Phase 03 is not evidenced as complete. This sequencing conflict is recorded in project state and blocks Phase 05 execution until reconciled.
+Phase 04 was originally executed before Phase 03 artifacts were present. The sequence was later reconciled on `stage` before Phase 05; the original finding remains documented in `PHASE-04-SUMMARY.md` as historical context.
 
 | Area | IDs | Actual report | Status |
 |---|---|---|---|
@@ -146,15 +143,15 @@ R17 Platform terms
 
 Dependencies may alter this ordering when evidence reveals new blockers.
 
-Observed repository sequence currently differs:
+Historical repository sequence observed during Phase 04:
 
 ```text
 Phase 02 merged
-Phase 03 completion NOT FOUND
+Phase 03 completion was not present at that time
 Phase 04 completed by explicit current task
 ```
 
-Do not silently mark Phase 03 complete.
+This was later reconciled: Phase 03 reports are now present and reviewed, Phase 05 evaluated them together with Phase 04 evidence, and the accepted decisions are indexed in `docs/03-ADR/INDEX.md`.
 
 ---
 
@@ -222,11 +219,13 @@ R17-06
 
 Priority должна пересматриваться при обнаружении новых dependencies.
 
-Phase 04 has collected evidence for the R12/R13/integration-related R14/R17 items above, but this does not close missing Phase 03 technical questions.
+Phase 04 collected evidence for the R12/R13/integration-related R14/R17 items above. Phase 03 technical questions were closed separately by the reviewed reports under `research/technical/`; neither research phase accepted architecture decisions directly.
 
 ---
 
 # Decision gates
+
+These were the evidence gates used before Phase 05. Phase 03/04 research satisfied the gates needed for the accepted architecture baseline. Implementation-specific and freshness-sensitive checks remain deferred as recorded in the ADRs.
 
 ## Gate A — Runtime
 
@@ -355,16 +354,17 @@ Verified in reviewed artifacts:
 
 ```text
 Phase 02: MERGED / repository evidence confirms research plan
-Phase 03: NOT VERIFIED / remains PLANNED
-Phase 04: REVIEWED / completed out of sequence by explicit current task
-Architecture decisions created by Phase 04: none
-Product code created by Phase 04: none
+Phase 03: REVIEWED / technical evidence complete and reconciled
+Phase 04: REVIEWED / product, integration, hiring and security evidence complete
+Phase 05: COMPLETED / accepted decisions are indexed in docs/03-ADR/INDEX.md
+Architecture decisions created by research phases: none directly
+Product code created by research phases: none
 ```
 
-## Next phase candidate
+## Next bounded phase
 
 ```text
-05-architecture-decision-freeze
+06-product-data-ai-security-design
 ```
 
-**BLOCKED:** do not start Phase 05 until missing Phase 03 technical research is completed or located and project state is reconciled.
+No active research prerequisite blocks Phase 06. Phase 06 must work inside the accepted Phase 05 ADR boundaries.
