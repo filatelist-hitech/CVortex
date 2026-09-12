@@ -47,6 +47,7 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0015](ADR-0015-file-storage-abstraction.md) | File Storage Abstraction with Local Initial Backend | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-12 | File storage | — | — |
 | [ADR-0016](ADR-0016-deterministic-document-rendering.md) | Deterministic DOCX-to-PDF Rendering Pipeline | accepted | OWNER_CONSTRAINT | 2026-09-12 | Documents | — | — |
 | [ADR-0017](ADR-0017-untrusted-external-content.md) | Untrusted External Content Boundary | accepted | RESEARCH_BACKED_DECISION | 2026-09-12 | Security / ingestion | — | — |
+| [ADR-0018](ADR-0018-runtime-ai-skills-location.md) | Repository Runtime AI Skills Location | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-12 | AI / repository | — | — |
 
 ## Freeze rule
 
