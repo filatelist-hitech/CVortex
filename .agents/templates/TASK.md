@@ -11,11 +11,15 @@ related:
 
 # Task
 
-## Goal
+## Observable Outcome
+
+Describe one system or user-visible state that must exist after this task. Prefer one vertical slice over a whole subsystem.
+
+## Milestone / Slice
 
 ...
 
-## Current Phase
+## Goal
 
 ...
 
@@ -33,6 +37,8 @@ related:
 
 - ...
 
+Reference repository-wide policies/ADRs instead of copying them wholesale.
+
 ## Requirements / Invariants
 
 - ...
@@ -40,7 +46,7 @@ related:
 ## Research
 
 - `required: yes|no`
-- If yes, state the current/freshness-sensitive questions only.
+- If yes, state only freshness-sensitive questions that block this task.
 - Follow `.agents/workflows/research.md`.
 
 ## Security Considerations
@@ -49,23 +55,19 @@ related:
 
 ## Resource Budget
 
-Use `.agents/policies/resource-usage.md` defaults unless this task needs an explicit override.
-
-Expected default:
+Use `.agents/policies/resource-usage.md` defaults unless an explicit override is justified:
 
 - one agent;
 - sequential execution;
 - task-relevant context only;
 - lowest-cost capable model/effort;
-- no subagents without justification;
-- targeted validation before broad suites;
-- concise completion report.
-
-Any escalation should state the concrete reason.
+- no subagents without correctness justification;
+- narrow validation before broad suites;
+- concise final report.
 
 ## Validation
 
-- ...
+List actual runnable checks that prove the observable outcome.
 
 ## Documentation / State Updates
 
@@ -73,12 +75,14 @@ Any escalation should state the concrete reason.
 
 ## Completion Criteria
 
+Use binary observable checks.
+
 - [ ] ...
 - [ ] ...
 
 ## STOP
 
-Do not begin the next phase or adjacent feature automatically.
+Stop when this bounded outcome is complete. Do not begin the next slice or speculative refactor.
 
 ## Suggested Launch Prompt
 
