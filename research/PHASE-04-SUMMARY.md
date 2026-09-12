@@ -13,6 +13,12 @@ tags: [research, phase-04, integrations, recruitment, security]
 
 # Phase 04 Summary
 
+> **Historical state note**
+>
+> The repository-state conflict recorded later in this document was accurate during the original Phase 04 run, but it was subsequently resolved before Phase 05. Phase 03 artifacts are now present and reviewed, Phase 05 is completed, and the old prerequisite finding is **not an active blocker**.
+>
+> For current execution state use `.agents/state/STATUS.md`, `.agents/state/NEXT.md`, `.agents/state/BLOCKERS.md`, and `research/RESEARCH-INDEX.md`. This document preserves the original observation for research provenance only.
+
 ## Scope completed
 
 Evidence collected for all requested vacancy-source classes and named platforms, ATS-hosted career platforms, import methods, API/auth/feed constraints, relevant Terms/robots distinctions, ATS parsing/screening, recruiting AI, resume practices, cover letters, technical hiring, RU/EU/US/UK market differences, employer-type evidence and external-content threats.
@@ -157,7 +163,7 @@ Future ingestion/research pipeline must treat all external content as untrusted.
 
 No accepted product decision was contradicted. Research reinforces existing `Scope.md` decisions to avoid fake ATS percentages and make URL ingestion conditional on research.
 
-Repository-state conflict discovered: Phase 02 research plan is merged in `stage`, but `.agents/state/STATUS.md` and `NEXT.md` still report Phase 01/02. No Phase 03 technical-research completion was found in repository history during this run. Phase 04 was executed because the explicit current task requires it; this gap must block Phase 05 execution until reconciled.
+Historical observation from the original run: Phase 02 research plan was merged in `stage`, while Phase 03 completion was not yet present. At that time this gap correctly blocked Phase 05. It has since been reconciled and is retained here only as provenance; it is not a current blocker.
 
 ## Decision inputs for Phase 05
 
@@ -170,6 +176,8 @@ Phase 05 may decide, but Phase 04 does not accept:
 - matching dimension model;
 - Recruitment Knowledge Base scope/versioning;
 - external-content trust boundary and URL-import security architecture.
+
+These inputs were subsequently consumed during Phase 05 together with Phase 03 evidence. Current accepted architecture is defined by `docs/03-ADR/INDEX.md` and `docs/02-Architecture/Architecture-Baseline.md`.
 
 ## Validation
 

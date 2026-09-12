@@ -1,10 +1,16 @@
 # CVortex Project State
 
-## Current Phase
+## Last Completed Phase
 
 `06-product-data-ai-security-design`
 
 Status: **completed**
+
+## Next Authorized Phase
+
+`07-design-foundation`
+
+Execution authority is defined by `NEXT.md` and active blockers in `BLOCKERS.md`. Do not advance automatically.
 
 ## Completed Phases
 
@@ -77,18 +83,18 @@ No pre-Phase-05 accepted ADR existed, so no ADR was superseded.
 
 ## Deferred Decisions
 
-Deferred to Phase 06 or later, without blocking Phase 06:
+Deferred to later bounded phases; none blocks the recorded completion of Phase 06:
 
-- final ERD, database tables and API/OpenAPI contracts;
+- physical database tables and API/OpenAPI contracts;
 - authentication package and invitation endpoint details;
 - concrete runtime Skill file layout and loader implementation; `.agents/` remains reserved for development agents and `/runtime-ai/` is canonical;
 - concrete provider adapters, model mappings, prices and routing thresholds;
 - dependency/runtime versions and compatibility validation;
 - queue topology, supervisors and retry parameters;
-- component primitive library;
+- component primitive library and token/Figma workflow (Phase 07);
 - design-token transformation/synchronization tooling;
 - document generator library and exact LibreOffice build;
-- detailed threat model, retention rules and ingestion adapters;
+- retention rules and ingestion adapters;
 - future semantic-search implementation.
 
 ## Files Created / Changed
@@ -128,10 +134,8 @@ Validated:
 
 No repository-provided Markdown/link/frontmatter validator exists; deterministic repository-local Ruby/shell checks were executed instead.
 
-## Next Phase
+## Historical Phase 05 Next Phase
 
-`06-product-data-ai-security-design`
+`06-product-data-ai-security-design` — completed
 
-Execution status: **READY**.
-
-Do not advance automatically.
+Current next phase is `07-design-foundation` as recorded above and in `NEXT.md`.

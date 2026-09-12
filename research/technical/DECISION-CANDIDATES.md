@@ -8,9 +8,15 @@ architecture_decision: none
 
 # Technical Decision Candidates
 
-No accepted ADRs are created by this file. Items marked **owner-fixed direction** are constraints already provided by the product owner, not decisions invented by Phase 03.
+> **Post-Phase-05 reconciliation**
+>
+> This document is historical Phase 03 research input. Phase 05 has completed. Items below remain useful as dated evidence and option history, but they are **not current architecture decisions**.
+>
+> Current architecture authority is `PROJECT.md`, `docs/03-ADR/INDEX.md`, and the accepted ADRs. Where this file conflicts with those newer authoritative sources, the newer source wins. Concrete versions and vendor capabilities below are freshness-sensitive and must be revalidated before implementation when required by the active phase.
 
-## Owner-fixed directions preserved
+No accepted ADRs are created by this file. Items marked **owner-fixed direction** describe the Phase 03 understanding at the time of research and must not override later accepted project state.
+
+## Owner-fixed directions preserved during Phase 03
 
 - Backend: PHP 8.4+ and Laravel.
 - Frontend: Next.js, React, TypeScript, Tailwind.
@@ -19,10 +25,10 @@ No accepted ADRs are created by this file. Items marked **owner-fixed direction*
 - Web: Nginx.
 - Documents: DOCX templates + LibreOffice headless -> PDF.
 - Deployment: local-first Docker Compose, API-first, later VPS/cloud.
-- OpenAI is first LLM provider, with provider-independent business architecture and BYOK/system-managed credentials.
+- Phase 03 recorded OpenAI as first LLM provider, with provider-independent business architecture and BYOK/system-managed credentials. Later Phase 05 reconciliation established that provider selection is mutable configuration; accepted ADRs and `PROJECT.md` are authoritative.
 - Figma is visual source of truth; docs are Markdown/Obsidian.
 
-## Candidates for Phase 05 decision freeze
+## Historical candidates for Phase 05 decision freeze
 
 | ID | Decision | Options | Preliminary recommendation | Status / evidence needed |
 |---|---|---|---|---|
@@ -73,6 +79,8 @@ No accepted ADRs are created by this file. Items marked **owner-fixed direction*
 - concrete database schema/ERD;
 - accepted ADRs.
 
-## Phase 05 input
+## Historical Phase 05 input
 
-Phase 05 should consume these candidates together with Phase 04 product/integration/hiring/security research. Any candidate that conflicts with an owner-fixed direction must be surfaced explicitly rather than silently overriding it.
+Phase 05 consumed these candidates together with Phase 04 product/integration/hiring/security research. The resulting accepted decisions are recorded in `docs/03-ADR/INDEX.md` and `docs/02-Architecture/Architecture-Baseline.md`.
+
+Do not treat an unaccepted recommendation in this file as a deferred architecture decision merely because it was proposed during Phase 03.
