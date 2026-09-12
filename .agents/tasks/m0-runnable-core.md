@@ -17,17 +17,24 @@ related:
 
 ## Observable outcome
 
-From a clean local checkout, a developer can run the documented bootstrap/start command and open a real CVortex technical shell in the browser through Nginx. Laravel, Next.js, PostgreSQL, Redis and Horizon are genuinely running and health behavior is validated.
+From a clean local checkout, a developer can run the documented bootstrap/start command and open a real CVortex technical shell through Nginx. Laravel, Next.js, PostgreSQL, Redis and Horizon are running, and health behavior is validated.
 
-This is the first implementation milestone. It does not implement business functionality.
+Business functionality is out of scope.
 
 ## Source of truth
 
-Use `/AGENTS.md`, `PROJECT.md`, current state, accepted ADRs, Phase 06 system design and Phase 07 design foundation.
+Use:
 
-The final hardened Phase 08 spec preserved at `legacy/phase-08-hardened-pr16.md` is requirement evidence for M0. This active spec owns the smaller milestone boundary.
+- `/AGENTS.md`;
+- `PROJECT.md`;
+- current project state;
+- accepted ADRs;
+- Phase 06 system design;
+- Phase 07 design foundation.
 
-Use indexes and targeted reads rather than recursively loading all docs/research.
+`legacy/phase-08-hardened-pr16.md` is requirement evidence for M0. This file owns the active, smaller M0 boundary.
+
+Use indexes and targeted reads instead of recursively loading all docs/research.
 
 Before pinning runtimes, packages or images, verify current official support and compatibility. Concrete versions are implementation configuration, not permanent architecture invariants.
 
@@ -37,10 +44,10 @@ A clean checkout must be reproducible.
 
 Required:
 
-- explicit supported Docker image tags, never `latest`;
+- explicit supported Docker image tags; never `latest`;
 - committed `composer.lock`;
 - committed `package-lock.json`;
-- current compatible runtime/framework versions documented where operationally relevant;
+- version choices needed to reproduce the M0 stack documented where relevant;
 - dependency installation through normal official ecosystem paths.
 
 Ordinary version pins do not require ADRs by themselves.
@@ -89,7 +96,7 @@ Backend and Horizon use the same backend image with different runtime commands. 
 
 ## Required repository shape
 
-Create only immediately used paths, conceptually:
+Create only paths used by M0, conceptually:
 
 ```text
 compose.yaml
@@ -100,29 +107,25 @@ apps/frontend/
 infra/nginx/
 ```
 
-Add short scoped `AGENTS.md` under backend/frontend/infra where useful.
+Add short scoped `AGENTS.md` under backend/frontend/infra when the root contract is insufficient for that subtree.
 
-Do not create empty speculative `packages/` or `services/` directories.
-
-Do not add duplicate Compose/Docker layers solely to anticipate production deployment.
+Do not create empty speculative `packages/` or `services/` directories. Do not add duplicate Compose/Docker layers only to anticipate production deployment.
 
 ## Local development contract
 
-M0 is a real local development environment, not a production deployment rehearsal.
-
-Use:
+M0 uses a local-development runtime:
 
 ```text
 host source → bind mounts → container runtime
 ```
 
-Keep container-specific dependencies such as `vendor/` and `node_modules/` container-managed, using container/named-volume storage instead of host macOS installations.
+Keep container-specific dependencies such as `vendor/` and `node_modules/` container-managed through container or named-volume storage rather than host macOS installations.
 
 Frontend local runtime uses `next dev` behind Nginx. Backend uses PHP-FPM behind Nginx/FastCGI.
 
-Host prerequisites are only Git, Docker/Compose and Make. Do not require host PHP, Composer, Node.js, npm, PostgreSQL or Redis.
+Host prerequisites are Git, Docker/Compose and Make. Do not require host PHP, Composer, Node.js, npm, PostgreSQL or Redis.
 
-A production frontend build is mandatory validation. A production-like frontend/container runtime image is not an M0 completion requirement. Multi-stage Dockerfiles are allowed only when they simplify the actual M0 implementation.
+A production frontend build is mandatory validation. A production-like frontend/container runtime image is not an M0 completion requirement. Multi-stage Dockerfiles are allowed when they simplify the M0 implementation.
 
 ## Backend baseline
 
@@ -133,10 +136,10 @@ Create a current supported Laravel application configured for:
 - Horizon using Redis;
 - private local filesystem abstraction;
 - `/api/v1` boundary;
-- request correlation/safe logs;
+- request correlation and safe logs;
 - deterministic test/lint/static-analysis commands.
 
-No CVortex domain migrations/models.
+Do not create CVortex domain migrations or models.
 
 Health endpoints:
 
@@ -161,7 +164,7 @@ Success:
 {"status":"ready"}
 ```
 
-Dependency failure returns `503` with sanitized:
+Dependency failure returns `503` with sanitized output:
 
 ```json
 {"status":"not_ready"}
@@ -177,16 +180,16 @@ restored        → ready 200 without unnecessary app restart
 
 Health output must not leak DSNs, hosts, versions, stack traces or credentials.
 
-Horizon must start and connect to Redis, but is not a readiness dependency and is not exposed through Nginx.
+Horizon must start and connect to Redis. It is not a readiness dependency and is not exposed through Nginx.
 
-M0 queue topology is just `default`.
+M0 queue topology is only `default`.
 
 ## Frontend baseline
 
 Create a current supported Next.js + React application with:
 
 - TypeScript strict;
-- ESLint/typecheck;
+- ESLint and typecheck;
 - Vitest + React Testing Library baseline;
 - at least one meaningful test;
 - Phase 07 tokens consumed in a maintainable minimal way;
@@ -201,7 +204,7 @@ Your career, in context.
 Technical baseline is running.
 ```
 
-No dashboard, login, fake navigation or business mock data.
+Do not add dashboard, login, fake navigation or business mock data.
 
 ## Persistence contract
 
@@ -211,7 +214,7 @@ Persistence is explicit:
 - private Laravel local storage is persistent;
 - Redis state is disposable in M0.
 
-PostgreSQL and private storage use persistent named volumes and must survive an ordinary Compose down/up cycle. Validation must prove both with deterministic markers or equivalent observable state.
+PostgreSQL and private storage use persistent named volumes and must survive an ordinary Compose down/up cycle. Prove both with deterministic markers or equivalent observable state.
 
 The normal `make down` path must not remove persistent volumes. Destructive volume removal is outside the normal M0 developer workflow.
 
@@ -226,13 +229,11 @@ Use one root local configuration contract:
 /.env
 ```
 
-Real `.env` is gitignored. Compose passes services only the variables they need.
+Real `.env` is gitignored. Compose passes each service only the variables it needs.
 
-Do not introduce parallel app-local env files when the root contract is sufficient.
+Do not introduce parallel app-local env files when the root contract is sufficient. Backend-only secrets must never enter frontend public environment variables or browser bundles.
 
-Backend-only secrets must never enter frontend public environment variables or browser bundles.
-
-Use a private persistent local storage volume outside the public web root. It must not be directly served by Nginx.
+Use a private persistent local storage volume outside the public web root. Nginx must not serve it directly.
 
 Implement `X-Request-ID` reuse/generation with safe validation, response header and application-log correlation. Do not add a tracing/monitoring platform.
 
@@ -256,9 +257,7 @@ make migrate
 
 ## Minimal CI baseline
 
-M0 includes one minimal GitHub Actions quality workflow.
-
-It must cover at minimum:
+Add one GitHub Actions quality workflow covering at minimum:
 
 - frontend lint;
 - frontend typecheck;
@@ -269,9 +268,9 @@ It must cover at minimum:
 - backend static analysis configured by M0;
 - Compose configuration validation.
 
-Do not turn M0 CI into deployment infrastructure or a large orchestration system.
+Do not turn M0 CI into deployment infrastructure or a general orchestration system.
 
-Runtime dependency-failure/recovery and persistence checks remain mandatory M0 validation even if they stay outside this minimal CI workflow.
+Runtime dependency-failure/recovery and persistence checks remain mandatory M0 validation even if they stay outside this workflow.
 
 ## Non-goals
 
@@ -287,21 +286,20 @@ Do not implement:
 - dashboard/business screens;
 - PWA polish that requires speculative packages;
 - production deployment/runtime machinery beyond build validation;
-- Kubernetes/microservices/Kafka/vector DB/GraphQL/Elasticsearch/event sourcing/observability platform.
+- Kubernetes, microservices, Kafka, vector DB, GraphQL, Elasticsearch, event sourcing or an observability platform.
 
 ## Security checks
 
-At minimum verify:
+Verify at minimum:
 
 - only Nginx is host-exposed;
-- loopback is default host binding;
+- loopback is the default host binding;
 - no production/default secrets are committed;
 - private storage is not web-public;
 - Horizon/internal metadata is not exposed;
-- debug output does not leak through operational endpoints;
+- operational endpoints do not leak debug output;
 - frontend receives no backend-only secrets;
-- root configuration does not accidentally duplicate secrets into app-local env files;
-- dependency installation uses normal official ecosystem paths.
+- the root configuration contract does not duplicate secrets into app-local env files.
 
 ## Validation
 
@@ -318,16 +316,16 @@ Actually validate:
 - Redis connection;
 - Horizon startup;
 - frontend lint/typecheck/test/production build;
-- backend tests/lint/static checks actually configured;
+- backend tests/lint/static checks configured by M0;
 - root `make` commands;
 - PostgreSQL persistence across ordinary down/up;
 - private-storage persistence across ordinary down/up;
 - readiness failure/recovery for PostgreSQL and Redis;
 - only Nginx is host-facing;
 - committed lockfiles and explicit non-`latest` image tags;
-- minimal GitHub Actions quality workflow matches the defined deterministic quality baseline.
+- the GitHub Actions workflow matches the deterministic quality baseline above.
 
-If the execution environment cannot run Docker, result is `PARTIAL/BLOCKED`, not invented PASS.
+If the execution environment cannot run Docker, result is `PARTIAL/BLOCKED`, not PASS.
 
 Do not report a check as executed unless it was actually run.
 
@@ -335,11 +333,11 @@ Do not report a check as executed unless it was actually run.
 
 - [ ] real stack builds and starts;
 - [ ] clean checkout initializes with only Git, Docker/Compose and Make on the host;
-- [ ] source uses the bind-mount/container-managed-dependency development model;
+- [ ] source uses bind mounts with container-managed dependencies;
 - [ ] browser reaches CVortex through Nginx;
 - [ ] only Nginx is host-facing;
-- [ ] frontend and backend are both real applications;
-- [ ] PostgreSQL/Redis/Horizon are operational;
+- [ ] frontend and backend are real applications;
+- [ ] PostgreSQL, Redis and Horizon are operational;
 - [ ] health failure/recovery behavior passes;
 - [ ] PostgreSQL and private storage survive ordinary down/up;
 - [ ] Redis is not treated as durable product state;
@@ -350,7 +348,7 @@ Do not report a check as executed unless it was actually run.
 - [ ] minimal GitHub Actions quality workflow exists;
 - [ ] `composer.lock` and `package-lock.json` are committed;
 - [ ] Docker images use explicit supported non-`latest` tags;
-- [ ] current-version compatibility decisions are recorded where needed;
+- [ ] compatibility decisions that constrain runtime, image or package selection are recorded;
 - [ ] no business functionality or speculative production deployment leaked into M0;
 - [ ] docs/state reflect actual implementation.
 
@@ -373,7 +371,7 @@ Keep the completion report concise:
 5. Real blockers/limitations only.
 6. Completed task and exact next authorized task.
 
-Do not repeat the task specification in the final report.
+Do not repeat this task specification in the final report.
 
 ## STOP
 
