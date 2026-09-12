@@ -4,13 +4,42 @@
 
 Perform an independent, bounded review without repeating the implementation task or consuming unnecessary context/compute.
 
+## Execution gate
+
+This workflow is repository-native by default.
+
+Unless the current explicit user/task instruction opts in to a named external framework or skill:
+
+- use exactly one reviewer agent;
+- work sequentially;
+- do not spawn subagents or teams;
+- do not parallelize review or research;
+- do not activate OMX, code-review orchestration, security-review orchestration, or an equivalent external review workflow;
+- do not escalate model capability or reasoning automatically.
+
+Words such as `review`, `audit`, `inspect`, `verify`, `check`, `security review`, or similar are not permission to activate external orchestration.
+
+If a specific unresolved finding genuinely needs stronger reasoning, broader context or parallel review, report:
+
+`ESCALATION RECOMMENDED`
+
+Include the exact unresolved question, evidence and why the current review mode is insufficient. Do not perform the escalation automatically.
+
+When a task spec is available, the reviewer may run:
+
+```bash
+bash scripts/check-agent-contract.sh review .agents/tasks/<task>.md
+```
+
+Review mode is read-only. Do not pass `--write`.
+
 ## Default Review Mode
 
 - Review only; do not fix findings unless the task explicitly says to fix.
-- Use one agent and sequential inspection by default.
 - Read `PROJECT.md`, `.agents/state/STATUS.md`, the task spec (if present), the diff/changed files, and only context needed to judge those changes.
 - Do not recursively reread the repository.
-- Do not repeat research or tests already proven unless a finding depends on revalidation.
+- Reuse credible, still-applicable validation evidence.
+- Re-run tests/research only when a finding depends on revalidation, evidence is missing/stale, or a high-risk requirement needs independent confirmation.
 - Keep the report concise and actionable.
 
 Follow `.agents/policies/resource-usage.md`.
@@ -78,7 +107,9 @@ Report only:
 - finding counts by severity;
 - actionable findings;
 - validation/research claims independently rechecked;
-- remaining uncertainty.
+- requirements that remain unverified;
+- remaining uncertainty;
+- `ESCALATION RECOMMENDED` only when justified.
 
 Do not approve work that claims tests or validation that were not actually performed.
 

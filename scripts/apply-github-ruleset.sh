@@ -23,14 +23,27 @@ RULESET_NAME="CVortex protected integration branches"
   exit 1
 }
 
-# Refuse to require a check that does not yet exist on the protected integration branch.
-if ! gh api "repos/$REPO/contents/.github/workflows/governance.yml?ref=stage" >/dev/null 2>&1; then
+# Refuse to require governance checks that do not yet exist on the protected integration branch.
+workflow_text="$(gh api \
+  -H 'Accept: application/vnd.github.raw+json' \
+  "repos/$REPO/contents/.github/workflows/governance.yml?ref=stage" \
+  2>/dev/null || true)"
+if [[ -z "$workflow_text" ]]; then
   cat >&2 <<'EOF'
 error: .github/workflows/governance.yml is not present on stage.
-Do not apply the ruleset yet: requiring Roadmap metadata before the workflow exists can lock merges.
+Do not apply the ruleset yet: requiring governance checks before the workflow exists can lock merges.
 EOF
   exit 1
 fi
+
+grep -Fq 'name: Roadmap metadata' <<<"$workflow_text" || {
+  echo "error: Governance workflow on stage does not define Roadmap metadata" >&2
+  exit 1
+}
+grep -Fq 'name: PR contract' <<<"$workflow_text" || {
+  echo "error: Governance workflow on stage does not define PR contract" >&2
+  exit 1
+}
 
 RULESET_ID="$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" | head -n1)"
@@ -43,4 +56,34 @@ else
   echo "ruleset updated: $RULESET_NAME (#$RULESET_ID)"
 fi
 
-echo "Required status check: Roadmap metadata"
+# Re-resolve the live ruleset after mutation and verify GitHub actually enforces
+# the repository-managed desired state. A successful API mutation alone is not proof.
+RULESET_ID="$(gh api "repos/$REPO/rulesets" \
+  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" | head -n1)"
+
+[[ -n "$RULESET_ID" ]] || {
+  echo "error: ruleset was not found after apply" >&2
+  exit 1
+}
+
+for required_rule in deletion non_fast_forward pull_request required_status_checks; do
+  count="$(gh api "repos/$REPO/rulesets/$RULESET_ID" \
+    --jq "[.rules[] | select(.type == \"$required_rule\")] | length")"
+  if [[ "$count" -lt 1 ]]; then
+    echo "error: live ruleset is missing required rule: $required_rule" >&2
+    exit 1
+  fi
+done
+
+for required_check in 'Roadmap metadata' 'PR contract'; do
+  check_count="$(gh api "repos/$REPO/rulesets/$RULESET_ID" \
+    --jq "[.rules[] | select(.type == \"required_status_checks\") | .parameters.required_status_checks[]? | select(.context == \"$required_check\")] | length")"
+
+  if [[ "$check_count" -lt 1 ]]; then
+    echo "error: live ruleset does not require the $required_check status check" >&2
+    exit 1
+  fi
+done
+
+echo "ruleset verified: $RULESET_NAME (#$RULESET_ID)"
+echo "required status checks verified: Roadmap metadata, PR contract"

@@ -30,6 +30,29 @@ Before a phase or substantial task:
 
 Do **not** recursively load `.agents/`, `docs/`, or `research/` by default. Use indexes, links, filenames and targeted search to locate the smallest sufficient context. Read additional material only when it materially affects correctness.
 
+## Mandatory Task Routing
+
+Before substantive work, classify the request as exactly one primary execution mode and load its canonical repository workflow before acting:
+
+| Mode | Canonical route |
+| --- | --- |
+| `IMPLEMENT` | `.agents/workflows/implementation.md` + `.agents/policies/git-workflow.md` |
+| `REVIEW` | `.agents/workflows/review.md` + `.agents/policies/resource-usage.md` |
+| `RESEARCH` | `.agents/workflows/research.md` + `.agents/policies/research.md` |
+| `ARCHITECTURE` | `.agents/workflows/architecture-decision.md` + `.agents/policies/resource-usage.md` |
+| `DOCS` | `.agents/policies/documentation.md` + `.agents/policies/git-workflow.md` |
+| `GIT/RELEASE` | `.agents/policies/git-workflow.md` + `.agents/policies/release-management.md` |
+
+When a task specification declares an `execution.workflow`, use it as the task's primary mode unless the current explicit user instruction overrides it.
+
+Repository-native workflows are the default. External/plugin orchestration, teams, subagents and parallel review are opt-in. A generic request containing words such as `review`, `audit`, `inspect`, `verify`, `check`, `research`, or similar does **not** authorize OMX or another orchestration framework.
+
+An explicitly requested external skill may supplement the repository workflow, but it does not replace repository scope, Git, security, resource or STOP rules. If deeper orchestration appears useful but was not explicitly authorized, report the concrete reason for escalation instead of activating it automatically.
+
+Before the first repository write, perform the Git preflight defined by the active workflow and `.agents/policies/git-workflow.md`. Do not write directly to `main` or `stage` even when the available tool technically permits it.
+
+Before reporting a pull request as ready for review or complete, perform the full PR preflight from `.agents/policies/git-workflow.md`. When available, run `bash scripts/check-pr-contract.sh <pr-number>`. A green roadmap check alone is not proof that assignee, taxonomy labels, status, changelog choice, template sections and checkpoint comments are complete.
+
 ## Resource Discipline
 
 Follow `.agents/policies/resource-usage.md`.
@@ -120,9 +143,13 @@ For all repository changes, follow `.agents/policies/git-workflow.md` and `CONTR
 
 Mandatory baseline: work on short-lived branches, target `stage` for normal changes, and promote `stage` to `main` only through release policy.
 
+Agents performing a write task must create or verify the correct short-lived branch before modifying repository files. The user does not need to repeat this requirement in each prompt.
+
 Every PR to `stage` must have a native M0–M6 GitHub Milestone or `roadmap:unversioned`. M1 work also carries one M1 slice label or `roadmap:cross-cutting`.
 
-Canonical GitHub delivery metadata is `.github/roadmap.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; `Roadmap metadata` is a required check once that ruleset is applied.
+Every PR must also satisfy the repository PR contract: assignee, canonical type/area labels, exactly one priority and status label, explicit changelog path, PR-template structure, and metadata/governance checkpoint comments. Set the final `status:*` label only after the other metadata and checkpoint comments are present, then verify the current PR state.
+
+Canonical GitHub delivery metadata is `.github/roadmap.yml`. Canonical labels are `.github/labels.yml`. The protected-branch ruleset is `.github/rulesets/cvortex-protected-branches.json`; repository governance checks are defined in `.github/workflows/governance.yml`.
 
 Versioning, tags and GitHub Releases follow `.agents/policies/release-management.md`.
 <!-- CVORTEX:GIT-WORKFLOW:END -->

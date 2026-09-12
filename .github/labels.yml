@@ -78,6 +78,9 @@ labels:
   - name: status:ready
     color: 0E8A16
     description: Requirements are sufficiently clear to execute
+  - name: status:review
+    color: D4C5F9
+    description: Implementation is awaiting independent review or merge decision
 
   # Roadmap placement
   - name: roadmap:unversioned

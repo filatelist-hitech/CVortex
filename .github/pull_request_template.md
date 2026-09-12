@@ -6,10 +6,17 @@ Describe what changed, why it is needed, and the observable user/system outcome.
 
 - GitHub Milestone: `M0 · Runnable Core` / `M1 · First Value` / ... / `roadmap:unversioned`
 - Slice label: `slice:m1.x-*` / `roadmap:cross-cutting` / not applicable
+- Type label(s): one or more canonical `type:*`
+- Area label(s): one or more canonical `area:*`
+- Priority: exactly one canonical `priority:*`
+- Status: exactly one canonical `status:*`
+- Assignee: at least one
 - Target version: `v0.x.0` / prerelease / none
 - Release impact: none / prerelease / patch / minor / breaking
 
 Assign the native GitHub Milestone before merge when the change belongs to M0–M6. Cross-cutting work with no product-version target must use `roadmap:unversioned` instead of inventing a milestone.
+
+Use only labels from `.github/labels.yml`. Apply the final `status:*` label after the required checkpoint comments so the final metadata event represents the complete PR state.
 
 ## Related work
 
@@ -60,11 +67,17 @@ Assign the native GitHub Milestone before merge when the change belongs to M0–
 - [ ] ADR/architecture diagrams were updated if an accepted design changed
 - [ ] Applicable local/manual validation was performed
 - [ ] Roadmap metadata matches `.github/roadmap.yml`
+- [ ] `PR metadata / review checkpoint` comment is present
+- [ ] `Governance / validation checkpoint` comment is present
+- [ ] `scripts/check-pr-contract.sh` passes when available
 
 ## Release notes
 
+Choose exactly one path:
+
 - [ ] This change should appear in release notes
 - [ ] `skip-changelog` is appropriate
+
 - [ ] Breaking changes are labeled `breaking-change` and documented
 
 Release tags are created only from validated `main` commits. Completing a slice or merging a PR does not automatically create a version.
