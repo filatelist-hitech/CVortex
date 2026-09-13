@@ -39,9 +39,13 @@ class AuthController extends Controller
         ]);
         $email = $emails->normalize($data['email']);
         $user = User::query()->where('email', $email)->first();
-        $passwordMatches = $user === null
-            ? Hash::check($data['password'], config('auth.dummy_password_hashes.'.config('hashing.driver')))
-            : Hash::check($data['password'], $user->password);
+        if ($user === null) {
+            // Match the active hasher and its current work factor without storing a dummy hash.
+            Hash::make($data['password']);
+            $passwordMatches = false;
+        } else {
+            $passwordMatches = Hash::check($data['password'], $user->password);
+        }
         if (! $passwordMatches) {
             throw ValidationException::withMessages(['email' => 'The provided credentials are incorrect.']);
         }

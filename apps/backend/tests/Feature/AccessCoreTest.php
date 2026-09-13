@@ -293,6 +293,19 @@ class AccessCoreTest extends TestCase
         $this->postJson('/api/v1/auth/login', ['email' => 'login@example.test', 'password' => 'a very long safe passphrase'])->assertUnprocessable()->assertJsonPath('errors.email.0', 'This account is disabled.');
     }
 
+    public function test_unknown_account_password_work_matches_each_supported_hash_driver(): void
+    {
+        foreach (['argon', 'argon2id', 'bcrypt'] as $driver) {
+            config(['hashing.driver' => $driver]);
+            $email = $driver.'-missing@example.test';
+            $this->clearLoginLimiter('127.0.0.1', $email);
+
+            $this->postJson('/api/v1/auth/login', ['email' => $email, 'password' => 'wrong password'])
+                ->assertUnprocessable()
+                ->assertJsonPath('errors.email.0', 'The provided credentials are incorrect.');
+        }
+    }
+
     public function test_long_passwords_preserve_their_suffixes(): void
     {
         $prefix = str_repeat('p', 72);
