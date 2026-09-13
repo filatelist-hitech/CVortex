@@ -8,9 +8,9 @@ CVortex is a personal Job Search OS for adapting resumes to vacancies, generatin
 
 CVortex is in active pre-release development.
 
-The current completed implementation milestone is **M0 · Runnable Core**: a reproducible local technical baseline with Laravel, Next.js, PostgreSQL, Redis/Horizon, Nginx and Docker Compose.
+The current completed implementation milestone is **M1.1 · Access Core**. It includes the reproducible M0 local technical baseline with Laravel, Next.js, PostgreSQL, Redis/Horizon, Nginx and Docker Compose, plus invite-only first-party session authentication, ownership enforcement and disabled-user handling.
 
-M0 is **not the MVP**. It establishes the runtime foundation only.
+M1.1 is **not the MVP**. The next authorized slice is **M1.2 · Career Core**, which adds the first truthful career-fact workflow.
 
 The accepted release roadmap is:
 

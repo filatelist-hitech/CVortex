@@ -83,7 +83,7 @@ The canonical implementation sequence is `docs/01-Product/Roadmap.md`.
 
 Completed Foundation Era Phases 00–07 remain authoritative history. Implementation now proceeds through value-driven milestones and vertical slices beginning with `M0 Runnable Core`, then `M1 First Value`.
 
-`M0 Runnable Core` is completed / PASS. The repository has a reproducible local Docker Compose runtime with Nginx, Next.js, Laravel/PHP-FPM, Horizon, PostgreSQL and Redis. The next authorized slice is `m1-1-access-core`; no M1 functionality is present in M0.
+`M0 Runnable Core` and `M1.1 Access Core` are completed / PASS. The repository has a reproducible local Docker Compose runtime with Nginx, Next.js, Laravel/PHP-FPM, Horizon, PostgreSQL and Redis, plus invite-only first-party session authentication with ownership and disabled-user enforcement. The next authorized slice is `m1-2-career-core`.
 
 ## Delivery Governance
 
