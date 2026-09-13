@@ -293,6 +293,27 @@ class AccessCoreTest extends TestCase
         $this->postJson('/api/v1/auth/login', ['email' => 'login@example.test', 'password' => 'a very long safe passphrase'])->assertUnprocessable()->assertJsonPath('errors.email.0', 'This account is disabled.');
     }
 
+    public function test_login_rehashes_an_existing_password_during_hash_driver_migration(): void
+    {
+        $password = 'a very long safe passphrase';
+        config(['hashing.driver' => 'bcrypt', 'hashing.bcrypt.verify' => false]);
+        $user = User::query()->create(['email' => 'rehash@example.test', 'password' => $password]);
+        $this->assertStringStartsWith('$2y$', (string) $user->fresh()->password);
+
+        config([
+            'hashing.driver' => 'argon2id',
+            'hashing.argon.verify' => false,
+            'hashing.rehash_on_login' => true,
+        ]);
+        $this->clearLoginLimiter('127.0.0.1', $user->email);
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->withHeader('Origin', 'http://localhost')
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $password])
+            ->assertOk();
+
+        $this->assertStringStartsWith('$argon2id$', (string) $user->fresh()->password);
+    }
+
     public function test_unknown_account_password_work_matches_each_supported_hash_driver(): void
     {
         foreach (['argon', 'argon2id', 'bcrypt'] as $driver) {
@@ -477,6 +498,28 @@ class AccessCoreTest extends TestCase
 
         $this->expectException(\LogicException::class);
         AuditEvent::query()->delete();
+    }
+
+    public function test_audit_query_boundary_rejects_forwarded_destructive_operations(): void
+    {
+        $event = app(AuditLogger::class)->record('test.event', AuditEvent::ACTOR_SYSTEM);
+        $query = AuditEvent::query()->whereKey($event->id);
+
+        foreach ([
+            fn () => $query->truncate(),
+            fn () => $query->upsert([['id' => $event->id, 'event_type' => 'altered']], ['id'], ['event_type']),
+            fn () => $query->updateOrInsert(['id' => $event->id], ['event_type' => 'altered']),
+            fn () => $query->increment('created_at'),
+            fn () => $query->decrement('created_at'),
+            fn () => $query->touch(),
+        ] as $mutation) {
+            try {
+                $mutation();
+                $this->fail('A destructive audit query unexpectedly succeeded.');
+            } catch (\LogicException $exception) {
+                $this->assertSame('Audit events are append-only.', $exception->getMessage());
+            }
+        }
     }
 
     public function test_audit_append_boundary_still_allows_creation(): void

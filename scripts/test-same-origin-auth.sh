@@ -8,7 +8,9 @@ header_file="$(mktemp -t cvortex-auth-headers.XXXXXX)"
 email="m1-1-runtime-$(date +%s)@example.test"
 password='a very long safe passphrase'
 
-cleanup() { rm -f "$cookie_file" "$header_file"; }
+cleanup() {
+  rm -f -- "$cookie_file" "$header_file"
+}
 trap cleanup EXIT
 
 status_of() { sed -n '1s/.*STATUS://p'; }

@@ -94,7 +94,7 @@ same_email_status_two=$?
 set -e
 
 same_email_registered=$( (grep -l -F 'registered' "$same_email_one" "$same_email_two" || true) | wc -l | tr -d ' ' )
-same_email_failed=$( (grep -l -E 'Exception|QueryException' "$same_email_one" "$same_email_two" || true) | wc -l | tr -d ' ' )
+same_email_failed=$( (grep -l -F 'Illuminate\Validation\ValidationException' "$same_email_one" "$same_email_two" || true) | wc -l | tr -d ' ' )
 same_email_users=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM users WHERE email = 'user@example.com'")
 same_email_uses=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT coalesce(sum(uses), 0) FROM invitations WHERE id IN ('$same_email_id_one', '$same_email_id_two')")
 same_email_consumed=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM invitations WHERE id IN ('$same_email_id_one', '$same_email_id_two') AND uses = 1")
@@ -103,7 +103,7 @@ same_email_consumed_audits=$("${compose[@]}" exec -T -e DB_DATABASE="$database" 
 same_email_registered_audits=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM audit_events a JOIN users u ON u.id = a.subject_id WHERE a.event_type = 'user.registered' AND u.email = 'user@example.com'")
 
 if test "$same_email_registered" -ne 1 || test "$same_email_failed" -ne 1 || test "$same_email_users" -ne 1 || test "$same_email_uses" -ne 1 || test "$same_email_consumed" -ne 1 || test "$same_email_reusable" -ne 1 || test "$same_email_consumed_audits" -ne 1 || test "$same_email_registered_audits" -ne 1 || test "$same_email_status_one" -eq "$same_email_status_two"; then
-  echo "same normalized email concurrency failed: statuses=$same_email_status_one/$same_email_status_two registered=$same_email_registered failed=$same_email_failed users=$same_email_users uses=$same_email_uses consumed=$same_email_consumed reusable=$same_email_reusable consumed_audits=$same_email_consumed_audits registered_audits=$same_email_registered_audits" >&2
+  echo "same normalized email concurrency failed: statuses=$same_email_status_one/$same_email_status_two registered=$same_email_registered validation_failures=$same_email_failed users=$same_email_users uses=$same_email_uses consumed=$same_email_consumed reusable=$same_email_reusable consumed_audits=$same_email_consumed_audits registered_audits=$same_email_registered_audits" >&2
   cat "$same_email_one" "$same_email_two" >&2
   exit 1
 fi

@@ -52,6 +52,9 @@ class AuthController extends Controller
         if (! $user->isActive()) {
             throw ValidationException::withMessages(['email' => 'This account is disabled.']);
         }
+        if (config('hashing.rehash_on_login', true) && Hash::needsRehash($user->password)) {
+            $user->forceFill(['password' => Hash::make($data['password'])])->save();
+        }
 
         Auth::guard('web')->login($user);
         $request->session()->regenerate();

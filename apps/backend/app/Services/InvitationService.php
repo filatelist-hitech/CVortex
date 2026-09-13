@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AuditEvent;
 use App\Models\Invitation;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -54,35 +55,53 @@ class InvitationService
     {
         $normalizedEmail = $this->emails->validate($email);
 
-        return DB::transaction(function () use ($token, $normalizedEmail, $password): User {
-            $invitation = Invitation::query()->where('token_hash', $this->tokenHash($token))->lockForUpdate()->first();
-            if ($invitation === null || ! $invitation->isUsable()) {
-                throw ValidationException::withMessages(['invitation_token' => 'This invitation is not available.']);
-            }
-            if ($invitation->target_email !== null && $invitation->target_email !== $normalizedEmail) {
-                throw ValidationException::withMessages(['invitation_token' => 'This invitation is not valid for this email address.']);
-            }
-            if (User::query()->where('email', $normalizedEmail)->exists()) {
+        try {
+            return DB::transaction(function () use ($token, $normalizedEmail, $password): User {
+                $invitation = Invitation::query()->where('token_hash', $this->tokenHash($token))->lockForUpdate()->first();
+                if ($invitation === null || ! $invitation->isUsable()) {
+                    throw ValidationException::withMessages(['invitation_token' => 'This invitation is not available.']);
+                }
+                if ($invitation->target_email !== null && $invitation->target_email !== $normalizedEmail) {
+                    throw ValidationException::withMessages(['invitation_token' => 'This invitation is not valid for this email address.']);
+                }
+                if (User::query()->where('email', $normalizedEmail)->exists()) {
+                    throw ValidationException::withMessages(['email' => 'An account already exists for this email address.']);
+                }
+
+                $user = new User;
+                $user->forceFill([
+                    'email' => $normalizedEmail,
+                    'password' => Hash::make($password),
+                    'role' => User::ROLE_USER,
+                    'status' => User::STATUS_ACTIVE,
+                ])->save();
+                $invitation->forceFill(['uses' => 1, 'consumed_at' => now()])->save();
+                $this->audit->record('invitation.consumed', AuditEvent::ACTOR_SYSTEM, null, Invitation::class, $invitation->id);
+                $this->audit->record('user.registered', AuditEvent::ACTOR_SYSTEM, null, User::class, $user->id);
+
+                return $user;
+            }, attempts: 3);
+        } catch (QueryException $exception) {
+            if ($this->isUniqueViolation($exception)) {
                 throw ValidationException::withMessages(['email' => 'An account already exists for this email address.']);
             }
 
-            $user = new User;
-            $user->forceFill([
-                'email' => $normalizedEmail,
-                'password' => Hash::make($password),
-                'role' => User::ROLE_USER,
-                'status' => User::STATUS_ACTIVE,
-            ])->save();
-            $invitation->forceFill(['uses' => 1, 'consumed_at' => now()])->save();
-            $this->audit->record('invitation.consumed', AuditEvent::ACTOR_SYSTEM, null, Invitation::class, $invitation->id);
-            $this->audit->record('user.registered', AuditEvent::ACTOR_SYSTEM, null, User::class, $user->id);
-
-            return $user;
-        }, attempts: 3);
+            throw $exception;
+        }
     }
 
     private function tokenHash(string $token): string
     {
         return hash_hmac('sha256', $token, (string) config('app.key'));
+    }
+
+    private function isUniqueViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? $exception->getCode());
+        $driver = DB::getDriverName();
+
+        return ($driver === 'pgsql' && $sqlState === '23505')
+            || ($driver === 'sqlite' && $sqlState === '23000')
+            || ($driver === 'mysql' && $sqlState === '23000' && (int) ($exception->errorInfo[1] ?? 0) === 1062);
     }
 }
