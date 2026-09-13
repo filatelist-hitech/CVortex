@@ -68,7 +68,7 @@ M1.1 Access Core is completed / PASS and was squash-merged into `stage` as `c7c5
 
 `m1-2-career-core`
 
-Authority is `.agents/state/NEXT.md` + blockers + the M1.2 task specification when created.
+Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-2-career-core.md`.
 
 ## M0 validation
 
