@@ -284,6 +284,7 @@ class AccessCoreTest extends TestCase
 
     public function test_login_errors_do_not_enumerate_and_disabled_account_is_rejected(): void
     {
+        config(['hashing.driver' => 'argon2id']);
         $user = User::query()->create(['email' => 'login@example.test', 'password' => Hash::make('a very long safe passphrase')]);
         foreach ([['missing@example.test', 'wrong'], ['login@example.test', 'wrong']] as [$email, $password]) {
             $this->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password])->assertUnprocessable()->assertJsonPath('errors.email.0', 'The provided credentials are incorrect.');

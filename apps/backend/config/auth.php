@@ -9,7 +9,11 @@ return [
         'decay_seconds' => (int) env('AUTH_LOGIN_RATE_LIMIT_DECAY_SECONDS', 60),
     ],
 
-    'dummy_password_hash' => '$2y$12$92IXUNpkjO0rOQ5JByM.yeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    'dummy_password_hashes' => [
+        'bcrypt' => '$2y$12$92IXUNpkjO0rOQ5JByM.yeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        'argon' => '$argon2id$v=19$m=65536,t=4,p=1$L3BYc25jMFA3QWlzblRmcg$nrVnaFWHMEiH7KS1GwZgpjxcpk86OuMuTc6Ss0/JrG0',
+        'argon2id' => '$argon2id$v=19$m=65536,t=4,p=1$L3BYc25jMFA3QWlzblRmcg$nrVnaFWHMEiH7KS1GwZgpjxcpk86OuMuTc6Ss0/JrG0',
+    ],
 
     /*
     |--------------------------------------------------------------------------

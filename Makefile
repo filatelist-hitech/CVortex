@@ -29,7 +29,15 @@ restart:
 	docker compose up -d
 
 test:
-	docker compose run --rm --no-deps backend composer test
+	docker compose run --rm --no-deps \
+		-e DB_CONNECTION=sqlite \
+		-e DB_DATABASE=:memory: \
+		-e DB_URL= \
+		-e CACHE_STORE=array \
+		-e QUEUE_CONNECTION=sync \
+		-e SESSION_DRIVER=array \
+		-e MAIL_MAILER=array \
+		backend composer test
 	docker compose run --rm --no-deps frontend npm test
 
 lint:
