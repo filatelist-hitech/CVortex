@@ -509,6 +509,7 @@ class AccessCoreTest extends TestCase
             fn () => $query->truncate(),
             fn () => $query->upsert([['id' => $event->id, 'event_type' => 'altered']], ['id'], ['event_type']),
             fn () => $query->updateOrInsert(['id' => $event->id], ['event_type' => 'altered']),
+            fn () => $query->forceDelete(),
             fn () => $query->increment('created_at'),
             fn () => $query->decrement('created_at'),
             fn () => $query->touch(),
@@ -567,8 +568,13 @@ class AccessCoreTest extends TestCase
         $this->assertCount(2, $tokenMatches);
 
         $this->artisan('invitation:revoke '.$idMatches[1])->expectsOutput('Invitation revoked.')->assertExitCode(0);
-        $this->expectException(ValidationException::class);
-        app(InvitationService::class)->register($tokenMatches[1], 'revoked@example.test', 'a very long safe passphrase');
+        try {
+            app(InvitationService::class)->register($tokenMatches[1], 'revoked@example.test', 'a very long safe passphrase');
+            $this->fail('Registration with a revoked invitation must fail.');
+        } catch (ValidationException $exception) {
+            $this->assertSame('This invitation is not available.', $exception->errors()['invitation_token'][0]);
+        }
+
         $this->assertDatabaseMissing('users', ['email' => 'revoked@example.test']);
     }
 

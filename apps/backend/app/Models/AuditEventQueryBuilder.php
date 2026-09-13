@@ -24,6 +24,11 @@ class AuditEventQueryBuilder extends Builder
         $this->rejectMutation();
     }
 
+    public function forceDelete(): never
+    {
+        $this->rejectMutation();
+    }
+
     public function truncate(): void
     {
         $this->rejectMutation();
