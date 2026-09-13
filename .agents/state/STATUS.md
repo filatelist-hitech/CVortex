@@ -66,13 +66,15 @@ M1.1 Access Core is completed / PASS and was squash-merged into `stage` as `c7c5
 
 ## M1.2 implementation outcome
 
-M1.2 Career Core is completed / PASS on `feature/m1-2-career-core`. Authenticated users can paste career text for provider-neutral structured extraction into evidence-backed `PENDING` facts, explicitly Confirm/Edit and Confirm/Reject, add `user_manual` confirmed facts without an LLM, and query confirmed facts plus Truth-Guarded Claims. Original source wording remains separate from human-approved edits; invalid, non-confirmed, missing-provenance and cross-owner evidence blocks deterministically. Runtime AI assets are versioned under `/runtime-ai/`; the optional Responses adapter uses environment-only credentials behind the provider contract, with no concrete SDK type, model invariant, BYOK or file import. Final validation: backend 52 tests / 250 assertions and frontend 4 / 4; targeted Career tests 12 / 70 on SQLite and 12 / 70 on isolated PostgreSQL; fresh PostgreSQL migration, Pint, Larastan, ESLint, TypeScript, production frontend build, Compose config and `git diff --check` pass.
+M1.2 Career Core is **CHANGES_REQUIRED** after the independent adversarial audit on `feature/m1-2-career-core`. The implementation contains the intended Career/Claim/runtime-AI surface, but the milestone is not complete: a cross-owner CareerSource provenance chain receives `TruthGuard::PASS`; semantic-upgrade validation can accept an upgraded `fact_type`; `USER_RESOLUTION_REQUIRED` has no executable path; no safe confirmed-only matching query exists; supersession is not implemented; and the live applied PostgreSQL schema cannot execute extraction or manual fact entry. The audit also found ordinary exception logging of private Career text and insufficient executable adversarial/frontend/no-LLM coverage.
 
-## Next authorized task
+Validation independently rerun: backend 52 tests / 250 assertions and frontend 4 / 4; targeted Career tests 12 / 70 on SQLite and 12 / 70 on a fresh isolated PostgreSQL database; Pint, Larastan, ESLint, TypeScript, production frontend build, Compose config and `git diff --check` pass. These green checks do not close the findings above. M1.3 is blocked until M1.2 remediation receives a fresh independent PASS.
 
-`m1-3-vacancy-core`
+## Current authorized task
 
-Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-3-vacancy-core.md`.
+`m1-2-career-core` remediation and re-review.
+
+Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-2-career-core.md`. M1.3 remains out of scope until this gate returns `PASS`.
 
 ## M0 validation
 
