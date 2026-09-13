@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["facts"],
+  "properties": {
+    "facts": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fact_type", "assertion", "source_excerpt", "confidence"],
+        "properties": {
+          "fact_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$"},
+          "assertion": {"type": "string", "maxLength": 1000},
+          "source_excerpt": {"type": "string", "maxLength": 2000},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    }
+  }
+}

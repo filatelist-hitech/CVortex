@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import CareerWorkspace from "./career-workspace";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
 
 const csrf = () => decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
 
-async function api(path: string, options: RequestInit = {}) {
+export async function api(path: string, options: RequestInit = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
     headers: {
@@ -65,7 +66,7 @@ export default function AccessShell({ registrationRoute = false }: { registratio
   }
 
   if (user) {
-    return <main className="shell"><section className="status-card" aria-labelledby="app-title"><p className="eyebrow">Authenticated shell</p><h1 id="app-title">CVortex</h1><p className="tagline">{user.email}</p><dl className="identity"><dt>Role</dt><dd>{user.role}</dd><dt>Status</dt><dd>{user.status}</dd></dl><button type="button" onClick={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }}>Sign out</button></section></main>;
+    return <CareerWorkspace email={user.email} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
   }
 
   const registrationUnavailable = mode === "register" && (!registrationRoute || !token);
