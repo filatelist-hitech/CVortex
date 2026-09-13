@@ -26,7 +26,10 @@ class UserStatusService
             if ($user->role === User::ROLE_ADMIN && User::query()->where('role', User::ROLE_ADMIN)->where('status', User::STATUS_ACTIVE)->count() === 1) {
                 throw ValidationException::withMessages(['user' => 'The sole active admin cannot be disabled.']);
             }
-            $user->forceFill(['status' => User::STATUS_DISABLED])->save();
+            $user->forceFill([
+                'status' => User::STATUS_DISABLED,
+                'auth_generation' => $user->auth_generation + 1,
+            ])->save();
             DB::table(config('session.table'))->where('user_id', $user->id)->delete();
             $this->audit->record('user.disabled', AuditEvent::ACTOR_OPERATOR, null, User::class, $user->id);
         });

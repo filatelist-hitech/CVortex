@@ -233,6 +233,16 @@ class AccessCoreTest extends TestCase
         $this->assertContains($secondResponse->status(), [401, 403]);
     }
 
+    public function test_disabling_and_reenabling_user_does_not_restore_a_pre_disable_session(): void
+    {
+        $user = User::query()->create(['email' => 'generation@example.test', 'password' => Hash::make('a very long safe passphrase')]);
+        app(UserStatusService::class)->disable($user);
+        app(UserStatusService::class)->enable($user);
+
+        $this->app['auth']->forgetGuards();
+        $this->withSession(['auth_generation' => 0])->actingAs($user)->getJson('/api/v1/me')->assertForbidden();
+    }
+
     public function test_expired_revoked_and_exhausted_invitations_are_rejected(): void
     {
         ['invitation' => $expired, 'token' => $expiredToken] = app(InvitationService::class)->create(null, 1);
@@ -280,6 +290,25 @@ class AccessCoreTest extends TestCase
         }
         $user->forceFill(['status' => User::STATUS_DISABLED])->save();
         $this->postJson('/api/v1/auth/login', ['email' => 'login@example.test', 'password' => 'a very long safe passphrase'])->assertUnprocessable()->assertJsonPath('errors.email.0', 'This account is disabled.');
+    }
+
+    public function test_long_passwords_preserve_their_suffixes(): void
+    {
+        $prefix = str_repeat('p', 72);
+        $first = $prefix.'-first';
+        $second = $prefix.'-second';
+        $user = User::query()->create(['email' => 'long-password@example.test', 'password' => $first]);
+        $cookies = $this->csrfCookies();
+
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->withHeader('Origin', 'http://localhost')
+            ->withCookie(config('session.cookie'), $cookies['session'])
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $first])
+            ->assertOk();
+        $this->app['auth']->forgetGuards();
+        $this->withCookie(config('session.cookie'), $cookies['session'])
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $second])
+            ->assertUnprocessable();
     }
 
     public function test_login_rate_limit_is_configurable_deterministic_and_isolated_by_email_and_ip(): void
@@ -500,7 +529,7 @@ class AccessCoreTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        return $this->actingAs($user, 'web');
+        return $this->actingAs($user, 'web')->withSession(['auth_generation' => $user->fresh()->auth_generation]);
     }
 
     private function loginSession(User $user): string

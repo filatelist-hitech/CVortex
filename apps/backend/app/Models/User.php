@@ -28,7 +28,7 @@ class User extends Authenticatable
 
     protected function casts(): array
     {
-        return ['password' => 'hashed'];
+        return ['password' => 'hashed', 'auth_generation' => 'integer'];
     }
 
     public function isActive(): bool

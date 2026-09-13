@@ -26,6 +26,7 @@ class AuthController extends Controller
 
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
+        $request->session()->put('auth_generation', $user->auth_generation);
 
         return response()->json(['data' => $this->identity($user)], 201);
     }
@@ -38,7 +39,10 @@ class AuthController extends Controller
         ]);
         $email = $emails->normalize($data['email']);
         $user = User::query()->where('email', $email)->first();
-        if ($user === null || ! Hash::check($data['password'], $user->password)) {
+        $passwordMatches = $user === null
+            ? Hash::check($data['password'], config('auth.dummy_password_hash'))
+            : Hash::check($data['password'], $user->password);
+        if (! $passwordMatches) {
             throw ValidationException::withMessages(['email' => 'The provided credentials are incorrect.']);
         }
         if (! $user->isActive()) {
@@ -47,6 +51,7 @@ class AuthController extends Controller
 
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
+        $request->session()->put('auth_generation', $user->auth_generation);
         Log::info('auth.login.succeeded', $audit->safeLogContext(['user_id' => $user->id]));
 
         return response()->json(['data' => $this->identity($user)]);

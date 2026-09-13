@@ -14,7 +14,11 @@ class EnsureActiveUser
     {
         /** @var User $user */
         $user = $request->user();
-        if (! $user->isActive()) {
+        $sessionGeneration = $request->hasSession() ? $request->session()->get('auth_generation') : null;
+        if ($request->hasSession() && $sessionGeneration === null) {
+            $request->session()->put('auth_generation', $user->auth_generation);
+        }
+        if (! $user->isActive() || ($sessionGeneration !== null && (int) $sessionGeneration !== (int) $user->auth_generation)) {
             Auth::guard('web')->logout();
             if ($request->hasSession()) {
                 $request->session()->invalidate();

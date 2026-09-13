@@ -9,6 +9,8 @@ return [
         'decay_seconds' => (int) env('AUTH_LOGIN_RATE_LIMIT_DECAY_SECONDS', 60),
     ],
 
+    'dummy_password_hash' => '$2y$12$92IXUNpkjO0rOQ5JByM.yeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults

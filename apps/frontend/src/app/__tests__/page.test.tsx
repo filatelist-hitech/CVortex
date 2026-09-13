@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Home from "../page";
 import RegisterPage from "../register/page";
@@ -31,7 +32,7 @@ describe("access shell", () => {
       throw new Error(`Unexpected request: ${path}`);
     });
 
-    render(<RegisterPage />);
+    render(<StrictMode><RegisterPage /></StrictMode>);
 
     await waitFor(() => expect(window.location.pathname).toBe("/register"));
     expect(window.location.hash).toBe("");

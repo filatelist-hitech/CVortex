@@ -38,7 +38,7 @@ export default function AccessShell({ registrationRoute = false }: { registratio
       const invitationToken = new URLSearchParams(window.location.hash.slice(1)).get("token") ?? "";
       // The fragment is an external browser value; copy it once into transient memory after mount.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setToken(invitationToken);
+      if (invitationToken) setToken(invitationToken);
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
 
