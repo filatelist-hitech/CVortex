@@ -7,10 +7,11 @@ use App\Models\User;
 
 class AuditLogger
 {
-    /** @param array<string, scalar|null> $metadata */
+    /** @param array<string, mixed> $metadata */
     public function record(string $eventType, string $actorType, ?User $actorUser = null, ?string $subjectType = null, ?string $subjectId = null, array $metadata = []): AuditEvent
     {
-        return AuditEvent::query()->create([
+        /** @var AuditEvent $event */
+        $event = AuditEvent::query()->create([
             'event_type' => $eventType,
             'actor_type' => $actorType,
             'actor_user_id' => $actorUser?->id,
@@ -18,10 +19,12 @@ class AuditLogger
             'subject_id' => $subjectId,
             'metadata' => $this->safeMetadata($metadata),
         ]);
+
+        return $event;
     }
 
-    /** @param array<string, scalar|null> $metadata
-     *  @return array<string, scalar|null> */
+    /** @param array<string, mixed> $metadata
+     *  @return array<string, mixed> */
     private function safeMetadata(array $metadata): array
     {
         $safe = [];
@@ -29,7 +32,7 @@ class AuditLogger
             if ($this->isSensitiveKey($key)) {
                 continue;
             }
-            $safe[$key] = $value;
+            $safe[$key] = is_array($value) ? $this->safeMetadata($value) : $value;
         }
 
         return $safe;

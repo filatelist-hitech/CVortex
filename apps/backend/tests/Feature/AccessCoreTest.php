@@ -414,11 +414,33 @@ class AccessCoreTest extends TestCase
     public function test_audit_redacts_sensitive_metadata_and_refuses_mutation(): void
     {
         $actor = User::query()->create(['email' => 'actor@example.test', 'password' => Hash::make('a very long safe passphrase')]);
-        $event = app(AuditLogger::class)->record('test.event', AuditEvent::ACTOR_USER, $actor, metadata: ['safe' => 'value', 'password' => 'nope', 'invitation_token' => 'nope', 'session_id' => 'nope']);
-        $this->assertSame(['safe' => 'value'], $event->metadata);
+        $event = app(AuditLogger::class)->record('test.event', AuditEvent::ACTOR_USER, $actor, metadata: ['safe' => 'value', 'password' => 'nope', 'nested' => ['safe' => 'also safe', 'session_id' => 'nope']]);
+        $this->assertSame(['safe' => 'value', 'nested' => ['safe' => 'also safe']], $event->metadata);
         $this->assertSame($actor->id, $event->actor_user_id);
         $this->expectException(\LogicException::class);
         $event->forceFill(['event_type' => 'altered'])->save();
+    }
+
+    public function test_audit_query_boundary_rejects_bulk_update_and_query_delete(): void
+    {
+        $event = app(AuditLogger::class)->record('test.event', AuditEvent::ACTOR_SYSTEM);
+
+        try {
+            AuditEvent::query()->whereKey($event->id)->update(['event_type' => 'altered']);
+            $this->fail('Bulk update unexpectedly succeeded.');
+        } catch (\LogicException $exception) {
+            $this->assertSame('Audit events are append-only.', $exception->getMessage());
+        }
+
+        $this->expectException(\LogicException::class);
+        AuditEvent::query()->delete();
+    }
+
+    public function test_audit_append_boundary_still_allows_creation(): void
+    {
+        $event = app(AuditLogger::class)->record('test.appended', AuditEvent::ACTOR_SYSTEM);
+
+        $this->assertDatabaseHas('audit_events', ['id' => $event->id, 'event_type' => 'test.appended']);
     }
 
     public function test_bootstrap_admin_is_one_time_and_never_echoes_password(): void

@@ -3,7 +3,7 @@ title: M1.1 Access Core Operations
 status: implemented
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-13
 tags: [access, auth, invitations, security]
 related: ["[[../03-ADR/ADR-0007-multi-user-ownership|ADR-0007]]", "[[../03-ADR/ADR-0008-invite-only-access|ADR-0008]]"]
 canonical_auth_decision: "[[../03-ADR/ADR-0019-sanctum-stateful-first-party-auth|ADR-0019]]"
@@ -45,7 +45,7 @@ docker compose exec backend php artisan user:enable <user-ulid>
 
 The shared email identity boundary validates input with Laravel 13 RFC email validation, then applies the existing trim-plus-Unicode-lowercase canonical comparison. CLI and HTTP paths use the same service rules.
 
-Invitation consumption locks its row in one transaction, verifies status/target email/unique email, creates the user, consumes the one allowed use and appends audit events. Audit events are application append-only and contain actor type (`USER`, `OPERATOR`, `SYSTEM`), optional user actor, subject and safe metadata. Passwords, invitation tokens, session IDs and CSRF/auth tokens are excluded.
+Invitation consumption locks its row in one transaction, verifies status/target email/unique email, creates the user, consumes the one allowed use and appends audit events. Audit events are application append-only: `AuditEventQueryBuilder` permits inserts used by `AuditLogger`, but rejects query-level `update()` and `delete()`; model instance mutation is rejected as well. This is not database-level immutability: raw `DB` access can still mutate the table and is outside the M1.1 supported application boundary. Audit events contain actor type (`USER`, `OPERATOR`, `SYSTEM`), optional user actor, subject and key-based recursively redacted metadata. Passwords, invitation tokens, session IDs and CSRF/auth tokens are excluded when they occur in protected keys; arbitrary values under benign keys are not content-inspected.
 
 The first-admin command acquires a fixed PostgreSQL transaction-level advisory lock, then re-checks for an existing admin inside the transaction before inserting. This serializes only the bootstrap invariant, releases automatically at transaction end, and avoids distributed-lock infrastructure. SQLite test runs skip the PostgreSQL-specific lock because their single-process test database has no equivalent; the real Docker PostgreSQL concurrency harness covers the database boundary. The same harness also runs the distinct two-independent-invitations/one-normalized-email case: one registration succeeds, one loses at the database `UNIQUE` boundary, one User and one invitation consumption are committed, and the losing invitation remains unused with no losing audit state.
 

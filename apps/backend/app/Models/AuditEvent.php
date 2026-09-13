@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class AuditEvent extends Model
 {
@@ -27,6 +28,12 @@ class AuditEvent extends Model
     {
         static::updating(static fn () => throw new \LogicException('Audit events are append-only.'));
         static::deleting(static fn () => throw new \LogicException('Audit events are append-only.'));
+    }
+
+    /** @param QueryBuilder $query */
+    public function newEloquentBuilder($query): AuditEventQueryBuilder
+    {
+        return new AuditEventQueryBuilder($query);
     }
 
     protected function casts(): array
