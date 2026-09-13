@@ -60,15 +60,15 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 - the M0 technical shell consumes a maintainable semantic subset of Phase 07 design tokens;
 - Figma live file exists but canvas review remains limited by previously recorded MCP Starter-plan capability/rate limitation.
 
-## M1.1 implementation readiness
+## M1.1 implementation outcome
 
-M1.1 Access Core review fixes are implemented locally pending the PR update. The current fixes add per-user auth-generation invalidation for in-flight session replay after disable/re-enable, forward login limiter and Argon settings through Compose, preserve invitation fragments across React Strict Mode replay, equalize unknown-account password work by invoking the active hasher with current parameters, support staged password-driver migration with login rehashing, translate concurrent duplicate-email unique conflicts into validation errors, block forwarded destructive audit-builder operations, preserve all accepted password bytes, isolate `make test` from the persistent Compose PostgreSQL/session/cache runtime, make the same-origin harness clean up only its uniquely identified test records, and fix the concurrency harness's isolated disable database setup. `make test` passes with backend 40 tests / 178 assertions and frontend 2 / 2; Pint, Larastan, PostgreSQL concurrency, same-origin auth, Compose config validation and `git diff --check` pass. The ordinary Compose development build still reproduces the known baseline `/_global-error` prerender failure; production build passes. `NEXT.md` remains `m1-1-access-core`; M1.2 has not started.
+M1.1 Access Core is completed / PASS and was squash-merged into `stage` as `c7c5d970624cfe731f62d55389f302603ec55c34` from PR #23. The implementation adds per-user auth-generation invalidation for in-flight session replay after disable/re-enable, forwards login limiter and Argon settings through Compose, preserves invitation fragments across React Strict Mode replay, equalizes unknown-account password work by invoking the active hasher with current parameters, supports staged password-driver migration with login rehashing, translates concurrent duplicate-email unique conflicts into validation errors, blocks forwarded destructive audit-builder operations including `forceDelete`, preserves all accepted password bytes, isolates `make test` from the persistent Compose PostgreSQL/session/cache runtime, makes the same-origin harness clean up only its uniquely identified test records, and fixes the concurrency harness's isolated disable database setup. Final validation before merge: backend 40 tests / 180 assertions and frontend 2 / 2; Pint, Larastan, PostgreSQL concurrency, same-origin auth, frontend lint/typecheck, production frontend build, Compose config validation and `git diff --check` pass. The ordinary Compose development build still reproduces the known baseline `/_global-error` prerender failure; production build passes.
 
 ## Next authorized task
 
-`m1-1-access-core`
+`m1-2-career-core`
 
-Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-1-access-core.md`.
+Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-2-career-core.md`.
 
 ## M0 validation
 
