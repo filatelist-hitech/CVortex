@@ -20,8 +20,8 @@ jobs:
         run: make init
       - name: Backend and frontend checks
         run: make lint
-      - name: Start PostgreSQL for backend tests
-        run: docker compose up --detach --wait postgres
+      - name: Start backend dependencies for tests
+        run: docker compose up --detach --wait postgres redis
       - name: Backend and frontend tests
         run: make test
       - name: Frontend production build
