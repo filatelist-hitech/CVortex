@@ -60,7 +60,7 @@ Queue-level throttling must not be mistaken for HTTP rate limiting. They protect
 
 ## Decision status
 
-Candidate only. No auth ADR is accepted in Phase 03.
+This Phase 03 research was candidate material at the time it was written. The M1.1 decision is now accepted in [ADR-0019](../../docs/03-ADR/ADR-0019-sanctum-stateful-first-party-auth.md); this research remains the evidence record and does not govern implementation.
 
 ## Confidence
 

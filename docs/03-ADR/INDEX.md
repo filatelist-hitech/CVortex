@@ -48,6 +48,7 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0016](ADR-0016-deterministic-document-rendering.md) | Deterministic DOCX-to-PDF Rendering Pipeline | accepted | OWNER_CONSTRAINT | 2026-09-12 | Documents | — | — |
 | [ADR-0017](ADR-0017-untrusted-external-content.md) | Untrusted External Content Boundary | accepted | RESEARCH_BACKED_DECISION | 2026-09-12 | Security / ingestion | — | — |
 | [ADR-0018](ADR-0018-runtime-ai-skills-location.md) | Repository Runtime AI Skills Location | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-12 | AI / repository | — | — |
+| [ADR-0019](ADR-0019-sanctum-stateful-first-party-auth.md) | Stateful Sanctum Authentication for First-party Web | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-13 | Access / security | — | — |
 
 ## Freeze rule
 

@@ -20,13 +20,18 @@ class InvitationService
             throw ValidationException::withMessages(['expires' => 'Expiry must be between 1 and 30 days.']);
         }
 
+        $normalizedTargetEmail = $targetEmail === null ? null : $this->emails->validate($targetEmail);
         $token = bin2hex(random_bytes(32));
-        $invitation = Invitation::query()->create([
-            'token_hash' => $this->tokenHash($token),
-            'target_email' => $targetEmail === null ? null : $this->emails->normalize($targetEmail),
-            'expires_at' => now()->addDays($expiresInDays),
-        ]);
-        $this->audit->record('invitation.created', AuditEvent::ACTOR_OPERATOR, null, Invitation::class, $invitation->id);
+        $invitation = DB::transaction(function () use ($normalizedTargetEmail, $token, $expiresInDays): Invitation {
+            $invitation = Invitation::query()->create([
+                'token_hash' => $this->tokenHash($token),
+                'target_email' => $normalizedTargetEmail,
+                'expires_at' => now()->addDays($expiresInDays),
+            ]);
+            $this->audit->record('invitation.created', AuditEvent::ACTOR_OPERATOR, null, Invitation::class, $invitation->id);
+
+            return $invitation;
+        });
 
         return compact('invitation', 'token');
     }
@@ -47,7 +52,7 @@ class InvitationService
 
     public function register(string $token, string $email, string $password): User
     {
-        $normalizedEmail = $this->emails->normalize($email);
+        $normalizedEmail = $this->emails->validate($email);
 
         return DB::transaction(function () use ($token, $normalizedEmail, $password): User {
             $invitation = Invitation::query()->where('token_hash', $this->tokenHash($token))->lockForUpdate()->first();

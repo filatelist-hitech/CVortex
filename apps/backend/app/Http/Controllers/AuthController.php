@@ -15,11 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request, InvitationService $invitations): JsonResponse
+    public function register(Request $request, InvitationService $invitations, EmailNormalizer $emails): JsonResponse
     {
         $data = $request->validate([
             'invitation_token' => ['required', 'string', 'size:64'],
-            'email' => ['required', 'string', 'email:rfc', 'max:254'],
+            'email' => $emails->rules(),
             'password' => ['required', 'string', 'min:15', 'max:128', 'confirmed'],
         ]);
         $user = $invitations->register($data['invitation_token'], $data['email'], $data['password']);
@@ -33,7 +33,7 @@ class AuthController extends Controller
     public function login(Request $request, EmailNormalizer $emails, AuditLogger $audit): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'string', 'email:rfc', 'max:254'],
+            'email' => $emails->rules(),
             'password' => ['required', 'string', 'max:128'],
         ]);
         $email = $emails->normalize($data['email']);

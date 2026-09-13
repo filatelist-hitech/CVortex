@@ -9,12 +9,20 @@ use Illuminate\Validation\ValidationException;
 
 class UserStatusService
 {
+    private const ADMIN_STATUS_LOCK_NAMESPACE = 1129735762;
+
+    private const ADMIN_STATUS_LOCK_KEY = 2;
+
     public function __construct(private readonly AuditLogger $audit) {}
 
     public function disable(User $user): void
     {
         DB::transaction(function () use ($user): void {
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
+            if ($user->role === User::ROLE_ADMIN && DB::getDriverName() === 'pgsql') {
+                DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::ADMIN_STATUS_LOCK_NAMESPACE, self::ADMIN_STATUS_LOCK_KEY]);
+                $user = User::query()->lockForUpdate()->findOrFail($user->id);
+            }
             if ($user->role === User::ROLE_ADMIN && User::query()->where('role', User::ROLE_ADMIN)->where('status', User::STATUS_ACTIVE)->count() === 1) {
                 throw ValidationException::withMessages(['user' => 'The sole active admin cannot be disabled.']);
             }

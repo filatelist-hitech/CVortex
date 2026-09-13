@@ -42,7 +42,7 @@ class BootstrapFirstAdmin extends Command
                 }
                 $user = new User;
                 $user->forceFill([
-                    'email' => $emails->normalize((string) $this->argument('email')),
+                    'email' => $emails->validate((string) $this->argument('email')),
                     'password' => Hash::make($password),
                     'role' => User::ROLE_ADMIN,
                     'status' => User::STATUS_ACTIVE,

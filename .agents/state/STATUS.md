@@ -62,7 +62,7 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 
 ## M1.1 implementation readiness
 
-M1.1 Access Core implementation and the five confirmed independent-review fixes are complete / PASS pending a fresh independent review. Commit `9193b51` adds the real `/register#token=...` flow, PostgreSQL bootstrap serialization, executable security-matrix regressions, complete invitation CLI output and configurable login limiting. Backend/frontend tests, Pint, Larastan, production frontend build with `NODE_ENV=production`, Nginx `/register`, same-origin auth, PostgreSQL concurrency, isolated migration up/down/re-up, governance and diff checks pass. The compose-dev `NODE_ENV=development` build remains an environment-specific Next `/_global-error` failure; it is not used as the production-build result. `NEXT.md` remains `m1-1-access-core` until independent review; M1.2 has not started.
+M1.1 Access Core review fixes are implemented and validated pending the PR update. The final focused AccessCore run is 24 tests / 118 assertions; the full backend suite is 29 tests / 131 assertions. Pint (45 files), Larastan, frontend lint/typecheck, Vitest (2 tests), production frontend build, same-origin auth, `/register` runtime, PostgreSQL concurrency (bootstrap, invitation registration and exactly two-admin disable), migration up/down/re-up, governance preflight, diff check and PR contract all pass. The accepted Sanctum architecture is recorded in ADR-0019. `NEXT.md` remains `m1-1-access-core`; M1.2 has not started.
 
 ## Next authorized task
 

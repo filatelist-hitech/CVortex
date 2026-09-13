@@ -7,14 +7,18 @@ cd "$ROOT"
 compose=(docker compose)
 pg_user="${POSTGRES_USER:-$("${compose[@]}" exec -T postgres printenv POSTGRES_USER | tr -d '\r\n')}"
 database="cvortex_access_core_concurrency_$$_${RANDOM}"
+disable_database="cvortex_access_core_disable_$$_${RANDOM}"
 password='a very long safe passphrase'
 output_one="$(mktemp -t cvortex-bootstrap-one.XXXXXX)"
 output_two="$(mktemp -t cvortex-bootstrap-two.XXXXXX)"
 register_one="$(mktemp -t cvortex-register-one.XXXXXX)"
 register_two="$(mktemp -t cvortex-register-two.XXXXXX)"
+disable_one="$(mktemp -t cvortex-disable-one.XXXXXX)"
+disable_two="$(mktemp -t cvortex-disable-two.XXXXXX)"
 
 cleanup() {
-  rm -f "$output_one" "$output_two" "$register_one" "$register_two"
+  rm -f "$output_one" "$output_two" "$register_one" "$register_two" "$disable_one" "$disable_two"
+  docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$disable_database\" WITH (FORCE)" >/dev/null 2>&1 || true
   "${compose[@]}" exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$database\" WITH (FORCE)" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -69,4 +73,46 @@ if test "$registered" -ne 1 || test "$failed" -ne 1 || test "$users" -ne 1 || te
   exit 1
 fi
 
-echo 'access-core-postgres-concurrency: PASS (one bootstrap admin, one invitation registration)'
+docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$disable_database\"" >/dev/null
+docker compose exec -T -e DB_DATABASE="$disable_database" backend php artisan migrate --force >/dev/null
+disable_ids=$(docker compose exec -T -e DB_DATABASE="$disable_database" backend php tests/Support/prepare_disable_concurrency.php)
+disable_id_one=$(sed -n '1p' <<<"$disable_ids")
+disable_id_two=$(sed -n '2p' <<<"$disable_ids")
+
+set +e
+(docker compose exec -T -e DB_DATABASE="$disable_database" backend php artisan user:disable "$disable_id_one") >"$disable_one" 2>&1 &
+disable_pid_one=$!
+(docker compose exec -T -e DB_DATABASE="$disable_database" backend php artisan user:disable "$disable_id_two") >"$disable_two" 2>&1 &
+disable_pid_two=$!
+wait "$disable_pid_one"
+disable_status_one=$?
+wait "$disable_pid_two"
+disable_status_two=$?
+set -e
+
+disable_successes=$( (grep -l -F 'User disabled.' "$disable_one" "$disable_two" || true) | wc -l | tr -d ' ')
+disable_rejections=$( (grep -l -F 'sole active admin cannot be disabled' "$disable_one" "$disable_two" || true) | wc -l | tr -d ' ')
+active_admins=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT count(*) FROM users WHERE role = 'admin' AND status = 'ACTIVE'")
+disabled_admins=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT count(*) FROM users WHERE role = 'admin' AND status = 'DISABLED'")
+disable_audits=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT count(*) FROM audit_events WHERE event_type = 'user.disabled'")
+remaining_sessions=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT count(*) FROM sessions")
+
+if test "$disable_successes" -ne 1 || test "$disable_rejections" -ne 1 || test "$active_admins" -ne 1 || test "$disabled_admins" -ne 1 || test "$disable_audits" -ne 1 || test "$remaining_sessions" -ne 1 || test "$disable_status_one" -eq "$disable_status_two"; then
+  echo "admin disable concurrency failed: statuses=$disable_status_one/$disable_status_two successes=$disable_successes rejections=$disable_rejections active=$active_admins disabled=$disabled_admins audits=$disable_audits sessions=$remaining_sessions" >&2
+  cat "$disable_one" "$disable_two" >&2
+  exit 1
+fi
+
+rejected_id=$disable_id_one
+if grep -q -F 'User disabled.' "$disable_one"; then
+  rejected_id=$disable_id_two
+fi
+rejected_sessions=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT count(*) FROM sessions WHERE user_id = '$rejected_id'")
+rejected_audits=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT count(*) FROM audit_events WHERE subject_id = '$rejected_id'")
+rejected_status=$(docker compose exec -T -e DB_DATABASE="$disable_database" postgres psql -U "$pg_user" -d "$disable_database" -Atqc "SELECT status FROM users WHERE id = '$rejected_id'")
+if test "$rejected_sessions" -ne 1 || test "$rejected_audits" -ne 0 || test "$rejected_status" != 'ACTIVE'; then
+  echo "rejected disable mutated state: status=$rejected_status sessions=$rejected_sessions audits=$rejected_audits" >&2
+  exit 1
+fi
+
+echo 'access-core-postgres-concurrency: PASS (bootstrap, invitation registration, concurrent admin disable)'

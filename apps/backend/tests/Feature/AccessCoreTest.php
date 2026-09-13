@@ -111,6 +111,33 @@ class AccessCoreTest extends TestCase
         $this->assertDatabaseHas('audit_events', ['event_type' => 'invitation.created', 'actor_type' => AuditEvent::ACTOR_OPERATOR]);
     }
 
+    public function test_invalid_targeted_invitation_email_is_rejected_without_side_effects(): void
+    {
+        $this->artisan('invitation:create --email=not-an-email --expires=7')->assertExitCode(1);
+        $this->assertDatabaseCount('invitations', 0);
+        $this->assertDatabaseCount('audit_events', 0);
+    }
+
+    public function test_invitation_creation_rolls_back_when_creation_audit_fails_without_leaking_token(): void
+    {
+        $audit = $this->mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('injected audit failure'));
+        $this->app->instance(AuditLogger::class, $audit);
+        Log::spy();
+
+        try {
+            app(InvitationService::class)->create('safe@example.test', 7);
+            $this->fail('Invitation creation must fail when its required audit event fails.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('injected audit failure', $exception->getMessage());
+            $this->assertStringNotContainsString('token', $exception->getMessage());
+        }
+
+        $this->assertDatabaseCount('invitations', 0);
+        $this->assertDatabaseCount('audit_events', 0);
+        Log::shouldNotHaveReceived('info');
+    }
+
     public function test_generic_invitation_cli_creates_usable_one_time_invitation_and_never_reveals_it_again(): void
     {
         $this->assertSame(0, Artisan::call('invitation:create', ['--expires' => 7]));
@@ -174,6 +201,13 @@ class AccessCoreTest extends TestCase
         app(UserStatusService::class)->disable($admin);
     }
 
+    public function test_bootstrap_admin_rejects_invalid_email_without_side_effects(): void
+    {
+        $this->artisan('user:bootstrap-admin malformed')->expectsQuestion('Password (15-128 characters)', 'a very long safe passphrase')->assertExitCode(1);
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('audit_events', 0);
+    }
+
     public function test_disabling_user_invalidates_multiple_database_sessions(): void
     {
         $user = User::query()->create(['email' => 'sessions@example.test', 'password' => Hash::make('a very long safe passphrase')]);
@@ -218,6 +252,16 @@ class AccessCoreTest extends TestCase
         ['csrf' => $csrf] = $this->csrfCookies();
         $this->assertNotEmpty($csrf);
         $this->assertDatabaseMissing('users', ['email' => 'web@example.test']);
+    }
+
+    public function test_http_registration_rejects_invalid_email_before_persistence(): void
+    {
+        ['token' => $token] = app(InvitationService::class)->create(null, 7);
+        $payload = ['invitation_token' => $token, 'email' => 'malformed', 'password' => 'a very long safe passphrase', 'password_confirmation' => 'a very long safe passphrase'];
+        $this->withoutMiddleware(ValidateCsrfToken::class)->postJson('/api/v1/auth/register', $payload)->assertUnprocessable();
+        $this->assertDatabaseMissing('users', ['email' => 'malformed']);
+        $this->assertDatabaseCount('invitations', 1);
+        $this->assertSame(0, Invitation::query()->sole()->uses);
     }
 
     public function test_login_errors_do_not_enumerate_and_disabled_account_is_rejected(): void
