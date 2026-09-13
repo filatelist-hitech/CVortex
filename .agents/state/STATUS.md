@@ -55,8 +55,8 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 - Docker Compose provides Nginx, frontend, backend/PHP-FPM, Horizon, PostgreSQL and Redis with only Nginx host-exposed;
 - root Make/configuration workflows, health probes, request correlation, persistent PostgreSQL/private storage and disposable Redis are implemented;
 - deterministic backend/frontend checks and the minimal GitHub Actions quality workflow are implemented;
-- no product migrations/domain code exist yet;
-- runtime AI directory remains an architecture/canonical-location baseline rather than implemented Skills;
+- M1.2 adds the first product migration/domain slice for owner-scoped Career sources, facts, Claims, evidence and LLM-run metadata;
+- runtime AI now contains the versioned `career.fact-extraction@1.0.0` Skill, prompt, schema and synthetic adversarial eval fixtures;
 - the M0 technical shell consumes a maintainable semantic subset of Phase 07 design tokens;
 - Figma live file exists but canvas review remains limited by previously recorded MCP Starter-plan capability/rate limitation.
 
@@ -64,11 +64,15 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 
 M1.1 Access Core is completed / PASS and was squash-merged into `stage` as `c7c5d970624cfe731f62d55389f302603ec55c34` from PR #23. The implementation adds per-user auth-generation invalidation for in-flight session replay after disable/re-enable, forwards login limiter and Argon settings through Compose, preserves invitation fragments across React Strict Mode replay, equalizes unknown-account password work by invoking the active hasher with current parameters, supports staged password-driver migration with login rehashing, translates concurrent duplicate-email unique conflicts into validation errors, blocks forwarded destructive audit-builder operations including `forceDelete`, preserves all accepted password bytes, isolates `make test` from the persistent Compose PostgreSQL/session/cache runtime, makes the same-origin harness clean up only its uniquely identified test records, and fixes the concurrency harness's isolated disable database setup. Final validation before merge: backend 40 tests / 180 assertions and frontend 2 / 2; Pint, Larastan, PostgreSQL concurrency, same-origin auth, frontend lint/typecheck, production frontend build, Compose config validation and `git diff --check` pass. The ordinary Compose development build still reproduces the known baseline `/_global-error` prerender failure; production build passes.
 
+## M1.2 implementation outcome
+
+M1.2 Career Core is completed / PASS on `feature/m1-2-career-core`. Authenticated users can paste career text for provider-neutral structured extraction into evidence-backed `PENDING` facts, explicitly Confirm/Edit and Confirm/Reject, add `user_manual` confirmed facts without an LLM, and query confirmed facts plus Truth-Guarded Claims. Original source wording remains separate from human-approved edits; invalid, non-confirmed, missing-provenance and cross-owner evidence blocks deterministically. Runtime AI assets are versioned under `/runtime-ai/`; the optional Responses adapter uses environment-only credentials behind the provider contract, with no concrete SDK type, model invariant, BYOK or file import. Final validation: backend 52 tests / 250 assertions and frontend 4 / 4; targeted Career tests 12 / 70 on SQLite and 12 / 70 on isolated PostgreSQL; fresh PostgreSQL migration, Pint, Larastan, ESLint, TypeScript, production frontend build, Compose config and `git diff --check` pass.
+
 ## Next authorized task
 
-`m1-2-career-core`
+`m1-3-vacancy-core`
 
-Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-2-career-core.md`.
+Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-3-vacancy-core.md`.
 
 ## M0 validation
 
