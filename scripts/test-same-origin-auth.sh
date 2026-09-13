@@ -7,9 +7,22 @@ cookie_file="$(mktemp -t cvortex-auth-cookies.XXXXXX)"
 header_file="$(mktemp -t cvortex-auth-headers.XXXXXX)"
 email="m1-1-runtime-$(date +%s)@example.test"
 password='a very long safe passphrase'
+invitation_id=""
 
 cleanup() {
   rm -f -- "$cookie_file" "$header_file"
+  if test -n "$invitation_id"; then
+    docker compose exec -T postgres sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' <<SQL >/dev/null 2>&1 || true
+BEGIN;
+DELETE FROM audit_events
+WHERE subject_id = '$invitation_id'
+   OR subject_id IN (SELECT id FROM users WHERE email = '$email');
+DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE email = '$email');
+DELETE FROM users WHERE email = '$email';
+DELETE FROM invitations WHERE id = '$invitation_id';
+COMMIT;
+SQL
+  fi
 }
 trap cleanup EXIT
 
@@ -28,7 +41,9 @@ csrf="$(curl -sS -D "$header_file" -o /dev/null -w '%{http_code}' -c "$cookie_fi
 assert_status "$csrf" 204 csrf-cookie
 cookie_present XSRF-TOKEN && cookie_present cvortex-session
 
-token="$(docker compose exec -T backend php artisan invitation:create --expires=7 | sed -n 's#.*token=##p')"
+invitation_output="$(docker compose exec -T backend php artisan invitation:create --expires=7)"
+invitation_id="$(sed -n 's/^Invitation ULID: //p' <<<"$invitation_output")"
+token="$(sed -n 's#.*token=##p' <<<"$invitation_output")"
 xsrf="$(xsrf_header)"
 register="$(curl -sS -o /dev/null -w '%{http_code}' -b "$cookie_file" -c "$cookie_file" \
   -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Origin: $origin" \
