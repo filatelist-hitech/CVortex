@@ -5,13 +5,14 @@ milestone: m1-first-value
 slice: m1-1-access-core
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-13
 tags: [task, auth, authorization, invitations, security]
 related:
   - ../../PROJECT.md
   - ../../docs/01-Product/Roadmap.md
   - ../policies/git-workflow.md
   - ../policies/documentation.md
+  - ../../docs/03-ADR/ADR-0019-sanctum-stateful-first-party-auth.md
   - legacy/phase-09-hardened-pr17.md
 ---
 
@@ -90,7 +91,7 @@ Do not:
 - introduce JWT/PAT/bearer auth for the first-party web app;
 - introduce OAuth or future-client auth flows in this slice.
 
-Middleware order, cookie names and exact Sanctum configuration are implementation details. Verify them against current official Laravel/Sanctum documentation. If this model lacks accepted ADR coverage, add or update the ADR during implementation.
+Middleware order, cookie names and exact Sanctum configuration are implementation details. Verify them against current official Laravel/Sanctum documentation. The canonical accepted architecture decision for this auth model is [ADR-0019](../../docs/03-ADR/ADR-0019-sanctum-stateful-first-party-auth.md); update that ADR through the architecture workflow if implementation evidence creates a real conflict.
 
 ## Domain vocabulary
 
@@ -110,6 +111,10 @@ REVOKED → EXPIRED → EXHAUSTED → ACTIVE
 
 **Ownership** is a server-authoritative relationship between a User and a private resource. The client is never its authority. Prove the convention with an isolated test-only fixture; do not invent a production `OwnedResource`, Career model or Vacancy model for these tests.
 
+**Security mutation atomicity** is a database invariant. For every M1.1 security mutation that requires an `AuditEvent`, the business mutation and its mandatory audit event commit atomically in the same database transaction. At minimum this covers first-admin bootstrap, invitation create, invitation revoke, invitation consume/registration where applicable, user disable and user enable. If required audit persistence fails, the business state rolls back; no partial security mutation exists without its audit event, and no audit event represents a business mutation that rolled back. Rollback and error paths must preserve the existing sensitive-value redaction guarantees.
+
+**Admin-state concurrency** is a database invariant. The check and mutation that preserve at least one `ACTIVE` admin are serialized inside the database transaction using PostgreSQL-safe concurrency control. Process-local-only locking is not a correctness mechanism.
+
 ## Security invariants
 
 These must hold regardless of controller or UI shape:
@@ -120,6 +125,8 @@ Admin does not bypass private-resource ownership.
 Client user_id / owner_id / role / scope values do not authorize anything.
 DISABLED users cannot keep using an authenticated session.
 Registration cannot leave a partial User when invitation consumption fails.
+Required security mutations cannot commit without their mandatory AuditEvent, and rolled-back mutations cannot leave audit events behind.
+At least one ACTIVE admin remains under concurrent status transitions.
 Sensitive auth/invitation values never enter normal logs, audit metadata or serialized responses.
 ```
 
@@ -137,6 +144,8 @@ If an email already belongs to a User:
 - the invitation is not consumed;
 - no account merge or recovery occurs through the invitation flow.
 
+Persist the canonical normalized email as the User identity and enforce a database-level `UNIQUE` constraint on that persisted value. Application-level duplicate checks are UX/prevalidation only; they are not the concurrency correctness mechanism. Preserve casing/whitespace equivalence tests at the normalization boundary.
+
 ## Operator flows
 
 ### First admin
@@ -152,6 +161,8 @@ Required behavior:
 - sensitive input does not appear in logs;
 - successful bootstrap appends an OPERATOR audit event.
 
+Bootstrap must commit the new admin and its required audit event atomically. PostgreSQL concurrency control must serialize competing first-admin attempts.
+
 If an admin already exists, the command fails safely and changes nothing. It does not create another admin, reset an existing account or promote an arbitrary user.
 
 General role mutation is outside M1.1.
@@ -166,6 +177,8 @@ A targeted invitation requires normalized registration email to match normalized
 
 Revocation updates primary state such as `revoked_at` and appends the appropriate audit event.
 
+Invitation create and revoke must commit their business mutation and required audit event atomically.
+
 ### Disable/enable
 
 Provide operator CLI commands equivalent to:
@@ -178,6 +191,8 @@ user:enable
 Disabling invalidates active sessions. Status is also enforced on every authenticated request so a stale session cannot preserve access.
 
 Never allow an operation to leave zero ACTIVE admins. Disabling the sole ACTIVE admin fails closed with no partial change.
+
+The active-admin check and status mutation must be serialized in the same database transaction. The invariant must hold for concurrent operations targeting different admins; process-local locks alone are insufficient. Disable and enable each commit their status/session mutation (where applicable) and required audit event atomically.
 
 ## Invitation URL
 
@@ -232,6 +247,8 @@ establish authenticated session
 ```
 
 Two concurrent attempts using one invitation must produce exactly one successful registration. The losing request fails safely, creates no partial User and cannot over-consume the invitation.
+
+The registration/invitation-consumption transaction also carries the audit atomicity invariant: invitation consumption, User creation and all required registration/consumption `AuditEvent` rows either commit together or all roll back. A failed audit write must not leave a User or consumed invitation, and a rolled-back registration must not leave an audit event.
 
 Use database constraints, locking and transaction semantics rather than timing assumptions.
 
@@ -396,6 +413,7 @@ Automated coverage must prove failure paths as well as happy paths.
 - token absent from serialization, audit and logs;
 - duplicate-email registration fails without consuming the invitation;
 - concurrent use of one invitation allows exactly one successful registration.
+- concurrent registration through two independent invitations for one normalized email creates exactly one User; the losing transaction fails safely without partial invitation/account/audit state.
 
 ### Registration
 
@@ -426,6 +444,8 @@ Automated coverage must prove failure paths as well as happy paths.
 - sole ACTIVE admin cannot be disabled;
 - rejected last-admin disable makes no partial changes.
 
+The explicit PostgreSQL concurrent-disable regression is also required: with exactly two `ACTIVE` admins and two concurrent operations targeting different admins, exactly one succeeds, one is rejected, exactly one `ACTIVE` admin remains, and the rejected transition leaves no partial status, session or audit changes.
+
 ### Authorization
 
 Using the isolated ownership fixture:
@@ -445,12 +465,31 @@ Using the isolated ownership fixture:
 - audit events are not updated/deleted through normal application flows;
 - sensitive values are absent from audit, logs and serialized output.
 
+### Atomic security mutation and rollback
+
+Add deterministic fault-injection tests that make required `AuditEvent` persistence fail and prove rollback/no partial state for:
+
+- invitation create;
+- invitation revoke;
+- first-admin bootstrap;
+- user disable;
+- user enable.
+
+For each case assert that the business mutation is absent or restored, the required audit event is absent, and no sensitive value appears in the exception, logs, audit metadata or serialized output. Retain the registration/invitation-consumption rollback test and make it prove the same all-or-nothing relationship between User creation, invitation consumption and required audit events.
+
+### PostgreSQL concurrency
+
+Add an explicit PostgreSQL regression with exactly two `ACTIVE` admins and two concurrent `user:disable` operations targeting different admins. Exactly one operation succeeds, one is rejected, exactly one `ACTIVE` admin remains, and the rejected transition leaves no partial status, session or audit changes. The evidence must demonstrate database transaction serialization (including the PostgreSQL-safe mechanism), not process-local-only locking.
+
+Add a concurrent registration regression using two valid independent invitations and the same normalized email identity. Exactly one User exists for that normalized email; the losing transaction fails safely; and invitation, account and audit state has no incorrect partial commit. The database unique constraint remains the final concurrency guard.
+
 ### Database and application validation
 
 Run as applicable:
 
 - migrations up;
 - migrations down/rollback safety required by project policy;
+- persisted normalized User email has a database-level `UNIQUE` constraint; concurrent same-email registration relies on that constraint rather than only an application precheck;
 - backend automated tests;
 - frontend tests/typecheck/lint/build relevant to touched code;
 - repository governance/security checks required by the project.
@@ -489,18 +528,24 @@ M1.1 is PASS only when every applicable criterion is satisfied:
 - [ ] invitation token is shown only once and cannot be retrieved later;
 - [ ] token does not leak through normal URL query, log, audit or serialization paths;
 - [ ] invited registration works atomically;
+- [ ] first-admin bootstrap, invitation create/revoke, invitation consume/registration, disable and enable commit each business mutation and mandatory AuditEvent atomically;
+- [ ] deterministic audit-persistence fault injection proves rollback/no partial state for invitation create, invitation revoke, bootstrap, disable and enable;
+- [ ] no audit event remains for a rolled-back business mutation, and rollback/error paths preserve sensitive-value redaction;
 - [ ] duplicate email cannot consume an invitation;
 - [ ] concurrent use of one invitation cannot create two accounts;
+- [ ] concurrent registration through two independent invitations for one normalized email creates exactly one User and safely rolls back the losing transaction;
 - [ ] registration establishes a regenerated session only after commit;
 - [ ] login/logout/current-user flow works;
 - [ ] same-origin Sanctum session + CSRF is the implemented first-party auth model;
 - [ ] email normalization/comparison is centralized and documented;
+- [ ] canonical normalized User email is persisted under a database-level `UNIQUE` constraint; application duplicate checks are not the concurrency guard;
 - [ ] public user identity is stable and non-sequential;
 - [ ] roles/status cannot be client-escalated;
 - [ ] DISABLED is enforced on every authenticated request;
 - [ ] operator disable/enable path works;
 - [ ] disabling invalidates active sessions;
 - [ ] at least one ACTIVE admin is always preserved;
+- [ ] concurrent disable of two admins with exactly two `ACTIVE` admins has exactly one success, one rejection and one remaining `ACTIVE` admin, with no partial rejected transition;
 - [ ] reusable ownership convention exists and negative tests pass;
 - [ ] foreign private-resource access returns `404`;
 - [ ] known capability denial uses `403` where applicable;

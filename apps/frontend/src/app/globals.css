@@ -111,6 +111,20 @@ h1 {
   content: "";
 }
 
+.tabs, form, .identity { display: grid; gap: var(--space-4); margin-top: var(--space-6); }
+.tabs { grid-template-columns: repeat(2, 1fr); }
+label { display: grid; gap: var(--space-2); color: var(--text-secondary); }
+input, button { min-height: 44px; border: 1px solid var(--border-subtle); border-radius: 8px; font: inherit; }
+input { padding: 0 var(--space-4); color: var(--text-primary); background: #060a14; }
+button { cursor: pointer; padding: 0 var(--space-4); color: #03141a; background: var(--accent-primary); font-weight: 700; }
+.tabs button { color: var(--text-secondary); background: transparent; }
+.tabs button.selected { border-color: var(--accent-primary); color: var(--accent-primary); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent-tertiary); outline-offset: 2px; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+.error { color: #ffb4b4; line-height: 1.5; }
+.identity { grid-template-columns: auto 1fr; }
+.identity dt { color: var(--text-muted); }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
