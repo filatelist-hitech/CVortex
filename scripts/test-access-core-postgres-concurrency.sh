@@ -13,11 +13,13 @@ output_one="$(mktemp -t cvortex-bootstrap-one.XXXXXX)"
 output_two="$(mktemp -t cvortex-bootstrap-two.XXXXXX)"
 register_one="$(mktemp -t cvortex-register-one.XXXXXX)"
 register_two="$(mktemp -t cvortex-register-two.XXXXXX)"
+same_email_one="$(mktemp -t cvortex-register-same-email-one.XXXXXX)"
+same_email_two="$(mktemp -t cvortex-register-same-email-two.XXXXXX)"
 disable_one="$(mktemp -t cvortex-disable-one.XXXXXX)"
 disable_two="$(mktemp -t cvortex-disable-two.XXXXXX)"
 
 cleanup() {
-  rm -f "$output_one" "$output_two" "$register_one" "$register_two" "$disable_one" "$disable_two"
+  rm -f "$output_one" "$output_two" "$register_one" "$register_two" "$same_email_one" "$same_email_two" "$disable_one" "$disable_two"
   docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$disable_database\" WITH (FORCE)" >/dev/null 2>&1 || true
   "${compose[@]}" exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$database\" WITH (FORCE)" >/dev/null 2>&1 || true
 }
@@ -73,6 +75,38 @@ if test "$registered" -ne 1 || test "$failed" -ne 1 || test "$users" -ne 1 || te
   exit 1
 fi
 
+invitation_same_email_one=$("${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan invitation:create --email=User@Example.com --expires=7)
+same_email_token_one=$(sed -n 's#.*token=##p' <<<"$invitation_same_email_one")
+same_email_id_one=$(sed -n 's/^Invitation ULID: //p' <<<"$invitation_same_email_one")
+invitation_same_email_two=$("${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan invitation:create --email=user@example.com --expires=7)
+same_email_token_two=$(sed -n 's#.*token=##p' <<<"$invitation_same_email_two")
+same_email_id_two=$(sed -n 's/^Invitation ULID: //p' <<<"$invitation_same_email_two")
+
+set +e
+(printf '%s\n' "$same_email_token_one" | "${compose[@]}" exec -T -e DB_DATABASE="$database" backend php tests/Support/register_invitation.php User@Example.com) >"$same_email_one" 2>&1 &
+same_email_pid_one=$!
+(printf '%s\n' "$same_email_token_two" | "${compose[@]}" exec -T -e DB_DATABASE="$database" backend php tests/Support/register_invitation.php user@example.com) >"$same_email_two" 2>&1 &
+same_email_pid_two=$!
+wait "$same_email_pid_one"
+same_email_status_one=$?
+wait "$same_email_pid_two"
+same_email_status_two=$?
+set -e
+
+same_email_registered=$( (grep -l -F 'registered' "$same_email_one" "$same_email_two" || true) | wc -l | tr -d ' ' )
+same_email_failed=$( (grep -l -E 'Exception|QueryException' "$same_email_one" "$same_email_two" || true) | wc -l | tr -d ' ' )
+same_email_users=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM users WHERE email = 'user@example.com'")
+same_email_uses=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT coalesce(sum(uses), 0) FROM invitations WHERE id IN ('$same_email_id_one', '$same_email_id_two')")
+same_email_consumed=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM invitations WHERE id IN ('$same_email_id_one', '$same_email_id_two') AND uses = 1")
+same_email_consumed_audits=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM audit_events WHERE event_type = 'invitation.consumed' AND subject_id IN ('$same_email_id_one', '$same_email_id_two')")
+same_email_registered_audits=$("${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM audit_events a JOIN users u ON u.id = a.subject_id WHERE a.event_type = 'user.registered' AND u.email = 'user@example.com'")
+
+if test "$same_email_registered" -ne 1 || test "$same_email_failed" -ne 1 || test "$same_email_users" -ne 1 || test "$same_email_uses" -ne 1 || test "$same_email_consumed" -ne 1 || test "$same_email_consumed_audits" -ne 1 || test "$same_email_registered_audits" -ne 1 || test "$same_email_status_one" -eq "$same_email_status_two"; then
+  echo "same normalized email concurrency failed: statuses=$same_email_status_one/$same_email_status_two registered=$same_email_registered failed=$same_email_failed users=$same_email_users uses=$same_email_uses consumed=$same_email_consumed consumed_audits=$same_email_consumed_audits registered_audits=$same_email_registered_audits" >&2
+  cat "$same_email_one" "$same_email_two" >&2
+  exit 1
+fi
+
 docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$disable_database\"" >/dev/null
 docker compose exec -T -e DB_DATABASE="$disable_database" backend php artisan migrate --force >/dev/null
 disable_ids=$(docker compose exec -T -e DB_DATABASE="$disable_database" backend php tests/Support/prepare_disable_concurrency.php)
@@ -115,4 +149,4 @@ if test "$rejected_sessions" -ne 1 || test "$rejected_audits" -ne 0 || test "$re
   exit 1
 fi
 
-echo 'access-core-postgres-concurrency: PASS (bootstrap, invitation registration, concurrent admin disable)'
+echo 'access-core-postgres-concurrency: PASS (bootstrap, single-invitation registration, independent-invitation same-email registration, concurrent admin disable)'

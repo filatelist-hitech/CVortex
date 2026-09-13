@@ -62,7 +62,7 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 
 ## M1.1 implementation readiness
 
-M1.1 Access Core review fixes are implemented and validated pending the PR update. The final focused AccessCore run is 24 tests / 118 assertions; the full backend suite is 29 tests / 131 assertions. Pint (45 files), Larastan, frontend lint/typecheck, Vitest (2 tests), production frontend build, same-origin auth, `/register` runtime, PostgreSQL concurrency (bootstrap, invitation registration and exactly two-admin disable), migration up/down/re-up, governance preflight, diff check and PR contract all pass. The accepted Sanctum architecture is recorded in ADR-0019. `NEXT.md` remains `m1-1-access-core`; M1.2 has not started.
+M1.1 Access Core review fixes are implemented and validated locally pending the PR update. The final focused AccessCore run is 28 tests / 144 assertions; the full backend suite is 33 tests / 157 assertions. Pint (45 files), Larastan, frontend lint/typecheck, Vitest (2 tests / 2 assertions), production frontend build, same-origin auth, `/register` runtime, PostgreSQL concurrency (bootstrap, existing single-invitation registration, independent invitations for one normalized email, and exactly two-admin disable), migration up/down/re-up, governance preflight, diff check and PR contract all pass. GitHub `m0-quality` is red from PostgreSQL container DNS resolution failure before tests; classify as infrastructure/transient, not a code failure. The accepted Sanctum architecture is recorded in ADR-0019. `NEXT.md` remains `m1-1-access-core`; M1.2 has not started.
 
 ## Next authorized task
 

@@ -162,12 +162,20 @@ class AccessCoreTest extends TestCase
         $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('injected audit failure'));
         $this->app->instance(AuditLogger::class, $audit);
 
-        $this->expectException(\RuntimeException::class);
-        app(InvitationService::class)->register($token, 'rollback@example.test', 'a very long safe passphrase');
+        try {
+            app(InvitationService::class)->register($token, 'rollback@example.test', 'a very long safe passphrase');
+            $this->fail('Registration must fail when its required audit event fails.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('injected audit failure', $exception->getMessage());
+            $this->assertStringNotContainsString($token, $exception->getMessage());
+            $this->assertStringNotContainsString('a very long safe passphrase', $exception->getMessage());
+        }
 
         $this->assertDatabaseMissing('users', ['email' => 'rollback@example.test']);
         $this->assertSame(0, $invitation->fresh()->uses);
+        $this->assertNull($invitation->fresh()->consumed_at);
         $this->assertDatabaseMissing('audit_events', ['event_type' => 'user.registered']);
+        $this->assertDatabaseMissing('audit_events', ['event_type' => 'invitation.consumed']);
     }
 
     public function test_normal_application_logs_are_redacted_for_credentials(): void
@@ -306,6 +314,78 @@ class AccessCoreTest extends TestCase
         $this->assertDatabaseCount('sessions', 0);
         $cookies = $this->csrfCookies();
         $this->withHeader('Origin', 'http://localhost')->withCookie(config('session.cookie'), $cookies['session'])->withHeader('X-CSRF-TOKEN', $cookies['session_token'])->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'a very long safe passphrase'])->assertOk();
+    }
+
+    public function test_invitation_revoke_rolls_back_when_audit_persistence_fails(): void
+    {
+        ['invitation' => $invitation] = app(InvitationService::class)->create(null, 7);
+        $audit = $this->mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('injected audit failure'));
+        $this->app->instance(AuditLogger::class, $audit);
+
+        try {
+            app(InvitationService::class)->revoke($invitation->id);
+            $this->fail('Invitation revocation must fail when its required audit event fails.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('injected audit failure', $exception->getMessage());
+        }
+
+        $this->assertNull($invitation->fresh()->revoked_at);
+        $this->assertDatabaseMissing('audit_events', ['event_type' => 'invitation.revoked']);
+    }
+
+    public function test_bootstrap_rolls_back_when_audit_persistence_fails(): void
+    {
+        $audit = $this->mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('injected audit failure'));
+        $this->app->instance(AuditLogger::class, $audit);
+
+        $this->artisan('user:bootstrap-admin bootstrap-failure@example.test')
+            ->expectsQuestion('Password (15-128 characters)', 'a very long safe passphrase')
+            ->expectsOutput('injected audit failure')
+            ->assertExitCode(1);
+
+        $this->assertDatabaseMissing('users', ['email' => 'bootstrap-failure@example.test']);
+        $this->assertDatabaseMissing('audit_events', ['event_type' => 'user.bootstrap_admin']);
+    }
+
+    public function test_disable_rolls_back_status_sessions_and_audit_when_persistence_fails(): void
+    {
+        $user = User::query()->create(['email' => 'disable-failure@example.test', 'password' => Hash::make('a very long safe passphrase')]);
+        \DB::table('sessions')->insert(['id' => 'disable-failure-session', 'user_id' => $user->id, 'payload' => 'payload', 'last_activity' => time()]);
+        $audit = $this->mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('injected audit failure'));
+        $this->app->instance(AuditLogger::class, $audit);
+
+        try {
+            app(UserStatusService::class)->disable($user);
+            $this->fail('User disable must fail when its required audit event fails.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('injected audit failure', $exception->getMessage());
+        }
+
+        $this->assertSame(User::STATUS_ACTIVE, $user->fresh()->status);
+        $this->assertDatabaseCount('sessions', 1);
+        $this->assertDatabaseMissing('audit_events', ['event_type' => 'user.disabled']);
+    }
+
+    public function test_enable_rolls_back_status_and_audit_when_persistence_fails(): void
+    {
+        $user = new User;
+        $user->forceFill(['email' => 'enable-failure@example.test', 'password' => Hash::make('a very long safe passphrase'), 'status' => User::STATUS_DISABLED])->save();
+        $audit = $this->mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('injected audit failure'));
+        $this->app->instance(AuditLogger::class, $audit);
+
+        try {
+            app(UserStatusService::class)->enable($user);
+            $this->fail('User enable must fail when its required audit event fails.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('injected audit failure', $exception->getMessage());
+        }
+
+        $this->assertSame(User::STATUS_DISABLED, $user->fresh()->status);
+        $this->assertDatabaseMissing('audit_events', ['event_type' => 'user.enabled']);
     }
 
     public function test_test_only_ownership_fixture_hides_foreign_resources_and_admin_has_no_bypass(): void
