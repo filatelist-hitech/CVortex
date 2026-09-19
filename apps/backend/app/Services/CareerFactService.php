@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\CareerFactSupersessionConflict;
 use App\Exceptions\SafeCareerException;
 use App\Models\CareerFact;
 use App\Models\CareerFactType;
@@ -138,21 +139,29 @@ class CareerFactService
         if (! hash_equals($user->id, (string) $original->owner_id)) {
             abort(404);
         }
-        if ($original->status !== CareerFact::STATUS_CONFIRMED
-            || ! $this->owners->factHasValidProvenance($original, $user->id, true)) {
-            throw ValidationException::withMessages(['fact' => 'Only an owner-valid confirmed fact may be superseded.']);
-        }
         if (CareerFactType::tryFrom($factType) === null) {
             throw ValidationException::withMessages(['fact_type' => 'The selected fact type is not supported.']);
         }
 
         try {
             return DB::transaction(function () use ($user, $original, $factType, $assertion): CareerFact {
+                $lockedOriginal = CareerFact::query()->whereKey($original->id)->lockForUpdate()->first();
+                if ($lockedOriginal === null || ! hash_equals($user->id, (string) $lockedOriginal->owner_id)) {
+                    abort(404);
+                }
+
+                if ($lockedOriginal->status !== CareerFact::STATUS_CONFIRMED
+                    || ! $this->owners->factHasValidProvenance($lockedOriginal, $user->id, true)
+                    || CareerFact::query()->where('supersedes_fact_id', $lockedOriginal->id)
+                        ->where('status', CareerFact::STATUS_CONFIRMED)->exists()) {
+                    throw new CareerFactSupersessionConflict;
+                }
+
                 $replacement = CareerFact::query()->create([
                     'owner_id' => $user->id,
-                    'career_profile_id' => $original->career_profile_id,
+                    'career_profile_id' => $lockedOriginal->career_profile_id,
                     'career_source_id' => null,
-                    'supersedes_fact_id' => $original->id,
+                    'supersedes_fact_id' => $lockedOriginal->id,
                     'provenance_type' => CareerFact::PROVENANCE_MANUAL,
                     'fact_type' => $factType,
                     'assertion_original' => $assertion,
@@ -164,19 +173,25 @@ class CareerFactService
                     'reviewed_by' => $user->id,
                     'reviewed_at' => now(),
                 ]);
-                $original->forceFill([
+                $lockedOriginal->forceFill([
                     'status' => CareerFact::STATUS_DEPRECATED,
                 ])->save();
-                Claim::query()->whereIn('id', ClaimEvidence::query()->where('career_fact_id', $original->id)->pluck('claim_id'))
+                Claim::query()->whereIn('id', ClaimEvidence::query()->where('career_fact_id', $lockedOriginal->id)->pluck('claim_id'))
                     ->update(['truth_status' => TruthGuard::BLOCK]);
                 $this->createClaim($replacement);
                 $this->audit->record('career_fact.superseded', 'USER', $user, CareerFact::class, $replacement->id, [
-                    'supersedes_fact_id' => $original->id,
+                    'supersedes_fact_id' => $lockedOriginal->id,
                 ]);
 
                 return $replacement;
             });
-        } catch (QueryException) {
+        } catch (CareerFactSupersessionConflict $exception) {
+            throw $exception;
+        } catch (QueryException $exception) {
+            if (($exception->errorInfo[0] ?? null) === '23505'
+                && str_contains($exception->getMessage(), 'career_facts_one_confirmed_replacement_unique')) {
+                throw new CareerFactSupersessionConflict;
+            }
             throw new SafeCareerException;
         }
     }

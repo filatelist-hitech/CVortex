@@ -198,6 +198,16 @@ class CareerCoreRemediationTest extends TestCase
             ->assertJsonCount(1, 'data.facts')
             ->assertJsonPath('data.facts.0.id', $replacementId)
             ->assertJsonMissing(['id' => $original->id]);
+
+        $this->actingAs($user)->postJson('/api/v1/career/facts/'.$original->id.'/supersede', [
+            'fact_type' => 'skill', 'assertion' => 'Losing duplicate replacement.',
+        ])->assertConflict();
+
+        $next = app(CareerFactService::class)->supersede($user, CareerFact::query()->findOrFail($replacementId), 'skill', 'Second historical correction.');
+        $this->assertSame($replacementId, $next->supersedes_fact_id);
+        $this->actingAs($user)->getJson('/api/v1/career/trusted')->assertOk()
+            ->assertJsonCount(1, 'data.facts')
+            ->assertJsonPath('data.facts.0.id', $next->id);
     }
 
     public function test_truth_guard_has_distinct_pass_block_and_valid_evidence_resolution_outcomes(): void

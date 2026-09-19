@@ -50,6 +50,8 @@ Repeated extraction of the same source text for one owner reuses its content-has
 
 `USER_RESOLUTION_REQUIRED` has one narrow meaning: two or more owner-valid, provenance-valid facts support the exact Claim wording but assign different typed fact semantics, so the application cannot choose the intended meaning safely. Missing or invalid evidence remains `BLOCK`. Human resolution selects one of the Claim's still-valid evidence facts, records selected fact/actor/time, clears the active ambiguity and re-evaluates the Claim. Evidence history is preserved.
 
+Supersession is serialized by locking the source `CareerFact` row and rechecking its confirmed state, provenance and replacement relation inside the transaction. PostgreSQL also enforces a partial unique index on `career_facts.supersedes_fact_id` for `CONFIRMED` replacements. This permits a historical chain (`A → B → C`) because each parent has at most one confirmed child, while preventing two simultaneous current replacements of the same fact. A losing request receives HTTP 409; old Claims are blocked and the replacement Claim is evaluated in the same transaction.
+
 ## Runtime AI boundary
 
 The application depends on the CVortex-owned `LlmProvider` contract and logical `ModelPolicy`. The canonical `career.fact-extraction@1.0.0` manifest, prompt, schema and synthetic adversarial fixtures live under `/runtime-ai/skills/career-fact-extraction/v1/`. A configuration resolver maps logical policy → provider → concrete model outside Career domain/application code. No provider SDK, concrete model invariant, BYOK credential or raw source text is stored in domain/run metadata.
@@ -70,9 +72,10 @@ The executable harness is:
 
 ```bash
 bash scripts/test-career-core-postgres-upgrade.sh
+bash scripts/test-career-fact-supersession-postgres-concurrency.sh
 ```
 
-It creates only a uniquely named temporary database, reconstructs the representative already-applied legacy schema, verifies preserved legacy data plus extraction/manual writes, checks non-destructive rollback/re-up, exercises cross-owner database failures and removes that temporary database.
+`test-career-core-postgres-upgrade.sh` creates only a uniquely named temporary database, reconstructs the representative already-applied legacy schema, verifies preserved legacy data plus extraction/manual writes, checks non-destructive rollback/re-up, exercises cross-owner database failures and removes that temporary database. `test-career-fact-supersession-postgres-concurrency.sh` uses another uniquely named temporary database and independent application processes to exercise the supersession lock/index race, then removes its database.
 
 ## Error and privacy boundary
 
