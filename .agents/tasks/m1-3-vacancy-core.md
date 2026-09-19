@@ -1,11 +1,11 @@
 ---
 title: CVortex M1.3 — Vacancy Core
-status: ready
+status: completed
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-19
 tags: [task, vacancy, matching, truth-first, ai]
 related:
   - ../../docs/01-Product/Roadmap.md

@@ -56,7 +56,8 @@ Only M0 and M1 slices have execution specs now. M2+ detail is intentionally crea
 - root Make/configuration workflows, health probes, request correlation, persistent PostgreSQL/private storage and disposable Redis are implemented;
 - deterministic backend/frontend checks and the minimal GitHub Actions quality workflow are implemented;
 - M1.2 adds the first product migration/domain slice for owner-scoped Career sources, facts, Claims, evidence and LLM-run metadata;
-- runtime AI now contains the versioned `career.fact-extraction@1.0.0` Skill, prompt, schema and synthetic adversarial eval fixtures;
+- M1.3 adds owner-scoped Vacancy snapshots, semantic requirements, seven-dimensional Career matching, explainable gaps and should-I-apply recommendations;
+- runtime AI contains the versioned `career.fact-extraction@1.0.0` and `vacancy.requirement-extraction@1.0.0` Skills, prompts, schemas and synthetic adversarial eval fixtures;
 - the M0 technical shell consumes a maintainable semantic subset of Phase 07 design tokens;
 - Figma live file exists but canvas review remains limited by previously recorded MCP Starter-plan capability/rate limitation.
 
@@ -72,13 +73,21 @@ Final validation on 2026-09-19: full backend 68 tests / 428 assertions; Career o
 
 ### M1.2 supersession concurrency revalidation — 2026-09-19
 
-The remaining CareerFact supersession race is closed. The service locks and rechecks the original fact inside its transaction; PostgreSQL enforces one confirmed replacement per superseded fact through a partial unique index. Two independent Laravel processes were released from a PostgreSQL-backed barrier against the same confirmed original while a database trigger held the first insert open. Exactly one replacement committed, and the other received the controlled conflict. Verification confirmed direct duplicate rejection by the index, preserved review/history fields, old Claim `BLOCK`, replacement Claim `PASS`, one `TrustedCareerQuery` result and valid A → B → C history. PostgreSQL legacy upgrade plus rollback/re-up passed; full backend validation passed with 68 tests / 428 assertions; Pint and Larastan passed. `NEXT.md` remains `m1-3-vacancy-core`; M1.3 has not started.
+The remaining CareerFact supersession race is closed. The service locks and rechecks the original fact inside its transaction; PostgreSQL enforces one confirmed replacement per superseded fact through a partial unique index. Two independent Laravel processes were released from a PostgreSQL-backed barrier against the same confirmed original while a database trigger held the first insert open. Exactly one replacement committed, and the other received the controlled conflict. Verification confirmed direct duplicate rejection by the index, preserved review/history fields, old Claim `BLOCK`, replacement Claim `PASS`, one `TrustedCareerQuery` result and valid A → B → C history. PostgreSQL legacy upgrade plus rollback/re-up passed; full backend validation passed with 68 tests / 428 assertions; Pint and Larastan passed.
+
+## M1.3 implementation outcome
+
+M1.3 Vacancy Core is completed / PASS. Pasted vacancy text is preserved as an immutable owner-scoped versioned snapshot with deterministic exact-content deduplication. Optional HTTP(S) source URLs are metadata only and are never fetched. The versioned `vacancy.requirement-extraction@1.0.0` Skill separates trusted instructions from untrusted vacancy data; deterministic validation preserves source evidence, forces preferred wording to remain preferred, and discards prompt-injection/marketing noise.
+
+Matching consumes only the M1.2 `TrustedCareerQuery` boundary: current same-owner `CONFIRMED` facts with valid provenance and live Truth-Guard `PASS` Claims. Technical, Experience, Domain, Language, Location, Work format and Salary are always represented as match, adjacent, gap, unknown, not-applicable or deterministic blocker. Recommendation policy emits all five required classes with linked dimensions, requirements, snapshots and confirmed evidence; it exposes no ATS probability. Career changes make prior analysis detectably stale.
+
+Final validation on 2026-09-19: full backend 82 tests / 493 assertions with the PostgreSQL-only ownership test intentionally skipped under SQLite; Vacancy Core on isolated PostgreSQL 9 executed tests / 46 assertions with the SQLite-only log-failure fixture intentionally skipped; frontend 7 / 7; Pint 113 files; Larastan 0 errors; ESLint, TypeScript, production frontend build, Compose config, fresh PostgreSQL migration/rollback/re-up and `git diff --check` pass. PostgreSQL direct cross-owner requirement linkage was rejected. Temporary validation databases were removed. No external URL request, resume tailoring, cover-letter generation or application submission was introduced.
 
 ## Current authorized task
 
-`m1-3-vacancy-core` (not started).
+`m1-4-application-draft` (not started).
 
-Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-3-vacancy-core.md`.
+Authority is `.agents/state/NEXT.md` + blockers + `.agents/tasks/m1-4-application-draft.md`.
 
 ## M0 validation
 

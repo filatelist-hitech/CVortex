@@ -1,0 +1,9 @@
+{
+  "id": "vacancy.requirement-extraction",
+  "version": "1.0.0",
+  "prompt_version": "1.0.0",
+  "default_model_policy": "low_cost_structured_extraction",
+  "input_trust": "untrusted_data",
+  "output_schema": "output.schema.json",
+  "max_requirements": 100
+}

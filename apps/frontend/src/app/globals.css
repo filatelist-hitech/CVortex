@@ -160,11 +160,39 @@ blockquote { padding: 12px 16px; border-left: 2px solid var(--accent-secondary);
 .loading, .empty { padding: 24px 0; }
 .claim-list { display: grid; gap: 12px; margin-top: 16px; list-style: none; }
 .claim-list li { display: flex; align-items: center; gap: 12px; }
+.vacancy-workspace { margin-top: 48px; padding-top: 40px; border-top: 1px solid var(--border-subtle); }
+.vacancy-workspace > .muted { margin-top: 8px; }
+.vacancy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
+.vacancy-grid h3, .review-section h3 { font-size: 1.25rem; }
+.vacancy-list { display: grid; gap: 10px; margin-top: 16px; list-style: none; }
+.vacancy-list button { display: grid; width: 100%; height: auto; min-height: 64px; padding: 12px 16px; text-align: left; }
+.vacancy-list small { color: var(--text-muted); font-weight: 500; }
+.vacancy-selected { border-color: var(--accent-primary); color: var(--surface-canvas); background: var(--accent-primary); }
+.vacancy-selected small { color: #17333a; }
+.vacancy-detail { margin-top: 24px; }
+.source-copy { overflow: auto; max-height: 360px; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-secondary); background: #060a14; white-space: pre-wrap; overflow-wrap: anywhere; }
+.requirement-list, .dimension-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.requirement-card, .dimension-card { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-canvas); }
+.mandatory { color: var(--state-blocked); }
+.preferred { color: var(--accent-primary); }
+.uncertain, .unknown, .not_applicable, .adjacent { color: var(--state-pending); }
+.match { color: var(--state-success); }
+.gap, .blocker { color: var(--state-blocked); }
+.recommendation { margin-top: 24px; padding: 28px; border: 1px solid var(--accent-secondary); border-radius: var(--radius-lg); background: linear-gradient(135deg, color-mix(in srgb, var(--accent-secondary) 14%, var(--surface-default)), var(--surface-default)); }
+.recommendation h3 { font-size: clamp(1.75rem, 5vw, 3rem); }
+.recommendation > p:not(.eyebrow), .recommendation ul { margin-top: 12px; color: var(--text-secondary); line-height: 1.5; }
+.recommendation ul, .panel ul, .dimension-card ul { display: grid; gap: 8px; padding-left: 20px; }
+.dimension-card p { line-height: 1.5; }
+.dimension-card details li { display: grid; gap: 4px; margin-bottom: 10px; }
+.dimension-card details small { color: var(--text-muted); }
+.stale-callout { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 14px; border: 1px solid var(--state-pending); border-radius: 8px; }
+.stale-callout span { flex: 1; color: var(--text-secondary); }
 
 @media (max-width: 767px) {
-  .career-header, .career-grid { display: grid; grid-template-columns: 1fr; }
+  .career-header, .career-grid, .vacancy-grid, .requirement-list, .dimension-grid { display: grid; grid-template-columns: 1fr; }
   .account { justify-content: flex-start; }
   .alert { align-items: flex-start; flex-direction: column; }
+  .stale-callout { align-items: flex-start; flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {

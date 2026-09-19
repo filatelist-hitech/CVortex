@@ -5,6 +5,7 @@ use App\Http\Controllers\CareerController;
 use App\Http\Controllers\CareerExtractionController;
 use App\Http\Controllers\CurrentUserController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\VacancyController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -26,6 +27,10 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/career/facts/{id}/deprecate', [CareerController::class, 'deprecate'])->name('career.deprecate');
             Route::post('/career/facts/{id}/supersede', [CareerController::class, 'supersede'])->name('career.supersede');
             Route::patch('/career/claims/{id}/resolve', [CareerController::class, 'resolveClaim'])->name('career.claim.resolve');
+            Route::get('/vacancies', [VacancyController::class, 'index'])->name('vacancies.index');
+            Route::post('/vacancies', [VacancyController::class, 'store'])->name('vacancies.store');
+            Route::get('/vacancies/{id}', [VacancyController::class, 'show'])->name('vacancies.show');
+            Route::post('/vacancies/{id}/reanalyze', [VacancyController::class, 'reanalyze'])->name('vacancies.reanalyze');
         });
     });
 });

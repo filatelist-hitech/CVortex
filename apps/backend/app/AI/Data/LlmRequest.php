@@ -10,5 +10,7 @@ final readonly class LlmRequest
         public string $untrustedSourceText,
         public array $schema,
         public ModelPolicy $modelPolicy,
+        public string $schemaName = 'career_facts',
+        public string $untrustedDataLabel = 'UNTRUSTED CAREER SOURCE DATA',
     ) {}
 }

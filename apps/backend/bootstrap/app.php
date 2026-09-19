@@ -26,12 +26,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->reportable(function (Throwable $exception): bool {
-            if (request()->is('api/v1/career*')
+            if ((request()->is('api/v1/career*') || request()->is('api/v1/vacancies*'))
                 && ! $exception instanceof ValidationException
                 && ! $exception instanceof AuthenticationException
                 && (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500)) {
-                Log::error('career.operation_failed', [
-                    'operation' => request()->route()?->getName() ?? 'career',
+                Log::error(request()->is('api/v1/vacancies*') ? 'vacancy.operation_failed' : 'career.operation_failed', [
+                    'operation' => request()->route()?->getName() ?? 'private-domain',
                     'exception_type' => $exception::class,
                 ]);
 
@@ -41,13 +41,13 @@ return Application::configure(basePath: dirname(__DIR__))
             return true;
         });
         $exceptions->render(function (Throwable $exception, Request $request) {
-            if ($request->is('api/v1/career*')
+            if (($request->is('api/v1/career*') || $request->is('api/v1/vacancies*'))
                 && ! $exception instanceof ValidationException
                 && ! $exception instanceof AuthenticationException
                 && (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500)) {
                 return response()->json([
-                    'message' => 'The Career operation could not be completed. Please try again.',
-                    'error' => ['code' => 'CAREER_OPERATION_FAILED'],
+                    'message' => 'The private operation could not be completed. Please try again.',
+                    'error' => ['code' => $request->is('api/v1/vacancies*') ? 'VACANCY_OPERATION_FAILED' : 'CAREER_OPERATION_FAILED'],
                 ], 500);
             }
         });

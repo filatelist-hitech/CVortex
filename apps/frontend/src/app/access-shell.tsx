@@ -13,6 +13,7 @@ const safeErrorMessages: Record<string, string> = {
   PROVIDER_ERROR: "Career extraction is temporarily unavailable. Manual fact entry is still available.",
   INVALID_EXTRACTION_RESULT: "Career extraction returned unsupported data. Nothing was trusted.",
   CAREER_OPERATION_FAILED: "The Career operation could not be completed. Please try again.",
+  VACANCY_OPERATION_FAILED: "The vacancy operation could not be completed. Please try again.",
 };
 
 export async function api(path: string, options: RequestInit = {}) {

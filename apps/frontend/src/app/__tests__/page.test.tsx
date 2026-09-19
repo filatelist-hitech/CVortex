@@ -178,4 +178,33 @@ describe("access shell", () => {
     expect(screen.getByText("Still pending.", { selector: ".pending-card .assertion" })).toBeInTheDocument();
     expect(screen.getAllByText("PASS")).toHaveLength(2);
   });
+
+  it("renders explainable vacancy analysis while keeping raw source text inert", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } });
+      if (path === "/api/v1/career") return Response.json({ data: { facts: [], claims: [], sources: [] } });
+      if (path === "/api/v1/vacancies") return Response.json({ data: [{ id: "vacancy-1", title: "Backend Engineer", company: "Example", source_url: "https://jobs.example.test/1", analysis_status: "COMPLETED", error_code: null, snapshot_version: 1, recommendation: "APPLY", analysis_stale: false }] });
+      if (path === "/api/v1/vacancies/vacancy-1") return Response.json({ data: {
+        id: "vacancy-1", title: "Backend Engineer", company: "Example", source_url: "https://jobs.example.test/1", source_type: "PASTED_TEXT", analysis_status: "COMPLETED", error_code: null, snapshot_version: 1, recommendation: "APPLY", analysis_stale: false,
+        snapshot: { id: "snapshot-1", version: 1, raw_text: "<script>window.pwned=true</script> Laravel required.", source_url: "https://jobs.example.test/1", imported_at: "2026-09-19T00:00:00Z" },
+        requirements: [{ id: "requirement-1", dimension: "TECHNICAL", importance: "MANDATORY", label: "Laravel", source_excerpt: "Laravel required.", confidence: 0.9 }],
+        analysis: { recommendation: "APPLY", key_reasons: ["Technical: confirmed match."], material_gaps: [], uncertainties: [{ requirement_id: "r2", label: "Salary", reason: "candidate data is absent" }], stale: false, dimensions: [
+          { dimension: "TECHNICAL", result: "MATCH", explanation: "Confirmed evidence supports Laravel.", origin: "DETERMINISTIC", vacancy_requirement_ids: ["requirement-1"], candidate_evidence: [{ type: "CareerFact", id: "fact-1", statement: "Laravel", status: "CONFIRMED", provenance_type: "user_manual" }] },
+          ...["EXPERIENCE", "DOMAIN", "LANGUAGE", "LOCATION", "WORK_FORMAT", "SALARY"].map((dimension) => ({ dimension, result: "UNKNOWN", explanation: "Confirmed candidate data is insufficient.", origin: "DETERMINISTIC", vacancy_requirement_ids: [], candidate_evidence: [] })),
+        ] },
+      } });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    const { container } = render(<Home />);
+
+    expect(await screen.findByRole("heading", { name: "Should I apply?" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "APPLY" })).toBeInTheDocument();
+    expect(screen.getByText("This is a prioritization class, not an interview probability or ATS score.")).toBeInTheDocument();
+    expect(screen.getByText("Confirmed evidence supports Laravel.")).toBeInTheDocument();
+    expect(screen.getByText("CareerFact · CONFIRMED")).toBeInTheDocument();
+    expect(screen.getByText("<script>window.pwned=true</script> Laravel required.")).toBeInTheDocument();
+    expect(container.querySelector("script")).toBeNull();
+  });
 });

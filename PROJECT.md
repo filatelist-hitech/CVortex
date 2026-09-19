@@ -83,7 +83,7 @@ The canonical implementation sequence is `docs/01-Product/Roadmap.md`.
 
 Completed Foundation Era Phases 00–07 remain authoritative history. Implementation now proceeds through value-driven milestones and vertical slices beginning with `M0 Runnable Core`, then `M1 First Value`.
 
-`M0 Runnable Core`, `M1.1 Access Core` and `M1.2 Career Core` are completed / PASS. M1.2 remediation closes the adversarial ownership, semantic validation, applied-schema upgrade, privacy, Truth Guard, supersession, AI metadata and observable-flow findings. `m1-3-vacancy-core` is the next authorized slice; it has not started.
+`M0 Runnable Core`, `M1.1 Access Core`, `M1.2 Career Core` and `M1.3 Vacancy Core` are completed / PASS. Vacancy Core preserves pasted source snapshots, extracts source-backed requirements, matches only trusted confirmed Career evidence and produces explainable seven-dimensional recommendations without URL fetching or fake ATS probability. `m1-4-application-draft` is the next authorized slice; it has not started.
 
 ## Delivery Governance
 

@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "./access-shell";
+import VacancyWorkspace from "./vacancy-workspace";
 
 type Fact = {
   id: string;
@@ -91,6 +92,7 @@ export default function CareerWorkspace({ email, onSignOut }: { email: string; o
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Human review required</p><h2>Pending facts</h2></div><span className="count">{pending.length}</span></div>{pending.length === 0 ? <p className="empty">No pending candidates. Paste text above or add a manual fact.</p> : <div className="fact-list">{pending.map((fact) => <article className="fact-card pending-card" key={fact.id}><div className="fact-meta"><span className="badge pending-badge">Pending confirmation</span><span>{fact.fact_type}</span></div><p className="assertion">{fact.assertion_original}</p><details open><summary>Evidence available</summary><blockquote>{fact.source_excerpt}</blockquote><p className="muted">Provenance: {fact.provenance_type}</p></details><label>Edit before confirming<textarea rows={3} value={edits[fact.id] ?? fact.assertion_original} onChange={(event) => setEdits((current) => ({ ...current, [fact.id]: event.target.value }))} /></label><div className="actions"><button disabled={busy !== ""} onClick={() => void review(fact, "confirm")}>Confirm</button><button className="secondary" disabled={busy !== ""} onClick={() => void review(fact, "edit_confirm")}>Edit and Confirm</button><button className="danger" disabled={busy !== ""} onClick={() => void review(fact, "reject")}>Reject</button></div></article>)}</div>}</section>
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Queryable truth</p><h2>Confirmed facts</h2></div><span className="count confirmed-count">{confirmed.length}</span></div>{confirmed.length === 0 ? <p className="empty">No confirmed facts yet.</p> : <div className="fact-list">{confirmed.map((fact) => <article className="fact-card confirmed-card" key={fact.id}><div className="fact-meta"><span className="badge confirmed-badge">Confirmed</span><span>{fact.fact_type}</span></div><p className="assertion">{fact.assertion_approved ?? fact.assertion_original}</p><details><summary>Evidence and provenance</summary><blockquote>{fact.source_excerpt}</blockquote><p className="muted">{fact.provenance_type}</p></details></article>)}</div>}</section>
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Truth Guard</p><h2>Claims</h2></div></div>{overview.claims.length === 0 ? <p className="empty">Claims appear only after explicit confirmation.</p> : <ul className="claim-list">{overview.claims.map((claim) => <li key={claim.id}><span className={`badge ${claim.truth_status === "PASS" ? "confirmed-badge" : "blocked-badge"}`}>{claim.truth_status}</span><span>{claim.statement}</span></li>)}</ul>}</section>
+      <VacancyWorkspace />
     </>}
   </main>;
 }
