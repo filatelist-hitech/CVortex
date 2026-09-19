@@ -15,6 +15,22 @@ class ClaimResolutionService
         private readonly AuditLogger $audit,
     ) {}
 
+    public function recordAmbiguityIfPresent(Claim $claim): Claim
+    {
+        $factTypes = ClaimEvidence::query()
+            ->join('career_facts', 'career_facts.id', '=', 'claim_evidence.career_fact_id')
+            ->where('claim_evidence.claim_id', $claim->id)
+            ->where('claim_evidence.owner_id', $claim->owner_id)
+            ->distinct()
+            ->pluck('career_facts.fact_type');
+
+        if ($factTypes->count() < 2) {
+            return $claim;
+        }
+
+        return $this->requireValidEvidenceResolution($claim);
+    }
+
     public function requireValidEvidenceResolution(Claim $claim, string $reason = 'VALID_EVIDENCE_AMBIGUITY'): Claim
     {
         $factTypes = ClaimEvidence::query()

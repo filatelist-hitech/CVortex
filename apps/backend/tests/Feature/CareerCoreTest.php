@@ -9,6 +9,8 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\CareerOutputException;
 use App\AI\Providers\OpenAiResponsesProvider;
+use App\AI\RuntimeSkillRegistry;
+use App\Jobs\ExtractCareerSource;
 use App\Models\CareerFact;
 use App\Models\CareerSource;
 use App\Models\Claim;
@@ -20,6 +22,7 @@ use App\Services\TruthGuard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -57,6 +60,7 @@ class CareerCoreTest extends TestCase
 
     public function test_authenticated_user_can_start_extraction_through_the_api(): void
     {
+        Queue::fake();
         $this->app->instance(LlmProvider::class, new FakeLlmProvider([['facts' => [[
             'fact_type' => 'experience',
             'assertion' => 'Built a synthetic API.',
@@ -67,8 +71,9 @@ class CareerCoreTest extends TestCase
 
         $this->actingAs($user)->postJson('/api/v1/career/extractions', [
             'source_text' => 'Built a synthetic API.',
-        ])->assertStatus(202)->assertJsonPath('data.extraction_status', CareerSource::STATUS_COMPLETED);
-        $this->assertDatabaseHas('career_facts', ['owner_id' => $user->id, 'status' => CareerFact::STATUS_PENDING]);
+        ])->assertStatus(202)->assertJsonPath('data.extraction_status', CareerSource::STATUS_PENDING);
+        Queue::assertPushed(ExtractCareerSource::class, fn (ExtractCareerSource $job): bool => $job->ownerId === $user->id);
+        $this->assertDatabaseHas('career_sources', ['owner_id' => $user->id, 'extraction_status' => CareerSource::STATUS_PENDING]);
 
     }
 
@@ -96,6 +101,44 @@ class CareerCoreTest extends TestCase
             $this->assertDatabaseMissing('career_facts', ['owner_id' => $user->id]);
             $this->assertDatabaseHas('career_sources', ['owner_id' => $user->id, 'extraction_status' => 'FAILED', 'error_code' => 'SCHEMA_INVALID']);
         }
+    }
+
+    public function test_unchecked_fact_categories_fail_closed_and_rejected_output_keeps_provider_metadata(): void
+    {
+        $user = $this->user('unchecked-category@example.test');
+        $provider = new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                return new LlmResponse(['facts' => [[
+                    'fact_type' => 'achievement',
+                    'assertion' => 'Participated in a checkout redesign.',
+                    'source_excerpt' => 'Participated in a checkout redesign.',
+                    'confidence' => 0.9,
+                ]]], 'fake', 'fake-model', 11, 7, 23, 'fake-request-id', 42);
+            }
+        };
+        $this->app->instance(LlmProvider::class, $provider);
+
+        try {
+            app(CareerExtractionService::class)->extract($user, 'Participated in a checkout redesign.');
+            $this->fail('Unchecked achievement semantics must be rejected.');
+        } catch (CareerOutputException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $this->assertDatabaseHas('llm_runs', [
+            'owner_id' => $user->id,
+            'status' => 'FAILED',
+            'provider' => 'fake',
+            'model' => 'fake-model',
+            'provider_request_id' => 'fake-request-id',
+            'input_tokens' => 11,
+            'output_tokens' => 7,
+            'latency_ms' => 23,
+            'estimated_cost_micros' => 42,
+            'validation_result' => CareerOutputException::SEMANTIC_REJECTED,
+        ]);
     }
 
     public function test_completed_extraction_retry_is_idempotent(): void
@@ -136,6 +179,26 @@ class CareerCoreTest extends TestCase
         $this->assertDatabaseHas('llm_runs', ['owner_id' => $user->id, 'status' => 'COMPLETED', 'retry_count' => 1]);
     }
 
+    public function test_skill_setup_failure_releases_source_for_retry(): void
+    {
+        $user = $this->user('skill-setup-retry@example.test');
+        $this->app->instance(RuntimeSkillRegistry::class, \Mockery::mock(RuntimeSkillRegistry::class)
+            ->shouldReceive('careerFactExtraction')->once()->andThrow(new \RuntimeException('synthetic asset error'))->getMock());
+        try {
+            app(CareerExtractionService::class)->extract($user, 'Synthetic setup retry source.');
+            $this->fail('The missing asset should fail setup.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('synthetic asset error', $exception->getMessage());
+        }
+        $this->assertDatabaseHas('career_sources', ['owner_id' => $user->id, 'extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SETUP_ERROR']);
+
+        $this->app->instance(RuntimeSkillRegistry::class, new RuntimeSkillRegistry);
+        $this->app->instance(LlmProvider::class, new FakeLlmProvider([['facts' => []]]));
+        $source = app(CareerExtractionService::class)->extract($user, 'Synthetic setup retry source.');
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
+        $this->assertDatabaseCount('llm_runs', 1);
+    }
+
     public function test_pending_fact_supports_confirm_edit_confirm_reject_and_deprecate_lifecycle(): void
     {
         $user = $this->user('review@example.test');
@@ -160,6 +223,25 @@ class CareerCoreTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $service->review($user, $reject->fresh(), 'confirm');
+    }
+
+    public function test_stale_pending_review_cannot_apply_a_second_transition(): void
+    {
+        $user = $this->user('stale-review@example.test');
+        $fact = $this->pendingFact($user, 'One valid transition.');
+        $stale = CareerFact::query()->findOrFail($fact->id);
+        $service = app(CareerFactService::class);
+
+        $service->review($user, $fact, 'confirm');
+        try {
+            $service->review($user, $stale, 'reject');
+            $this->fail('The second transition must recheck locked state.');
+        } catch (ValidationException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $this->assertSame(CareerFact::STATUS_CONFIRMED, $fact->fresh()->status);
+        $this->assertDatabaseCount('claims', 1);
     }
 
     public function test_manual_fact_is_confirmed_with_user_manual_provenance_without_provider(): void
@@ -226,7 +308,7 @@ class CareerCoreTest extends TestCase
         $owner = $this->user('private@example.test');
         $attacker = $this->user('attacker@example.test');
         $provider = new FakeLlmProvider([['facts' => [[
-            'fact_type' => 'skill', 'assertion' => 'Private career text.', 'source_excerpt' => 'Private career text.', 'confidence' => 0.7,
+            'fact_type' => 'experience', 'assertion' => 'Private career text.', 'source_excerpt' => 'Private career text.', 'confidence' => 0.7,
         ]]]]);
         $this->app->instance(LlmProvider::class, $provider);
         $source = app(CareerExtractionService::class)->extract($owner, 'Private career text.');

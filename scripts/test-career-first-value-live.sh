@@ -14,7 +14,7 @@ user_id=''
 invitation_id=''
 
 restore_backend() {
-  docker compose up -d --force-recreate --no-deps backend >/dev/null 2>&1 || true
+  docker compose up -d --force-recreate --no-deps backend horizon >/dev/null 2>&1 || true
   for _ in $(seq 1 30); do
     health_state="$(docker inspect -f '{{.State.Health.Status}}' cvortex-backend-1 2>/dev/null || true)"
     test "$health_state" = healthy && break
@@ -58,7 +58,7 @@ AI_PROVIDER=openai \
 OPENAI_API_KEY=synthetic-runtime-key \
 OPENAI_BASE_URL=http://cvortex-m12-openai-mock:8000/v1 \
 OPENAI_CAREER_EXTRACTION_MODEL=synthetic-policy-model \
-docker compose up -d --force-recreate --no-deps backend >/dev/null
+docker compose up -d --force-recreate --no-deps backend horizon >/dev/null
 for _ in $(seq 1 30); do
   health_state="$(docker inspect -f '{{.State.Health.Status}}' cvortex-backend-1 2>/dev/null || true)"
   test "$health_state" = healthy && break
@@ -117,8 +117,16 @@ if test "$status_code" != 202; then
     -c "SELECT provider, model, status, validation_result, error_category FROM llm_runs WHERE owner_id = '$user_id' ORDER BY created_at DESC LIMIT 1" >&2 || true
 fi
 assert_status "$status_code" 202 extraction
-test "$(jq -r '.data.extraction_status' "$body_file")" = COMPLETED
 source_id="$(jq -r '.data.id' "$body_file")"
+for _ in $(seq 1 60); do
+  curl -fsS -b "$cookie_file" -H 'Accept: application/json' -H "Origin: $origin" \
+    "$base_url/api/v1/career/sources/$source_id" >"$body_file"
+  extraction_status="$(jq -r '.data.extraction_status' "$body_file")"
+  test "$extraction_status" = COMPLETED && break
+  test "$extraction_status" != FAILED || { cat "$body_file" >&2; exit 1; }
+  sleep 1
+done
+test "$extraction_status" = COMPLETED
 
 curl -fsS -b "$cookie_file" -H 'Accept: application/json' -H "Origin: $origin" "$base_url/api/v1/career" >"$body_file"
 test "$(jq '[.data.facts[] | select(.status == "PENDING")] | length' "$body_file")" = 4

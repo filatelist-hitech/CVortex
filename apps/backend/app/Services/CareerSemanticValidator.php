@@ -11,6 +11,10 @@ class CareerSemanticValidator
         $text = mb_strtolower($assertion);
 
         return match ($type) {
+            CareerFactType::SKILL => $this->matches($text, [
+                '/\b(?:familiar|knowledge|skill|experience|proficient|expert|used|built with)\b/u',
+                '/знаком|знаю|навык|опыт|владею|использовал/u',
+            ]),
             CareerFactType::EXPERIENCE => ! $this->matches($text, [
                 '/\bfamiliar(?:ity)?\b/u', '/\bbasic knowledge\b/u', '/\baware(?:ness)?\b/u',
                 '/\bmentioned?\b/u', '/знаком(?:ство|а|ы)?/u', '/базов(?:ые|ый|ая) знани/u',
@@ -43,7 +47,10 @@ class CareerSemanticValidator
                 '/\bproficient\s+(?:in|with)\b/u', '/\bspecialist\s+in\b/u',
                 '/\b(?:эксперт\s+в|продвинут\w*\s+(?:знани|навык)|глубок\w*\s+(?:знани|экспертиз))\w*/u',
             ]),
-            default => true,
+            // Categories without deterministic semantic checks are unsupported
+            // until a validator is added. Never let a syntactically valid but
+            // unchecked category promote source text into trusted facts.
+            default => false,
         };
     }
 

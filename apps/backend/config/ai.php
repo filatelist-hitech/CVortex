@@ -6,9 +6,9 @@ return [
         'low_cost_structured_extraction' => [
             'provider' => env('AI_PROVIDER', 'none'),
             'model' => env('OPENAI_CAREER_EXTRACTION_MODEL'),
-            'input_cost_micros_per_million_tokens' => env('OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS') !== null
+            'input_cost_micros_per_million_tokens' => filled(env('OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS'))
                 ? (int) env('OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS') : null,
-            'output_cost_micros_per_million_tokens' => env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') !== null
+            'output_cost_micros_per_million_tokens' => filled(env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS'))
                 ? (int) env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null,
         ],
     ],

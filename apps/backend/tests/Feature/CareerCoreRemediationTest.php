@@ -29,6 +29,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -37,6 +38,26 @@ use Tests\TestCase;
 class CareerCoreRemediationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_blank_provider_pricing_is_recorded_as_unknown(): void
+    {
+        $inputKey = 'OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS';
+        $outputKey = 'OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS';
+        $oldInput = getenv($inputKey);
+        $oldOutput = getenv($outputKey);
+        putenv($inputKey.'=');
+        putenv($outputKey.'=');
+        try {
+            $config = require base_path('config/ai.php');
+        } finally {
+            $oldInput === false ? putenv($inputKey) : putenv($inputKey.'='.$oldInput);
+            $oldOutput === false ? putenv($outputKey) : putenv($outputKey.'='.$oldOutput);
+        }
+
+        $policy = $config['model_policies']['low_cost_structured_extraction'];
+        $this->assertNull($policy['input_cost_micros_per_million_tokens']);
+        $this->assertNull($policy['output_cost_micros_per_million_tokens']);
+    }
 
     public function test_complete_owner_chain_blocks_cross_owner_source_profile_claim_and_nested_idor(): void
     {
@@ -216,12 +237,13 @@ class CareerCoreRemediationTest extends TestCase
         $fact = app(CareerFactService::class)->createManual($user, 'skill', 'Ambiguous but supported wording.');
         $claim = Claim::query()->where('statement', $fact->approvedAssertion())->sole();
         $secondFact = app(CareerFactService::class)->createManual($user, 'experience', 'Ambiguous but supported wording.');
-        ClaimEvidence::link($claim, $secondFact);
         $unsupported = Claim::query()->create(['owner_id' => $user->id, 'statement' => 'No evidence.', 'truth_status' => TruthGuard::BLOCK]);
 
-        $this->assertSame(TruthGuard::PASS, app(TruthGuard::class)->evaluate($claim));
+        $this->assertSame(TruthGuard::USER_RESOLUTION_REQUIRED, app(TruthGuard::class)->evaluate($claim->fresh()));
+        app(CareerFactService::class)->createManual($user, 'education', 'Ambiguous but supported wording.');
+        $this->assertSame(TruthGuard::USER_RESOLUTION_REQUIRED, app(TruthGuard::class)->evaluate($claim->fresh()));
+        $this->assertDatabaseCount('claim_evidence', 3);
         $this->assertSame(TruthGuard::BLOCK, app(TruthGuard::class)->evaluate($unsupported));
-        app(ClaimResolutionService::class)->requireValidEvidenceResolution($claim);
         $this->assertSame(TruthGuard::USER_RESOLUTION_REQUIRED, app(TruthGuard::class)->evaluate($claim->fresh()));
         $foreignUser = $this->user('resolution-foreign@example.test');
         $foreignFact = app(CareerFactService::class)->createManual($foreignUser, 'skill', 'Ambiguous but supported wording.');
@@ -273,11 +295,18 @@ class CareerCoreRemediationTest extends TestCase
             'ai.model_policies.low_cost_structured_extraction.model' => '',
         ]);
         $this->app->forgetInstance(LlmProvider::class);
+        Queue::fake();
         $user = $this->user('unconfigured-ai@example.test');
 
         $this->actingAs($user)->postJson('/api/v1/career/extractions', [
             'source_text' => 'Synthetic extraction unavailable text.',
-        ])->assertServiceUnavailable()->assertJsonPath('error.code', 'PROVIDER_ERROR');
+        ])->assertAccepted()->assertJsonPath('data.extraction_status', CareerSource::STATUS_PENDING);
+        try {
+            app(CareerExtractionService::class)->extract($user, 'Synthetic extraction unavailable text.');
+            $this->fail('An unconfigured provider must fail in the worker path.');
+        } catch (LlmProviderException $exception) {
+            $this->assertSame(LlmProviderException::NOT_CONFIGURED, $exception->category);
+        }
         $this->assertDatabaseMissing('career_facts', ['owner_id' => $user->id]);
         $this->assertDatabaseHas('llm_runs', [
             'owner_id' => $user->id,
@@ -485,7 +514,7 @@ class CareerCoreRemediationTest extends TestCase
             DB::unprepared("CREATE TRIGGER fail_career_source_insert BEFORE INSERT ON career_sources BEGIN SELECT RAISE(ABORT, 'synthetic persistence failure'); END");
         } else {
             $mock = \Mockery::mock(CareerExtractionService::class);
-            $mock->shouldReceive('extract')->once()->andThrow(new \RuntimeException('Persistence failed around '.$private));
+            $mock->shouldReceive('queue')->once()->andThrow(new \RuntimeException('Persistence failed around '.$private));
             $this->app->instance(CareerExtractionService::class, $mock);
         }
 
@@ -502,13 +531,19 @@ class CareerCoreRemediationTest extends TestCase
     public function test_provider_failure_response_and_logs_do_not_expose_private_source(): void
     {
         Log::spy();
+        Queue::fake();
         $private = 'SYNTHETIC-PROVIDER-PRIVATE-TEXT-31af';
         $this->app->instance(LlmProvider::class, new SensitiveFailureProvider($private));
         $user = $this->user('provider-redaction@example.test');
 
         $response = $this->actingAs($user)->postJson('/api/v1/career/extractions', ['source_text' => $private])
-            ->assertServiceUnavailable()
-            ->assertJsonPath('error.code', 'PROVIDER_ERROR');
+            ->assertAccepted();
+        try {
+            app(CareerExtractionService::class)->extract($user, $private);
+            $this->fail('The provider should fail in the worker path.');
+        } catch (LlmProviderException) {
+            $this->addToAssertionCount(1);
+        }
         $this->assertStringNotContainsString($private, $response->getContent());
         Log::shouldNotHaveReceived('error');
     }
@@ -518,7 +553,7 @@ class CareerCoreRemediationTest extends TestCase
         Log::spy();
         $private = 'SYNTHETIC-HTTP-PRIVATE-TEXT-82cd';
         $mock = \Mockery::mock(CareerExtractionService::class);
-        $mock->shouldReceive('extract')->once()->andThrow(new HttpException(500, 'Server failure around '.$private));
+        $mock->shouldReceive('queue')->once()->andThrow(new HttpException(500, 'Server failure around '.$private));
         $this->app->instance(CareerExtractionService::class, $mock);
         $user = $this->user('http-redaction@example.test');
 

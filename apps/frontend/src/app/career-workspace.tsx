@@ -38,6 +38,12 @@ export default function CareerWorkspace({ email, onSignOut }: { email: string; o
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!overview?.sources.some((source) => source.extraction_status === "PENDING" || source.extraction_status === "RUNNING")) return;
+    const timer = window.setInterval(() => void refresh(), 1500);
+    return () => window.clearInterval(timer);
+  }, [overview?.sources, refresh]);
+
   async function submit(event: FormEvent<HTMLFormElement>, path: string, operation: string) {
     event.preventDefault();
     const form = event.currentTarget;

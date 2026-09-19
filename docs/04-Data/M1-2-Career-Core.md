@@ -38,7 +38,7 @@ All routes are under authenticated, active-user `/api/v1/career` scope. Owner id
 |---|---|---|
 | `GET` | `/career` | Owner-scoped sources, facts and minimal Claim visibility |
 | `GET` | `/career/trusted` | Matching-facing boundary: current same-owner `CONFIRMED` facts with valid provenance and live `PASS` Claims only |
-| `POST` | `/career/extractions` | Persist pasted text and start bounded extraction |
+| `POST` | `/career/extractions` | Persist pasted text, enqueue bounded extraction, and return the source operation status |
 | `GET` | `/career/sources/{id}` | Owner-scoped source and safe run metadata |
 | `POST` | `/career/facts/manual` | Explicit human-confirmed manual fact |
 | `PATCH` | `/career/facts/{id}/review` | `confirm`, `edit_confirm` or `reject` a pending fact |
@@ -46,9 +46,11 @@ All routes are under authenticated, active-user `/api/v1/career` scope. Owner id
 | `POST` | `/career/facts/{id}/supersede` | Preserve a confirmed historical fact, create its human-confirmed replacement and invalidate stale Claims |
 | `PATCH` | `/career/claims/{id}/resolve` | Resolve an explicitly recorded valid-evidence ambiguity |
 
-Repeated extraction of the same source text for one owner reuses its content-hash identity. Completed work is returned without creating duplicate facts or runs; an in-progress source cannot be claimed by another retry. Database uniqueness on owner/source hash and source/candidate hash closes the duplicate-submit race.
+Repeated extraction of the same source text for one owner reuses its content-hash identity. The HTTP request stores the source, queues a job containing only owner/source IDs, and returns without waiting for the provider. Horizon workers re-read the owner-scoped source and claim `PENDING`/`FAILED` work with a conditional update, so duplicate delivery cannot call the provider twice concurrently. Completed work does not create duplicate facts or runs. The Career workspace polls source state while extraction is pending/running. Database uniqueness on owner/source hash and source/candidate hash closes duplicate-submit races.
 
 `USER_RESOLUTION_REQUIRED` has one narrow meaning: two or more owner-valid, provenance-valid facts support the exact Claim wording but assign different typed fact semantics, so the application cannot choose the intended meaning safely. Missing or invalid evidence remains `BLOCK`. Human resolution selects one of the Claim's still-valid evidence facts, records selected fact/actor/time, clears the active ambiguity and re-evaluates the Claim. Evidence history is preserved.
+
+Creating a confirmed fact whose exact approved wording already has a same-owner Claim links the new evidence to that Claim. If the valid evidence assigns different fact types, the application records `USER_RESOLUTION_REQUIRED` immediately and exposes the resolution action. Extraction categories without deterministic semantic validation fail closed; manual confirmation remains available for those types.
 
 Supersession is serialized by locking the source `CareerFact` row and rechecking its confirmed state, provenance and replacement relation inside the transaction. PostgreSQL also enforces a partial unique index on `career_facts.supersedes_fact_id` for `CONFIRMED` replacements. This permits a historical chain (`A → B → C`) because each parent has at most one confirmed child, while preventing two simultaneous current replacements of the same fact. A losing request receives HTTP 409; old Claims are blocked and the replacement Claim is evaluated in the same transaction.
 
@@ -73,9 +75,10 @@ The executable harness is:
 ```bash
 bash scripts/test-career-core-postgres-upgrade.sh
 bash scripts/test-career-fact-supersession-postgres-concurrency.sh
+bash scripts/test-career-review-postgres-concurrency.sh
 ```
 
-`test-career-core-postgres-upgrade.sh` creates only a uniquely named temporary database, reconstructs the representative already-applied legacy schema, verifies preserved legacy data plus extraction/manual writes, checks non-destructive rollback/re-up, exercises cross-owner database failures and removes that temporary database. `test-career-fact-supersession-postgres-concurrency.sh` uses another uniquely named temporary database and independent application processes to exercise the supersession lock/index race, then removes its database.
+`test-career-core-postgres-upgrade.sh` creates only a uniquely named temporary database, reconstructs the representative already-applied legacy schema, verifies preserved legacy data plus extraction/manual writes, checks non-destructive rollback/re-up, exercises cross-owner database failures and removes that temporary database. `test-career-fact-supersession-postgres-concurrency.sh` uses another uniquely named temporary database and independent application processes to exercise the supersession lock/index race, then removes its database. `test-career-review-postgres-concurrency.sh` uses two independent review workers and a database barrier to prove only one transition from `PENDING` can create a valid Claim; the competing transition rechecks the locked state and is rejected.
 
 ## Error and privacy boundary
 

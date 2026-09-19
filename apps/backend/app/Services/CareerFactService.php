@@ -20,6 +20,7 @@ class CareerFactService
         private readonly TruthGuard $truthGuard,
         private readonly CareerOwnerChain $owners,
         private readonly AuditLogger $audit,
+        private readonly ClaimResolutionService $resolutions,
     ) {}
 
     public function profileFor(User $user): CareerProfile
@@ -75,6 +76,12 @@ class CareerFactService
 
         try {
             return DB::transaction(function () use ($user, $fact, $action, $approvedAssertion): CareerFact {
+                $fact = CareerFact::query()->whereKey($fact->id)->lockForUpdate()->first();
+                if ($fact === null || $fact->status !== CareerFact::STATUS_PENDING
+                    || ! $this->owners->factHasValidProvenance($fact, $user->id)) {
+                    throw ValidationException::withMessages(['action' => 'Only valid pending facts may be reviewed.']);
+                }
+
                 if ($action === 'reject') {
                     $fact->forceFill([
                         'status' => CareerFact::STATUS_REJECTED,
@@ -201,6 +208,21 @@ class CareerFactService
         if (! $this->owners->factHasValidProvenance($fact, (string) $fact->owner_id, true)) {
             throw ValidationException::withMessages(['fact' => 'The fact ownership or provenance chain is invalid.']);
         }
+        $claim = Claim::query()->where('owner_id', $fact->owner_id)
+            ->where('statement', $fact->approvedAssertion())
+            ->whereIn('truth_status', [TruthGuard::PASS, TruthGuard::USER_RESOLUTION_REQUIRED])
+            ->first();
+        if ($claim !== null) {
+            $ambiguityAlreadyRecorded = $claim->truth_status === TruthGuard::USER_RESOLUTION_REQUIRED;
+            ClaimEvidence::link($claim, $fact);
+            $claim->forceFill(['truth_status' => $this->truthGuard->evaluate($claim)])->save();
+            if (! $ambiguityAlreadyRecorded) {
+                $this->resolutions->recordAmbiguityIfPresent($claim);
+            }
+
+            return $claim;
+        }
+
         $claim = Claim::query()->create([
             'owner_id' => $fact->owner_id,
             'statement' => $fact->approvedAssertion(),

@@ -9,6 +9,7 @@ use App\AI\Exceptions\CareerOutputException;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
 use App\Exceptions\SafeCareerException;
+use App\Jobs\ExtractCareerSource;
 use App\Models\CareerFact;
 use App\Models\CareerFactType;
 use App\Models\CareerSource;
@@ -16,6 +17,7 @@ use App\Models\LlmRun;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class CareerExtractionService
 {
@@ -35,6 +37,32 @@ class CareerExtractionService
         } catch (QueryException) {
             throw new SafeCareerException;
         }
+    }
+
+    public function queue(User $user, string $sourceText): CareerSource
+    {
+        $sourceText = trim($sourceText);
+        $profile = $this->facts->profileFor($user);
+
+        try {
+            $source = CareerSource::query()->firstOrCreate(
+                ['owner_id' => $user->id, 'content_hash' => hash('sha256', $sourceText)],
+                [
+                    'career_profile_id' => $profile->id,
+                    'kind' => 'PASTED_TEXT',
+                    'source_text' => $sourceText,
+                    'extraction_status' => CareerSource::STATUS_PENDING,
+                ],
+            );
+        } catch (QueryException) {
+            throw new SafeCareerException;
+        }
+
+        if (in_array($source->extraction_status, [CareerSource::STATUS_PENDING, CareerSource::STATUS_FAILED], true)) {
+            ExtractCareerSource::dispatch((string) $user->id, (string) $source->id)->afterCommit();
+        }
+
+        return $source;
     }
 
     private function performExtraction(User $user, string $sourceText): CareerSource
@@ -63,21 +91,30 @@ class CareerExtractionService
             return $source->fresh();
         }
         $source->refresh();
-        $skill = $this->skills->careerFactExtraction();
-        $retryCount = LlmRun::query()->where('career_source_id', $source->id)->count();
-        $run = LlmRun::query()->create([
-            'owner_id' => $user->id,
-            'career_source_id' => $source->id,
-            'workflow' => 'career_text_extraction',
-            'skill_id' => $skill->id,
-            'skill_version' => $skill->version,
-            'prompt_version' => $skill->promptVersion,
-            'model_policy' => $skill->modelPolicy,
-            'status' => 'RUNNING',
-            'retry_count' => $retryCount,
-        ]);
+        try {
+            $skill = $this->skills->careerFactExtraction();
+            $retryCount = LlmRun::query()->where('career_source_id', $source->id)->count();
+            $run = LlmRun::query()->create([
+                'owner_id' => $user->id,
+                'career_source_id' => $source->id,
+                'workflow' => 'career_text_extraction',
+                'skill_id' => $skill->id,
+                'skill_version' => $skill->version,
+                'prompt_version' => $skill->promptVersion,
+                'model_policy' => $skill->modelPolicy,
+                'status' => 'RUNNING',
+                'retry_count' => $retryCount,
+            ]);
+        } catch (Throwable $exception) {
+            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SETUP_ERROR'])->save();
+            if ($exception instanceof QueryException) {
+                throw new SafeCareerException;
+            }
+            throw $exception;
+        }
 
         try {
+            $response = null;
             $response = $this->provider->generateStructured(new LlmRequest(
                 trustedInstructions: $skill->trustedInstructions,
                 untrustedSourceText: $sourceText,
@@ -119,11 +156,20 @@ class CareerExtractionService
             });
         } catch (CareerOutputException $exception) {
             $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SCHEMA_INVALID'])->save();
+            $failureMetadata = [
+                'provider' => $response->provider,
+                'model' => $response->model,
+                'provider_request_id' => $response->providerRequestId,
+                'input_tokens' => $response->inputTokens,
+                'output_tokens' => $response->outputTokens,
+                'latency_ms' => $response->latencyMs,
+                'estimated_cost_micros' => $response->estimatedCostMicros,
+            ];
             $run->forceFill([
                 'status' => 'FAILED',
                 'validation_result' => $exception->category,
                 'error_category' => $exception->category,
-            ])->save();
+            ])->forceFill($failureMetadata)->save();
             throw $exception;
         } catch (LlmProviderException $exception) {
             $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR'])->save();
