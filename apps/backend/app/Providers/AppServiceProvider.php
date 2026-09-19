@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\AI\Contracts\LlmProvider;
+use App\AI\Providers\ConfiguredLlmProvider;
 use App\Services\EmailNormalizer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -16,7 +18,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            LlmProvider::class,
+            ConfiguredLlmProvider::class,
+        );
     }
 
     /**
@@ -31,6 +36,6 @@ class AppServiceProvider extends ServiceProvider
             )->by('login:'.$request->ip().'|'.app(EmailNormalizer::class)->normalize((string) $request->input('email')));
         });
 
-        Route::pattern('id', '[0-9A-HJKMNP-TV-Z]{26}');
+        Route::pattern('id', '(?i:[0-9A-HJKMNP-TV-Z]{26})');
     }
 }

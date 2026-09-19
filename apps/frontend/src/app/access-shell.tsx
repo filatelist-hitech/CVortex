@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import CareerWorkspace from "./career-workspace";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
 
 const csrf = () => decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
 
-async function api(path: string, options: RequestInit = {}) {
+const safeErrorMessages: Record<string, string> = {
+  PROVIDER_ERROR: "Career extraction is temporarily unavailable. Manual fact entry is still available.",
+  INVALID_EXTRACTION_RESULT: "Career extraction returned unsupported data. Nothing was trusted.",
+  CAREER_OPERATION_FAILED: "The Career operation could not be completed. Please try again.",
+};
+
+export async function api(path: string, options: RequestInit = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
     headers: {
@@ -20,7 +27,8 @@ async function api(path: string, options: RequestInit = {}) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.message ?? "Request failed. Please try again.");
+    const code = typeof body?.error?.code === "string" ? body.error.code : "";
+    throw new Error(safeErrorMessages[code] ?? "Request failed. Please try again.");
   }
   return response.status === 204 ? null : response.json();
 }
@@ -65,7 +73,7 @@ export default function AccessShell({ registrationRoute = false }: { registratio
   }
 
   if (user) {
-    return <main className="shell"><section className="status-card" aria-labelledby="app-title"><p className="eyebrow">Authenticated shell</p><h1 id="app-title">CVortex</h1><p className="tagline">{user.email}</p><dl className="identity"><dt>Role</dt><dd>{user.role}</dd><dt>Status</dt><dd>{user.status}</dd></dl><button type="button" onClick={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }}>Sign out</button></section></main>;
+    return <CareerWorkspace email={user.email} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
   }
 
   const registrationUnavailable = mode === "register" && (!registrationRoute || !token);

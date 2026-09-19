@@ -1,11 +1,11 @@
 ---
 title: CVortex M1.2 — Career Core
-status: ready
+status: completed
 milestone: m1-first-value
 slice: m1-2-career-core
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-19
 tags: [task, career, truth-first, provenance, ai]
 related:
   - ../../docs/01-Product/Roadmap.md
@@ -186,16 +186,16 @@ Cover:
 
 ## Completion criteria
 
-- [ ] user can paste career text and start extraction;
-- [ ] extraction creates only PENDING facts with evidence;
-- [ ] user can Confirm/Edit/Reject;
-- [ ] confirmed facts are queryable for later matching;
-- [ ] valid Claims trace to CONFIRMED same-owner facts;
-- [ ] Truth Guard fails closed on missing/invalid evidence;
-- [ ] manual fact entry works without LLM;
-- [ ] provider-specific SDK types do not leak into domain logic;
-- [ ] BYOK/file import did not leak into scope;
-- [ ] tests/evals/docs/state pass.
+- [x] user can paste career text and start extraction;
+- [x] extraction creates only PENDING facts with evidence;
+- [x] user can Confirm/Edit/Reject;
+- [x] confirmed facts are queryable for later matching;
+- [x] valid Claims trace to CONFIRMED same-owner facts;
+- [x] Truth Guard fails closed on missing/invalid evidence;
+- [x] manual fact entry works without LLM;
+- [x] provider-specific SDK types do not leak into domain logic;
+- [x] BYOK/file import did not leak into scope;
+- [x] tests/evals/docs/state pass.
 
 ## State update
 
