@@ -75,7 +75,7 @@ describe("access shell", () => {
     expect(screen.getByText("Claims appear only after explicit confirmation.")).toBeInTheDocument();
     expect(screen.queryByText("Confirmed", { selector: ".confirmed-badge" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Edit before confirming"), { target: { value: "Human-approved Laravel familiarity." } });
-    fireEvent.click(screen.getByRole("button", { name: "Edit and Confirm" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit and Confirm" })[0]);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/career/facts/fact-1/review", expect.objectContaining({ method: "PATCH" })));
     const request = fetchMock.mock.calls.find(([input]) => String(input).includes("fact-1/review"));
@@ -87,7 +87,7 @@ describe("access shell", () => {
       const path = String(input);
       if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "career@example.test", role: "user", status: "ACTIVE" } });
       if (path === "/api/v1/career") return Response.json({ data: { facts: [], claims: [], sources: [] } });
-      if (path === "/api/v1/career/extractions") return Response.json({ message: "Career extraction is temporarily unavailable. Manual fact entry is still available." }, { status: 503 });
+      if (path === "/api/v1/career/extractions") return Response.json({ message: "raw provider exception", error: { code: "PROVIDER_ERROR" } }, { status: 503 });
       throw new Error(`Unexpected request: ${path}`);
     });
 
@@ -98,5 +98,84 @@ describe("access shell", () => {
 
     expect(await screen.findByText("Career extraction is temporarily unavailable. Manual fact entry is still available.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add confirmed fact" })).toBeEnabled();
+  });
+
+  it("never renders an arbitrary backend exception message", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "career@example.test", role: "user", status: "ACTIVE" } });
+      if (path === "/api/v1/career") return Response.json({ data: { facts: [], claims: [], sources: [] } });
+      if (path === "/api/v1/career/extractions") return Response.json({ message: "SQLSTATE private career text leaked here" }, { status: 500 });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    await screen.findByText("No confirmed facts yet.");
+    fireEvent.change(screen.getByLabelText("Career or resume text"), { target: { value: "Synthetic career text." } });
+    fireEvent.click(screen.getByRole("button", { name: "Extract pending facts" }));
+
+    expect(await screen.findByText("Request failed. Please try again.")).toBeInTheDocument();
+    expect(screen.queryByText(/SQLSTATE private/)).not.toBeInTheDocument();
+  });
+
+  it("executes the visible first-value extraction and review flow", async () => {
+    type TestFact = { id: string; fact_type: string; assertion_original: string; assertion_approved: string | null; source_excerpt: string; provenance_type: "paste_extraction"; status: "PENDING" | "CONFIRMED" | "REJECTED" };
+    const facts: TestFact[] = [];
+    const claims: Array<{ id: string; statement: string; truth_status: "PASS" }> = [];
+    const sources: Array<{ id: string; extraction_status: "COMPLETED"; error_code: null }> = [];
+    let finishExtraction: (() => void) | undefined;
+    const extractionGate = new Promise<void>((resolve) => { finishExtraction = resolve; });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "career@example.test", role: "user", status: "ACTIVE" } });
+      if (path === "/api/v1/career") return Response.json({ data: { facts, claims, sources } });
+      if (path === "/api/v1/career/extractions") {
+        await extractionGate;
+        facts.push(
+          { id: "confirm", fact_type: "experience", assertion_original: "Confirmed source.", assertion_approved: null, source_excerpt: "Confirmed source.", provenance_type: "paste_extraction", status: "PENDING" },
+          { id: "edit", fact_type: "experience", assertion_original: "Editable source.", assertion_approved: null, source_excerpt: "Editable source.", provenance_type: "paste_extraction", status: "PENDING" },
+          { id: "reject", fact_type: "experience", assertion_original: "Rejected source.", assertion_approved: null, source_excerpt: "Rejected source.", provenance_type: "paste_extraction", status: "PENDING" },
+          { id: "pending", fact_type: "experience", assertion_original: "Still pending.", assertion_approved: null, source_excerpt: "Still pending.", provenance_type: "paste_extraction", status: "PENDING" },
+        );
+        sources.push({ id: "source", extraction_status: "COMPLETED", error_code: null });
+        return Response.json({ data: sources[0] }, { status: 202 });
+      }
+      if (path.includes("/review")) {
+        const id = path.split("/").at(-2);
+        const fact = facts.find((candidate) => candidate.id === id);
+        const body = JSON.parse(String(options?.body)) as { action: "confirm" | "edit_confirm" | "reject"; assertion?: string };
+        if (!fact) throw new Error("Missing test fact");
+        if (body.action === "reject") fact.status = "REJECTED";
+        else {
+          fact.status = "CONFIRMED";
+          fact.assertion_approved = body.action === "edit_confirm" ? body.assertion ?? null : fact.assertion_original;
+          claims.push({ id: `claim-${id}`, statement: fact.assertion_approved ?? fact.assertion_original, truth_status: "PASS" });
+        }
+        return Response.json({ data: fact });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    await screen.findByText("No pending candidates. Paste text above or add a manual fact.");
+    fireEvent.change(screen.getByLabelText("Career or resume text"), { target: { value: "Synthetic multi-fact source." } });
+    fireEvent.click(screen.getByRole("button", { name: "Extract pending facts" }));
+    expect(await screen.findByRole("button", { name: "Extracting…" })).toBeDisabled();
+    finishExtraction?.();
+
+    expect(await screen.findByText("Latest extraction: COMPLETED")).toBeInTheDocument();
+    expect(screen.getAllByText("Evidence available")).toHaveLength(4);
+    fireEvent.click(screen.getAllByRole("button", { name: "Confirm" })[0]);
+    await waitFor(() => expect(screen.getByText("Confirmed source.", { selector: ".confirmed-card .assertion" })).toBeInTheDocument());
+
+    fireEvent.change(screen.getAllByLabelText("Edit before confirming")[0], { target: { value: "Human approved edit." } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit and Confirm" })[0]);
+    await waitFor(() => expect(screen.getByText("Human approved edit.", { selector: ".confirmed-card .assertion" })).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Reject" })[0]);
+    await waitFor(() => expect(screen.queryByText("Rejected source.", { selector: ".pending-card .assertion" })).not.toBeInTheDocument());
+    expect(screen.getByText("Still pending.", { selector: ".pending-card .assertion" })).toBeInTheDocument();
+    expect(screen.getAllByText("PASS")).toHaveLength(2);
   });
 });

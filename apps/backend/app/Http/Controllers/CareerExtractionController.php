@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\Exceptions\CareerOutputException;
 use App\AI\Exceptions\LlmProviderException;
 use App\Services\CareerExtractionService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,11 @@ class CareerExtractionController extends Controller
 
         try {
             $source = $service->extract($request->user(), $data['source_text']);
+        } catch (CareerOutputException) {
+            return response()->json([
+                'message' => 'Career extraction returned unsupported data. Nothing was trusted.',
+                'error' => ['code' => 'INVALID_EXTRACTION_RESULT'],
+            ], 422);
         } catch (LlmProviderException) {
             return response()->json([
                 'message' => 'Career extraction is temporarily unavailable. Manual fact entry is still available.',

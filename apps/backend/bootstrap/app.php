@@ -2,10 +2,14 @@
 
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsureRequestId;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,6 +25,32 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->reportable(function (Throwable $exception): bool {
+            if (request()->is('api/v1/career*')
+                && ! $exception instanceof ValidationException
+                && ! $exception instanceof AuthenticationException
+                && (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500)) {
+                Log::error('career.operation_failed', [
+                    'operation' => request()->route()?->getName() ?? 'career',
+                    'exception_type' => $exception::class,
+                ]);
+
+                return false;
+            }
+
+            return true;
+        });
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            if ($request->is('api/v1/career*')
+                && ! $exception instanceof ValidationException
+                && ! $exception instanceof AuthenticationException
+                && (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500)) {
+                return response()->json([
+                    'message' => 'The Career operation could not be completed. Please try again.',
+                    'error' => ['code' => 'CAREER_OPERATION_FAILED'],
+                ], 500);
+            }
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

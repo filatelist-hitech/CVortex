@@ -24,7 +24,7 @@ class CareerFact extends Model
     protected $fillable = [
         'owner_id', 'career_profile_id', 'career_source_id', 'supersedes_fact_id', 'provenance_type',
         'fact_type', 'assertion_original', 'assertion_approved', 'source_excerpt', 'extracted_by',
-        'extraction_confidence', 'status', 'reviewed_by', 'reviewed_at',
+        'extraction_confidence', 'candidate_hash', 'status', 'reviewed_by', 'reviewed_at',
     ];
 
     protected function casts(): array

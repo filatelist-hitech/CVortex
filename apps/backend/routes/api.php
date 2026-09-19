@@ -16,11 +16,16 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'active-user'])->group(function (): void {
         Route::get('/me', CurrentUserController::class);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
-        Route::get('/career', [CareerController::class, 'index']);
-        Route::post('/career/extractions', CareerExtractionController::class);
-        Route::get('/career/sources/{id}', [CareerController::class, 'source']);
-        Route::post('/career/facts/manual', [CareerController::class, 'manual']);
-        Route::patch('/career/facts/{id}/review', [CareerController::class, 'review']);
-        Route::patch('/career/facts/{id}/deprecate', [CareerController::class, 'deprecate']);
+        Route::group([], function (): void {
+            Route::get('/career', [CareerController::class, 'index'])->name('career.index');
+            Route::get('/career/trusted', [CareerController::class, 'trusted'])->name('career.trusted');
+            Route::post('/career/extractions', CareerExtractionController::class)->name('career.extract');
+            Route::get('/career/sources/{id}', [CareerController::class, 'source'])->name('career.source');
+            Route::post('/career/facts/manual', [CareerController::class, 'manual'])->name('career.manual');
+            Route::patch('/career/facts/{id}/review', [CareerController::class, 'review'])->name('career.review');
+            Route::patch('/career/facts/{id}/deprecate', [CareerController::class, 'deprecate'])->name('career.deprecate');
+            Route::post('/career/facts/{id}/supersede', [CareerController::class, 'supersede'])->name('career.supersede');
+            Route::patch('/career/claims/{id}/resolve', [CareerController::class, 'resolveClaim'])->name('career.claim.resolve');
+        });
     });
 });

@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\CareerFact;
 use App\Models\Claim;
-use Illuminate\Support\Facades\DB;
+use App\Models\ClaimEvidence;
 
 class TruthGuard
 {
+    public function __construct(private readonly CareerOwnerChain $owners) {}
+
     public const PASS = 'PASS';
 
     public const BLOCK = 'BLOCK';
@@ -16,45 +18,35 @@ class TruthGuard
 
     public function evaluate(Claim $claim): string
     {
-        $evidence = DB::table('claim_evidence')
-            ->join('career_facts', 'career_facts.id', '=', 'claim_evidence.career_fact_id')
-            ->where('claim_evidence.claim_id', $claim->id)
-            ->get([
-                'claim_evidence.owner_id as evidence_owner_id',
-                'career_facts.owner_id as fact_owner_id',
-                'career_facts.status',
-                'career_facts.provenance_type',
-                'career_facts.career_source_id',
-                'career_facts.source_excerpt',
-                'career_facts.assertion_original',
-                'career_facts.assertion_approved',
-                'career_facts.reviewed_by',
-                'career_facts.reviewed_at',
-            ]);
+        $evidence = ClaimEvidence::query()->where('claim_id', $claim->id)->get();
 
         if ($evidence->isEmpty()) {
             return self::BLOCK;
         }
 
         foreach ($evidence as $item) {
-            $sameOwner = hash_equals($claim->owner_id, $item->evidence_owner_id)
-                && hash_equals($claim->owner_id, $item->fact_owner_id);
-            $validProvenance = ($item->provenance_type === CareerFact::PROVENANCE_MANUAL
-                    && trim((string) $item->source_excerpt) !== '')
-                || ($item->provenance_type === CareerFact::PROVENANCE_EXTRACTION
-                    && $item->career_source_id !== null
-                    && trim((string) $item->source_excerpt) !== '');
-            $humanReviewed = $item->reviewed_by !== null
-                && hash_equals($claim->owner_id, $item->reviewed_by)
-                && $item->reviewed_at !== null;
-            $supportedStatement = hash_equals(
-                (string) $claim->statement,
-                (string) ($item->assertion_approved ?? $item->assertion_original),
-            );
-
-            if (! $sameOwner || $item->status !== CareerFact::STATUS_CONFIRMED || ! $validProvenance || ! $humanReviewed || ! $supportedStatement) {
+            $fact = CareerFact::query()->find($item->career_fact_id);
+            if ($fact === null || ! $this->owners->evidenceSupportsClaim($item, $claim, $fact)) {
                 return self::BLOCK;
             }
+        }
+
+        if ($claim->resolution_reason === 'VALID_EVIDENCE_AMBIGUITY'
+            && $claim->resolution_requested_at !== null
+            && $claim->resolved_at === null) {
+            return self::USER_RESOLUTION_REQUIRED;
+        }
+        if ($claim->resolution_reason === 'VALID_EVIDENCE_AMBIGUITY'
+            && ($claim->resolved_at === null
+                || $claim->resolved_by === null
+                || $claim->resolved_career_fact_id === null
+                || ! $evidence->contains(
+                    fn (ClaimEvidence $item): bool => hash_equals(
+                        (string) $claim->resolved_career_fact_id,
+                        (string) $item->career_fact_id,
+                    ),
+                ))) {
+            return self::BLOCK;
         }
 
         return self::PASS;

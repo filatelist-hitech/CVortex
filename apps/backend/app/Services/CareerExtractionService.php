@@ -5,14 +5,17 @@ namespace App\Services;
 use App\AI\Contracts\LlmProvider;
 use App\AI\Data\LlmRequest;
 use App\AI\Data\ModelPolicy;
+use App\AI\Exceptions\CareerOutputException;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Exceptions\SafeCareerException;
 use App\Models\CareerFact;
+use App\Models\CareerFactType;
 use App\Models\CareerSource;
 use App\Models\LlmRun;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class CareerExtractionService
 {
@@ -20,9 +23,21 @@ class CareerExtractionService
         private readonly LlmProvider $provider,
         private readonly CareerFactService $facts,
         private readonly RuntimeSkillRegistry $skills,
+        private readonly CareerSemanticValidator $semantics,
     ) {}
 
     public function extract(User $user, string $sourceText): CareerSource
+    {
+        try {
+            return $this->performExtraction($user, $sourceText);
+        } catch (CareerOutputException|LlmProviderException $exception) {
+            throw $exception;
+        } catch (QueryException) {
+            throw new SafeCareerException;
+        }
+    }
+
+    private function performExtraction(User $user, string $sourceText): CareerSource
     {
         $sourceText = trim($sourceText);
         $hash = hash('sha256', $sourceText);
@@ -84,6 +99,7 @@ class CareerExtractionService
                         'source_excerpt' => $candidate['source_excerpt'],
                         'extracted_by' => $skill->id.'@'.$skill->version,
                         'extraction_confidence' => $candidate['confidence'],
+                        'candidate_hash' => hash('sha256', $candidate['fact_type']."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
                         'status' => CareerFact::STATUS_PENDING,
                     ]);
                 }
@@ -96,15 +112,33 @@ class CareerExtractionService
                     'input_tokens' => $response->inputTokens,
                     'output_tokens' => $response->outputTokens,
                     'latency_ms' => $response->latencyMs,
+                    'estimated_cost_micros' => $response->estimatedCostMicros,
+                    'validation_result' => 'PASS',
+                    'error_category' => null,
                 ])->save();
             });
-        } catch (ValidationException $exception) {
+        } catch (CareerOutputException $exception) {
             $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SCHEMA_INVALID'])->save();
-            $run->forceFill(['status' => 'FAILED', 'validation_error' => 'SCHEMA_INVALID'])->save();
+            $run->forceFill([
+                'status' => 'FAILED',
+                'validation_result' => $exception->category,
+                'error_category' => $exception->category,
+            ])->save();
             throw $exception;
         } catch (LlmProviderException $exception) {
             $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR'])->save();
-            $run->forceFill(['status' => 'FAILED', 'validation_error' => 'PROVIDER_ERROR'])->save();
+            $run->forceFill([
+                'provider' => $exception->providerName,
+                'model' => $exception->resolvedModel,
+                'provider_request_id' => $exception->providerRequestId,
+                'status' => 'FAILED',
+                'input_tokens' => $exception->inputTokens,
+                'output_tokens' => $exception->outputTokens,
+                'latency_ms' => $exception->latencyMs,
+                'estimated_cost_micros' => $exception->estimatedCostMicros,
+                'validation_result' => 'NOT_VALIDATED',
+                'error_category' => $exception->category,
+            ])->save();
             throw $exception;
         }
 
@@ -118,7 +152,7 @@ class CareerExtractionService
     {
         $facts = $output['facts'] ?? null;
         if (array_keys($output) !== ['facts'] || ! is_array($facts) || ! array_is_list($facts) || count($facts) > 50) {
-            throw ValidationException::withMessages(['model_output' => 'The extraction result does not match the required schema.']);
+            throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
         }
 
         $validated = [];
@@ -128,7 +162,6 @@ class CareerExtractionService
                 || array_diff(['fact_type', 'assertion', 'source_excerpt', 'confidence'], array_keys($candidate)) !== []
                 || ! isset($candidate['fact_type'], $candidate['assertion'], $candidate['source_excerpt'], $candidate['confidence'])
                 || ! is_string($candidate['fact_type'])
-                || preg_match('/^[a-z][a-z0-9_]{1,63}$/', $candidate['fact_type']) !== 1
                 || ! is_string($candidate['assertion'])
                 || trim($candidate['assertion']) === ''
                 || mb_strlen($candidate['assertion']) > 1000
@@ -140,7 +173,11 @@ class CareerExtractionService
                 || (float) $candidate['confidence'] > 1
                 || ! str_contains($sourceText, $candidate['source_excerpt'])
                 || ! str_contains($candidate['source_excerpt'], $candidate['assertion'])) {
-                throw ValidationException::withMessages(['model_output' => 'The extraction result contains unsupported or invalid evidence.']);
+                throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+            }
+            $type = CareerFactType::tryFrom($candidate['fact_type']);
+            if ($type === null || ! $this->semantics->supports($type, $candidate['assertion'])) {
+                throw new CareerOutputException(CareerOutputException::SEMANTIC_REJECTED);
             }
             $validated[] = [
                 'fact_type' => $candidate['fact_type'],

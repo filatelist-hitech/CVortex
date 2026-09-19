@@ -3,8 +3,7 @@
 namespace App\Providers;
 
 use App\AI\Contracts\LlmProvider;
-use App\AI\Providers\OpenAiResponsesProvider;
-use App\AI\Providers\UnconfiguredLlmProvider;
+use App\AI\Providers\ConfiguredLlmProvider;
 use App\Services\EmailNormalizer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -21,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             LlmProvider::class,
-            config('ai.provider') === 'openai' ? OpenAiResponsesProvider::class : UnconfiguredLlmProvider::class,
+            ConfiguredLlmProvider::class,
         );
     }
 
@@ -37,6 +36,6 @@ class AppServiceProvider extends ServiceProvider
             )->by('login:'.$request->ip().'|'.app(EmailNormalizer::class)->normalize((string) $request->input('email')));
         });
 
-        Route::pattern('id', '[0-9A-HJKMNP-TV-Z]{26}');
+        Route::pattern('id', '(?i:[0-9A-HJKMNP-TV-Z]{26})');
     }
 }

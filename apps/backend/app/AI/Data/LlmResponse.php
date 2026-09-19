@@ -13,5 +13,6 @@ final readonly class LlmResponse
         public ?int $outputTokens = null,
         public ?int $latencyMs = null,
         public ?string $providerRequestId = null,
+        public ?int $estimatedCostMicros = null,
     ) {}
 }

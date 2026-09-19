@@ -9,6 +9,12 @@ type Mode = "login" | "register";
 
 const csrf = () => decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
 
+const safeErrorMessages: Record<string, string> = {
+  PROVIDER_ERROR: "Career extraction is temporarily unavailable. Manual fact entry is still available.",
+  INVALID_EXTRACTION_RESULT: "Career extraction returned unsupported data. Nothing was trusted.",
+  CAREER_OPERATION_FAILED: "The Career operation could not be completed. Please try again.",
+};
+
 export async function api(path: string, options: RequestInit = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
@@ -21,7 +27,8 @@ export async function api(path: string, options: RequestInit = {}) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.message ?? "Request failed. Please try again.");
+    const code = typeof body?.error?.code === "string" ? body.error.code : "";
+    throw new Error(safeErrorMessages[code] ?? "Request failed. Please try again.");
   }
   return response.status === 204 ? null : response.json();
 }

@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\CareerFact;
+use App\Models\CareerFactType;
 use App\Models\CareerSource;
 use App\Models\Claim;
 use App\Models\LlmRun;
 use App\Services\CareerFactService;
+use App\Services\ClaimResolutionService;
+use App\Services\TrustedCareerQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CareerController extends Controller
 {
@@ -58,15 +62,26 @@ class CareerController extends Controller
                 'provider' => $run->provider,
                 'model' => $run->model,
                 'status' => $run->status,
-                'validation_error' => $run->validation_error,
+                'input_tokens' => $run->input_tokens,
+                'output_tokens' => $run->output_tokens,
+                'latency_ms' => $run->latency_ms,
+                'retry_count' => $run->retry_count,
+                'validation_result' => $run->validation_result,
+                'error_category' => $run->error_category,
+                'estimated_cost_micros' => $run->estimated_cost_micros,
             ],
         ]]);
+    }
+
+    public function trusted(Request $request, TrustedCareerQuery $query): JsonResponse
+    {
+        return response()->json(['data' => $query->forMatching($request->user())]);
     }
 
     public function manual(Request $request, CareerFactService $service): JsonResponse
     {
         $data = $request->validate([
-            'fact_type' => ['required', 'string', 'regex:/^[a-z][a-z0-9_]{1,63}$/'],
+            'fact_type' => ['required', 'string', Rule::enum(CareerFactType::class)],
             'assertion' => ['required', 'string', 'max:1000'],
         ]);
         $fact = $service->createManual($request->user(), $data['fact_type'], trim($data['assertion']));
@@ -91,6 +106,35 @@ class CareerController extends Controller
         $fact = CareerFact::query()->where('owner_id', $request->user()->id)->findOrFail($id);
 
         return response()->json(['data' => $service->deprecate($request->user(), $fact)]);
+    }
+
+    public function supersede(Request $request, string $id, CareerFactService $service): JsonResponse
+    {
+        $fact = CareerFact::query()->where('owner_id', $request->user()->id)->findOrFail($id);
+        $data = $request->validate([
+            'fact_type' => ['required', 'string', Rule::enum(CareerFactType::class)],
+            'assertion' => ['required', 'string', 'max:1000'],
+        ]);
+
+        return response()->json(['data' => $service->supersede(
+            $request->user(),
+            $fact,
+            $data['fact_type'],
+            trim($data['assertion']),
+        )], 201);
+    }
+
+    public function resolveClaim(Request $request, string $id, ClaimResolutionService $service): JsonResponse
+    {
+        $claim = Claim::query()->where('owner_id', $request->user()->id)->findOrFail($id);
+        $data = $request->validate([
+            'career_fact_id' => ['required', 'ulid'],
+        ]);
+        $selectedFact = CareerFact::query()
+            ->where('owner_id', $request->user()->id)
+            ->findOrFail($data['career_fact_id']);
+
+        return response()->json(['data' => $service->resolve($request->user(), $claim, $selectedFact)]);
     }
 
     /** @return array<string, mixed> */

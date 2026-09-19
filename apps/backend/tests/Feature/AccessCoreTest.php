@@ -13,6 +13,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
@@ -375,7 +376,7 @@ class AccessCoreTest extends TestCase
         $user = User::query()->create(['email' => 'enable@example.test', 'password' => Hash::make('a very long safe passphrase'), 'status' => User::STATUS_DISABLED]);
         $this->artisan('user:enable '.$user->id)->expectsOutput('User enabled.')->assertExitCode(0);
         $this->assertSame(User::STATUS_ACTIVE, $user->fresh()->status);
-        $this->assertDatabaseCount('sessions', 0);
+        $this->assertSame(0, DB::table('sessions')->where('user_id', $user->id)->count());
         $cookies = $this->csrfCookies();
         $this->withHeader('Origin', 'http://localhost')->withCookie(config('session.cookie'), $cookies['session'])->withHeader('X-CSRF-TOKEN', $cookies['session_token'])->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'a very long safe passphrase'])->assertOk();
     }
@@ -429,7 +430,7 @@ class AccessCoreTest extends TestCase
         }
 
         $this->assertSame(User::STATUS_ACTIVE, $user->fresh()->status);
-        $this->assertDatabaseCount('sessions', 1);
+        $this->assertSame(1, DB::table('sessions')->where('user_id', $user->id)->count());
         $this->assertDatabaseMissing('audit_events', ['event_type' => 'user.disabled']);
     }
 

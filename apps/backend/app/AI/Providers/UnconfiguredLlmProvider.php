@@ -11,6 +11,6 @@ class UnconfiguredLlmProvider implements LlmProvider
 {
     public function generateStructured(LlmRequest $request): LlmResponse
     {
-        throw new LlmProviderException('No system LLM provider is configured.');
+        throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED, 'No system LLM provider is configured.');
     }
 }
