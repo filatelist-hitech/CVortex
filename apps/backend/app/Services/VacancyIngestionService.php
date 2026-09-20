@@ -32,21 +32,22 @@ class VacancyIngestionService
         try {
             $result = DB::transaction(function () use ($user, $sourceText, $sourceUrl, $contentHash): array {
                 $this->lockLogicalVacancy((string) $user->id, $sourceUrl);
-                $existing = VacancySnapshot::query()
-                    ->where('owner_id', $user->id)
-                    ->where('content_hash', $contentHash)
-                    ->first();
-                if ($existing !== null) {
-                    $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($existing->vacancy_id);
-
-                    return ['vacancy' => $vacancy, 'snapshot' => $existing, 'duplicate' => true];
-                }
-
                 $vacancy = $sourceUrl === null ? null : Vacancy::query()
                     ->where('owner_id', $user->id)
                     ->where('source_url', $sourceUrl)
                     ->lockForUpdate()
                     ->first();
+                if ($vacancy !== null) {
+                    $current = VacancySnapshot::query()
+                        ->where('owner_id', $user->id)
+                        ->where('vacancy_id', $vacancy->id)
+                        ->orderByDesc('version')
+                        ->orderByDesc('id')
+                        ->first();
+                    if ($current !== null && hash_equals((string) $current->content_hash, $contentHash)) {
+                        return ['vacancy' => $vacancy, 'snapshot' => $current, 'duplicate' => true];
+                    }
+                }
                 if ($vacancy === null) {
                     $vacancy = Vacancy::query()->create([
                         'owner_id' => $user->id,
@@ -80,12 +81,21 @@ class VacancyIngestionService
                 return ['vacancy' => $vacancy, 'snapshot' => $snapshot, 'duplicate' => false];
             });
         } catch (QueryException) {
-            $existing = VacancySnapshot::query()->where('owner_id', $user->id)->where('content_hash', $contentHash)->first();
-            if ($existing === null) {
+            $vacancy = $sourceUrl === null ? null : Vacancy::query()
+                ->where('owner_id', $user->id)
+                ->where('source_url', $sourceUrl)
+                ->first();
+            $existing = $vacancy === null ? null : VacancySnapshot::query()
+                ->where('owner_id', $user->id)
+                ->where('vacancy_id', $vacancy->id)
+                ->orderByDesc('version')
+                ->orderByDesc('id')
+                ->first();
+            if ($existing === null || ! hash_equals((string) $existing->content_hash, $contentHash)) {
                 throw new SafeVacancyException;
             }
             $result = [
-                'vacancy' => Vacancy::query()->where('owner_id', $user->id)->findOrFail($existing->vacancy_id),
+                'vacancy' => $vacancy,
                 'snapshot' => $existing,
                 'duplicate' => true,
             ];

@@ -241,7 +241,7 @@ class VacancyRequirementValidator
         $qualifier = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $text = $this->normalize($label.' '.$excerpt);
 
-        return preg_match('/\b'.$languages.'\s+(?:'.$qualifier.'|(?:language\s+)?(?:proficiency|level)|is\s+required|required)\b|\b'.$qualifier.'\s+(?:proficiency\s+)?(?:in\s+)?'.$languages.'\b|\b(?:proficiency|level)\s+(?:in\s+)?'.$languages.'\b|\b'.$languages.'\s+(?:language\s+)?(?:proficiency|level)\b/iu', $text) === 1;
+        return preg_match('/\b'.$languages.'\s+(?:(?:at\s+)?'.$qualifier.'(?:\s+level)?|(?:language\s+)?(?:proficiency|level)(?:\s+at)?\s+'.$qualifier.'|is\s+required|required)\b|\b'.$qualifier.'(?:[ -]level)?\s+(?:proficiency\s+)?(?:in\s+)?'.$languages.'\b|\b(?:proficiency|level)\s+(?:at\s+)?(?:in\s+)?'.$languages.'\b|\b'.$languages.'\s+(?:language\s+)?(?:proficiency|level)\b/iu', $text) === 1;
     }
 
     private function hasExperienceDuration(string $text): bool
@@ -378,8 +378,8 @@ class VacancyRequirementValidator
         $language = '(?:english|russian|german|french|spanish|английск\pL*|русск\pL*|немецк\pL*|французск\pL*)';
         $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $patterns = [
-            '/\b'.$language.'\s*(?:(?:language\s+)?(?:proficiency|level)\s*)?(?::|is|of)?\s*'.$qualification.'\b/iu',
-            '/\b'.$qualification.'\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
+            '/\b'.$language.'\s*(?:at\s+)?(?:(?:language\s+)?(?:proficiency|level)\s*(?:at\s+)?)?(?::|is|of)?\s*'.$qualification.'(?:\s+level)?\b/iu',
+            '/\b'.$qualification.'(?:[ -]level)?\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
         ];
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $excerpt, $match) === 1 && $this->normalize($match[1]) === $value) {

@@ -67,6 +67,34 @@ class VacancyCoreTest extends TestCase
         $this->assertDatabaseCount('vacancy_snapshots', 2);
     }
 
+    public function test_historical_content_reappearance_creates_a_new_current_snapshot_version(): void
+    {
+        Queue::fake();
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => []]]));
+        $user = $this->user('snapshot-reappearance@example.test');
+        $service = app(VacancyIngestionService::class);
+        $url = 'https://jobs.example.test/reappearing';
+
+        $first = $service->queue($user, 'Vacancy content A.', $url);
+        $second = $service->queue($user, 'Vacancy content B.', $url);
+        $third = $service->queue($user, 'Vacancy content A.', $url);
+
+        $this->assertSame([1, 2, 3], [$first['snapshot']->version, $second['snapshot']->version, $third['snapshot']->version]);
+        $this->assertCount(3, array_unique([$first['snapshot']->id, $second['snapshot']->id, $third['snapshot']->id]));
+        $this->assertSame(
+            \DB::table('vacancy_snapshots')->where('id', $first['snapshot']->id)->value('content_hash'),
+            \DB::table('vacancy_snapshots')->where('id', $third['snapshot']->id)->value('content_hash'),
+        );
+        $this->assertSame($third['snapshot']->id, \DB::table('vacancy_snapshots')
+            ->where('vacancy_id', $third['vacancy']->id)->orderByDesc('version')->orderByDesc('id')->value('id'));
+
+        app(VacancyAnalysisService::class)->analyze($user, $third['snapshot']);
+        $this->assertDatabaseHas('vacancy_analyses', ['vacancy_snapshot_id' => $third['snapshot']->id]);
+        $this->assertDatabaseHas('vacancy_snapshots', ['id' => $first['snapshot']->id, 'raw_text' => 'Vacancy content A.']);
+        $this->assertDatabaseHas('vacancy_snapshots', ['id' => $second['snapshot']->id, 'raw_text' => 'Vacancy content B.']);
+        Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $job): bool => $job->snapshotId === (string) $third['snapshot']->id);
+    }
+
     public function test_superseded_snapshot_cannot_claim_the_current_vacancy_status(): void
     {
         Queue::fake();
@@ -458,6 +486,86 @@ class VacancyCoreTest extends TestCase
             app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
             $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
             $this->assertSame($case['result'], $detail->json('data.analysis.dimensions.3.result'), $case['source']);
+        }
+    }
+
+    public function test_language_level_source_grammar_rejects_incidental_english_and_accepts_proficiency(): void
+    {
+        Queue::fake();
+        $user = $this->user('language-at-level@example.test');
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'skill', 'Built an English parser.');
+        $cases = [
+            ['source' => 'English at B2 level required.', 'value' => 'B2'],
+            ['source' => 'English level: B2 required.', 'value' => 'B2'],
+            ['source' => 'B2 English required.', 'value' => 'B2'],
+            ['source' => 'B2-level English required.', 'value' => 'B2'],
+            ['source' => 'English proficiency B2 required.', 'value' => 'B2'],
+            ['source' => 'English proficiency at B2 required.', 'value' => 'B2'],
+            ['source' => 'English at C1 level required.', 'value' => 'C1'],
+            ['source' => 'English upper-intermediate required.', 'value' => null],
+        ];
+        $provider = new VacancyFakeLlmProvider(array_map(fn (array $case): array => ['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'English', $case['source'], $case['value']),
+        ]], [...$cases, ['source' => 'English at B2 level required.', 'value' => 'B2']]));
+        $this->app->instance(LlmProvider::class, $provider);
+
+        foreach ($cases as $case) {
+            $source = $case['source'];
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->assertDatabaseHas('vacancy_requirements', [
+                'vacancy_snapshot_id' => $result['snapshot']->id,
+                'dimension' => 'LANGUAGE',
+            ]);
+            $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+            $this->assertSame('GAP', $detail->json('data.analysis.dimensions.3.result'), $source);
+        }
+
+        $career->createManual($user, 'language', 'English B2');
+        $last = app(VacancyIngestionService::class)->queue($user, 'English at B2 level required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $last['snapshot']);
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$last['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.3.result'));
+    }
+
+    public function test_adjacent_evidence_is_counted_as_mandatory_or_preferred_gap(): void
+    {
+        Queue::fake();
+        $user = $this->user('adjacent-accounting@example.test');
+        $facts = app(CareerFactService::class);
+        $facts->createManual($user, 'skill', 'Laravel');
+        $facts->createManual($user, 'skill', 'Vue');
+        $cases = [
+            ['source' => "Laravel required.\nReact required.", 'requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Laravel', 'Laravel required.'),
+                $this->requirement('TECHNICAL', 'MANDATORY', 'React', 'React required.'),
+            ], 'recommendation' => 'MAYBE', 'gap_category' => 'adjacent or weak candidate evidence'],
+            ['source' => "Laravel required.\nReact preferred.", 'requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Laravel', 'Laravel required.'),
+                $this->requirement('TECHNICAL', 'PREFERRED', 'React', 'React preferred.'),
+            ], 'recommendation' => 'APPLY', 'gap_category' => 'adjacent or weak candidate evidence'],
+            ['source' => "Laravel required.\nReact required.\nSymfony required.\nKafka required.", 'requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Laravel', 'Laravel required.'),
+                $this->requirement('TECHNICAL', 'MANDATORY', 'React', 'React required.'),
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Symfony', 'Symfony required.'),
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Kafka', 'Kafka required.'),
+            ], 'recommendation' => 'LOW_PRIORITY', 'gap_category' => 'adjacent or weak candidate evidence'],
+        ];
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider(array_map(
+            fn (array $case): array => ['requirements' => $case['requirements']],
+            $cases,
+        )));
+
+        foreach ($cases as $case) {
+            $result = app(VacancyIngestionService::class)->queue($user, $case['source'], null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->assertSame($case['recommendation'], $analysis->recommendation);
+            $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+            $requirements = collect($detail->json('data.analysis.material_gaps'))->keyBy('label');
+            $this->assertFalse($requirements->has('Laravel'), 'Exact confirmed evidence remains a match.');
+            $this->assertSame($case['gap_category'], $requirements->get($case['requirements'][1]['label'])['category'], $case['source']);
+            $this->assertSame('Laravel', $case['requirements'][0]['label']);
         }
     }
 

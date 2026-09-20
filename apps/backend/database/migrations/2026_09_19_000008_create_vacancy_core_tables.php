@@ -33,7 +33,6 @@ return new class extends Migration
             $table->string('content_hash', 64);
             $table->timestampTz('imported_at');
             $table->timestamps();
-            $table->unique(['owner_id', 'content_hash']);
             $table->unique(['vacancy_id', 'version']);
         });
 

@@ -189,6 +189,13 @@ class VacancyMatchingService
                 $adjacent++;
                 $evidence[$weak['type'].':'.$weak['id']] = $weak;
                 $gaps[] = $this->gap($requirement, 'adjacent or weak candidate evidence');
+                if ($requirement->importance === 'MANDATORY') {
+                    $mandatoryGaps++;
+                } elseif ($requirement->importance === 'PREFERRED') {
+                    $preferredGaps++;
+                } else {
+                    $uncertainties[] = $this->uncertainty($requirement, 'requirement importance is uncertain despite adjacent candidate evidence');
+                }
 
                 continue;
             }
@@ -295,7 +302,7 @@ class VacancyMatchingService
         $languagePattern = $this->languagePattern($language);
         $qualification = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
 
-        return preg_match('/\b'.$languagePattern.'\s+(?:(?:language\s+)?(?:proficiency|level)|'.$qualification.')\b|\b'.$qualification.'\s+(?:proficiency\s+)?(?:in\s+)?'.$languagePattern.'\b|\b(?:proficiency|level)\s+(?:in\s+)?'.$languagePattern.'\b/iu', $candidateText) === 1;
+        return preg_match('/\b'.$languagePattern.'\s+(?:(?:at\s+)?'.$qualification.'(?:\s+level)?|(?:language\s+)?(?:proficiency|level)(?:\s+at)?\s+'.$qualification.')\b|\b'.$qualification.'(?:[ -]level)?\s+(?:(?:proficiency\s+)?in\s+)?'.$languagePattern.'\b|\b(?:proficiency|level)\s+(?:at\s+)?(?:in\s+)?'.$languagePattern.'(?:\s+'.$qualification.')?\b/iu', $candidateText) === 1;
     }
 
     private function languageQualificationMatches(VacancyRequirement $requirement, string $candidateText): bool
@@ -342,8 +349,8 @@ class VacancyMatchingService
         $language = $this->languagePattern($language);
         $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $patterns = [
-            '/\b'.$language.'\s*(?:(?:language\s+)?(?:proficiency|level)\s*)?(?::|is|of)?\s*'.$qualification.'\b/iu',
-            '/\b'.$qualification.'\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
+            '/\b'.$language.'\s*(?:at\s+)?(?:(?:language\s+)?(?:proficiency|level)\s*(?:at\s+)?)?(?::|is|of)?\s*'.$qualification.'(?:\s+level)?\b/iu',
+            '/\b'.$qualification.'(?:[ -]level)?\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
         ];
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $text, $match) === 1) {
