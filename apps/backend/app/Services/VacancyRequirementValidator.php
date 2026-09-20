@@ -56,6 +56,9 @@ class VacancyRequirementValidator
             if ($this->isInstructionAttack($label.' '.$excerpt) || $this->isMarketingNoise($excerpt)) {
                 continue;
             }
+            if ($this->hasNegatedRequirement($excerpt)) {
+                continue;
+            }
             if (! $this->labelSupportedByExcerpt($label, $excerpt)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
@@ -92,6 +95,10 @@ class VacancyRequirementValidator
 
     private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
     {
+        if ($dimension === 'SALARY') {
+            return $this->salaryValueSupported($value, $excerpt);
+        }
+
         $value = $this->normalize($value);
         $evidence = $this->normalize($excerpt);
         if ($dimension === 'WORK_FORMAT') {
@@ -114,15 +121,14 @@ class VacancyRequirementValidator
 
         // Numeric/currency separators are structural, but value-bearing numbers
         // must retain the source order so a model cannot swap range endpoints.
-        if (in_array($dimension, ['EXPERIENCE', 'SALARY'], true)) {
+        if ($dimension === 'EXPERIENCE') {
             preg_match_all('/\d+(?:[.,]\d+)?/u', $value, $valueNumbers);
             preg_match_all('/\d+(?:[.,]\d+)?/u', $evidence, $evidenceNumbers);
             if ($valueNumbers[0] === [] || array_slice($evidenceNumbers[0], 0, count($valueNumbers[0])) !== $valueNumbers[0]) {
                 return false;
             }
-            if ($dimension === 'EXPERIENCE') {
-                return true;
-            }
+
+            return true;
         }
 
         // Numeric/currency separators are structural; every semantic token must
@@ -150,6 +156,11 @@ class VacancyRequirementValidator
         return $providerImportance;
     }
 
+    private function hasNegatedRequirement(string $excerpt): bool
+    {
+        return preg_match('/\bno\s+[\pL\s]{0,40}\brequired\b|\b(?:is|are)\s+not\s+(?:required|mandatory)\b|не\s+(?:требуется|обязател)/iu', $excerpt) === 1;
+    }
+
     private function sourceDimension(string $label, string $excerpt): string
     {
         $text = $this->normalize($excerpt);
@@ -160,7 +171,7 @@ class VacancyRequirementValidator
             preg_match('/\b(?:remote|hybrid|office|on site|onsite|work from home|удаленно|гибрид|офис)\b/iu', $text) === 1 => 'WORK_FORMAT',
             preg_match('/\b(?:location|based in|city|relocat|локац|город)\b/iu', $text) === 1 => 'LOCATION',
             preg_match('/\b(?:english|russian|german|french|spanish|язык|английск|русск|немецк|французск)\b/iu', $text) === 1 => 'LANGUAGE',
-            preg_match('/\b(?:\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)|experience\s+(?:with|of)|(?:minimum|at least)\s+\d+|(?:commercial|professional|production)\s+\w*\s*experience)\b/iu', $label) === 1 => 'EXPERIENCE',
+            preg_match('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)\b/iu', $text) === 1 || preg_match('/\b(?:experience\s+(?:with|of)|(?:commercial|professional|production)\s+\w*\s*experience)\b/iu', $label) === 1 => 'EXPERIENCE',
             preg_match('/\b(?:domain|industry|fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $label) === 1 => 'DOMAIN',
             default => 'TECHNICAL',
         };
@@ -189,6 +200,34 @@ class VacancyRequirementValidator
 
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $text) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function salaryValueSupported(string $value, string $excerpt): bool
+    {
+        if (preg_match('/\b(usd|eur|rub|руб|₽)\b/iu', $value, $currency) !== 1) {
+            return false;
+        }
+        preg_match_all('/\d+(?:[.,]\d+)?/u', $value, $expectedAmounts);
+        if ($expectedAmounts[0] === []) {
+            return false;
+        }
+
+        $currency = mb_strtolower($currency[1]);
+        $expressions = [
+            '/\b'.preg_quote($currency, '/').'\b\s*[: ]?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|—|to)\s*(\d+(?:[.,]\d+)?))?/iu',
+            '/(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|—|to)\s*(\d+(?:[.,]\d+)?))?\s*'.preg_quote($currency, '/').'\b/iu',
+        ];
+        foreach ($expressions as $pattern) {
+            if (preg_match($pattern, $excerpt, $match) !== 1) {
+                continue;
+            }
+            $amounts = array_values(array_filter([$match[1] ?? null, $match[2] ?? null]));
+            if ($amounts === $expectedAmounts[0]) {
                 return true;
             }
         }

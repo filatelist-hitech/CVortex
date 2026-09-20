@@ -216,6 +216,50 @@ class VacancyCoreTest extends TestCase
         $this->assertSame(['TECHNICAL', 'LOCATION', 'SALARY', 'LANGUAGE'], array_column($validated, 'dimension'));
     }
 
+    public function test_duration_and_salary_semantics_are_bound_to_source_expressions(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $duration = 'At least 3 years of Laravel required.';
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Laravel', $duration, 'years:3'),
+        ]], $duration);
+        $this->assertSame('EXPERIENCE', $validated[0]['dimension']);
+
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('SALARY', 'MANDATORY', 'Salary', 'Founded in 2010. Salary is 100000 USD.', 'usd:2010'),
+            ]], 'Founded in 2010. Salary is 100000 USD.');
+            $this->fail('A year was accepted as a salary amount.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+    }
+
+    public function test_negated_requirement_wording_is_not_persisted_as_a_requirement(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $this->assertSame([], $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'PREFERRED', 'Degree', 'No degree is required.'),
+            $this->requirement('EXPERIENCE', 'PREFERRED', 'Experience', 'Experience is not mandatory.'),
+        ]], 'No degree is required. Experience is not mandatory.'));
+    }
+
+    public function test_unquantified_experience_can_use_exact_confirmed_evidence(): void
+    {
+        Queue::fake();
+        $user = $this->user('unquantified-experience@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Commercial Symfony experience');
+        $source = 'Commercial Symfony experience required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', 'Commercial Symfony experience', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.1.result'));
+    }
+
     public function test_source_required_wording_overrides_provider_preferred_importance(): void
     {
         Queue::fake();

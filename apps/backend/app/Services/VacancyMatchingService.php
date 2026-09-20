@@ -244,7 +244,8 @@ class VacancyMatchingService
      */
     private function supportingEvidence(VacancyRequirement $requirement, array $facts, array $claims): ?array
     {
-        if (in_array($requirement->dimension, ['LOCATION', 'WORK_FORMAT', 'SALARY', 'EXPERIENCE'], true)) {
+        if (in_array($requirement->dimension, ['LOCATION', 'WORK_FORMAT', 'SALARY'], true)
+            || ($requirement->dimension === 'EXPERIENCE' && ! blank($requirement->normalized_value))) {
             return null;
         }
         $needle = $this->normalize($requirement->label);
