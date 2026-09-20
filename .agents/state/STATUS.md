@@ -111,6 +111,10 @@ Structured matching now requires experience amounts and explicit units tied to a
 
 Follow-up remediation makes `make init` append a generated runtime password when upgrading a legacy `.env` that lacks the key. Vacancy validation rejects generic technical/domain labels that omit the source-derived subject, rejects suppression directives that tell the extractor not to consider the vacancy and return zero/no output, canonicalizes supported Cyrillic language names for matching, and excludes requirement sentence framing from duration subjects. Local validation PASS: targeted `VacancyCoreTest` (213 assertions); legacy-runtime-password append regression; resolved Compose config; `make test` (backend 110 tests / 657 assertions, 4 PostgreSQL-only skips; frontend 7 / 7); `make lint` (Pint 120 files, Larastan 0 errors, ESLint, TypeScript); `bash scripts/check-runtime-db-credentials.sh`; and `git diff --check`. PR #27 awaits independent re-review; M1.4 remains blocked.
 
+### M1.3R9 follow-up PR #27 findings — 2026-09-21
+
+Follow-up remediation fails extraction closed for direct instructions not to extract, parse or list requirements; binds mandatory/preferred cues to the labeled requirement's source clause, treating an inseparable mixed-cue clause as `UNCERTAIN`; and exposes a retry action when a failed Vacancy analysis has no analysis payload. The README now accurately records that M1.3 remediation awaits independent PR #27 re-review and that M1.4 is blocked. Local validation PASS: targeted `VacancyCoreTest` (218 assertions); frontend vacancy retry regression (8 / 8); resolved Compose config; `make test` (backend 111 tests / 662 assertions, 4 PostgreSQL-only skips; frontend 8 / 8); `make lint` (Pint 120 files, Larastan 0 errors, ESLint, TypeScript); production frontend build; and `git diff --check`. PR #27 awaits independent re-review; M1.4 remains blocked.
+
 ## Current authorized task
 
 `m1-3r-vacancy-core-remediation-review` (read-only independent review).

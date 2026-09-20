@@ -207,4 +207,25 @@ describe("access shell", () => {
     expect(screen.getByText("<script>window.pwned=true</script> Laravel required.")).toBeInTheDocument();
     expect(container.querySelector("script")).toBeNull();
   });
+
+  it("retries a failed vacancy analysis even when no analysis payload exists", async () => {
+    const failedDetail = {
+      id: "vacancy-failed", title: "Backend Engineer", company: null, source_url: null, source_type: "PASTED_TEXT", analysis_status: "FAILED", error_code: "SEMANTIC_REJECTED", snapshot_version: 1, recommendation: null, analysis_stale: false,
+      snapshot: { id: "snapshot-failed", version: 1, raw_text: "Laravel is required.", source_url: null, imported_at: "2026-09-21T00:00:00Z" }, requirements: [], analysis: null,
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } });
+      if (path === "/api/v1/career") return Response.json({ data: { facts: [], claims: [], sources: [] } });
+      if (path === "/api/v1/vacancies") return Response.json({ data: [{ id: "vacancy-failed", title: "Backend Engineer", company: null, source_url: null, analysis_status: "FAILED", error_code: "SEMANTIC_REJECTED", snapshot_version: 1, recommendation: null, analysis_stale: false }] });
+      if (path === "/api/v1/vacancies/vacancy-failed") return Response.json({ data: failedDetail });
+      if (path === "/api/v1/vacancies/vacancy-failed/reanalyze" && options?.method === "POST") return Response.json({ data: {} }, { status: 202 });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Retry analysis" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/vacancies/vacancy-failed/reanalyze", expect.objectContaining({ method: "POST" })));
+  });
 });

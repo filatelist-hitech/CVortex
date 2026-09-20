@@ -70,7 +70,7 @@ class VacancyRequirementValidator
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
-            $importance = $this->sourceImportance($excerpt, $candidate['importance']);
+            $importance = $this->sourceImportance($label, $excerpt, $candidate['importance']);
             $validated[] = [
                 // Provider enum values are untrusted derived data. Source wording
                 // determines the persisted match dimension.
@@ -97,12 +97,19 @@ class VacancyRequirementValidator
     private function labelIdentifiesRequirement(string $label, string $excerpt): bool
     {
         $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month'];
-        $tokens = fn (string $text): array => array_values(array_filter(
+
+        return $this->requirementSubjectTokens($label, $generic) !== [] || $this->requirementSubjectTokens($excerpt, $generic) === [];
+    }
+
+    /** @param list<string> $generic
+     * @return list<string>
+     */
+    private function requirementSubjectTokens(string $text, array $generic): array
+    {
+        return array_values(array_filter(
             array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($text), -1, PREG_SPLIT_NO_EMPTY) ?: []),
             fn (string $token): bool => ! in_array($token, $generic, true) && ! is_numeric($token),
         ));
-
-        return $tokens($label) !== [] || $tokens($excerpt) === [];
     }
 
     private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
@@ -152,17 +159,46 @@ class VacancyRequirementValidator
         return preg_match('/\b(will be a plus|nice to have|preferred|desirable|optional)\b|будет\s+плюсом|желательно|необязательно/iu', $text) === 1;
     }
 
-    private function sourceImportance(string $excerpt, string $providerImportance): string
+    private function sourceImportance(string $label, string $excerpt, string $providerImportance): string
     {
-        if ($this->hasPreferredCue($excerpt)) {
-            return 'PREFERRED';
+        $cueText = $this->importanceCueText($label, $excerpt);
+        if ($cueText === null) {
+            // Multiple source clauses name the same subject. A provider enum
+            // cannot resolve a conflicting source-strength interpretation.
+            return 'UNCERTAIN';
         }
 
-        if (preg_match('/\b(?:required|mandatory|must\s+have|need(?:ed)?\s+to\s+have)\b|обязательн|требуется/iu', $excerpt) === 1) {
+        $preferred = $this->hasPreferredCue($cueText);
+        $mandatory = preg_match('/\b(?:required|mandatory|must\s+have|need(?:ed)?\s+to\s+have)\b|обязательн|требуется/iu', $cueText) === 1;
+        if ($preferred && $mandatory) {
+            return 'UNCERTAIN';
+        }
+        if ($preferred) {
+            return 'PREFERRED';
+        }
+        if ($mandatory) {
             return 'MANDATORY';
         }
 
         return $providerImportance;
+    }
+
+    private function importanceCueText(string $label, string $excerpt): ?string
+    {
+        $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month'];
+        $subjectTokens = $this->requirementSubjectTokens($label, $generic);
+        if ($subjectTokens === []) {
+            return $excerpt;
+        }
+
+        $matches = [];
+        foreach (preg_split('/[;.!?\n]+/u', $excerpt, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $clause) {
+            if ($this->labelSupportedByExcerpt(implode(' ', $subjectTokens), $clause)) {
+                $matches[] = $clause;
+            }
+        }
+
+        return count($matches) === 1 ? $matches[0] : null;
     }
 
     private function hasNegatedRequirement(string $excerpt): bool
@@ -267,6 +303,7 @@ class VacancyRequirementValidator
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
             '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
             '/\b(?:return|output|emit|print)\s+(?:an?\s+)?empty\s+(?:requirements?\s+)?(?:array|list)\b/iu',
+            '/\b(?:do\s+not|don[\'’]t|never)\s+(?:extract|parse|identify|list)\s+(?:any\s+)?(?:requirements?|items?|results?)\b/iu',
             '/\b(?:do\s+not|don[\'’]t|never)\s+(?:consider|use|read|analy[sz]e|process)\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,160}\b(?:reply|respond|return|output|produce|emit)\b.{0,80}\b(?:zero|no|empty|nothing)\s+(?:items?|requirements?|results?|output)\b/iu',
             '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
             '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',
