@@ -5,11 +5,17 @@ set -euo pipefail
 runtime_config=$(docker compose --env-file .env.example config --format json)
 migration_config=$(docker compose --env-file .env.example --profile tools config --format json)
 
+jq -e '
+  .services.postgres.environment as $env
+  | $env.POSTGRES_RUNTIME_PASSWORD != $env.POSTGRES_PASSWORD
+' <<<"$runtime_config" >/dev/null
+
 for service in backend horizon; do
   jq -e --arg service "$service" '
     .services[$service].environment as $env
     | $env.DB_USERNAME == "cvortex_app"
     and $env.DB_RUNTIME_ROLE == "cvortex_app"
+    and $env.DB_PASSWORD != .services.migration.environment.DB_PASSWORD
     and ($env | has("DB_ADMIN_USERNAME") | not)
     and ($env | has("DB_ADMIN_PASSWORD") | not)
   ' <<<"$runtime_config" >/dev/null

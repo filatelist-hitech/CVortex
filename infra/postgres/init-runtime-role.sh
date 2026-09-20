@@ -2,14 +2,18 @@
 set -euo pipefail
 
 runtime_user="${POSTGRES_RUNTIME_USER:-cvortex_app}"
-runtime_password="${POSTGRES_RUNTIME_PASSWORD:-${POSTGRES_PASSWORD:-}}"
+runtime_password="${POSTGRES_RUNTIME_PASSWORD:-}"
 
 if [[ ! "$runtime_user" =~ ^[a-z_][a-z0-9_]*$ ]]; then
   echo 'POSTGRES_RUNTIME_USER must be a simple PostgreSQL role name' >&2
   exit 1
 fi
 if [[ -z "$runtime_password" ]]; then
-  echo 'POSTGRES_RUNTIME_PASSWORD must not be empty' >&2
+  echo 'POSTGRES_RUNTIME_PASSWORD must be configured by make init' >&2
+  exit 1
+fi
+if [[ "$runtime_password" == "${POSTGRES_PASSWORD:-}" ]]; then
+  echo 'POSTGRES_RUNTIME_PASSWORD must differ from POSTGRES_PASSWORD' >&2
   exit 1
 fi
 

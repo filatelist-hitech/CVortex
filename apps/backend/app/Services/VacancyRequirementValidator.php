@@ -171,7 +171,7 @@ class VacancyRequirementValidator
             preg_match('/\b(?:remote|hybrid|office|on site|onsite|work from home|удаленно|гибрид|офис)\b/iu', $text) === 1 => 'WORK_FORMAT',
             preg_match('/\b(?:location|based in|city|relocat|локац|город)\b/iu', $text) === 1 => 'LOCATION',
             preg_match('/\b(?:english|russian|german|french|spanish|язык|английск|русск|немецк|французск)\b/iu', $text) === 1 => 'LANGUAGE',
-            preg_match('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)\b/iu', $text) === 1 || preg_match('/\b(?:experience\s+(?:with|of)|(?:commercial|professional|production)\s+\w*\s*experience)\b/iu', $label) === 1 => 'EXPERIENCE',
+            preg_match('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)\b|\b(?:commercial|professional|production)\s+\w*\s*experience\b/iu', $text) === 1 || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1 => 'EXPERIENCE',
             preg_match('/\b(?:domain|industry|fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $label) === 1 => 'DOMAIN',
             default => 'TECHNICAL',
         };

@@ -260,6 +260,47 @@ class VacancyCoreTest extends TestCase
         $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.1.result'));
     }
 
+    public function test_source_commercial_experience_cannot_be_downgraded_to_a_technical_skill(): void
+    {
+        Queue::fake();
+        $user = $this->user('commercial-experience-source@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Built a hobby Symfony demo');
+        $source = 'Commercial Symfony experience required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Symfony', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('GAP', $detail->json('data.analysis.dimensions.1.result'));
+    }
+
+    public function test_location_and_language_matching_require_dimension_specific_evidence(): void
+    {
+        Queue::fake();
+        $user = $this->user('location-language-boundaries@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Location: Russia');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Built an English parser');
+        app(CareerFactService::class)->createManual($user, 'language', 'English B2');
+        $provider = new VacancyFakeLlmProvider([
+            ['requirements' => [$this->requirement('LOCATION', 'MANDATORY', 'US', 'Location: US required.', 'us')]],
+            ['requirements' => [$this->requirement('LANGUAGE', 'MANDATORY', 'English', 'English required.')]],
+        ]);
+        $this->app->instance(LlmProvider::class, $provider);
+
+        $location = app(VacancyIngestionService::class)->queue($user, 'Location: US required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $location['snapshot']);
+        $locationDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$location['vacancy']->id)->assertOk();
+        $this->assertSame('BLOCKER', $locationDetail->json('data.analysis.dimensions.4.result'));
+
+        $language = app(VacancyIngestionService::class)->queue($user, 'English required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $language['snapshot']);
+        $languageDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$language['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $languageDetail->json('data.analysis.dimensions.3.result'));
+        $this->assertStringContainsString('English B2', $languageDetail->json('data.analysis.dimensions.3.candidate_evidence.0.statement'));
+    }
+
     public function test_source_required_wording_overrides_provider_preferred_importance(): void
     {
         Queue::fake();
@@ -509,7 +550,7 @@ class VacancyCoreTest extends TestCase
         app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
 
         $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
-        $this->assertSame('ADJACENT', $detail->json('data.analysis.dimensions.0.result'));
+        $this->assertSame('NOT_APPLICABLE', $detail->json('data.analysis.dimensions.0.result'));
         $this->assertSame('GAP', $detail->json('data.analysis.dimensions.1.result'));
     }
 

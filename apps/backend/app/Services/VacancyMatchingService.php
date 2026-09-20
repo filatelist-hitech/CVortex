@@ -248,16 +248,18 @@ class VacancyMatchingService
             || ($requirement->dimension === 'EXPERIENCE' && ! blank($requirement->normalized_value))) {
             return null;
         }
-        $needle = $this->normalize($requirement->label);
+        $needle = $requirement->dimension === 'EXPERIENCE'
+            ? $this->experienceEvidenceTerms($requirement)
+            : $this->normalize($requirement->label);
         foreach ($facts as $fact) {
             $text = $this->normalize($fact->approvedAssertion());
-            if ($this->directSupportAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
+            if ($this->directSupportAllowed($requirement, $text) && $this->languageEvidenceAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
                 return ['type' => 'fact', 'id' => (string) $fact->id];
             }
         }
         foreach ($claims as $claim) {
             $text = $this->normalize($claim->statement);
-            if ($this->directSupportAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
+            if ($this->directSupportAllowed($requirement, $text) && $this->languageEvidenceAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
                 return ['type' => 'claim', 'id' => (string) $claim->id];
             }
         }
@@ -272,6 +274,26 @@ class VacancyMatchingService
         }
 
         return preg_match('/\b(familiar|aware|learning|studied|basic|beginner)\b|знаком|изуча|базов/iu', $candidateText) !== 1;
+    }
+
+    private function languageEvidenceAllowed(VacancyRequirement $requirement, string $candidateText): bool
+    {
+        if ($requirement->dimension !== 'LANGUAGE') {
+            return true;
+        }
+
+        return preg_match('/\b(?:language|proficiency|level|fluent|native)\b|\b(?:english|russian|german|french|spanish)\s+(?:a[1-2]|b[1-2]|c[1-2]|fluent|native)\b/iu', $candidateText) === 1;
+    }
+
+    private function experienceEvidenceTerms(VacancyRequirement $requirement): string
+    {
+        $terms = array_map(
+            fn (string $term): string => trim($term, '.'),
+            preg_split('/\s+/u', $this->normalize($requirement->label.' '.$requirement->source_excerpt), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+        );
+        $terms = array_filter($terms, fn (string $term): bool => ! in_array($term, ['required', 'must', 'have', 'need'], true));
+
+        return implode(' ', $terms);
     }
 
     /** @param list<CareerFact> $facts
@@ -438,6 +460,10 @@ class VacancyMatchingService
 
         $aliases = ['удаленно' => 'remote', 'гибрид' => 'hybrid', 'офис' => 'office'];
         $actual = $aliases[$actual] ?? $actual;
+
+        if ($dimension === 'LOCATION') {
+            return $expected === $actual;
+        }
 
         return $expected === $actual || str_contains($actual, $expected) || str_contains($expected, $actual);
     }
