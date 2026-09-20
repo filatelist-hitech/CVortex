@@ -12,8 +12,11 @@ x-backend-environment: &backend-environment
   DB_HOST: postgres
   DB_PORT: 5432
   DB_DATABASE: ${POSTGRES_DB}
-  DB_USERNAME: ${POSTGRES_USER}
-  DB_PASSWORD: ${POSTGRES_PASSWORD}
+  DB_USERNAME: ${POSTGRES_RUNTIME_USER:-cvortex_app}
+  DB_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD:-${POSTGRES_PASSWORD}}
+  DB_RUNTIME_ROLE: ${POSTGRES_RUNTIME_USER:-cvortex_app}
+  DB_ADMIN_USERNAME: ${POSTGRES_USER}
+  DB_ADMIN_PASSWORD: ${POSTGRES_PASSWORD}
   DB_CONNECT_TIMEOUT: 2
   CACHE_STORE: redis
   QUEUE_CONNECTION: redis
@@ -125,8 +128,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_RUNTIME_USER: ${POSTGRES_RUNTIME_USER:-cvortex_app}
+      POSTGRES_RUNTIME_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD:-${POSTGRES_PASSWORD}}
     volumes:
       - postgres_data:/var/lib/postgresql
+      - ./infra/postgres/init-runtime-role.sh:/docker-entrypoint-initdb.d/10-runtime-role.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s

@@ -1,6 +1,6 @@
 ---
 title: M1.3 Vacancy Core Implementation
-status: implemented
+status: remediation-awaiting-independent-review
 owner: project
 created: 2026-09-19
 updated: 2026-09-19
@@ -25,15 +25,21 @@ pasted untrusted text
 → seven explainable dimensions, gaps and recommendation
 ```
 
+The original independent review verdict is `CHANGES REQUIRED`. The M1.3R implementation below remediates the four confirmed findings and awaits a separate independent verdict; this document does not declare that gate passed.
+
 The optional source URL is metadata only. The backend does not resolve DNS, open a socket, follow a redirect or fetch the URL. URL/server ingestion and job-board adapters remain M3 work.
 
 ## Data and provenance
 
-`Vacancy` is the logical owner-scoped aggregate. `VacancySnapshot` preserves the exact pasted text, source URL metadata, import time, content hash and monotonically increasing version. Canonicalized line endings and outer whitespace are used only for hashing; they do not replace `raw_text`. An exact same-owner content hash reuses the existing snapshot. Changed text with the same URL metadata creates a new snapshot version under the same Vacancy.
+`Vacancy` is the logical owner-scoped aggregate. A partial PostgreSQL unique index enforces one aggregate per `owner_id + source_url` when URL metadata exists; `NULL` manual/paste URLs remain independent. Import takes a transaction-scoped PostgreSQL advisory lock for that logical key and locks the aggregate row before allocating the next snapshot version. The existing `(vacancy_id, version)` unique constraint is the final duplicate-version guard. Canonicalized line endings and outer whitespace are used only for hashing; they do not replace `raw_text`. An exact same-owner content hash reuses the existing snapshot. Concurrent changed-content imports for the same owner and URL converge on one Vacancy and create monotonically increasing snapshots.
 
-`VacancyRequirement` stores one of the seven dimensions, `MANDATORY / PREFERRED / UNCERTAIN`, a normalized label/value, a verbatim source excerpt, confidence and Skill identity. Obvious instruction-injection and employer-marketing output is discarded. Deterministic validation forces “will be a plus”, “nice to have”, “preferred”, “желательно” and “будет плюсом” to `PREFERRED` even if a model labels it mandatory.
+`VacancySnapshot` preserves the exact pasted text, source URL metadata, import time, content hash and version. It is creation-only through `VacancySnapshot::record`: all attributes are guarded, Eloquent rejects updates, and a PostgreSQL `BEFORE UPDATE` trigger rejects raw SQL mutation of historical content, hash, version, URL or owner/aggregate identity. New source content creates a new row.
+
+`VacancyRequirement` stores one of the seven dimensions, `MANDATORY / PREFERRED / UNCERTAIN`, a normalized label/value, a verbatim source excerpt, confidence and Skill identity. Provider output is still untrusted after schema validation. Deterministic validation discards instruction-directed role messages, recommendation manipulation, ignore/override directives and fake JSON/XML instruction wrappers before a requirement can reach matching. Legitimate requirements about system design, JSON/XML APIs, prompt engineering and recommendation systems remain valid. Employer-marketing output is discarded. Deterministic validation forces “will be a plus”, “nice to have”, “preferred”, “желательно” and “будет плюсом” to `PREFERRED` even if a model labels it mandatory.
 
 `VacancyAnalysis` links a snapshot and a hash of the current trusted Career context. Every result has seven `VacancyMatchDimension` rows. Candidate evidence is linked through `VacancyMatchEvidence` to either a same-owner current confirmed CareerFact or a live Truth-Guard `PASS` Claim. PostgreSQL owner-composite foreign keys enforce the owner chain in addition to server-side query scoping.
+
+All seven Vacancy tables additionally use forced PostgreSQL RLS. HTTP middleware derives `cvortex.owner_id` from the authenticated server-side user; ingestion/analysis services and Horizon jobs establish the same scoped context and restore or clear it in `finally`. Missing context sees no private Vacancy rows. The Compose runtime connects as `cvortex_app`, a login role with neither `SUPERUSER` nor `BYPASSRLS`; migrations use the separate administrative connection. The PostgreSQL init script provisions or reconciles the runtime role without storing a production credential in Git.
 
 ```text
 recommendation
@@ -90,7 +96,10 @@ The frontend renders raw text as inert React text, never trusted HTML. It labels
 
 ```bash
 docker compose run --rm --no-deps -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= backend php artisan test --filter=VacancyCoreTest
+docker compose run --rm --no-deps -e DB_DATABASE=<disposable-db> backend php artisan test --filter=VacancyPostgresSecurityTest
+bash scripts/test-vacancy-postgres-revalidation.sh
+bash scripts/test-vacancy-postgres-concurrency.sh
 docker compose run --rm --no-deps frontend npm test
 ```
 
-The feature suite covers snapshot/hash/version behavior, URL non-fetching, preferred/mandatory correction, marketing and prompt-injection filtering, exact and adjacent matching, PENDING exclusion, all seven dimensions, stale detection, cross-user denial, safe URL/size validation and absence of an ATS score field.
+The feature suite covers snapshot/hash/version behavior, URL non-fetching, preferred/mandatory correction, marketing and instruction-family filtering, legitimate controls, exact and adjacent matching, PENDING exclusion, all seven dimensions, stale detection, cross-user denial, safe URL/size validation and absence of an ATS score field. PostgreSQL-only suites verify real runtime-role flags, forced RLS/fail-closed behavior, HTTP/job context cleanup, cross-owner raw SQL denial, snapshot triggers and independent-process import convergence. `test-vacancy-postgres-revalidation.sh` creates one uniquely named disposable database, runs the security suite, rolls back only the remediation migration, migrates it forward, then runs the same suite again without removing first-run rows; it verifies that preserved `users` rows survive both migration stages.

@@ -19,7 +19,7 @@ trap cleanup EXIT
 
 "${compose[@]}" exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
   -c "CREATE DATABASE \"$database\"" >/dev/null
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --force >/dev/null
+"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --database=pgsql_admin --force >/dev/null
 ids=$("${compose[@]}" exec -T -e DB_DATABASE="$database" backend php tests/Support/prepare_career_supersession_concurrency.php)
 owner_id=$(sed -n '1p' <<<"$ids")
 fact_id=$(sed -n '2p' <<<"$ids")

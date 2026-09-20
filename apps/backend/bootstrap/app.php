@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsureRequestId;
+use App\Http\Middleware\SetDatabaseOwnerContext;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => null);
         $middleware->alias([
             'active-user' => EnsureActiveUser::class,
+            'db-owner-context' => SetDatabaseOwnerContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

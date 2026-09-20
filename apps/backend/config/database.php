@@ -19,6 +19,8 @@ return [
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
+    'runtime_role' => env('DB_RUNTIME_ROLE', env('DB_USERNAME', 'cvortex_app')),
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections
@@ -92,6 +94,24 @@ return [
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 2),
+            ] : [],
+        ],
+
+        'pgsql_admin' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_ADMIN_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_ADMIN_USERNAME', 'postgres'),
+            'password' => env('DB_ADMIN_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,

@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\AI\Exceptions\VacancyOutputException;
 use App\Models\User;
 use App\Models\VacancySnapshot;
+use App\Services\DatabaseOwnerContext;
 use App\Services\VacancyAnalysisService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -28,23 +29,25 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
         return $this->ownerId.':'.$this->snapshotId;
     }
 
-    public function handle(VacancyAnalysisService $service): void
+    public function handle(VacancyAnalysisService $service, DatabaseOwnerContext $ownerContext): void
     {
-        $user = User::query()->find($this->ownerId);
-        $snapshot = VacancySnapshot::query()->where('owner_id', $this->ownerId)->find($this->snapshotId);
-        if ($user === null || $snapshot === null) {
-            return;
-        }
-        $latestSnapshotId = VacancySnapshot::query()->where('owner_id', $this->ownerId)
-            ->where('vacancy_id', $snapshot->vacancy_id)->latest('version')->value('id');
-        if (! hash_equals((string) $snapshot->id, (string) $latestSnapshotId)) {
-            return;
-        }
+        $ownerContext->run($this->ownerId, function () use ($service): void {
+            $user = User::query()->find($this->ownerId);
+            $snapshot = VacancySnapshot::query()->where('owner_id', $this->ownerId)->find($this->snapshotId);
+            if ($user === null || $snapshot === null) {
+                return;
+            }
+            $latestSnapshotId = VacancySnapshot::query()->where('owner_id', $this->ownerId)
+                ->where('vacancy_id', $snapshot->vacancy_id)->latest('version')->value('id');
+            if (! hash_equals((string) $snapshot->id, (string) $latestSnapshotId)) {
+                return;
+            }
 
-        try {
-            $service->analyze($user, $snapshot);
-        } catch (VacancyOutputException) {
-            // Invalid semantic output is terminal until an explicit user retry.
-        }
+            try {
+                $service->analyze($user, $snapshot);
+            } catch (VacancyOutputException) {
+                // Invalid semantic output is terminal until an explicit user retry.
+            }
+        });
     }
 }

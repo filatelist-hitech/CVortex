@@ -1,6 +1,6 @@
 ---
 title: CVortex M1.3 — Vacancy Core
-status: completed
+status: changes-required-remediation-awaiting-review
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: project
@@ -13,6 +13,8 @@ related:
 ---
 
 # CVortex M1.3 — Vacancy Core
+
+The original independent review verdict is `CHANGES REQUIRED`. M1.3R remediation is implemented and must pass `.agents/tasks/m1-3r-vacancy-core-remediation-review.md` before this task can return to completed/PASS or authorize M1.4.
 
 ## Observable outcome
 

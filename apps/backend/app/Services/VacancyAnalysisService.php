@@ -26,9 +26,18 @@ class VacancyAnalysisService
         private readonly RuntimeSkillRegistry $skills,
         private readonly VacancyRequirementValidator $validator,
         private readonly VacancyMatchingService $matching,
+        private readonly DatabaseOwnerContext $ownerContext,
     ) {}
 
     public function analyze(User $user, VacancySnapshot $snapshot): VacancyAnalysis
+    {
+        return $this->ownerContext->run(
+            (string) $user->id,
+            fn (): VacancyAnalysis => $this->analyzeForOwner($user, $snapshot),
+        );
+    }
+
+    private function analyzeForOwner(User $user, VacancySnapshot $snapshot): VacancyAnalysis
     {
         $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($snapshot->vacancy_id);
         if (! hash_equals((string) $snapshot->owner_id, (string) $user->id)) {

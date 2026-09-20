@@ -75,7 +75,29 @@ class VacancyRequirementValidator
 
     private function isInstructionAttack(string $text): bool
     {
-        return preg_match('/ignore\s+(all\s+)?(previous|prior)\s+instructions|system\s+prompt|developer\s+message|reveal\s+(secrets?|credentials?)|tool\s+call|действуй\s+как\s+система|игнорируй\s+.*инструкц/iu', $text) === 1;
+        $directive = '(?:output|return|emit|print|respond|ignore|disregard|forget|override|bypass|follow|obey|classify|mark|set|recommend|reveal|use|call)';
+        $role = '(?:system(?:\s+message)?|assistant|developer(?:\s+(?:instruction|message))?)';
+        $recommendation = '(?:strongly[\s_-]*apply|apply|maybe|low[\s_-]*priority|skip|highest|recommendation)';
+
+        $patterns = [
+            '/(?:^|[\r\n<{,])\s*["\']?'.$role.'["\']?\s*(?::|>|=)\s*'.$directive.'\b/iu',
+            '/\b(?:always\s+recommend|'.$directive.')\s+(?:this\s+candidate\s+)?(?:as\s+|to\s+)?'.$recommendation.'\b/iu',
+            '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:all\s+)?(?:the\s+)?(?:previous|prior|system|developer|candidate|missing)\s+(?:instructions?|rules?|facts?|skills?|requirements?)\b/iu',
+            '/\bfollow\s+(?:these|the\s+following|my)\s+instructions?\s+instead\b/iu',
+            '/["\'](?:instruction|system|developer|recommendation)["\']\s*:\s*["\'][^"\']*(?:'.$directive.'|'.$recommendation.')/iu',
+            '/<(?:system|assistant|developer|instruction|prompt)(?:\s[^>]*)?>[\s\S]*?\b'.$directive.'\b/iu',
+            '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
+            '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
+            '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isMarketingNoise(string $text): bool

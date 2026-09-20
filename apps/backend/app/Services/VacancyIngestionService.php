@@ -12,14 +12,26 @@ use Illuminate\Support\Facades\DB;
 
 class VacancyIngestionService
 {
+    public function __construct(private readonly DatabaseOwnerContext $ownerContext) {}
+
     /** @return array{vacancy: Vacancy, snapshot: VacancySnapshot, duplicate: bool} */
     public function queue(User $user, string $sourceText, ?string $sourceUrl): array
+    {
+        return $this->ownerContext->run(
+            (string) $user->id,
+            fn (): array => $this->queueForOwner($user, $sourceText, $sourceUrl),
+        );
+    }
+
+    /** @return array{vacancy: Vacancy, snapshot: VacancySnapshot, duplicate: bool} */
+    private function queueForOwner(User $user, string $sourceText, ?string $sourceUrl): array
     {
         $sourceUrl = filled($sourceUrl) ? trim((string) $sourceUrl) : null;
         $contentHash = hash('sha256', $this->canonicalText($sourceText));
 
         try {
             $result = DB::transaction(function () use ($user, $sourceText, $sourceUrl, $contentHash): array {
+                $this->lockLogicalVacancy((string) $user->id, $sourceUrl);
                 $existing = VacancySnapshot::query()
                     ->where('owner_id', $user->id)
                     ->where('content_hash', $contentHash)
@@ -33,7 +45,7 @@ class VacancyIngestionService
                 $vacancy = $sourceUrl === null ? null : Vacancy::query()
                     ->where('owner_id', $user->id)
                     ->where('source_url', $sourceUrl)
-                    ->latest()
+                    ->lockForUpdate()
                     ->first();
                 if ($vacancy === null) {
                     $vacancy = Vacancy::query()->create([
@@ -53,16 +65,17 @@ class VacancyIngestionService
                     ])->save();
                 }
 
+                Vacancy::query()->whereKey($vacancy->id)->lockForUpdate()->firstOrFail();
                 $version = ((int) VacancySnapshot::query()->where('vacancy_id', $vacancy->id)->max('version')) + 1;
-                $snapshot = VacancySnapshot::query()->create([
-                    'owner_id' => $user->id,
-                    'vacancy_id' => $vacancy->id,
-                    'version' => $version,
-                    'raw_text' => $sourceText,
-                    'source_url' => $sourceUrl,
-                    'content_hash' => $contentHash,
-                    'imported_at' => now(),
-                ]);
+                $snapshot = VacancySnapshot::record(
+                    (string) $user->id,
+                    (string) $vacancy->id,
+                    $version,
+                    $sourceText,
+                    $sourceUrl,
+                    $contentHash,
+                    now(),
+                );
 
                 return ['vacancy' => $vacancy, 'snapshot' => $snapshot, 'duplicate' => false];
             });
@@ -83,6 +96,18 @@ class VacancyIngestionService
         }
 
         return $result;
+    }
+
+    private function lockLogicalVacancy(string $ownerId, ?string $sourceUrl): void
+    {
+        if ($sourceUrl === null || DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::selectOne(
+            'SELECT pg_advisory_xact_lock(hashtextextended(?, 0))',
+            [$ownerId."\0".$sourceUrl],
+        );
     }
 
     public function canonicalText(string $text): string
