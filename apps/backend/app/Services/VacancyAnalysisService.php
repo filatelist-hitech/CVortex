@@ -56,6 +56,13 @@ class VacancyAnalysisService
 
         $claimed = Vacancy::query()->whereKey($vacancy->id)
             ->whereIn('analysis_status', [Vacancy::STATUS_PENDING, Vacancy::STATUS_FAILED, Vacancy::STATUS_COMPLETED])
+            // This predicate is evaluated by the same UPDATE that claims the
+            // Vacancy row. A stale job therefore cannot overwrite a newer
+            // snapshot's PENDING state after import has advanced the version.
+            ->whereRaw(
+                'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
+                [$snapshot->version],
+            )
             ->update(['analysis_status' => Vacancy::STATUS_RUNNING, 'error_code' => null, 'updated_at' => now()]);
         if ($claimed === 0) {
             $current = VacancyAnalysis::query()->where('owner_id', $user->id)

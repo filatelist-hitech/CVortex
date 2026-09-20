@@ -652,7 +652,7 @@ class VacancyMatchingService
             $tail = substr($tail, strlen($boundMatch[0]));
         }
         $currency = '(usd|eur|rub|руб|₽)';
-        $amount = '(\d+(?:[.,]\d+)?)';
+        $amount = '(\d{1,3}(?:[ \x{00A0}\x{202F}]\d{3})+|\d+(?:[.,]\d+)?)';
         $pattern = '/^\s*(?:(?<prefix_currency>'.$currency.')\s*)?(?<first>'.$amount.')\s*(?<first_currency>'.$currency.')?(?:\s*(?:-|–|—|to)\s*(?:(?<range_currency>'.$currency.')\s*)?(?<second>'.$amount.')\s*(?<second_currency>'.$currency.')?)?/iu';
         if (preg_match($pattern, $tail, $match) !== 1) {
             return null;
@@ -741,7 +741,7 @@ class VacancyMatchingService
 
     private function salaryAmount(string $value): float
     {
-        return (float) str_replace(',', '.', $value);
+        return (float) str_replace(',', '.', str_replace([' ', "\xC2\xA0", "\xE2\x80\xAF"], '', $value));
     }
 
     private function salaryCurrency(string $currency): string

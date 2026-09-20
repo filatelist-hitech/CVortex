@@ -56,7 +56,7 @@ class VacancyRequirementValidator
             if ($this->isInstructionAttack($label.' '.$excerpt) || $this->isMarketingNoise($excerpt)) {
                 continue;
             }
-            if ($this->hasNegatedRequirement($excerpt)) {
+            if ($this->hasNegatedRequirement($label, $excerpt)) {
                 continue;
             }
             $dimension = $this->sourceDimension($label, $excerpt);
@@ -96,7 +96,7 @@ class VacancyRequirementValidator
 
     private function labelIdentifiesRequirement(string $label, string $excerpt): bool
     {
-        $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month'];
+        $generic = $this->genericRequirementTerms();
 
         return $this->requirementSubjectTokens($label, $generic) !== [] || $this->requirementSubjectTokens($excerpt, $generic) === [];
     }
@@ -110,6 +110,12 @@ class VacancyRequirementValidator
             array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($text), -1, PREG_SPLIT_NO_EMPTY) ?: []),
             fn (string $token): bool => ! in_array($token, $generic, true) && ! is_numeric($token),
         ));
+    }
+
+    /** @return list<string> */
+    private function genericRequirementTerms(): array
+    {
+        return ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
     }
 
     private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
@@ -185,8 +191,7 @@ class VacancyRequirementValidator
 
     private function importanceCueText(string $label, string $excerpt): ?string
     {
-        $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month'];
-        $subjectTokens = $this->requirementSubjectTokens($label, $generic);
+        $subjectTokens = $this->requirementSubjectTokens($label, $this->genericRequirementTerms());
         if ($subjectTokens === []) {
             return $excerpt;
         }
@@ -201,9 +206,15 @@ class VacancyRequirementValidator
         return count($matches) === 1 ? $matches[0] : null;
     }
 
-    private function hasNegatedRequirement(string $excerpt): bool
+    private function hasNegatedRequirement(string $label, string $excerpt): bool
     {
-        return preg_match('/\bno\s+[\pL\s]{0,40}\brequired\b|\b(?:is|are)\s+not\s+(?:required|mandatory)\b|не\s+(?:требуется|обязател)/iu', $excerpt) === 1;
+        $subjectTokens = $this->requirementSubjectTokens($label, $this->genericRequirementTerms());
+        if ($subjectTokens === []) {
+            return preg_match('/\bno\s+[\pL\s]{0,40}\brequired\b|\b(?:is|are)\s+not\s+(?:required|mandatory)\b|не\s+(?:требуется|обязател)/iu', $excerpt) === 1;
+        }
+        $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $subjectTokens));
+
+        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory)\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
     }
 
     private function sourceDimension(string $label, string $excerpt): string
@@ -330,7 +341,7 @@ class VacancyRequirementValidator
 
         $currency = $this->salaryCurrency($currency['currency']);
         $currencyPattern = '(usd|eur|rub|руб|₽)';
-        $amountPattern = '(\d+(?:[.,]\d+)?)';
+        $amountPattern = '(\d{1,3}(?:[ \x{00A0}\x{202F}]\d{3})+|\d+(?:[.,]\d+)?)';
         $salaryEvidence = $excerpt;
         if (preg_match('/\b(?:salary|compensation|pay|зарплата)\b\s*(?<tail>[^;!?\n]{0,160})/iu', $excerpt, $context) === 1) {
             $salaryEvidence = $context['tail'];
@@ -352,6 +363,7 @@ class VacancyRequirementValidator
             if (isset($match[$amountOffset + 1]) && $match[$amountOffset + 1] !== '') {
                 $amounts[] = $match[$amountOffset + 1];
             }
+            $amounts = array_map(fn (string $amount): string => $this->normalizeSalaryAmount($amount), $amounts);
             if ($sourceCurrency === $currency && $amounts === $expectedAmounts[0]) {
                 return true;
             }
@@ -401,6 +413,11 @@ class VacancyRequirementValidator
     private function salaryCurrency(string $currency): string
     {
         return in_array(mb_strtolower($currency), ['руб', '₽'], true) ? 'rub' : mb_strtolower($currency);
+    }
+
+    private function normalizeSalaryAmount(string $amount): string
+    {
+        return str_replace([' ', "\xC2\xA0", "\xE2\x80\xAF"], '', $amount);
     }
 
     private function isMarketingNoise(string $text): bool

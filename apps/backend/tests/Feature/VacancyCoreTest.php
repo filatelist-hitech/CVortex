@@ -6,6 +6,7 @@ use App\AI\Contracts\LlmProvider;
 use App\AI\Data\LlmRequest;
 use App\AI\Data\LlmResponse;
 use App\AI\Exceptions\VacancyOutputException;
+use App\Exceptions\SafeVacancyException;
 use App\Jobs\AnalyzeVacancy;
 use App\Models\CareerFact;
 use App\Models\CareerSource;
@@ -64,6 +65,25 @@ class VacancyCoreTest extends TestCase
         $this->assertSame(2, $second['snapshot']->version);
         $this->assertDatabaseCount('vacancies', 1);
         $this->assertDatabaseCount('vacancy_snapshots', 2);
+    }
+
+    public function test_superseded_snapshot_cannot_claim_the_current_vacancy_status(): void
+    {
+        Queue::fake();
+        $user = $this->user('stale-claim@example.test');
+        $service = app(VacancyIngestionService::class);
+        $first = $service->queue($user, 'Laravel required.', 'https://jobs.example.test/stale-claim');
+        $second = $service->queue($user, 'Kubernetes required.', 'https://jobs.example.test/stale-claim');
+
+        try {
+            app(VacancyAnalysisService::class)->analyze($user, $first['snapshot']);
+            $this->fail('A superseded snapshot claimed the Vacancy status.');
+        } catch (SafeVacancyException) {
+            // The current snapshot remains pending for its own queued job.
+        }
+
+        $second['vacancy']->refresh();
+        $this->assertSame('PENDING', $second['vacancy']->analysis_status);
     }
 
     public function test_semantic_extraction_keeps_evidence_downgrades_preferred_and_ignores_noise(): void
@@ -206,6 +226,14 @@ class VacancyCoreTest extends TestCase
         } catch (VacancyOutputException $exception) {
             $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
         }
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'technology', 'Kubernetes technology is required.'),
+            ]], 'Kubernetes technology is required.');
+            $this->fail('A technology category label was accepted instead of Kubernetes.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
     }
 
     public function test_provider_dimension_is_reclassified_from_source_evidence(): void
@@ -244,6 +272,12 @@ class VacancyCoreTest extends TestCase
         } catch (VacancyOutputException $exception) {
             $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
         }
+
+        $spaceGrouped = 'Salary: 100 000 RUB required.';
+        $acceptedSalary = $validator->validate(['requirements' => [
+            $this->requirement('SALARY', 'MANDATORY', 'Salary', $spaceGrouped, 'rub:100000'),
+        ]], $spaceGrouped);
+        $this->assertSame('rub:100000', $acceptedSalary[0]['normalized_value']);
         try {
             $source = 'Founded in 2010 USD. Salary is 100000 USD.';
             $validator->validate(['requirements' => [
@@ -327,6 +361,7 @@ class VacancyCoreTest extends TestCase
             ['source' => 'Salary minimum: 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'MATCH'],
             ['source' => 'Salary maximum: 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'BLOCKER'],
             ['source' => 'Salary: 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'BLOCKER'],
+            ['source' => 'Salary: 100 000 RUB required.', 'value' => 'rub:100000', 'result' => 'BLOCKER'],
             ['source' => 'Salary: 100000-120000 RUB required.', 'value' => 'rub:100000:120000', 'result' => 'MATCH'],
             ['source' => 'Salary minimum: 100000 ₽ required.', 'value' => 'rub:100000', 'result' => 'MATCH'],
             ['source' => 'Salary from 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'MATCH'],
@@ -533,6 +568,18 @@ class VacancyCoreTest extends TestCase
             $this->requirement('TECHNICAL', 'PREFERRED', 'Degree', 'No degree is required.'),
             $this->requirement('EXPERIENCE', 'PREFERRED', 'Experience', 'Experience is not mandatory.'),
         ]], 'No degree is required. Experience is not mandatory.'));
+    }
+
+    public function test_negation_for_another_subject_does_not_remove_a_supported_requirement(): void
+    {
+        $source = 'No degree is required; Kubernetes is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $source),
+        ]], $source);
+
+        $this->assertCount(1, $validated);
+        $this->assertSame('Kubernetes', $validated[0]['label']);
+        $this->assertSame('MANDATORY', $validated[0]['importance']);
     }
 
     public function test_unquantified_experience_can_use_exact_confirmed_evidence(): void
