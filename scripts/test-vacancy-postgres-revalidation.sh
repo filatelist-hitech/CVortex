@@ -30,22 +30,22 @@ run_suite() {
 database_created=true
 
 echo 'vacancy-postgres-revalidation: fresh migration'
-"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
-  php artisan migrate --database=pgsql_admin --force
+  "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
+  php artisan migrate --force
 
 run_suite first
 users_after_first=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 test "$users_after_first" -gt 0
 
 echo 'vacancy-postgres-revalidation: rollback remediation migration'
-"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
-  php artisan migrate:rollback --database=pgsql_admin --step=1 --force
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
+  php artisan migrate:rollback --step=1 --force
 users_after_rollback=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 test "$users_after_rollback" = "$users_after_first"
 
 echo 'vacancy-postgres-revalidation: migrate remediation up'
-"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
-  php artisan migrate --database=pgsql_admin --force
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
+  php artisan migrate --force
 users_after_reup=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 test "$users_after_reup" = "$users_after_first"
 

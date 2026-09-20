@@ -15,8 +15,6 @@ x-backend-environment: &backend-environment
   DB_USERNAME: ${POSTGRES_RUNTIME_USER:-cvortex_app}
   DB_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD:-${POSTGRES_PASSWORD}}
   DB_RUNTIME_ROLE: ${POSTGRES_RUNTIME_USER:-cvortex_app}
-  DB_ADMIN_USERNAME: ${POSTGRES_USER}
-  DB_ADMIN_PASSWORD: ${POSTGRES_PASSWORD}
   DB_CONNECT_TIMEOUT: 2
   CACHE_STORE: redis
   QUEUE_CONNECTION: redis
@@ -46,6 +44,20 @@ x-backend-environment: &backend-environment
   OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS: ${OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS:-}
   OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS: ${OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS:-}
   OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-45}
+
+x-migration-environment: &migration-environment
+  APP_NAME: ${APP_NAME}
+  APP_ENV: ${APP_ENV}
+  APP_KEY: ${APP_KEY}
+  APP_DEBUG: ${APP_DEBUG}
+  DB_CONNECTION: pgsql
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_DATABASE: ${POSTGRES_DB}
+  DB_USERNAME: ${POSTGRES_USER}
+  DB_PASSWORD: ${POSTGRES_PASSWORD}
+  DB_RUNTIME_ROLE: ${POSTGRES_RUNTIME_USER:-cvortex_app}
+  DB_CONNECT_TIMEOUT: 2
 
 services:
   nginx:
@@ -119,6 +131,16 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - internal
+
+  migration:
+    image: cvortex-backend
+    profiles: ["tools"]
+    environment: *migration-environment
+    volumes:
+      - ./apps/backend:/var/www/html
+      - backend_vendor:/var/www/html/vendor
     networks:
       - internal
 

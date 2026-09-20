@@ -25,7 +25,7 @@ pasted untrusted text
 → seven explainable dimensions, gaps and recommendation
 ```
 
-The original independent review verdict is `CHANGES REQUIRED`. The M1.3R implementation below remediates the four confirmed findings and awaits a separate independent verdict; this document does not declare that gate passed.
+The original independent review verdict is `CHANGES REQUIRED`. The M1.3R implementation and its bounded follow-up remediation await a separate independent verdict; this document does not declare that gate passed.
 
 The optional source URL is metadata only. The backend does not resolve DNS, open a socket, follow a redirect or fetch the URL. URL/server ingestion and job-board adapters remain M3 work.
 
@@ -35,11 +35,11 @@ The optional source URL is metadata only. The backend does not resolve DNS, open
 
 `VacancySnapshot` preserves the exact pasted text, source URL metadata, import time, content hash and version. It is creation-only through `VacancySnapshot::record`: all attributes are guarded, Eloquent rejects updates, and a PostgreSQL `BEFORE UPDATE` trigger rejects raw SQL mutation of historical content, hash, version, URL or owner/aggregate identity. New source content creates a new row.
 
-`VacancyRequirement` stores one of the seven dimensions, `MANDATORY / PREFERRED / UNCERTAIN`, a normalized label/value, a verbatim source excerpt, confidence and Skill identity. Provider output is still untrusted after schema validation. If source text contains an instruction-directed role message, recommendation manipulation, ignore/override directive or fake JSON/XML instruction wrapper, extraction fails closed even when the provider returns an empty or partial set. In ordinary text, deterministic validation rejects instruction-directed output before matching. Legitimate requirements about system design, JSON/XML APIs, prompt engineering and recommendation systems remain valid. Employer-marketing output is discarded while concrete requirements embedded in hiring phrasing are preserved. Non-null structured values must be supported by the source excerpt. Deterministic validation forces “will be a plus”, “nice to have”, “preferred”, “желательно” and “будет плюсом” to `PREFERRED` even if a model labels it mandatory.
+`VacancyRequirement` stores one of the seven dimensions, `MANDATORY / PREFERRED / UNCERTAIN`, a normalized label/value, a verbatim source excerpt, confidence and Skill identity. Provider output is still untrusted after schema validation: source-derived deterministic rules assign the persisted dimension, so a provider enum cannot reclassify a technical skill as domain (or structured location, salary or language evidence as another dimension). If source text contains an instruction-directed role message, recommendation manipulation, an ignore/disregard/override instruction aimed at prior prompts, rules, context or messages, or fake JSON/XML instruction wrapper, extraction fails closed even when the provider returns an empty or partial set. In ordinary text, deterministic validation rejects instruction-directed output before matching. Legitimate requirements about system design, JSON/XML APIs, prompt engineering and recommendation systems remain valid. Employer-marketing output is discarded while concrete requirements embedded in hiring phrasing are preserved. Non-null structured values must be supported by the source excerpt. Deterministic validation forces “will be a plus”, “nice to have”, “preferred”, “желательно” and “будет плюсом” to `PREFERRED` even if a model labels it mandatory.
 
 `VacancyAnalysis` links a snapshot and a hash of the current trusted Career context. Every result has seven `VacancyMatchDimension` rows. Candidate evidence is linked through `VacancyMatchEvidence` to either a same-owner current confirmed CareerFact or a live Truth-Guard `PASS` Claim. PostgreSQL owner-composite foreign keys enforce the owner chain in addition to server-side query scoping.
 
-All seven Vacancy tables additionally use forced PostgreSQL RLS. HTTP middleware derives `cvortex.owner_id` from the authenticated server-side user; ingestion/analysis services and Horizon jobs establish the same scoped context and restore or clear it in `finally`. Missing context sees no private Vacancy rows. The Compose runtime connects as `cvortex_app`, a login role with neither `SUPERUSER` nor `BYPASSRLS`; migrations use the separate administrative connection. The PostgreSQL init script provisions or reconciles the runtime role without storing a production credential in Git.
+All seven Vacancy tables additionally use forced PostgreSQL RLS. HTTP middleware derives `cvortex.owner_id` from the authenticated server-side user; ingestion/analysis services and Horizon jobs establish the same scoped context and restore or clear it in `finally`. Missing context sees no private Vacancy rows. Backend and Horizon receive only `cvortex_app`, a login role with neither `SUPERUSER` nor `BYPASSRLS`; the Compose `migration` tools-profile service receives the separate administrative connection. The PostgreSQL init script provisions or reconciles the runtime role without storing a production credential in Git.
 
 ```text
 recommendation
@@ -52,13 +52,13 @@ dimension evidence
 → confirmed Career provenance
 ```
 
-The detail API recomputes the trusted Career signature. Adding, superseding or deprecating trusted Career evidence makes an earlier analysis observably `stale`; explicit reanalysis produces a new signature-linked result without mutating the source snapshot.
+The detail API recomputes the trusted Career signature. It selects an exact current-signature analysis first, then uses `created_at DESC, id DESC` as a deterministic stale fallback. Adding, superseding or deprecating trusted Career evidence makes an earlier analysis observably `stale`; explicit reanalysis produces a new signature-linked result without mutating the source snapshot.
 
 ## Matching and recommendation policy
 
 The dimensions are `TECHNICAL`, `EXPERIENCE`, `DOMAIN`, `LANGUAGE`, `LOCATION`, `WORK_FORMAT` and `SALARY`. Missing vacancy requirements are `NOT_APPLICABLE`; missing candidate data is `UNKNOWN`. Results can also be `MATCH`, `ADJACENT`, `GAP` or deterministic `BLOCKER`.
 
-Exact source/candidate comparisons and supported structured values are deterministic. Location, work-format and salary comparisons require dimension-specific explicit candidate wording; incidental mentions do not count as evidence. Experience duration candidates must be about the requirement subject, and all relevant values are considered before declaring incompatibility. Conservative adjacency families can identify weak related evidence, but adjacency remains a gap and never upgrades familiarity into direct/commercial experience. Duration comparison occurs only when both sides contain an explicit computable number. Missing candidate values for mandatory structured requirements remain unknown and cap the recommendation at `MAYBE`.
+Exact source/candidate comparisons and supported structured values are deterministic. Token/skill matches are boundary-aware: `Go` can match `Go backend` but not `Google`. Location, work-format and salary comparisons require dimension-specific explicit candidate wording; incidental mentions do not count as evidence. Experience duration candidates must have a source-provable subject through bounded normal forms such as `at least 3 years of X` and `3+ years with X`; ambiguous duration-only text remains unknown. All relevant values are considered before declaring incompatibility. Conservative adjacency families can identify weak related evidence, but adjacency remains a gap and never upgrades familiarity into direct/commercial experience. Duration comparison occurs only when both sides contain an explicit computable number. Missing candidate values for mandatory structured requirements remain unknown and cap the recommendation at `MAYBE`.
 
 Recommendation classes are priority decisions, not interview probability or an ATS reconstruction:
 
@@ -100,6 +100,7 @@ docker compose run --rm --no-deps -e DB_DATABASE=<disposable-db> backend php art
 bash scripts/test-vacancy-postgres-revalidation.sh
 bash scripts/test-vacancy-postgres-concurrency.sh
 docker compose run --rm --no-deps frontend npm test
+bash scripts/check-runtime-db-credentials.sh
 ```
 
 The feature suite covers snapshot/hash/version behavior, URL non-fetching, preferred/mandatory correction, marketing and instruction-family filtering, legitimate controls, exact and adjacent matching, PENDING exclusion, all seven dimensions, stale detection, cross-user denial, safe URL/size validation and absence of an ATS score field. PostgreSQL-only suites verify real runtime-role flags, forced RLS/fail-closed behavior, HTTP/job context cleanup, cross-owner raw SQL denial, snapshot triggers and independent-process import convergence. `test-vacancy-postgres-revalidation.sh` creates one uniquely named disposable database, runs the security suite, rolls back only the remediation migration, migrates it forward, then runs the same suite again without removing first-run rows; it verifies that preserved `users` rows survive both migration stages.

@@ -9,8 +9,9 @@ init:
 	@if [ ! -f .env ]; then \
 		cp .env.example .env; \
 		password=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo bin2hex(random_bytes(24));'); \
+		runtime_password=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo bin2hex(random_bytes(24));'); \
 		key=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo "base64:".base64_encode(random_bytes(32));'); \
-		awk -v password="$$password" -v key="$$key" 'BEGIN { FS=OFS="=" } $$1=="POSTGRES_PASSWORD" || $$1=="POSTGRES_RUNTIME_PASSWORD" { print $$1, password; next } $$1=="APP_KEY" { print $$1, key; next } { print }' .env > .env.tmp; \
+		awk -v password="$$password" -v runtime_password="$$runtime_password" -v key="$$key" 'BEGIN { FS=OFS="=" } $$1=="POSTGRES_PASSWORD" { print $$1, password; next } $$1=="POSTGRES_RUNTIME_PASSWORD" { print $$1, runtime_password; next } $$1=="APP_KEY" { print $$1, key; next } { print }' .env > .env.tmp; \
 		mv .env.tmp .env; \
 	fi
 	docker compose build
@@ -54,4 +55,4 @@ shell:
 
 migrate:
 	docker compose exec -T postgres bash /docker-entrypoint-initdb.d/10-runtime-role.sh
-	docker compose run --rm --no-deps backend php artisan migrate --database=pgsql_admin --force
+	docker compose run --rm --no-deps migration php artisan migrate --force

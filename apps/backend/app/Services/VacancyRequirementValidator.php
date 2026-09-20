@@ -61,13 +61,16 @@ class VacancyRequirementValidator
             }
 
             $normalizedValue = $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']);
-            if ($normalizedValue !== null && ! $this->normalizedValueSupported($candidate['dimension'], $normalizedValue, $excerpt)) {
+            $dimension = $this->sourceDimension($label, $excerpt);
+            if ($normalizedValue !== null && ! $this->normalizedValueSupported($dimension, $normalizedValue, $excerpt)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
             $importance = $this->hasPreferredCue($excerpt) ? 'PREFERRED' : $candidate['importance'];
             $validated[] = [
-                'dimension' => $candidate['dimension'],
+                // Provider enum values are untrusted derived data. Source wording
+                // determines the persisted match dimension.
+                'dimension' => $dimension,
                 'importance' => $importance,
                 'label' => $label,
                 'normalized_value' => $normalizedValue,
@@ -117,6 +120,9 @@ class VacancyRequirementValidator
             if ($valueNumbers[0] === [] || array_slice($evidenceNumbers[0], 0, count($valueNumbers[0])) !== $valueNumbers[0]) {
                 return false;
             }
+            if ($dimension === 'EXPERIENCE') {
+                return true;
+            }
         }
 
         // Numeric/currency separators are structural; every semantic token must
@@ -131,6 +137,22 @@ class VacancyRequirementValidator
         return preg_match('/\b(will be a plus|nice to have|preferred|desirable|optional)\b|будет\s+плюсом|желательно|необязательно/iu', $text) === 1;
     }
 
+    private function sourceDimension(string $label, string $excerpt): string
+    {
+        $text = $this->normalize($excerpt);
+        $label = $this->normalize($label);
+
+        return match (true) {
+            preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
+            preg_match('/\b(?:remote|hybrid|office|on site|onsite|work from home|удаленно|гибрид|офис)\b/iu', $text) === 1 => 'WORK_FORMAT',
+            preg_match('/\b(?:location|based in|city|relocat|локац|город)\b/iu', $text) === 1 => 'LOCATION',
+            preg_match('/\b(?:english|russian|german|french|spanish|язык|английск|русск|немецк|французск)\b/iu', $text) === 1 => 'LANGUAGE',
+            preg_match('/\b(?:\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)|experience\s+(?:with|of)|(?:minimum|at least)\s+\d+|(?:commercial|professional|production)\s+\w*\s*experience)\b/iu', $label) === 1 => 'EXPERIENCE',
+            preg_match('/\b(?:domain|industry|fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $label) === 1 => 'DOMAIN',
+            default => 'TECHNICAL',
+        };
+    }
+
     private function isInstructionAttack(string $text): bool
     {
         $directive = '(?:output|return|emit|print|respond|ignore|disregard|forget|override|bypass|follow|obey|classify|mark|set|recommend|reveal|use|call)';
@@ -140,7 +162,8 @@ class VacancyRequirementValidator
         $patterns = [
             '/(?:^|[\r\n<{,])\s*["\']?'.$role.'["\']?\s*(?::|>|=)\s*'.$directive.'\b/iu',
             '/\b(?:always\s+recommend|'.$directive.')\s+(?:this\s+candidate\s+)?(?:as\s+|to\s+)?'.$recommendation.'\b/iu',
-            '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:all\s+)?(?:the\s+)?(?:previous|prior|system|developer|candidate|missing)\s+(?:instructions?|rules?|facts?|skills?|requirements?)\b/iu',
+            '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:(?:all|the)\s+)?(?:previous|prior|all)(?:\s+system)?\s+(?:prompts?|instructions?|rules?|context|messages?|facts?|skills?|requirements?)\b/iu',
+            '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:missing|candidate)\s+(?:facts?|skills?|requirements?)\b/iu',
             '/\bfollow\s+(?:these|the\s+following|my)\s+instructions?\s+instead\b/iu',
             '/["\'](?:instruction|system|developer|recommendation)["\']\s*:\s*["\'][^"\']*(?:'.$directive.'|'.$recommendation.')/iu',
             '/<(?:system|assistant|developer|instruction|prompt)(?:\s[^>]*)?>[\s\S]*?\b'.$directive.'\b/iu',

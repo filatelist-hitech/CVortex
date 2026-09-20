@@ -47,7 +47,8 @@ class VacancyAnalysisService
         $existing = VacancyAnalysis::query()
             ->where('owner_id', $user->id)
             ->where('vacancy_snapshot_id', $snapshot->id)
-            ->where('career_signature', $signature)
+            ->forCareerSignature($signature)
+            ->deterministicLatest()
             ->first();
         if ($existing !== null && $vacancy->analysis_status === Vacancy::STATUS_COMPLETED) {
             return $existing;
@@ -58,7 +59,8 @@ class VacancyAnalysisService
             ->update(['analysis_status' => Vacancy::STATUS_RUNNING, 'error_code' => null, 'updated_at' => now()]);
         if ($claimed === 0) {
             $current = VacancyAnalysis::query()->where('owner_id', $user->id)
-                ->where('vacancy_snapshot_id', $snapshot->id)->latest()->first();
+                ->where('vacancy_snapshot_id', $snapshot->id)->forCareerSignature($signature)
+                ->deterministicLatest()->first();
             if ($current !== null) {
                 return $current;
             }

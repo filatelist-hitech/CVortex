@@ -250,13 +250,13 @@ class VacancyMatchingService
         $needle = $this->normalize($requirement->label);
         foreach ($facts as $fact) {
             $text = $this->normalize($fact->approvedAssertion());
-            if ($this->directSupportAllowed($requirement, $text) && str_contains($text, $needle)) {
+            if ($this->directSupportAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
                 return ['type' => 'fact', 'id' => (string) $fact->id];
             }
         }
         foreach ($claims as $claim) {
             $text = $this->normalize($claim->statement);
-            if ($this->directSupportAllowed($requirement, $text) && str_contains($text, $needle)) {
+            if ($this->directSupportAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
                 return ['type' => 'claim', 'id' => (string) $claim->id];
             }
         }
@@ -359,22 +359,42 @@ class VacancyMatchingService
             return true;
         }
 
-        $subject = preg_replace('/\b\d+(?:[.,]\d+)?\s*(?:years?|лет|года)\b/iu', ' ', $requirement->label.' '.$requirement->source_excerpt) ?? '';
-        $tokens = array_values(array_filter(
-            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
-            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'experience', 'commercial', 'years'], true),
-        ));
-        if ($tokens === []) {
-            return true;
+        $tokens = $this->experienceSubjectTokens($requirement);
+        if ($tokens === null) {
+            return false;
         }
 
         foreach ($tokens as $token) {
-            if (! str_contains($candidateText, $token)) {
+            if (! $this->containsRequirementTerms($candidateText, $token)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /** @return list<string>|null */
+    private function experienceSubjectTokens(VacancyRequirement $requirement): ?array
+    {
+        $subject = preg_replace('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)\b/iu', ' ', $requirement->label.' '.$requirement->source_excerpt) ?? '';
+        $tokens = array_values(array_filter(
+            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
+            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'experience', 'commercial', 'years', 'least', 'minimum', 'with', 'for', 'and'], true),
+        ));
+
+        return $tokens === [] ? null : $tokens;
+    }
+
+    private function containsRequirementTerms(string $candidateText, string $requirementText): bool
+    {
+        $terms = preg_split('/\s+/u', $requirementText, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        foreach ($terms as $term) {
+            if (preg_match('/(?<![\pL\pN])'.preg_quote($term, '/').'(?![\pL\pN])/u', $candidateText) !== 1) {
+                return false;
+            }
+        }
+
+        return $terms !== [];
     }
 
     private function structuredCandidateValue(string $dimension, string $text): ?string

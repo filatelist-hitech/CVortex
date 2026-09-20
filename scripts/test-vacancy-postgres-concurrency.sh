@@ -26,8 +26,8 @@ trap cleanup EXIT
 "${compose[@]}" exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
   -c "CREATE DATABASE \"$database\"" >/dev/null
 database_created=true
-"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
-  php artisan migrate --database=pgsql_admin --force >/dev/null
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
+  php artisan migrate --force >/dev/null
 owner_id=$("${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
   php tests/Support/prepare_vacancy_import_concurrency.php | tail -n 1 | tr -d '\r')
 test -n "$owner_id"

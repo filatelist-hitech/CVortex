@@ -25,8 +25,13 @@ class VacancyController extends Controller
         $signature = $matching->careerSignature($request->user());
         $vacancies = Vacancy::query()->where('owner_id', $ownerId)->latest()->get()->map(function (Vacancy $vacancy) use ($ownerId, $signature): array {
             $snapshot = VacancySnapshot::query()->where('owner_id', $ownerId)->where('vacancy_id', $vacancy->id)->latest('version')->first();
-            $analysis = $snapshot === null ? null : VacancyAnalysis::query()
-                ->where('owner_id', $ownerId)->where('vacancy_snapshot_id', $snapshot->id)->latest()->first();
+            $analysis = null;
+            if ($snapshot !== null) {
+                $analyses = VacancyAnalysis::query()
+                    ->where('owner_id', $ownerId)->where('vacancy_snapshot_id', $snapshot->id);
+                $analysis = (clone $analyses)->forCareerSignature($signature)->deterministicLatest()->first()
+                    ?? $analyses->deterministicLatest()->first();
+            }
 
             return [
                 'id' => $vacancy->id,
@@ -69,8 +74,11 @@ class VacancyController extends Controller
         $snapshot = VacancySnapshot::query()->where('owner_id', $ownerId)->where('vacancy_id', $vacancy->id)->latest('version')->firstOrFail();
         $requirements = VacancyRequirement::query()->where('owner_id', $ownerId)
             ->where('vacancy_snapshot_id', $snapshot->id)->orderBy('created_at')->get();
-        $analysis = VacancyAnalysis::query()->where('owner_id', $ownerId)
-            ->where('vacancy_snapshot_id', $snapshot->id)->latest()->first();
+        $signature = $matching->careerSignature($request->user());
+        $analyses = VacancyAnalysis::query()->where('owner_id', $ownerId)
+            ->where('vacancy_snapshot_id', $snapshot->id);
+        $analysis = (clone $analyses)->forCareerSignature($signature)->deterministicLatest()->first()
+            ?? $analyses->deterministicLatest()->first();
         $run = VacancyLlmRun::query()->where('owner_id', $ownerId)
             ->where('vacancy_snapshot_id', $snapshot->id)->latest()->first();
 
@@ -106,7 +114,7 @@ class VacancyController extends Controller
                 'material_gaps' => $analysis->material_gaps,
                 'uncertainties' => $analysis->uncertainties,
                 'analysis_version' => $analysis->analysis_version,
-                'stale' => ! hash_equals($analysis->career_signature, $matching->careerSignature($request->user())),
+                'stale' => ! hash_equals($analysis->career_signature, $signature),
                 'dimensions' => $this->dimensions($analysis, $ownerId),
             ],
             'run' => $run === null ? null : [
