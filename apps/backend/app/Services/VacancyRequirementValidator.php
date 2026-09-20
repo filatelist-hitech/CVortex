@@ -66,7 +66,7 @@ class VacancyRequirementValidator
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
-            $importance = $this->hasPreferredCue($excerpt) ? 'PREFERRED' : $candidate['importance'];
+            $importance = $this->sourceImportance($excerpt, $candidate['importance']);
             $validated[] = [
                 // Provider enum values are untrusted derived data. Source wording
                 // determines the persisted match dimension.
@@ -137,6 +137,19 @@ class VacancyRequirementValidator
         return preg_match('/\b(will be a plus|nice to have|preferred|desirable|optional)\b|будет\s+плюсом|желательно|необязательно/iu', $text) === 1;
     }
 
+    private function sourceImportance(string $excerpt, string $providerImportance): string
+    {
+        if ($this->hasPreferredCue($excerpt)) {
+            return 'PREFERRED';
+        }
+
+        if (preg_match('/\b(?:required|mandatory|must\s+have|need(?:ed)?\s+to\s+have)\b|обязательн|требуется/iu', $excerpt) === 1) {
+            return 'MANDATORY';
+        }
+
+        return $providerImportance;
+    }
+
     private function sourceDimension(string $label, string $excerpt): string
     {
         $text = $this->normalize($excerpt);
@@ -162,7 +175,7 @@ class VacancyRequirementValidator
         $patterns = [
             '/(?:^|[\r\n<{,])\s*["\']?'.$role.'["\']?\s*(?::|>|=)\s*'.$directive.'\b/iu',
             '/\b(?:always\s+recommend|'.$directive.')\s+(?:this\s+candidate\s+)?(?:as\s+|to\s+)?'.$recommendation.'\b/iu',
-            '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:(?:all|the)\s+)?(?:previous|prior|all)(?:\s+system)?\s+(?:prompts?|instructions?|rules?|context|messages?|facts?|skills?|requirements?)\b/iu',
+            '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:(?:all|the)\s+)?(?:previous|prior|earlier|all)(?:\s+system)?\s+(?:prompts?|instructions?|rules?|directions?|context|messages?|facts?|skills?|requirements?)\b/iu',
             '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:missing|candidate)\s+(?:facts?|skills?|requirements?)\b/iu',
             '/\bfollow\s+(?:these|the\s+following|my)\s+instructions?\s+instead\b/iu',
             '/["\'](?:instruction|system|developer|recommendation)["\']\s*:\s*["\'][^"\']*(?:'.$directive.'|'.$recommendation.')/iu',
