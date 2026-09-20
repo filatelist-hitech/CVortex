@@ -245,7 +245,7 @@ class VacancyMatchingService
     private function supportingEvidence(VacancyRequirement $requirement, array $facts, array $claims): ?array
     {
         if (in_array($requirement->dimension, ['LOCATION', 'WORK_FORMAT', 'SALARY'], true)
-            || ($requirement->dimension === 'EXPERIENCE' && ! blank($requirement->normalized_value))) {
+            || ($requirement->dimension === 'EXPERIENCE' && (! blank($requirement->normalized_value) || $this->hasDurationExpression($requirement->source_excerpt)))) {
             return null;
         }
         $needle = $requirement->dimension === 'EXPERIENCE'
@@ -253,13 +253,19 @@ class VacancyMatchingService
             : $this->normalize($requirement->label);
         foreach ($facts as $fact) {
             $text = $this->normalize($fact->approvedAssertion());
-            if ($this->directSupportAllowed($requirement, $text) && $this->languageEvidenceAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
+            if ($this->directSupportAllowed($requirement, $text)
+                && $this->languageEvidenceAllowed($requirement, $text)
+                && $this->languageQualificationMatches($requirement, $text)
+                && $this->containsRequirementTerms($text, $needle)) {
                 return ['type' => 'fact', 'id' => (string) $fact->id];
             }
         }
         foreach ($claims as $claim) {
             $text = $this->normalize($claim->statement);
-            if ($this->directSupportAllowed($requirement, $text) && $this->languageEvidenceAllowed($requirement, $text) && $this->containsRequirementTerms($text, $needle)) {
+            if ($this->directSupportAllowed($requirement, $text)
+                && $this->languageEvidenceAllowed($requirement, $text)
+                && $this->languageQualificationMatches($requirement, $text)
+                && $this->containsRequirementTerms($text, $needle)) {
                 return ['type' => 'claim', 'id' => (string) $claim->id];
             }
         }
@@ -282,7 +288,58 @@ class VacancyMatchingService
             return true;
         }
 
-        return preg_match('/\b(?:language|proficiency|level|fluent|native)\b|\b(?:english|russian|german|french|spanish)\s+(?:a[1-2]|b[1-2]|c[1-2]|fluent|native)\b/iu', $candidateText) === 1;
+        $language = $this->languageToken($requirement);
+        if ($language === null) {
+            return false;
+        }
+        $languagePattern = preg_quote($language, '/');
+        $qualification = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+
+        return preg_match('/\b'.$languagePattern.'\s+(?:(?:language\s+)?(?:proficiency|level)|'.$qualification.')\b|\b'.$qualification.'\s+(?:proficiency\s+)?(?:in\s+)?'.$languagePattern.'\b|\b(?:proficiency|level)\s+(?:in\s+)?'.$languagePattern.'\b/iu', $candidateText) === 1;
+    }
+
+    private function languageQualificationMatches(VacancyRequirement $requirement, string $candidateText): bool
+    {
+        if ($requirement->dimension !== 'LANGUAGE') {
+            return true;
+        }
+        $language = $this->languageToken($requirement);
+        if ($language === null) {
+            return false;
+        }
+        $required = $this->languageQualification($requirement->source_excerpt, $language);
+
+        return $required === null || $this->languageQualification($candidateText, $language) === $required;
+    }
+
+    private function languageToken(VacancyRequirement $requirement): ?string
+    {
+        $text = $this->normalize($requirement->label.' '.$requirement->source_excerpt);
+        foreach (['english', 'russian', 'german', 'french', 'spanish'] as $language) {
+            if (preg_match('/\b'.preg_quote($language, '/').'\b/iu', $text) === 1) {
+                return $language;
+            }
+        }
+
+        return null;
+    }
+
+    private function languageQualification(string $text, string $language): ?string
+    {
+        $text = $this->normalize($text);
+        $language = preg_quote($language, '/');
+        $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+        $patterns = [
+            '/\b'.$language.'\s*(?:(?:language\s+)?(?:proficiency|level)\s*)?(?::|is|of)?\s*'.$qualification.'\b/iu',
+            '/\b'.$qualification.'\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text, $match) === 1) {
+                return $this->normalize($match[1]);
+            }
+        }
+
+        return null;
     }
 
     private function experienceEvidenceTerms(VacancyRequirement $requirement): string
@@ -337,31 +394,51 @@ class VacancyMatchingService
     private function structuredComparison(VacancyRequirement $requirement, array $facts, array $claims): ?array
     {
         if (! in_array($requirement->dimension, ['LOCATION', 'WORK_FORMAT', 'SALARY', 'EXPERIENCE'], true)
-            || blank($requirement->normalized_value)) {
+            || (blank($requirement->normalized_value) && ! ($requirement->dimension === 'EXPERIENCE' && $this->hasDurationExpression($requirement->source_excerpt)))) {
             return null;
+        }
+        if ($requirement->dimension === 'EXPERIENCE' && blank($requirement->normalized_value)) {
+            return ['result' => 'UNKNOWN'];
         }
         $candidates = [];
         foreach ($facts as $fact) {
-            $text = $this->normalize($fact->approvedAssertion());
-            if ($this->relevantStructuredEvidence($requirement, $text)) {
-                $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $text];
+            $rawText = $fact->approvedAssertion();
+            $text = $this->normalize($rawText);
+            if ($this->relevantStructuredEvidence($requirement, $rawText)) {
+                $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $text, 'raw_text' => $rawText];
             }
         }
         foreach ($claims as $claim) {
-            $text = $this->normalize($claim->statement);
-            if ($this->relevantStructuredEvidence($requirement, $text)) {
-                $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $text];
+            $rawText = $claim->statement;
+            $text = $this->normalize($rawText);
+            if ($this->relevantStructuredEvidence($requirement, $rawText)) {
+                $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $text, 'raw_text' => $rawText];
             }
         }
 
         $expected = $this->normalize((string) $requirement->normalized_value);
         $incompatible = false;
         foreach ($candidates as $candidate) {
-            $actual = $this->structuredCandidateValue($requirement->dimension, $candidate['text']);
-            if ($actual === null) {
-                continue;
+            if ($requirement->dimension === 'SALARY') {
+                $candidateRange = $this->salaryRange($candidate['raw_text']);
+                if ($candidateRange === null) {
+                    continue;
+                }
+                $compatible = $this->salaryRangesOverlap($this->salaryRange($requirement->source_excerpt), $candidateRange);
+                if ($compatible === null) {
+                    continue;
+                }
+            } else {
+                $candidateValueText = in_array($requirement->dimension, ['EXPERIENCE', 'SALARY'], true)
+                    ? $candidate['raw_text']
+                    : $candidate['text'];
+                $actual = $this->structuredCandidateValue($requirement->dimension, $candidateValueText);
+                if ($actual === null) {
+                    continue;
+                }
+                $compatible = $this->structuredCompatible($requirement->dimension, $expected, $actual);
             }
-            if ($this->structuredCompatible($requirement->dimension, $expected, $actual)) {
+            if ($compatible) {
                 return ['result' => 'MATCH', 'evidence' => ['type' => $candidate['type'], 'id' => $candidate['id']]];
             }
             if ($requirement->importance === 'MANDATORY') {
@@ -378,6 +455,9 @@ class VacancyMatchingService
 
     private function relevantStructuredEvidence(VacancyRequirement $requirement, string $candidateText): bool
     {
+        if ($requirement->dimension === 'WORK_FORMAT') {
+            return $this->workFormatValue($candidateText) !== null;
+        }
         if ($requirement->dimension !== 'EXPERIENCE') {
             return true;
         }
@@ -386,9 +466,14 @@ class VacancyMatchingService
         if ($tokens === null) {
             return false;
         }
+        $duration = $this->candidateExperienceDuration($candidateText);
+        if ($duration === null) {
+            return false;
+        }
+        $experienceContext = $this->normalize($duration['context']);
 
         foreach ($tokens as $token) {
-            if (! $this->containsRequirementTerms($candidateText, $token)) {
+            if (! $this->containsRequirementTerms($experienceContext, $token)) {
                 return false;
             }
         }
@@ -399,10 +484,10 @@ class VacancyMatchingService
     /** @return list<string>|null */
     private function experienceSubjectTokens(VacancyRequirement $requirement): ?array
     {
-        $subject = preg_replace('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)\b/iu', ' ', $requirement->label.' '.$requirement->source_excerpt) ?? '';
+        $subject = preg_replace('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)\b/iu', ' ', $requirement->label.' '.$requirement->source_excerpt) ?? '';
         $tokens = array_values(array_filter(
             array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
-            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'experience', 'commercial', 'years', 'least', 'minimum', 'with', 'for', 'and'], true),
+            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'experience', 'commercial', 'years', 'months', 'least', 'minimum', 'with', 'for', 'and'], true),
         ));
 
         return $tokens === [] ? null : $tokens;
@@ -424,11 +509,22 @@ class VacancyMatchingService
     {
         $patterns = match ($dimension) {
             'LOCATION' => ['/\b(?:location|локация|город)\s*:\s*([\pL\pN .-]+)/u'],
-            'WORK_FORMAT' => ['/\b(?:work format|формат работы)\s*:\s*(remote|hybrid|office|удаленно|гибрид|офис)/u'],
-            'SALARY' => ['/\b(?:salary minimum|минимальная зарплата)\s*:\s*(\d+)\s*([a-z]{3}|₽|руб)/u'],
-            'EXPERIENCE' => ['/\b(\d+(?:[.,]\d+)?)\s*(?:years?|лет|года)/u'],
+            'WORK_FORMAT' => [],
+            'SALARY' => [],
+            'EXPERIENCE' => [],
             default => [],
         };
+        if ($dimension === 'WORK_FORMAT') {
+            return $this->workFormatValue($text);
+        }
+        if ($dimension === 'EXPERIENCE') {
+            $duration = $this->candidateExperienceDuration($text);
+            if ($duration === null) {
+                return null;
+            }
+
+            return $duration['unit'].':'.$duration['amount'];
+        }
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $text, $match) === 1) {
                 return trim(implode(':', array_slice($match, 1)));
@@ -441,23 +537,12 @@ class VacancyMatchingService
     private function structuredCompatible(string $dimension, string $expected, string $actual): bool
     {
         if ($dimension === 'EXPERIENCE') {
-            preg_match('/(\d+(?:[.,]\d+)?)/', $expected, $expectedMatch);
-            preg_match('/(\d+(?:[.,]\d+)?)/', $actual, $actualMatch);
+            preg_match('/^(years|months):(\d+(?:[.,]\d+)?)$/u', $expected, $expectedMatch);
+            preg_match('/^(years|months):(\d+(?:[.,]\d+)?)$/u', $actual, $actualMatch);
 
-            return isset($expectedMatch[1], $actualMatch[1])
-                && (float) str_replace(',', '.', $actualMatch[1]) >= (float) str_replace(',', '.', $expectedMatch[1]);
+            return isset($expectedMatch[1], $expectedMatch[2], $actualMatch[1], $actualMatch[2])
+                && $this->durationMonths($actualMatch[1], $actualMatch[2]) >= $this->durationMonths($expectedMatch[1], $expectedMatch[2]);
         }
-        if ($dimension === 'SALARY') {
-            preg_match('/([a-z]{3}|₽|руб)[: ](\d+)(?::(\d+))?/u', $expected, $vacancy);
-            preg_match('/(\d+):([a-z]{3}|₽|руб)/u', $actual, $candidate);
-            if (! isset($vacancy[1], $vacancy[2], $candidate[1], $candidate[2]) || $vacancy[1] !== $candidate[2]) {
-                return false;
-            }
-            $maximum = isset($vacancy[3]) ? (int) $vacancy[3] : (int) $vacancy[2];
-
-            return (int) $candidate[1] <= $maximum;
-        }
-
         $aliases = ['удаленно' => 'remote', 'гибрид' => 'hybrid', 'офис' => 'office'];
         $actual = $aliases[$actual] ?? $actual;
 
@@ -465,7 +550,181 @@ class VacancyMatchingService
             return $expected === $actual;
         }
 
-        return $expected === $actual || str_contains($actual, $expected) || str_contains($expected, $actual);
+        return $expected === $actual;
+    }
+
+    private function durationMonths(string $unit, string $value): float
+    {
+        $months = (float) str_replace(',', '.', $value);
+
+        return $unit === 'years' ? $months * 12 : $months;
+    }
+
+    private function hasDurationExpression(string $text): bool
+    {
+        return preg_match('/(?<![\pL\pN])\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)(?!\pL)/iu', $text) === 1;
+    }
+
+    /** @return array{amount: string, unit: string, context: string}|null */
+    private function candidateExperienceDuration(string $text): ?array
+    {
+        preg_match_all('/(?<![\pL\pN])(?<amount>\d+(?:[.,]\d+)?)\s*\+?\s*(?<unit>years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)(?!\pL)/iu', $text, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        if (count($matches) !== 1) {
+            return null;
+        }
+        $match = $matches[0];
+        $start = $match['amount'][1];
+        $end = $match['unit'][1] + strlen($match['unit'][0]);
+        $before = substr($text, 0, $start);
+        $after = substr($text, $end);
+        preg_match_all('/[,;.!?\n]/u', $before, $beforeBoundaries, PREG_OFFSET_CAPTURE);
+        preg_match('/[,;.!?\n]/u', $after, $afterBoundary, PREG_OFFSET_CAPTURE);
+        $lastBoundary = $beforeBoundaries[0] === [] ? null : $beforeBoundaries[0][count($beforeBoundaries[0]) - 1];
+        $clauseStart = $lastBoundary === null ? 0 : $lastBoundary[1] + 1;
+        $clauseLength = ($afterBoundary[0][1] ?? strlen($after));
+        $clause = substr($text, $clauseStart, $start - $clauseStart).' '.substr($after, 0, $clauseLength);
+        if (preg_match('/\bexperience\b|опыт[\pL]*/iu', $clause) !== 1) {
+            return null;
+        }
+
+        return [
+            'amount' => $match['amount'][0],
+            'unit' => preg_match('/^(?:years?|лет|год(?:а|ов)?)$/iu', $match['unit'][0]) === 1 ? 'years' : 'months',
+            'context' => $clause,
+        ];
+    }
+
+    private function workFormatValue(string $text): ?string
+    {
+        $patterns = [
+            'remote' => '/\b(?:work format|формат работы)\s*:\s*(?:remote|удаленно)\b|\b(?:fully\s+)?remote\s+(?:work|position|role|arrangement|schedule|job|required)\b|\bfully\s+remote\b|\bwork(?:ing)?\s+(?:fully\s+)?remotely?\b|\bwork\s+from\s+home\b|\b(?:удаленная?|дистанционная?)\s+(?:работа|позиция|формат|занятость)\b|\b(?:работа|работать|формат)\s+удаленно\b/iu',
+            'hybrid' => '/\b(?:work format|формат работы)\s*:\s*(?:hybrid|гибрид)\b|\bhybrid\s+(?:work|working|position|role|arrangement|schedule|required)\b|\b(?:гибридный|гибридная|гибридное)\s+(?:режим|работа|формат|позиция)\b|\bгибрид\s+(?:работа|формат|требуется)\b/iu',
+            'office' => '/\b(?:work format|формат работы)\s*:\s*(?:office|офис)\b|\b(?:on[ -]?site|onsite)\s+(?:work|position|role|arrangement|schedule|required)\b|\boffice(?:[ -]based|\s+required)\b|\bwork\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\bbased\s+in\s+(?:the\s+)?office\b|\b(?:офисная|офисный|офисное)\s+(?:работа|формат|режим|позиция)\b|\bработа\s+в\s+офисе\b/iu',
+        ];
+        foreach ($patterns as $value => $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array{currency: string, period: ?string, minimum: ?float, maximum: ?float}|null */
+    private function salaryRange(string $text): ?array
+    {
+        if (preg_match('/\b(?:salary|compensation|pay|зарплата)\b\s*(?<tail>[^;!?\n]{0,160})/iu', $text, $context) !== 1) {
+            return null;
+        }
+        $tail = ltrim(trim($context['tail']), ':= ');
+        if (preg_match('/(?<!\d)\.(?!\d)/u', $tail, $sentenceEnd, PREG_OFFSET_CAPTURE) === 1) {
+            $tail = substr($tail, 0, $sentenceEnd[0][1]);
+        }
+        $tail = preg_replace('/^(?:is|equals)\s+/iu', '', $tail) ?? $tail;
+        if (preg_match('/(?<!\d)\d{1,3},\d{3}(?!\d)/u', $tail) === 1) {
+            return null;
+        }
+        $bound = null;
+        if (preg_match('/^(?<bound>minimum|min|from|starting(?:\s+at)?|at\s+least|maximum|max|up\s+to|range)\b\s*:?\s*/iu', $tail, $boundMatch) === 1) {
+            $bound = mb_strtolower(preg_replace('/\s+/', ' ', $boundMatch['bound']) ?? $boundMatch['bound']);
+            $tail = substr($tail, strlen($boundMatch[0]));
+        }
+        $currency = '(usd|eur|rub|руб|₽)';
+        $amount = '(\d+(?:[.,]\d+)?)';
+        $pattern = '/^\s*(?:(?<prefix_currency>'.$currency.')\s*)?(?<first>'.$amount.')\s*(?<first_currency>'.$currency.')?(?:\s*(?:-|–|—|to)\s*(?:(?<range_currency>'.$currency.')\s*)?(?<second>'.$amount.')\s*(?<second_currency>'.$currency.')?)?/iu';
+        if (preg_match($pattern, $tail, $match) !== 1) {
+            return null;
+        }
+        $currencies = array_values(array_filter([
+            $match['prefix_currency'],
+            $match['first_currency'] ?? '',
+            $match['range_currency'] ?? '',
+            $match['second_currency'] ?? '',
+        ]));
+        if ($currencies === []) {
+            return null;
+        }
+        $currencies = array_values(array_unique(array_map(fn (string $item): string => $this->salaryCurrency($item), $currencies)));
+        if (count($currencies) !== 1) {
+            return null;
+        }
+        $first = $this->salaryAmount($match['first']);
+        $second = isset($match['second']) && $match['second'] !== '' ? $this->salaryAmount($match['second']) : $first;
+        if (isset($match['second']) && $match['second'] !== '' && $second < $first) {
+            return null;
+        }
+        $period = $this->salaryPeriod($text, $tail);
+        if ($period === false) {
+            return null;
+        }
+        $minimum = $first;
+        $maximum = isset($match['second']) && $match['second'] !== '' ? $second : $first;
+        if (in_array($bound, ['minimum', 'min', 'from', 'starting at', 'at least'], true)) {
+            $maximum = null;
+        } elseif (in_array($bound, ['maximum', 'max', 'up to'], true)) {
+            $minimum = null;
+        }
+
+        return [
+            'currency' => $currencies[0],
+            'period' => $period,
+            'minimum' => $minimum,
+            'maximum' => $maximum,
+        ];
+    }
+
+    private function salaryPeriod(string $text, string $salaryTail): string|false|null
+    {
+        $periods = [];
+        $patterns = [
+            'hour' => '/\b(?:per\s+hour|hourly|\/\s*h(?:our)?)\b|в\s+час|почасов\pL*/iu',
+            'month' => '/\b(?:per\s+month|monthly|\/\s*month)\b|в\s+месяц|ежемесячн\pL*/iu',
+            'year' => '/\b(?:per\s+year|yearly|annual(?:ly)?|per\s+annum|\/\s*year)\b|в\s+год|ежегодн\pL*/iu',
+        ];
+        foreach ($patterns as $period => $pattern) {
+            if (preg_match($pattern, $salaryTail) === 1) {
+                $periods[] = $period;
+            }
+        }
+        $prefixPatterns = [
+            'hour' => '/\b(?:hourly|per\s+hour)\s+(?:salary|compensation|pay|зарплата)\b/iu',
+            'month' => '/\b(?:monthly|per\s+month)\s+(?:salary|compensation|pay|зарплата)\b/iu',
+            'year' => '/\b(?:yearly|annual(?:ly)?|per\s+year|per\s+annum)\s+(?:salary|compensation|pay|зарплата)\b/iu',
+        ];
+        foreach ($prefixPatterns as $period => $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                $periods[] = $period;
+            }
+        }
+
+        $periods = array_values(array_unique($periods));
+
+        return count($periods) > 1 ? false : ($periods[0] ?? null);
+    }
+
+    /** @param array{currency: string, period: ?string, minimum: ?float, maximum: ?float}|null $vacancy
+     * @param  array{currency: string, period: ?string, minimum: ?float, maximum: ?float}|null  $candidate
+     */
+    private function salaryRangesOverlap(?array $vacancy, ?array $candidate): ?bool
+    {
+        if ($vacancy === null || $candidate === null
+            || $vacancy['currency'] !== $candidate['currency']
+            || $vacancy['period'] !== $candidate['period']) {
+            return null;
+        }
+
+        return ($vacancy['maximum'] === null || $candidate['minimum'] === null || $candidate['minimum'] <= $vacancy['maximum'])
+            && ($candidate['maximum'] === null || $vacancy['minimum'] === null || $vacancy['minimum'] <= $candidate['maximum']);
+    }
+
+    private function salaryAmount(string $value): float
+    {
+        return (float) str_replace(',', '.', $value);
+    }
+
+    private function salaryCurrency(string $currency): string
+    {
+        return in_array(mb_strtolower($currency), ['руб', '₽'], true) ? 'rub' : mb_strtolower($currency);
     }
 
     /** @param list<array<string, mixed>> $dimensions */

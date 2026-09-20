@@ -219,7 +219,7 @@ class VacancyCoreTest extends TestCase
     public function test_duration_and_salary_semantics_are_bound_to_source_expressions(): void
     {
         $validator = app(VacancyRequirementValidator::class);
-        $duration = 'At least 3 years of Laravel required.';
+        $duration = 'At least 3 years of Laravel experience required.';
         $validated = $validator->validate(['requirements' => [
             $this->requirement('TECHNICAL', 'MANDATORY', 'Laravel', $duration, 'years:3'),
         ]], $duration);
@@ -233,6 +233,254 @@ class VacancyCoreTest extends TestCase
         } catch (VacancyOutputException $exception) {
             $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
         }
+        try {
+            $source = 'Founded in 2010 USD. Salary is 100000 USD.';
+            $validator->validate(['requirements' => [
+                $this->requirement('SALARY', 'MANDATORY', 'Salary', $source, 'usd:2010'),
+            ]], $source);
+            $this->fail('An unrelated currency amount was accepted as normalized salary.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+
+        try {
+            $source = 'English required. React C1 experience is preferred.';
+            $validator->validate(['requirements' => [
+                $this->requirement('LANGUAGE', 'MANDATORY', 'English', $source, 'C1'),
+            ]], $source);
+            $this->fail('An incidental technology level was accepted as English proficiency.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+    }
+
+    public function test_experience_normalized_value_requires_the_source_unit_and_supports_explicit_conversion(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        foreach ([
+            ['1 year of Laravel experience required.', 'years:1'],
+            ['1 month of Laravel experience required.', 'months:1'],
+            ['36 months of Laravel experience required.', 'months:36'],
+            ['At least 3+ years of Laravel experience required.', 'years:3'],
+            ['Experience with Laravel for 3 years required.', 'years:3'],
+        ] as [$source, $value]) {
+            $accepted = $validator->validate(['requirements' => [
+                $this->requirement('EXPERIENCE', 'MANDATORY', $source, $source, $value),
+            ]], $source);
+            $this->assertSame($value, $accepted[0]['normalized_value'], $source);
+        }
+
+        $months = '3 months experience with Laravel required.';
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('EXPERIENCE', 'MANDATORY', 'Experience with Laravel', $months, 'years:3'),
+            ]], $months);
+            $this->fail('A months source was accepted as years.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+        $accepted = $validator->validate(['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', 'Experience with Laravel', $months, 'months:3'),
+        ]], $months);
+        $this->assertSame('months:3', $accepted[0]['normalized_value']);
+
+        Queue::fake();
+        $user = $this->user('duration-unit@example.test');
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'experience', '36 months of Laravel experience.');
+        $career->createManual($user, 'experience', '3 years of Symfony experience.');
+        $source = '3 years of Laravel experience required.';
+        $reverseSource = '36 months of Symfony experience required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([
+            ['requirements' => [$this->requirement('EXPERIENCE', 'MANDATORY', '3 years of Laravel experience', $source, 'years:3')]],
+            ['requirements' => [$this->requirement('EXPERIENCE', 'MANDATORY', '36 months of Symfony experience', $reverseSource, 'months:36')]],
+        ]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.1.result'));
+
+        $reverse = app(VacancyIngestionService::class)->queue($user, $reverseSource, null);
+        app(VacancyAnalysisService::class)->analyze($user, $reverse['snapshot']);
+        $reverseDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$reverse['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $reverseDetail->json('data.analysis.dimensions.1.result'));
+    }
+
+    public function test_salary_matching_uses_overlapping_explicit_ranges(): void
+    {
+        Queue::fake();
+        $user = $this->user('salary-range@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Salary minimum: 120000 RUB');
+        $cases = [
+            ['source' => 'Salary minimum: 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'MATCH'],
+            ['source' => 'Salary maximum: 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'BLOCKER'],
+            ['source' => 'Salary: 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'BLOCKER'],
+            ['source' => 'Salary: 100000-120000 RUB required.', 'value' => 'rub:100000:120000', 'result' => 'MATCH'],
+            ['source' => 'Salary minimum: 100000 ₽ required.', 'value' => 'rub:100000', 'result' => 'MATCH'],
+            ['source' => 'Salary from 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'MATCH'],
+            ['source' => 'Salary up to 100000 RUB required.', 'value' => 'rub:100000', 'result' => 'BLOCKER'],
+            ['source' => 'Salary: 100000 USD required.', 'value' => 'usd:100000', 'result' => 'UNKNOWN'],
+            ['source' => 'Salary minimum: 100000 RUB per year required.', 'value' => 'rub:100000', 'result' => 'UNKNOWN'],
+        ];
+        $provider = new VacancyFakeLlmProvider(array_map(fn (array $case): array => ['requirements' => [
+            $this->requirement('SALARY', 'MANDATORY', 'Salary', $case['source'], $case['value']),
+        ]], $cases));
+        $this->app->instance(LlmProvider::class, $provider);
+
+        foreach ($cases as $case) {
+            $result = app(VacancyIngestionService::class)->queue($user, $case['source'], null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+            $this->assertSame($case['result'], $detail->json('data.analysis.dimensions.6.result'), $case['source']);
+            if ($case['result'] === 'BLOCKER') {
+                $this->assertSame('SKIP', $analysis->recommendation);
+            }
+        }
+
+        $missingSalaryUser = $this->user('salary-unknown@example.test');
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('SALARY', 'MANDATORY', 'Salary', 'Salary minimum: 100000 RUB required.', 'rub:100000'),
+        ]]]));
+        $missing = app(VacancyIngestionService::class)->queue($missingSalaryUser, 'Salary minimum: 100000 RUB required.', null);
+        app(VacancyAnalysisService::class)->analyze($missingSalaryUser, $missing['snapshot']);
+        $missingDetail = $this->actingAs($missingSalaryUser)->getJson('/api/v1/vacancies/'.$missing['vacancy']->id)->assertOk();
+        $this->assertSame('UNKNOWN', $missingDetail->json('data.analysis.dimensions.6.result'));
+        $this->assertSame('MAYBE', $missingDetail->json('data.analysis.recommendation'));
+
+        $periodUser = $this->user('salary-period-mismatch@example.test');
+        app(CareerFactService::class)->createManual($periodUser, 'experience', 'Salary minimum: 120000 RUB per month');
+        $periodSource = 'Salary minimum: 100000 RUB per year required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('SALARY', 'MANDATORY', 'Salary', $periodSource, 'rub:100000'),
+        ]]]));
+        $period = app(VacancyIngestionService::class)->queue($periodUser, $periodSource, null);
+        app(VacancyAnalysisService::class)->analyze($periodUser, $period['snapshot']);
+        $periodDetail = $this->actingAs($periodUser)->getJson('/api/v1/vacancies/'.$period['vacancy']->id)->assertOk();
+        $this->assertSame('UNKNOWN', $periodDetail->json('data.analysis.dimensions.6.result'));
+
+        $ambiguousNumberUser = $this->user('salary-ambiguous-number@example.test');
+        app(CareerFactService::class)->createManual($ambiguousNumberUser, 'experience', 'Salary minimum: 100,000 RUB');
+        $ambiguousNumberSource = 'Salary maximum: 100 RUB required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('SALARY', 'MANDATORY', 'Salary', $ambiguousNumberSource, 'rub:100'),
+        ]]]));
+        $ambiguousNumber = app(VacancyIngestionService::class)->queue($ambiguousNumberUser, $ambiguousNumberSource, null);
+        app(VacancyAnalysisService::class)->analyze($ambiguousNumberUser, $ambiguousNumber['snapshot']);
+        $ambiguousNumberDetail = $this->actingAs($ambiguousNumberUser)->getJson('/api/v1/vacancies/'.$ambiguousNumber['vacancy']->id)->assertOk();
+        $this->assertSame('UNKNOWN', $ambiguousNumberDetail->json('data.analysis.dimensions.6.result'));
+    }
+
+    public function test_language_evidence_requires_a_proficiency_construction(): void
+    {
+        Queue::fake();
+        $user = $this->user('language-proficiency@example.test');
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'experience', 'Worked with an English-speaking team.');
+        $career->createManual($user, 'experience', 'Prepared documentation in English.');
+        $cases = [
+            ['source' => 'English C1 required.', 'label' => 'English C1', 'value' => 'C1', 'result' => 'GAP'],
+            ['source' => 'English B2 required.', 'label' => 'English B2', 'value' => 'B2', 'result' => 'MATCH'],
+            ['source' => 'Fluent English required.', 'label' => 'Fluent English', 'value' => null, 'result' => 'MATCH'],
+            ['source' => 'Upper-intermediate English required.', 'label' => 'Upper-intermediate English', 'value' => null, 'result' => 'MATCH'],
+            ['source' => 'Professional working proficiency in English required.', 'label' => 'Professional working proficiency in English', 'value' => null, 'result' => 'MATCH'],
+        ];
+        $outputs = array_map(fn (array $case): array => ['requirements' => [
+            $this->requirement('LANGUAGE', 'MANDATORY', $case['label'], $case['source'], $case['value']),
+        ]], $cases);
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider($outputs));
+
+        $first = app(VacancyIngestionService::class)->queue($user, $cases[0]['source'], null);
+        app(VacancyAnalysisService::class)->analyze($user, $first['snapshot']);
+        $firstDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$first['vacancy']->id)->assertOk();
+        $this->assertSame('GAP', $firstDetail->json('data.analysis.dimensions.3.result'));
+
+        $career->createManual($user, 'language', 'English B2');
+        app(VacancyAnalysisService::class)->analyze($user, $first['snapshot']);
+        $lowerLevel = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$first['vacancy']->id)->assertOk();
+        $this->assertSame('GAP', $lowerLevel->json('data.analysis.dimensions.3.result'));
+
+        foreach (array_slice($cases, 1) as $case) {
+            if (str_starts_with($case['label'], 'Fluent')) {
+                $career->createManual($user, 'language', 'Fluent English');
+            } elseif (str_starts_with($case['label'], 'Upper-intermediate')) {
+                $career->createManual($user, 'language', 'Upper-intermediate English');
+            } elseif (str_starts_with($case['label'], 'Professional')) {
+                $career->createManual($user, 'language', 'Professional working proficiency in English');
+            }
+            $result = app(VacancyIngestionService::class)->queue($user, $case['source'], null);
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+            $this->assertSame($case['result'], $detail->json('data.analysis.dimensions.3.result'), $case['source']);
+        }
+    }
+
+    public function test_work_format_requires_arrangement_context_on_both_sides(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        foreach ([
+            ['Remote work required.', 'remote'],
+            ['Fully remote position required.', 'remote'],
+            ['Hybrid role required.', 'hybrid'],
+            ['On-site role required.', 'office'],
+            ['Office-based role required.', 'office'],
+        ] as [$source, $value]) {
+            $validated = $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'required', $source, $value),
+            ]], $source);
+            $this->assertSame('WORK_FORMAT', $validated[0]['dimension'], $source);
+        }
+        foreach ([
+            'Remote API access required.',
+            'Remote desktop required.',
+            'Remote system required.',
+            'Hybrid architecture required.',
+        ] as $source) {
+            $validated = $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'required', $source),
+            ]], $source);
+            $this->assertSame('TECHNICAL', $validated[0]['dimension'], $source);
+        }
+
+        Queue::fake();
+        $user = $this->user('work-format-context@example.test');
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'experience', 'Built remote API systems.');
+        $career->createManual($user, 'experience', 'Supported remote desktop access.');
+        $career->createManual($user, 'experience', 'Designed hybrid architecture.');
+        $source = 'Fully remote position required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Fully remote', $source, 'remote'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('UNKNOWN', $detail->json('data.analysis.dimensions.5.result'));
+
+        $career->createManual($user, 'experience', 'Fully remote employee.');
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $updated = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $updated->json('data.analysis.dimensions.5.result'));
+    }
+
+    public function test_remote_technology_is_not_reclassified_as_work_format(): void
+    {
+        Queue::fake();
+        $user = $this->user('remote-technology@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Experience building remote monitoring systems.');
+        $source = 'Experience building remote monitoring systems is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'remote monitoring systems', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.0.result'));
+        $this->assertSame('NOT_APPLICABLE', $detail->json('data.analysis.dimensions.5.result'));
+        $this->assertSame('WORK_FORMAT', app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Remote work', 'Remote work required.', 'remote'),
+        ]], 'Remote work required.')[0]['dimension']);
     }
 
     public function test_negated_requirement_wording_is_not_persisted_as_a_requirement(): void
@@ -425,7 +673,7 @@ class VacancyCoreTest extends TestCase
         $cases = [
             'At least 3 years of Laravel experience required.',
             '3 years of Laravel experience required.',
-            '3+ years with Laravel required.',
+            '3+ years of Laravel experience required.',
             'Minimum 3 years of Laravel experience required.',
             '3 years experience with Laravel required.',
             'Experience with Laravel for 3 years required.',
@@ -433,9 +681,14 @@ class VacancyCoreTest extends TestCase
         $outputs = array_map(fn (string $source): array => ['requirements' => [
             $this->requirement('EXPERIENCE', 'MANDATORY', $source, $source, 'years:3'),
         ]], $cases);
-        $outputs[] = ['requirements' => [
-            $this->requirement('EXPERIENCE', 'MANDATORY', '3 years experience required', '3 years experience required.', 'years:3'),
-        ]];
+        foreach ([
+            '2 years and 6 months of Laravel experience required.',
+            'Experience with Laravel required; notice period is 3 months.',
+        ] as $ambiguousSource) {
+            $outputs[] = ['requirements' => [
+                $this->requirement('EXPERIENCE', 'MANDATORY', $ambiguousSource, $ambiguousSource),
+            ]];
+        }
         $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider($outputs));
 
         foreach ($cases as $source) {
@@ -445,10 +698,40 @@ class VacancyCoreTest extends TestCase
             $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.1.result'));
         }
 
-        $ambiguous = app(VacancyIngestionService::class)->queue($user, '3 years experience required.', null);
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'experience', '30 months of Laravel experience.');
+        $ambiguous = app(VacancyIngestionService::class)->queue($user, '2 years and 6 months of Laravel experience required.', null);
         app(VacancyAnalysisService::class)->analyze($user, $ambiguous['snapshot']);
         $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$ambiguous['vacancy']->id)->assertOk();
         $this->assertSame('UNKNOWN', $detail->json('data.analysis.dimensions.1.result'));
+        $this->assertSame('MAYBE', $detail->json('data.analysis.recommendation'));
+
+        $unrelatedDuration = 'Experience with Laravel required; notice period is 3 months.';
+        $validator = app(VacancyRequirementValidator::class);
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('EXPERIENCE', 'MANDATORY', 'Laravel experience', $unrelatedDuration, 'months:3'),
+            ]], $unrelatedDuration);
+            $this->fail('A notice period was accepted as experience duration.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+
+        $unrelated = app(VacancyIngestionService::class)->queue($user, $unrelatedDuration, null);
+        app(VacancyAnalysisService::class)->analyze($user, $unrelated['snapshot']);
+        $unrelatedDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$unrelated['vacancy']->id)->assertOk();
+        $this->assertSame('UNKNOWN', $unrelatedDetail->json('data.analysis.dimensions.1.result'));
+
+        $otherUser = $this->user('experience-clause-binding@example.test');
+        app(CareerFactService::class)->createManual($otherUser, 'experience', '36 months of retail experience; Laravel backend developer.');
+        $source = '3 years of Laravel experience required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', '3 years of Laravel experience', $source, 'years:3'),
+        ]]]));
+        $unrelatedFact = app(VacancyIngestionService::class)->queue($otherUser, $source, null);
+        app(VacancyAnalysisService::class)->analyze($otherUser, $unrelatedFact['snapshot']);
+        $unrelatedFactDetail = $this->actingAs($otherUser)->getJson('/api/v1/vacancies/'.$unrelatedFact['vacancy']->id)->assertOk();
+        $this->assertSame('UNKNOWN', $unrelatedFactDetail->json('data.analysis.dimensions.1.result'));
     }
 
     public function test_current_analysis_selection_filters_signature_and_uses_a_deterministic_tie_breaker(): void
@@ -510,12 +793,12 @@ class VacancyCoreTest extends TestCase
         $this->pendingFact($user, 'Kubernetes');
 
         $source = implode("\n", [
-            'Laravel required.', '3 years required.', 'E-commerce knowledge.', 'English B2 preferred.',
+            'Laravel required.', '3 years of backend experience required.', 'E-commerce knowledge.', 'English B2 preferred.',
             'Berlin required.', 'Remote required.', 'Salary RUB 100000-200000.', 'Kubernetes required.',
         ]);
         $output = ['requirements' => [
             $this->requirement('TECHNICAL', 'MANDATORY', 'Laravel', 'Laravel required.'),
-            $this->requirement('EXPERIENCE', 'MANDATORY', '3 years', '3 years required.', 'years:3'),
+            $this->requirement('EXPERIENCE', 'MANDATORY', '3 years', '3 years of backend experience required.', 'years:3'),
             $this->requirement('DOMAIN', 'UNCERTAIN', 'E-commerce', 'E-commerce knowledge.'),
             $this->requirement('LANGUAGE', 'PREFERRED', 'English B2', 'English B2 preferred.'),
             $this->requirement('LOCATION', 'MANDATORY', 'Berlin', 'Berlin required.', 'berlin'),

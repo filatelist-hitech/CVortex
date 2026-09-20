@@ -98,6 +98,15 @@ class VacancyRequirementValidator
         if ($dimension === 'SALARY') {
             return $this->salaryValueSupported($value, $excerpt);
         }
+        if ($dimension === 'EXPERIENCE') {
+            return $this->durationValueSupported($value, $excerpt);
+        }
+        if ($dimension === 'LANGUAGE') {
+            return $this->languageValueSupported($value, $excerpt);
+        }
+        if (preg_match('/^(?:years|months):\d+(?:[.,]\d+)?$/iu', trim($value)) === 1) {
+            return false;
+        }
 
         $value = $this->normalize($value);
         $evidence = $this->normalize($excerpt);
@@ -117,18 +126,6 @@ class VacancyRequirementValidator
             }
 
             return $value !== '' && count($supported) === 1 && isset($supported[$value]);
-        }
-
-        // Numeric/currency separators are structural, but value-bearing numbers
-        // must retain the source order so a model cannot swap range endpoints.
-        if ($dimension === 'EXPERIENCE') {
-            preg_match_all('/\d+(?:[.,]\d+)?/u', $value, $valueNumbers);
-            preg_match_all('/\d+(?:[.,]\d+)?/u', $evidence, $evidenceNumbers);
-            if ($valueNumbers[0] === [] || array_slice($evidenceNumbers[0], 0, count($valueNumbers[0])) !== $valueNumbers[0]) {
-                return false;
-            }
-
-            return true;
         }
 
         // Numeric/currency separators are structural; every semantic token must
@@ -168,13 +165,77 @@ class VacancyRequirementValidator
 
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
-            preg_match('/\b(?:remote|hybrid|office|on site|onsite|work from home|удаленно|гибрид|офис)\b/iu', $text) === 1 => 'WORK_FORMAT',
+            $this->workFormatValue($excerpt) !== null => 'WORK_FORMAT',
             preg_match('/\b(?:location|based in|city|relocat|локац|город)\b/iu', $text) === 1 => 'LOCATION',
-            preg_match('/\b(?:english|russian|german|french|spanish|язык|английск|русск|немецк|французск)\b/iu', $text) === 1 => 'LANGUAGE',
-            preg_match('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|лет|года)\b|\b(?:commercial|professional|production)\s+\w*\s*experience\b/iu', $text) === 1 || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1 => 'EXPERIENCE',
+            $this->hasExperienceDuration($excerpt)
+                || preg_match('/\b(?:commercial|professional|production)\s+\w*\s*experience\b|\bexperience\s+(?:with|of)\b/iu', $text) === 1
+                || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1 => 'EXPERIENCE',
+            $this->hasLanguageRequirement($label, $excerpt) => 'LANGUAGE',
             preg_match('/\b(?:domain|industry|fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $label) === 1 => 'DOMAIN',
             default => 'TECHNICAL',
         };
+    }
+
+    private function hasLanguageRequirement(string $label, string $excerpt): bool
+    {
+        $languages = '(?:english|russian|german|french|spanish|английск\w*|русск\w*|немецк\w*|французск\w*)';
+        $qualifier = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+        $text = $this->normalize($label.' '.$excerpt);
+
+        return preg_match('/\b'.$languages.'\s+(?:'.$qualifier.'|(?:language\s+)?(?:proficiency|level)|is\s+required|required)\b|\b'.$qualifier.'\s+(?:proficiency\s+)?(?:in\s+)?'.$languages.'\b|\b(?:proficiency|level)\s+(?:in\s+)?'.$languages.'\b|\b'.$languages.'\s+(?:language\s+)?(?:proficiency|level)\b/iu', $text) === 1;
+    }
+
+    private function hasExperienceDuration(string $text): bool
+    {
+        foreach ($this->durationExpressions($text) as $duration) {
+            if ($duration['experience_context']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return list<array{amount: string, unit: string, experience_context: bool}> */
+    private function durationExpressions(string $text): array
+    {
+        preg_match_all('/(?<![\pL\pN])(?<amount>\d+(?:[.,]\d+)?)\s*\+?\s*(?<unit>years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)(?!\pL)/iu', $text, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        $durations = [];
+        foreach ($matches as $match) {
+            $start = $match['amount'][1];
+            $end = $match['unit'][1] + strlen($match['unit'][0]);
+            $before = substr($text, 0, $start);
+            $after = substr($text, $end);
+            preg_match_all('/[,;.!?\n]/u', $before, $beforeBoundaries, PREG_OFFSET_CAPTURE);
+            preg_match('/[,;.!?\n]/u', $after, $afterBoundary, PREG_OFFSET_CAPTURE);
+            $lastBoundary = $beforeBoundaries[0] === [] ? null : $beforeBoundaries[0][count($beforeBoundaries[0]) - 1];
+            $clauseStart = $lastBoundary === null ? 0 : $lastBoundary[1] + 1;
+            $clauseLength = ($afterBoundary[0][1] ?? strlen($after));
+            $clause = substr($text, $clauseStart, $start - $clauseStart).' '.substr($after, 0, $clauseLength);
+            $durations[] = [
+                'amount' => $match['amount'][0],
+                'unit' => $match['unit'][0],
+                'experience_context' => preg_match('/\bexperience\b|опыт[\pL]*/iu', $clause) === 1,
+            ];
+        }
+
+        return $durations;
+    }
+
+    private function workFormatValue(string $text): ?string
+    {
+        $patterns = [
+            'remote' => '/\b(?:work format|формат работы)\s*:\s*(?:remote|удаленно)\b|\b(?:fully\s+)?remote\s+(?:work|position|role|arrangement|schedule|job|required)\b|\bfully\s+remote\b|\bwork(?:ing)?\s+(?:fully\s+)?remotely?\b|\bwork\s+from\s+home\b|\b(?:удаленная?|дистанционная?)\s+(?:работа|позиция|формат|занятость)\b|\b(?:работа|работать|формат)\s+удаленно\b/iu',
+            'hybrid' => '/\b(?:work format|формат работы)\s*:\s*(?:hybrid|гибрид)\b|\bhybrid\s+(?:work|working|position|role|arrangement|schedule|required)\b|\b(?:гибридный|гибридная|гибридное)\s+(?:режим|работа|формат|позиция)\b|\bгибрид\s+(?:работа|формат|требуется)\b/iu',
+            'office' => '/\b(?:work format|формат работы)\s*:\s*(?:office|офис)\b|\b(?:on[ -]?site|onsite)\s+(?:work|position|role|arrangement|schedule|required)\b|\boffice(?:[ -]based|\s+required)\b|\bwork\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\bbased\s+in\s+(?:the\s+)?office\b|\b(?:офисная|офисный|офисное)\s+(?:работа|формат|режим|позиция)\b|\bработа\s+в\s+офисе\b/iu',
+        ];
+        foreach ($patterns as $value => $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private function isInstructionAttack(string $text): bool
@@ -209,7 +270,7 @@ class VacancyRequirementValidator
 
     private function salaryValueSupported(string $value, string $excerpt): bool
     {
-        if (preg_match('/\b(usd|eur|rub|руб|₽)\b/iu', $value, $currency) !== 1) {
+        if (preg_match('/(?:^|[^\pL])(?<currency>usd|eur|rub|руб|₽)(?=$|[^\pL])/iu', $value, $currency) !== 1) {
             return false;
         }
         preg_match_all('/\d+(?:[.,]\d+)?/u', $value, $expectedAmounts);
@@ -217,22 +278,79 @@ class VacancyRequirementValidator
             return false;
         }
 
-        $currency = mb_strtolower($currency[1]);
+        $currency = $this->salaryCurrency($currency['currency']);
+        $currencyPattern = '(usd|eur|rub|руб|₽)';
+        $amountPattern = '(\d+(?:[.,]\d+)?)';
+        $salaryEvidence = $excerpt;
+        if (preg_match('/\b(?:salary|compensation|pay|зарплата)\b\s*(?<tail>[^;!?\n]{0,160})/iu', $excerpt, $context) === 1) {
+            $salaryEvidence = $context['tail'];
+        }
+        if (preg_match('/(?<!\d)\.(?!\d)/u', $salaryEvidence, $sentenceEnd, PREG_OFFSET_CAPTURE) === 1) {
+            $salaryEvidence = substr($salaryEvidence, 0, $sentenceEnd[0][1]);
+        }
         $expressions = [
-            '/\b'.preg_quote($currency, '/').'\b\s*[: ]?\s*(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|—|to)\s*(\d+(?:[.,]\d+)?))?/iu',
-            '/(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|—|to)\s*(\d+(?:[.,]\d+)?))?\s*'.preg_quote($currency, '/').'\b/iu',
+            ['pattern' => '/'.$currencyPattern.'\s*[: ]?\s*'.$amountPattern.'(?:\s*(?:-|–|—|to)\s*'.$amountPattern.')?/iu', 'currency_index' => 1, 'amount_index' => 2],
+            ['pattern' => '/'.$amountPattern.'(?:\s*(?:-|–|—|to)\s*'.$amountPattern.')?\s*'.$currencyPattern.'/iu', 'currency_index' => 3, 'amount_index' => 1],
         ];
-        foreach ($expressions as $pattern) {
-            if (preg_match($pattern, $excerpt, $match) !== 1) {
+        foreach ($expressions as $expression) {
+            if (preg_match($expression['pattern'], $salaryEvidence, $match) !== 1) {
                 continue;
             }
-            $amounts = array_values(array_filter([$match[1] ?? null, $match[2] ?? null]));
-            if ($amounts === $expectedAmounts[0]) {
+            $sourceCurrency = $this->salaryCurrency($match[$expression['currency_index']] ?? '');
+            $amountOffset = $expression['amount_index'];
+            $amounts = [$match[$amountOffset]];
+            if (isset($match[$amountOffset + 1]) && $match[$amountOffset + 1] !== '') {
+                $amounts[] = $match[$amountOffset + 1];
+            }
+            if ($sourceCurrency === $currency && $amounts === $expectedAmounts[0]) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function languageValueSupported(string $value, string $excerpt): bool
+    {
+        $value = $this->normalize($value);
+        $language = '(?:english|russian|german|french|spanish|английск\pL*|русск\pL*|немецк\pL*|французск\pL*)';
+        $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+        $patterns = [
+            '/\b'.$language.'\s*(?:(?:language\s+)?(?:proficiency|level)\s*)?(?::|is|of)?\s*'.$qualification.'\b/iu',
+            '/\b'.$qualification.'\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $excerpt, $match) === 1 && $this->normalize($match[1]) === $value) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function durationValueSupported(string $value, string $excerpt): bool
+    {
+        if (preg_match('/^(years|months):(\d+(?:[.,]\d+)?)$/iu', trim($value), $normalized) !== 1) {
+            return false;
+        }
+        $durations = array_values(array_filter($this->durationExpressions($excerpt), fn (array $item): bool => $item['experience_context']));
+        if (count($durations) !== 1) {
+            return false;
+        }
+        $source = $durations[0];
+
+        return mb_strtolower($normalized[1]) === $this->durationUnit($source['unit'])
+            && (float) str_replace(',', '.', $normalized[2]) === (float) str_replace(',', '.', $source['amount']);
+    }
+
+    private function durationUnit(string $unit): string
+    {
+        return preg_match('/^(?:years?|лет|год(?:а|ов)?)$/iu', $unit) === 1 ? 'years' : 'months';
+    }
+
+    private function salaryCurrency(string $currency): string
+    {
+        return in_array(mb_strtolower($currency), ['руб', '₽'], true) ? 'rub' : mb_strtolower($currency);
     }
 
     private function isMarketingNoise(string $text): bool
