@@ -59,12 +59,13 @@ class VacancyRequirementValidator
             if ($this->hasNegatedRequirement($excerpt)) {
                 continue;
             }
-            if (! $this->labelSupportedByExcerpt($label, $excerpt)) {
+            $dimension = $this->sourceDimension($label, $excerpt);
+            if (! $this->labelSupportedByExcerpt($label, $excerpt)
+                || (in_array($dimension, ['TECHNICAL', 'DOMAIN'], true) && ! $this->labelIdentifiesRequirement($label, $excerpt))) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
             $normalizedValue = $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']);
-            $dimension = $this->sourceDimension($label, $excerpt);
             if ($normalizedValue !== null && ! $this->normalizedValueSupported($dimension, $normalizedValue, $excerpt)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
@@ -91,6 +92,17 @@ class VacancyRequirementValidator
         $excerptTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($excerpt), -1, PREG_SPLIT_NO_EMPTY) ?: []);
 
         return $labelTokens !== [] && array_diff($labelTokens, $excerptTokens) === [];
+    }
+
+    private function labelIdentifiesRequirement(string $label, string $excerpt): bool
+    {
+        $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month'];
+        $tokens = fn (string $text): array => array_values(array_filter(
+            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($text), -1, PREG_SPLIT_NO_EMPTY) ?: []),
+            fn (string $token): bool => ! in_array($token, $generic, true) && ! is_numeric($token),
+        ));
+
+        return $tokens($label) !== [] || $tokens($excerpt) === [];
     }
 
     private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
@@ -255,6 +267,7 @@ class VacancyRequirementValidator
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
             '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
             '/\b(?:return|output|emit|print)\s+(?:an?\s+)?empty\s+(?:requirements?\s+)?(?:array|list)\b/iu',
+            '/\b(?:do\s+not|don[\'’]t|never)\s+(?:consider|use|read|analy[sz]e|process)\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,160}\b(?:reply|respond|return|output|produce|emit)\b.{0,80}\b(?:zero|no|empty|nothing)\s+(?:items?|requirements?|results?|output)\b/iu',
             '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
             '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',
         ];

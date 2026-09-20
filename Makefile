@@ -18,7 +18,7 @@ init:
 		runtime_password=$$(awk -F= '$$1=="POSTGRES_RUNTIME_PASSWORD" {print substr($$0, index($$0, "=")+1)}' .env); \
 		if [ -z "$$runtime_password" ] || [ "$$runtime_password" = "$$admin_password" ]; then \
 			runtime_password=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo bin2hex(random_bytes(24));'); \
-			awk -v runtime_password="$$runtime_password" 'BEGIN { FS=OFS="=" } $$1=="POSTGRES_RUNTIME_PASSWORD" { print $$1, runtime_password; next } { print }' .env > .env.tmp; \
+			awk -v runtime_password="$$runtime_password" 'BEGIN { FS=OFS="="; found=0 } $$1=="POSTGRES_RUNTIME_PASSWORD" { print $$1, runtime_password; found=1; next } { print } END { if (! found) print "POSTGRES_RUNTIME_PASSWORD", runtime_password }' .env > .env.tmp; \
 			mv .env.tmp .env; \
 		fi
 	docker compose build

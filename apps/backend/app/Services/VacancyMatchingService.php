@@ -292,7 +292,7 @@ class VacancyMatchingService
         if ($language === null) {
             return false;
         }
-        $languagePattern = preg_quote($language, '/');
+        $languagePattern = $this->languagePattern($language);
         $qualification = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
 
         return preg_match('/\b'.$languagePattern.'\s+(?:(?:language\s+)?(?:proficiency|level)|'.$qualification.')\b|\b'.$qualification.'\s+(?:proficiency\s+)?(?:in\s+)?'.$languagePattern.'\b|\b(?:proficiency|level)\s+(?:in\s+)?'.$languagePattern.'\b/iu', $candidateText) === 1;
@@ -316,7 +316,7 @@ class VacancyMatchingService
     {
         $text = $this->normalize($requirement->label.' '.$requirement->source_excerpt);
         foreach (['english', 'russian', 'german', 'french', 'spanish'] as $language) {
-            if (preg_match('/\b'.preg_quote($language, '/').'\b/iu', $text) === 1) {
+            if (preg_match('/\b'.$this->languagePattern($language).'\b/iu', $text) === 1) {
                 return $language;
             }
         }
@@ -324,10 +324,22 @@ class VacancyMatchingService
         return null;
     }
 
+    private function languagePattern(string $language): string
+    {
+        return match ($language) {
+            'english' => '(?:english|английск\pL*)',
+            'russian' => '(?:russian|русск\pL*)',
+            'german' => '(?:german|немецк\pL*)',
+            'french' => '(?:french|французск\pL*)',
+            'spanish' => '(?:spanish|испанск\pL*)',
+            default => '(?!)',
+        };
+    }
+
     private function languageQualification(string $text, string $language): ?string
     {
         $text = $this->normalize($text);
-        $language = preg_quote($language, '/');
+        $language = $this->languagePattern($language);
         $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $patterns = [
             '/\b'.$language.'\s*(?:(?:language\s+)?(?:proficiency|level)\s*)?(?::|is|of)?\s*'.$qualification.'\b/iu',
@@ -484,13 +496,23 @@ class VacancyMatchingService
     /** @return list<string>|null */
     private function experienceSubjectTokens(VacancyRequirement $requirement): ?array
     {
-        $subject = preg_replace('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)\b/iu', ' ', $requirement->label.' '.$requirement->source_excerpt) ?? '';
-        $tokens = array_values(array_filter(
-            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
-            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'experience', 'commercial', 'years', 'months', 'least', 'minimum', 'with', 'for', 'and'], true),
-        ));
+        $tokens = $this->experienceSubjectTokensFrom($requirement->label);
+        if ($tokens === []) {
+            $tokens = $this->experienceSubjectTokensFrom($requirement->source_excerpt);
+        }
 
         return $tokens === [] ? null : $tokens;
+    }
+
+    /** @return list<string> */
+    private function experienceSubjectTokensFrom(string $text): array
+    {
+        $subject = preg_replace('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)\b/iu', ' ', $text) ?? '';
+
+        return array_values(array_filter(
+            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
+            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'mandatory', 'require', 'requires', 'requiring', 'requirement', 'experience', 'commercial', 'years', 'months', 'least', 'minimum', 'with', 'for', 'and', 'we', 'candidate', 'must', 'have', 'need', 'needed'], true),
+        ));
     }
 
     private function containsRequirementTerms(string $candidateText, string $requirementText): bool
