@@ -22,6 +22,13 @@ class VacancyMatchingService
     public function careerSignature(User $user): string
     {
         $context = $this->career->forMatching($user);
+
+        return $this->signatureForContext($context);
+    }
+
+    /** @param array{facts: list<CareerFact>, claims: list<Claim>} $context */
+    private function signatureForContext(array $context): string
+    {
         $values = [];
         foreach ($context['facts'] as $fact) {
             $values[] = 'fact:'.$fact->id.':'.$fact->updated_at?->toJSON().':'.$fact->approvedAssertion();
@@ -37,7 +44,7 @@ class VacancyMatchingService
     public function analyze(User $user, Vacancy $vacancy, VacancySnapshot $snapshot): VacancyAnalysis
     {
         $context = $this->career->forMatching($user);
-        $signature = $this->careerSignature($user);
+        $signature = $this->signatureForContext($context);
         $requirements = VacancyRequirement::query()
             ->where('owner_id', $user->id)
             ->where('vacancy_snapshot_id', $snapshot->id)
@@ -124,6 +131,7 @@ class VacancyMatchingService
                 'gaps' => [],
                 'uncertainties' => [],
                 'mandatory_gaps' => 0,
+                'mandatory_unknowns' => 0,
                 'preferred_gaps' => 0,
                 'matches' => 0,
                 'mandatory_count' => 0,
@@ -137,6 +145,7 @@ class VacancyMatchingService
         $matches = 0;
         $adjacent = 0;
         $mandatoryGaps = 0;
+        $mandatoryUnknowns = 0;
         $preferredGaps = 0;
         $blockers = 0;
         $mandatoryCount = count(array_filter($requirements, fn (VacancyRequirement $item): bool => $item->importance === 'MANDATORY'));
@@ -167,6 +176,9 @@ class VacancyMatchingService
                     $gaps[] = $this->gap($requirement, 'structured incompatibility');
                 } else {
                     $uncertainties[] = $this->uncertainty($requirement, 'candidate data is absent or incomplete');
+                    if ($requirement->importance === 'MANDATORY') {
+                        $mandatoryUnknowns++;
+                    }
                 }
 
                 continue;
@@ -218,6 +230,7 @@ class VacancyMatchingService
             'gaps' => $gaps,
             'uncertainties' => $uncertainties,
             'mandatory_gaps' => $mandatoryGaps,
+            'mandatory_unknowns' => $mandatoryUnknowns,
             'preferred_gaps' => $preferredGaps,
             'matches' => $matches,
             'mandatory_count' => $mandatoryCount,
@@ -231,6 +244,9 @@ class VacancyMatchingService
      */
     private function supportingEvidence(VacancyRequirement $requirement, array $facts, array $claims): ?array
     {
+        if (in_array($requirement->dimension, ['LOCATION', 'WORK_FORMAT', 'SALARY', 'EXPERIENCE'], true)) {
+            return null;
+        }
         $needle = $this->normalize($requirement->label);
         foreach ($facts as $fact) {
             $text = $this->normalize($fact->approvedAssertion());
@@ -303,13 +319,20 @@ class VacancyMatchingService
         }
         $candidates = [];
         foreach ($facts as $fact) {
-            $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $this->normalize($fact->approvedAssertion())];
+            $text = $this->normalize($fact->approvedAssertion());
+            if ($this->relevantStructuredEvidence($requirement, $text)) {
+                $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $text];
+            }
         }
         foreach ($claims as $claim) {
-            $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $this->normalize($claim->statement)];
+            $text = $this->normalize($claim->statement);
+            if ($this->relevantStructuredEvidence($requirement, $text)) {
+                $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $text];
+            }
         }
 
         $expected = $this->normalize((string) $requirement->normalized_value);
+        $incompatible = false;
         foreach ($candidates as $candidate) {
             $actual = $this->structuredCandidateValue($requirement->dimension, $candidate['text']);
             if ($actual === null) {
@@ -319,11 +342,39 @@ class VacancyMatchingService
                 return ['result' => 'MATCH', 'evidence' => ['type' => $candidate['type'], 'id' => $candidate['id']]];
             }
             if ($requirement->importance === 'MANDATORY') {
-                return ['result' => 'BLOCKER'];
+                $incompatible = true;
             }
         }
 
+        if ($incompatible) {
+            return ['result' => 'BLOCKER'];
+        }
+
         return ['result' => 'UNKNOWN'];
+    }
+
+    private function relevantStructuredEvidence(VacancyRequirement $requirement, string $candidateText): bool
+    {
+        if ($requirement->dimension !== 'EXPERIENCE') {
+            return true;
+        }
+
+        $subject = preg_replace('/\b\d+(?:[.,]\d+)?\s*(?:years?|лет|года)\b/iu', ' ', $requirement->label.' '.$requirement->source_excerpt) ?? '';
+        $tokens = array_values(array_filter(
+            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
+            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'experience', 'commercial', 'years'], true),
+        ));
+        if ($tokens === []) {
+            return true;
+        }
+
+        foreach ($tokens as $token) {
+            if (! str_contains($candidateText, $token)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function structuredCandidateValue(string $dimension, string $text): ?string
@@ -347,7 +398,7 @@ class VacancyMatchingService
     private function structuredCompatible(string $dimension, string $expected, string $actual): bool
     {
         if ($dimension === 'EXPERIENCE') {
-            preg_match('/(?:years?:)?\s*(\d+(?:[.,]\d+)?)/', $expected, $expectedMatch);
+            preg_match('/(\d+(?:[.,]\d+)?)/', $expected, $expectedMatch);
             preg_match('/(\d+(?:[.,]\d+)?)/', $actual, $actualMatch);
 
             return isset($expectedMatch[1], $actualMatch[1])
@@ -379,6 +430,7 @@ class VacancyMatchingService
         $matches = array_sum(array_column($dimensions, 'matches'));
         $mandatoryCount = array_sum(array_column($dimensions, 'mandatory_count'));
         $mandatoryMatches = array_sum(array_column($dimensions, 'mandatory_matches'));
+        $mandatoryUnknowns = array_sum(array_column($dimensions, 'mandatory_unknowns'));
         $uncertainties = array_sum(array_map(fn (array $item): int => count($item['uncertainties']), $dimensions));
         $gaps = array_sum(array_map(fn (array $item): int => count($item['gaps']), $dimensions));
 
@@ -386,6 +438,7 @@ class VacancyMatchingService
             $blockers > 0 => 'SKIP',
             $mandatoryGaps >= 3 => 'LOW_PRIORITY',
             $mandatoryGaps > 0 => 'MAYBE',
+            $mandatoryUnknowns > 0 => 'MAYBE',
             $mandatoryCount > 0 && $mandatoryMatches === $mandatoryCount && $preferredGaps === 0 && $uncertainties === 0 && $gaps === 0 => 'STRONGLY_APPLY',
             $matches > 0 => 'APPLY',
             default => 'MAYBE',

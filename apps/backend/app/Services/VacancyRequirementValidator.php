@@ -18,6 +18,12 @@ class VacancyRequirementValidator
             throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
         }
 
+        // If source text contains instructions aimed at the model, completeness
+        // cannot be inferred from a possibly suppressed (even empty) response.
+        if ($this->isInstructionAttack($sourceText)) {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+
         $validated = [];
         foreach ($requirements as $candidate) {
             if (! is_array($candidate)
@@ -50,7 +56,12 @@ class VacancyRequirementValidator
             if ($this->isInstructionAttack($label.' '.$excerpt) || $this->isMarketingNoise($excerpt)) {
                 continue;
             }
-            if (! str_contains($this->normalize($excerpt), $this->normalize($label))) {
+            if (! $this->labelSupportedByExcerpt($label, $excerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+            }
+
+            $normalizedValue = $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']);
+            if ($normalizedValue !== null && ! $this->normalizedValueSupported($candidate['dimension'], $normalizedValue, $excerpt)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
@@ -59,13 +70,60 @@ class VacancyRequirementValidator
                 'dimension' => $candidate['dimension'],
                 'importance' => $importance,
                 'label' => $label,
-                'normalized_value' => $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']),
+                'normalized_value' => $normalizedValue,
                 'source_excerpt' => $excerpt,
                 'confidence' => (float) $candidate['confidence'],
             ];
         }
 
         return $validated;
+    }
+
+    private function labelSupportedByExcerpt(string $label, string $excerpt): bool
+    {
+        $labelTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($label), -1, PREG_SPLIT_NO_EMPTY) ?: []);
+        $excerptTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($excerpt), -1, PREG_SPLIT_NO_EMPTY) ?: []);
+
+        return $labelTokens !== [] && array_diff($labelTokens, $excerptTokens) === [];
+    }
+
+    private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
+    {
+        $value = $this->normalize($value);
+        $evidence = $this->normalize($excerpt);
+        if ($dimension === 'WORK_FORMAT') {
+            $aliases = [
+                'remote' => ['remote', 'remotely', 'work from home', 'удаленно'],
+                'hybrid' => ['hybrid', 'гибрид'],
+                'office' => ['office', 'on-site', 'onsite', 'офис'],
+            ];
+            $supported = [];
+            foreach ($aliases as $canonical => $forms) {
+                foreach ($forms as $form) {
+                    if (preg_match('/\b'.preg_quote($this->normalize($form), '/').'\b/iu', $evidence) === 1) {
+                        $supported[$canonical] = true;
+                    }
+                }
+            }
+
+            return $value !== '' && count($supported) === 1 && isset($supported[$value]);
+        }
+
+        // Numeric/currency separators are structural, but value-bearing numbers
+        // must retain the source order so a model cannot swap range endpoints.
+        if (in_array($dimension, ['EXPERIENCE', 'SALARY'], true)) {
+            preg_match_all('/\d+(?:[.,]\d+)?/u', $value, $valueNumbers);
+            preg_match_all('/\d+(?:[.,]\d+)?/u', $evidence, $evidenceNumbers);
+            if ($valueNumbers[0] === [] || array_slice($evidenceNumbers[0], 0, count($valueNumbers[0])) !== $valueNumbers[0]) {
+                return false;
+            }
+        }
+
+        // Numeric/currency separators are structural; every semantic token must
+        // still be present in the verbatim supporting excerpt.
+        $tokens = preg_split('/\s+/u', (string) preg_replace('/[^\pL\pN+#.]+/u', ' ', $value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return $tokens !== [] && $this->labelSupportedByExcerpt(implode(' ', $tokens), $evidence);
     }
 
     private function hasPreferredCue(string $text): bool
@@ -87,6 +145,8 @@ class VacancyRequirementValidator
             '/["\'](?:instruction|system|developer|recommendation)["\']\s*:\s*["\'][^"\']*(?:'.$directive.'|'.$recommendation.')/iu',
             '/<(?:system|assistant|developer|instruction|prompt)(?:\s[^>]*)?>[\s\S]*?\b'.$directive.'\b/iu',
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
+            '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
+            '/\b(?:return|output|emit|print)\s+(?:an?\s+)?empty\s+(?:requirements?\s+)?(?:array|list)\b/iu',
             '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
             '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',
         ];
@@ -102,6 +162,11 @@ class VacancyRequirementValidator
 
     private function isMarketingNoise(string $text): bool
     {
+        if (preg_match('/\b(?:we are looking for|we seek|our team is looking for)\b/iu', $text) === 1
+            && preg_match('/\b(?:with|who have|experience|skills?|proficiency|knowledge|degree|certification|required|must have)\b/iu', $text) === 1) {
+            return false;
+        }
+
         return preg_match('/\b(we are|our company|our mission|world.class|market leader|we offer|benefits include)\b|наша\s+(компания|миссия|команда)|мы\s+предлагаем/iu', $text) === 1;
     }
 
