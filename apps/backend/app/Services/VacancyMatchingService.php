@@ -261,6 +261,7 @@ class VacancyMatchingService
         foreach ($facts as $fact) {
             $text = $this->normalize($fact->approvedAssertion());
             if ($this->directSupportAllowed($requirement, $text)
+                && ! $this->candidateEvidenceNegated($requirement, $text)
                 && $this->languageEvidenceAllowed($requirement, $text)
                 && $this->languageQualificationMatches($requirement, $text)
                 && $this->containsRequirementTerms($text, $needle)) {
@@ -270,6 +271,7 @@ class VacancyMatchingService
         foreach ($claims as $claim) {
             $text = $this->normalize($claim->statement);
             if ($this->directSupportAllowed($requirement, $text)
+                && ! $this->candidateEvidenceNegated($requirement, $text)
                 && $this->languageEvidenceAllowed($requirement, $text)
                 && $this->languageQualificationMatches($requirement, $text)
                 && $this->containsRequirementTerms($text, $needle)) {
@@ -287,6 +289,21 @@ class VacancyMatchingService
         }
 
         return preg_match('/\b(familiar|aware|learning|studied|basic|beginner)\b|знаком|изуча|базов/iu', $candidateText) !== 1;
+    }
+
+    private function candidateEvidenceNegated(VacancyRequirement $requirement, string $candidateText): bool
+    {
+        $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
+        $tokens = array_values(array_filter(
+            preg_split('/\s+/u', $this->normalize($requirement->label), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+            fn (string $token): bool => ! in_array($token, $generic, true),
+        ));
+        if ($tokens === []) {
+            return false;
+        }
+        $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $tokens));
+
+        return preg_match('/\b(?:no|without|never|not)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
     }
 
     private function languageEvidenceAllowed(VacancyRequirement $requirement, string $candidateText): bool

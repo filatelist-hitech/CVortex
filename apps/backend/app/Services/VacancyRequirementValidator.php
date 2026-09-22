@@ -186,7 +186,7 @@ class VacancyRequirementValidator
             return 'MANDATORY';
         }
 
-        return $providerImportance;
+        return 'UNCERTAIN';
     }
 
     private function importanceCueText(string $label, string $excerpt): ?string
@@ -237,7 +237,7 @@ class VacancyRequirementValidator
 
     private function hasLanguageRequirement(string $label, string $excerpt): bool
     {
-        $languages = '(?:english|russian|german|french|spanish|английск\w*|русск\w*|немецк\w*|французск\w*)';
+        $languages = '(?:english|russian|german|french|spanish|английск\w*|русск\w*|немецк\w*|французск\w*|испанск\w*)';
         $qualifier = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $text = $this->normalize($label.' '.$excerpt);
 
@@ -375,7 +375,7 @@ class VacancyRequirementValidator
     private function languageValueSupported(string $value, string $excerpt): bool
     {
         $value = $this->normalize($value);
-        $language = '(?:english|russian|german|french|spanish|английск\pL*|русск\pL*|немецк\pL*|французск\pL*)';
+        $language = '(?:english|russian|german|french|spanish|английск\pL*|русск\pL*|немецк\pL*|французск\pL*|испанск\pL*)';
         $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $patterns = [
             '/\b'.$language.'\s*(?:at\s+)?(?:(?:language\s+)?(?:proficiency|level)\s*(?:at\s+)?)?(?::|is|of)?\s*'.$qualification.'(?:\s+level)?\b/iu',

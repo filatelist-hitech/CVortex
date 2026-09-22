@@ -569,6 +569,39 @@ class VacancyCoreTest extends TestCase
         }
     }
 
+    public function test_uncued_importance_negated_candidate_and_cyrillic_spanish_fail_safe(): void
+    {
+        Queue::fake();
+        $user = $this->user('latest-review-boundaries@example.test');
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'skill', 'No Kubernetes experience.');
+        $career->createManual($user, 'skill', 'Создал испанский парсер.');
+        $provider = new VacancyFakeLlmProvider([
+            ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', 'Our stack includes Kubernetes.')]],
+            ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', 'Kubernetes is required.')]],
+            ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Испанский', 'Испанский B2 обязателен.')]],
+        ]);
+        $this->app->instance(LlmProvider::class, $provider);
+
+        $uncued = app(VacancyIngestionService::class)->queue($user, 'Our stack includes Kubernetes.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $uncued['snapshot']);
+        $uncuedDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$uncued['vacancy']->id)->assertOk();
+        $this->assertSame('MAYBE', $uncuedDetail->json('data.analysis.recommendation'));
+        $this->assertDatabaseHas('vacancy_requirements', ['vacancy_snapshot_id' => $uncued['snapshot']->id, 'importance' => 'UNCERTAIN']);
+
+        $negated = app(VacancyIngestionService::class)->queue($user, 'Kubernetes is required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $negated['snapshot']);
+        $negatedDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$negated['vacancy']->id)->assertOk();
+        $this->assertSame('MAYBE', $negatedDetail->json('data.analysis.recommendation'));
+        $this->assertSame('GAP', $negatedDetail->json('data.analysis.dimensions.0.result'));
+
+        $spanish = app(VacancyIngestionService::class)->queue($user, 'Испанский B2 обязателен.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $spanish['snapshot']);
+        $spanishDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$spanish['vacancy']->id)->assertOk();
+        $this->assertSame('LANGUAGE', $spanishDetail->json('data.requirements.0.dimension'));
+        $this->assertContains($spanishDetail->json('data.analysis.dimensions.3.result'), ['GAP', 'UNKNOWN']);
+    }
+
     public function test_cyrillic_language_proficiency_matches_the_canonical_language(): void
     {
         Queue::fake();
