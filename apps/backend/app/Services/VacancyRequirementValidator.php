@@ -97,8 +97,13 @@ class VacancyRequirementValidator
     private function labelIdentifiesRequirement(string $label, string $excerpt): bool
     {
         $generic = $this->genericRequirementTerms();
+        $labelTokens = $this->requirementSubjectTokens($label, $generic);
+        if ($labelTokens === []) {
+            return $this->requirementSubjectTokens($excerpt, $generic) === [];
+        }
+        $cueSubjects = $this->requirementCueSubjectTokens($excerpt, $generic);
 
-        return $this->requirementSubjectTokens($label, $generic) !== [] || $this->requirementSubjectTokens($excerpt, $generic) === [];
+        return $cueSubjects === [] || array_intersect($labelTokens, $cueSubjects) !== [];
     }
 
     /** @param list<string> $generic
@@ -116,6 +121,24 @@ class VacancyRequirementValidator
     private function genericRequirementTerms(): array
     {
         return ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
+    }
+
+    /** @param list<string> $generic
+     * @return list<string>
+     */
+    private function requirementCueSubjectTokens(string $excerpt, array $generic): array
+    {
+        $cue = '(?:required|mandatory|must\\s+have|need(?:ed)?\\s+to\\s+have|will\\s+be\\s+a\\s+plus|nice\\s+to\\s+have|preferred|desirable|optional)';
+        if (preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?:is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $matches) < 1) {
+            return [];
+        }
+
+        $tokens = [];
+        foreach ($matches['subject'] as $subject) {
+            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position'])));
+        }
+
+        return array_values(array_unique($tokens));
     }
 
     private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
@@ -241,7 +264,24 @@ class VacancyRequirementValidator
         $qualifier = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $text = $this->normalize($label.' '.$excerpt);
 
-        return preg_match('/\b'.$languages.'\s+(?:(?:at\s+)?'.$qualifier.'(?:\s+level)?|(?:language\s+)?(?:proficiency|level)(?:\s+at)?\s+'.$qualifier.'|is\s+required|required)\b|\b'.$qualifier.'(?:[ -]level)?\s+(?:proficiency\s+)?(?:in\s+)?'.$languages.'\b|\b(?:proficiency|level)\s+(?:at\s+)?(?:in\s+)?'.$languages.'\b|\b'.$languages.'\s+(?:language\s+)?(?:proficiency|level)\b/iu', $text) === 1;
+        return preg_match('/\b'.$languages.'\s+(?:(?:at\s+)?'.$qualifier.'(?:\s+level)?|(?:language\s+)?(?:proficiency|level)(?:\s+at)?\s+'.$qualifier.'|is\s+required|required)\b|\b'.$qualifier.'(?:[ -]level)?\s+(?:proficiency\s+)?(?:in\s+)?'.$languages.'\b|\b(?:proficiency|level)\s+(?:at\s+)?(?:in\s+)?'.$languages.'\b|\b'.$languages.'\s+(?:language\s+)?(?:proficiency|level)\b/iu', $text) === 1
+            || $this->qualifiedLanguageToken($text) !== null;
+    }
+
+    private function qualifiedLanguageToken(string $text): ?string
+    {
+        $qualifier = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+        $language = '(?<language>[\\pL][\\pL-]{2,})';
+        foreach ([
+            '/\\b'.$language.'\\s+(?:(?:at\\s+)?'.$qualifier.'(?:\\s+level)?|(?:language\\s+)?(?:proficiency|level)(?:\\s+at)?\\s+'.$qualifier.')\\b/iu',
+            '/\\b'.$qualifier.'(?:[ -]level)?\\s+(?:(?:proficiency\\s+)?in\\s+)?'.$language.'\\b/iu',
+        ] as $pattern) {
+            if (preg_match($pattern, $text, $match) === 1) {
+                return $this->normalize($match['language']);
+            }
+        }
+
+        return null;
     }
 
     private function hasExperienceDuration(string $text): bool
@@ -316,6 +356,7 @@ class VacancyRequirementValidator
             '/\b(?:return|output|emit|print)\s+(?:an?\s+)?empty\s+(?:requirements?\s+)?(?:array|list)\b/iu',
             '/\b(?:do\s+not|don[\'’]t|never)\s+(?:extract|parse|identify|list)\s+(?:any\s+)?(?:requirements?|items?|results?)\b/iu',
             '/\b(?:do\s+not|don[\'’]t|never)\s+(?:consider|use|read|analy[sz]e|process)\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,160}\b(?:reply|respond|return|output|produce|emit)\b.{0,80}\b(?:zero|no|empty|nothing)\s+(?:items?|requirements?|results?|output)\b/iu',
+            '/\b(?:skip|omit)\s+(?:extracting|extraction|parsing|listing|identifying)\s+(?:any\s+|the\s+)?requirements?\b/iu',
             '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
             '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',
         ];

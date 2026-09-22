@@ -228,4 +228,33 @@ describe("access shell", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Retry analysis" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/vacancies/vacancy-failed/reanalyze", expect.objectContaining({ method: "POST" })));
   });
+
+  it("selects the newly imported vacancy after refreshing the saved list", async () => {
+    const summaries = [
+      { id: "vacancy-old", title: "Old vacancy", company: null, source_url: null, analysis_status: "COMPLETED", error_code: null, snapshot_version: 1, recommendation: "APPLY", analysis_stale: false },
+      { id: "vacancy-new", title: "New vacancy", company: null, source_url: null, analysis_status: "PENDING", error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+    ];
+    const detail = (id: string) => ({
+      ...summaries.find((item) => item.id === id)!, source_type: "PASTED_TEXT",
+      snapshot: { id: `snapshot-${id}`, version: 1, raw_text: "Laravel required.", source_url: null, imported_at: "2026-09-22T00:00:00Z" }, requirements: [], analysis: null,
+    });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } });
+      if (path === "/api/v1/career") return Response.json({ data: { facts: [], claims: [], sources: [] } });
+      if (path === "/api/v1/vacancies" && !options?.method) return Response.json({ data: summaries });
+      if (path === "/api/v1/vacancies" && options?.method === "POST") return Response.json({ data: { id: "vacancy-new" } }, { status: 202 });
+      if (path === "/api/v1/vacancies/vacancy-old") return Response.json({ data: detail("vacancy-old") });
+      if (path === "/api/v1/vacancies/vacancy-new") return Response.json({ data: detail("vacancy-new") });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    await screen.findByRole("button", { name: /Old vacancy/ });
+    fireEvent.change(screen.getByLabelText("Vacancy text"), { target: { value: "Laravel required." } });
+    fireEvent.click(screen.getByRole("button", { name: "Preserve and analyze" }));
+
+    expect(await screen.findByRole("heading", { name: "New vacancy" })).toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([path]) => String(path) === "/api/v1/vacancies/vacancy-new")).toBe(true);
+  });
 });

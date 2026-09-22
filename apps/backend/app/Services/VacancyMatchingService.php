@@ -296,7 +296,7 @@ class VacancyMatchingService
         $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
         $tokens = array_values(array_filter(
             preg_split('/\s+/u', $this->normalize($requirement->label), -1, PREG_SPLIT_NO_EMPTY) ?: [],
-            fn (string $token): bool => ! in_array($token, $generic, true),
+            fn (string $token): bool => ! in_array($token, $generic, true) && ! is_numeric($token),
         ));
         if ($tokens === []) {
             return false;
@@ -345,7 +345,7 @@ class VacancyMatchingService
             }
         }
 
-        return null;
+        return $this->qualifiedLanguageToken($text);
     }
 
     private function languagePattern(string $language): string
@@ -356,7 +356,7 @@ class VacancyMatchingService
             'german' => '(?:german|немецк\pL*)',
             'french' => '(?:french|французск\pL*)',
             'spanish' => '(?:spanish|испанск\pL*)',
-            default => '(?!)',
+            default => preg_quote($language, '/'),
         };
     }
 
@@ -384,9 +384,26 @@ class VacancyMatchingService
             fn (string $term): string => trim($term, '.'),
             preg_split('/\s+/u', $this->normalize($requirement->label.' '.$requirement->source_excerpt), -1, PREG_SPLIT_NO_EMPTY) ?: [],
         );
-        $terms = array_filter($terms, fn (string $term): bool => ! in_array($term, ['required', 'must', 'have', 'need'], true));
+        $terms = array_filter($terms, fn (string $term): bool => ! in_array($term, ['required', 'mandatory', 'must', 'have', 'need', 'needed', 'require', 'requires', 'requiring', 'requirement', 'is', 'are'], true));
 
         return implode(' ', $terms);
+    }
+
+    private function qualifiedLanguageToken(string $text): ?string
+    {
+        $qualification = '(?:a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+        $language = '(?<language>[\\pL][\\pL-]{2,})';
+        $patterns = [
+            '/\\b'.$language.'\\s+(?:(?:at\\s+)?'.$qualification.'(?:\\s+level)?|(?:language\\s+)?(?:proficiency|level)(?:\\s+at)?\\s+'.$qualification.')\\b/iu',
+            '/\\b'.$qualification.'(?:[ -]level)?\\s+(?:(?:proficiency\\s+)?in\\s+)?'.$language.'\\b/iu',
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text, $match) === 1) {
+                return $this->normalize($match['language']);
+            }
+        }
+
+        return null;
     }
 
     /** @param list<CareerFact> $facts
@@ -440,14 +457,14 @@ class VacancyMatchingService
         foreach ($facts as $fact) {
             $rawText = $fact->approvedAssertion();
             $text = $this->normalize($rawText);
-            if ($this->relevantStructuredEvidence($requirement, $rawText)) {
+            if ($this->relevantStructuredEvidence($requirement, $rawText) && ! $this->candidateEvidenceNegated($requirement, $text)) {
                 $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $text, 'raw_text' => $rawText];
             }
         }
         foreach ($claims as $claim) {
             $rawText = $claim->statement;
             $text = $this->normalize($rawText);
-            if ($this->relevantStructuredEvidence($requirement, $rawText)) {
+            if ($this->relevantStructuredEvidence($requirement, $rawText) && ! $this->candidateEvidenceNegated($requirement, $text)) {
                 $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $text, 'raw_text' => $rawText];
             }
         }

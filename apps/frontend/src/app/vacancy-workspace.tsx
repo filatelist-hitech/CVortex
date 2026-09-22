@@ -69,13 +69,13 @@ export default function VacancyWorkspace() {
     setDetail(result.data);
   }, []);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (preferredId?: string) => {
     try {
       const result = await api("/api/v1/vacancies");
       const items = result.data as VacancySummary[];
       setVacancies(items);
       setError("");
-      const id = selectedId || items[0]?.id || "";
+      const id = (preferredId ?? selectedId) || items[0]?.id || "";
       if (id) {
         setSelectedId(id);
         await loadDetail(id);
@@ -112,7 +112,7 @@ export default function VacancyWorkspace() {
       });
       form.reset();
       setSelectedId(result.data.id);
-      await refresh();
+      await refresh(result.data.id);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The vacancy could not be added.");
     } finally {
