@@ -66,7 +66,7 @@ class VacancyRequirementValidator
             }
 
             $normalizedValue = $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']);
-            if ($normalizedValue !== null && ! $this->normalizedValueSupported($dimension, $normalizedValue, $excerpt)) {
+            if ($normalizedValue !== null && ! $this->normalizedValueSupported($dimension, $normalizedValue, $label, $excerpt)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
@@ -128,20 +128,22 @@ class VacancyRequirementValidator
      */
     private function requirementCueSubjectTokens(string $excerpt, array $generic): array
     {
+        $tokens = [];
         $cue = '(?:required|mandatory|must\\s+have|need(?:ed)?\\s+to\\s+have|will\\s+be\\s+a\\s+plus|nice\\s+to\\s+have|preferred|desirable|optional)';
-        if (preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?:is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $matches) < 1) {
-            return [];
+        preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?:is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $passive);
+        foreach ($passive['subject'] as $subject) {
+            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position'])));
         }
 
-        $tokens = [];
-        foreach ($matches['subject'] as $subject) {
-            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position'])));
+        preg_match_all('/\\b(?:this\\s+)?(?:[\\pL\\pN+#.-]+\\s+){0,4}(?:role|position)?\\s*requires\\s+(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)/iu', $excerpt, $active);
+        foreach ($active['subject'] as $subject) {
+            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['this', 'that', 'role', 'position'])));
         }
 
         return array_values(array_unique($tokens));
     }
 
-    private function normalizedValueSupported(string $dimension, string $value, string $excerpt): bool
+    private function normalizedValueSupported(string $dimension, string $value, string $label, string $excerpt): bool
     {
         if ($dimension === 'SALARY') {
             return $this->salaryValueSupported($value, $excerpt);
@@ -150,7 +152,7 @@ class VacancyRequirementValidator
             return $this->durationValueSupported($value, $excerpt);
         }
         if ($dimension === 'LANGUAGE') {
-            return $this->languageValueSupported($value, $excerpt);
+            return $this->languageValueSupported($value, $excerpt, $label);
         }
         if (preg_match('/^(?:years|months):\d+(?:[.,]\d+)?$/iu', trim($value)) === 1) {
             return false;
@@ -198,7 +200,7 @@ class VacancyRequirementValidator
         }
 
         $preferred = $this->hasPreferredCue($cueText);
-        $mandatory = preg_match('/\b(?:required|mandatory|must\s+have|need(?:ed)?\s+to\s+have)\b|обязательн|требуется/iu', $cueText) === 1;
+        $mandatory = preg_match('/\b(?:required|requires|mandatory|must\s+have|need(?:ed)?\s+to\s+have)\b|обязательн|требуется/iu', $cueText) === 1;
         if ($preferred && $mandatory) {
             return 'UNCERTAIN';
         }
@@ -413,22 +415,51 @@ class VacancyRequirementValidator
         return false;
     }
 
-    private function languageValueSupported(string $value, string $excerpt): bool
+    private function languageValueSupported(string $value, string $excerpt, string $label): bool
     {
         $value = $this->normalize($value);
-        $language = '(?:english|russian|german|french|spanish|английск\pL*|русск\pL*|немецк\pL*|французск\pL*|испанск\pL*)';
-        $qualification = '(a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
+        $expectedLanguage = $this->languageTokenFromLabel($label);
+        if ($expectedLanguage === null) {
+            return false;
+        }
+        $language = '(?<language>[\\pL][\\pL-]{2,})';
+        $qualification = '(?<qualification>a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $patterns = [
             '/\b'.$language.'\s*(?:at\s+)?(?:(?:language\s+)?(?:proficiency|level)\s*(?:at\s+)?)?(?::|is|of)?\s*'.$qualification.'(?:\s+level)?\b/iu',
             '/\b'.$qualification.'(?:[ -]level)?\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
         ];
         foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $excerpt, $match) === 1 && $this->normalize($match[1]) === $value) {
+            if (preg_match($pattern, $excerpt, $match) === 1
+                && $this->canonicalLanguageName($match['language']) === $expectedLanguage
+                && $this->normalize($match['qualification']) === $value) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function languageTokenFromLabel(string $label): ?string
+    {
+        foreach (['english' => '(?:english|английск\\pL*)', 'russian' => '(?:russian|русск\\pL*)', 'german' => '(?:german|немецк\\pL*)', 'french' => '(?:french|французск\\pL*)', 'spanish' => '(?:spanish|испанск\\pL*)'] as $language => $pattern) {
+            if (preg_match('/\\b'.$pattern.'\\b/iu', $this->normalize($label)) === 1) {
+                return $language;
+            }
+        }
+
+        return $this->qualifiedLanguageToken($this->normalize($label));
+    }
+
+    private function canonicalLanguageName(string $language): string
+    {
+        $language = $this->normalize($language);
+        foreach (['english' => '(?:english|английск\\pL*)', 'russian' => '(?:russian|русск\\pL*)', 'german' => '(?:german|немецк\\pL*)', 'french' => '(?:french|французск\\pL*)', 'spanish' => '(?:spanish|испанск\\pL*)'] as $canonical => $pattern) {
+            if (preg_match('/\\b'.$pattern.'\\b/iu', $language) === 1) {
+                return $canonical;
+            }
+        }
+
+        return $language;
     }
 
     private function durationValueSupported(string $value, string $excerpt): bool

@@ -303,7 +303,12 @@ class VacancyMatchingService
         }
         $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $tokens));
 
-        return preg_match('/\b(?:no|without|never|not)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
+        if ($requirement->dimension === 'WORK_FORMAT'
+            && preg_match('/\b(?:cannot|can\s+not|unable\s+to)\s+(?:work|be)\b.{0,40}\b(?:remote(?:ly)?|hybrid|on[ -]?site|office)\b/iu', $candidateText) === 1) {
+            return true;
+        }
+
+        return preg_match('/\b(?:no|without|never|not|cannot|can\s+not|unable\s+to)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not|cannot|can\s+not|unable\s+to)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
     }
 
     private function languageEvidenceAllowed(VacancyRequirement $requirement, string $candidateText): bool

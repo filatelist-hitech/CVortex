@@ -581,7 +581,7 @@ class VacancyCoreTest extends TestCase
             ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', 'Our stack includes Kubernetes.')]],
             ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', 'Kubernetes is required.')]],
             ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Испанский', 'Испанский B2 обязателен.')]],
-            ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Italian B2', 'Italian B2 is required.')]],
+            ['requirements' => [$this->requirement('TECHNICAL', 'MANDATORY', 'Italian B2', 'Italian B2 is required.', 'B2')]],
         ]);
         $this->app->instance(LlmProvider::class, $provider);
 
@@ -690,6 +690,23 @@ class VacancyCoreTest extends TestCase
         $this->assertSame('MATCH', $updated->json('data.analysis.dimensions.5.result'));
     }
 
+    public function test_inability_statement_cannot_satisfy_a_structured_work_format_requirement(): void
+    {
+        Queue::fake();
+        $user = $this->user('work-format-inability@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'I cannot work remotely.');
+        $source = 'Remote work is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Remote work', $source, 'remote'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MAYBE', $detail->json('data.analysis.recommendation'));
+        $this->assertContains($detail->json('data.analysis.dimensions.5.result'), ['GAP', 'UNKNOWN']);
+    }
+
     public function test_remote_technology_is_not_reclassified_as_work_format(): void
     {
         Queue::fake();
@@ -768,6 +785,21 @@ class VacancyCoreTest extends TestCase
     {
         $source = 'Kubernetes is required for this backend role.';
         $validator = app(VacancyRequirementValidator::class);
+        $this->expectException(VacancyOutputException::class);
+        $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'backend', $source),
+        ]], $source);
+    }
+
+    public function test_active_requires_cue_binds_the_technical_label_and_importance(): void
+    {
+        $source = 'This backend role requires Kubernetes.';
+        $validator = app(VacancyRequirementValidator::class);
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'UNCERTAIN', 'Kubernetes', $source),
+        ]], $source);
+        $this->assertSame('MANDATORY', $validated[0]['importance']);
+
         $this->expectException(VacancyOutputException::class);
         $validator->validate(['requirements' => [
             $this->requirement('TECHNICAL', 'MANDATORY', 'backend', $source),
