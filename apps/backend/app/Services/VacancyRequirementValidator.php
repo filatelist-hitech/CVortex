@@ -65,7 +65,8 @@ class VacancyRequirementValidator
             }
             $dimension = $this->sourceDimension($label, $excerpt);
             if (! $this->labelSupportedByExcerpt($label, $excerpt)
-                || (in_array($dimension, ['TECHNICAL', 'DOMAIN'], true) && ! $this->labelIdentifiesRequirement($label, $excerpt))) {
+                || ((in_array($dimension, ['TECHNICAL', 'DOMAIN'], true) || $this->hasCandidateDirectedCue($excerpt))
+                    && ! $this->labelIdentifiesRequirement($label, $excerpt))) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
@@ -120,8 +121,16 @@ class VacancyRequirementValidator
             return $this->requirementSubjectTokens($excerpt, $generic) === [];
         }
         $cueSubjects = $this->requirementCueSubjectTokens($excerpt, $generic);
+        if ($this->hasCandidateDirectedCue($excerpt)) {
+            return $cueSubjects !== [] && array_intersect($labelTokens, $cueSubjects) !== [];
+        }
 
         return $cueSubjects === [] || array_intersect($labelTokens, $cueSubjects) !== [];
+    }
+
+    private function hasCandidateDirectedCue(string $excerpt): bool
+    {
+        return preg_match('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?=[\pL\pN+#.-])/iu', $excerpt) === 1;
     }
 
     /** @param list<string> $generic
@@ -158,9 +167,10 @@ class VacancyRequirementValidator
             $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['this', 'that', 'role', 'position'])));
         }
 
-        preg_match_all('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,5}[\pL\pN+#.-]+)/iu', $excerpt, $candidateDirected);
+        preg_match_all('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,12}[\pL\pN+#.-]+)/iu', $excerpt, $candidateDirected);
         foreach ($candidateDirected['subject'] as $subject) {
-            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, $generic));
+            $subject = preg_replace('/\s+(?:for|in|on|to\s+succeed\s+in)\s+(?:(?:this|the|our)\s+)?(?:[\pL\pN+#.-]+\s+)?(?:role|position|team|project|department|environment|context)\b.*$/iu', '', $subject) ?? $subject;
+            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['role', 'position', 'team', 'project', 'department', 'environment', 'context'])));
         }
 
         return array_values(array_unique($tokens));
@@ -379,9 +389,14 @@ class VacancyRequirementValidator
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
             '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
             '/\b(?:return|output|emit|print)\s+(?:an?\s+)?empty\s+(?:requirements?\s+)?(?:array|list)\b/iu',
+            '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:any|all|the)\s+)?(?:extract(?:ing|ion)(?:\s+(?:of|any|the|all))*|pars(?:e|ing)|list(?:ing)?|identify(?:ing)?)\s+(?:(?:any|the|all)\s+)?requirements?\b/iu',
+            '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:the|any|all)\s+)?(?:requirement\s+)?(?:extraction|parsing)\b/iu',
+            '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:requirement\s+)?pars(?:e|ing)\b.{0,100}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
+            '/\b(?:skip|omit|ignore|suppress|avoid|prevent)\s+(?:(?:any|all|the)\s+)?requirements?\b/iu',
+            '/\b(?:leave|keep)\s+(?:the\s+)?requirements?\s+empty\b/iu',
+            '/\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
             '/\b(?:do\s+not|don[\'’]t|never)\s+(?:extract|parse|identify|list)\s+(?:any\s+)?(?:requirements?|items?|results?)\b/iu',
             '/\b(?:do\s+not|don[\'’]t|never)\s+(?:consider|use|read|analy[sz]e|process)\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,160}\b(?:reply|respond|return|output|produce|emit)\b.{0,80}\b(?:zero|no|empty|nothing)\s+(?:items?|requirements?|results?|output)\b/iu',
-            '/\b(?:skip|omit)\s+(?:extracting|extraction|parsing|listing|identifying)\s+(?:any\s+|the\s+)?requirements?\b/iu',
             '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
             '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',
         ];

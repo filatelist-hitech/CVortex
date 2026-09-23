@@ -317,7 +317,7 @@ class VacancyMatchingService
             return true;
         }
 
-        return preg_match('/\b(?:no|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
+        return preg_match('/\b(?:no|none|zero|0|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking|do\s+not\s+have|does\s+not\s+have)\s+(?:(?:any|zero|0|\d+(?:[.,]\d+)?)\s+)?(?:(?:years?|months?)\s+(?:of\s+)?)?(?:experience\s+(?:with|in)\s+)?(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|none|zero|0|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
     }
 
     /** @return list<string> */
@@ -601,7 +601,7 @@ class VacancyMatchingService
     private function structuredCandidateValue(string $dimension, string $text): ?string
     {
         $patterns = match ($dimension) {
-            'LOCATION' => ['/\b(?:location|локация|город)\s*:\s*([\pL\pN .-]+)/u'],
+            'LOCATION' => ['/(?:^|\b)(?:location|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|$)/u', '/^\s*(?:based|located|living|lives)\s+in\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|$)/u'],
             'WORK_FORMAT' => [],
             'SALARY' => [],
             'EXPERIENCE' => [],
