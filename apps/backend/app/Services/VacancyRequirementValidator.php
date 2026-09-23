@@ -64,9 +64,13 @@ class VacancyRequirementValidator
                 continue;
             }
             $dimension = $this->sourceDimension($label, $excerpt);
+            $requiresSubjectIdentity = in_array($dimension, ['TECHNICAL', 'DOMAIN', 'EXPERIENCE', 'LANGUAGE'], true)
+                || $this->hasCandidateDirectedCue($excerpt);
+            $identifiesSubject = $dimension === 'LANGUAGE'
+                ? $this->languageTokenFromLabel($label) !== null
+                : $this->labelIdentifiesRequirement($label, $excerpt);
             if (! $this->labelSupportedByExcerpt($label, $excerpt)
-                || ((in_array($dimension, ['TECHNICAL', 'DOMAIN'], true) || $this->hasCandidateDirectedCue($excerpt))
-                    && ! $this->labelIdentifiesRequirement($label, $excerpt))) {
+                || ($requiresSubjectIdentity && ! $identifiesSubject)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
@@ -116,16 +120,36 @@ class VacancyRequirementValidator
     private function labelIdentifiesRequirement(string $label, string $excerpt): bool
     {
         $generic = $this->genericRequirementTerms();
-        $labelTokens = $this->requirementSubjectTokens($label, $generic);
+        $labelTokens = $this->requirementSubjectTokens($label, array_merge($generic, $this->requirementModifiers()));
         if ($labelTokens === []) {
-            return $this->requirementSubjectTokens($excerpt, $generic) === [];
+            return false;
         }
         $cueSubjects = $this->requirementCueSubjectTokens($excerpt, $generic);
         if ($this->hasCandidateDirectedCue($excerpt)) {
-            return $cueSubjects !== [] && array_intersect($labelTokens, $cueSubjects) !== [];
+            return $this->labelMatchesCueSubject($labelTokens, $cueSubjects);
         }
 
-        return $cueSubjects === [] || array_intersect($labelTokens, $cueSubjects) !== [];
+        return $cueSubjects === [] || $this->labelMatchesCueSubject($labelTokens, $cueSubjects);
+    }
+
+    /** @param list<string> $labelTokens
+     * @param  list<list<string>>  $cueSubjects
+     */
+    private function labelMatchesCueSubject(array $labelTokens, array $cueSubjects): bool
+    {
+        foreach ($cueSubjects as $subject) {
+            if (array_diff($labelTokens, $subject) === []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return list<string> */
+    private function requirementModifiers(): array
+    {
+        return ['strong', 'solid', 'good', 'excellent', 'deep', 'advanced', 'proven', 'practical', 'hands', 'on', 'extensive', 'commercial', 'professional', 'confident', 'fluent'];
     }
 
     private function hasCandidateDirectedCue(string $excerpt): bool
@@ -140,40 +164,52 @@ class VacancyRequirementValidator
     {
         return array_values(array_filter(
             array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($text), -1, PREG_SPLIT_NO_EMPTY) ?: []),
-            fn (string $token): bool => ! in_array($token, $generic, true) && ! is_numeric($token),
+            fn (string $token): bool => ! in_array($token, $generic, true)
+                && ! is_numeric($token)
+                && preg_match('/^\d+(?:[.,]\d+)?\+?$/u', $token) !== 1,
         ));
     }
 
     /** @return list<string> */
     private function genericRequirementTerms(): array
     {
-        return ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
+        return ['experience', 'building', 'at', 'least', 'minimum', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
     }
 
     /** @param list<string> $generic
-     * @return list<string>
+     * @return list<list<string>>
      */
     private function requirementCueSubjectTokens(string $excerpt, array $generic): array
     {
-        $tokens = [];
+        $subjects = [];
+        $subjectTerms = array_merge($generic, $this->requirementModifiers());
         $cue = '(?:required|mandatory|must\\s+have|need(?:ed)?\\s+to\\s+have|will\\s+be\\s+a\\s+plus|nice\\s+to\\s+have|preferred|desirable|optional)';
         preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?:is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $passive);
         foreach ($passive['subject'] as $subject) {
-            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position'])));
+            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position']));
+            if ($tokensForSubject !== []) {
+                $subjects[] = $tokensForSubject;
+            }
         }
 
         preg_match_all('/\\b(?:this\\s+)?(?:[\\pL\\pN+#.-]+\\s+){0,4}(?:role|position)?\\s*requires\\s+(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)/iu', $excerpt, $active);
         foreach ($active['subject'] as $subject) {
-            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['this', 'that', 'role', 'position'])));
+            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['this', 'that', 'role', 'position']));
+            if ($tokensForSubject !== []) {
+                $subjects[] = $tokensForSubject;
+            }
         }
 
         preg_match_all('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,12}[\pL\pN+#.-]+)/iu', $excerpt, $candidateDirected);
         foreach ($candidateDirected['subject'] as $subject) {
             $subject = preg_replace('/\s+(?:for|in|on|to\s+succeed\s+in)\s+(?:(?:this|the|our)\s+)?(?:[\pL\pN+#.-]+\s+)?(?:role|position|team|project|department|environment|context)\b.*$/iu', '', $subject) ?? $subject;
-            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['role', 'position', 'team', 'project', 'department', 'environment', 'context'])));
+            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
+            if ($tokensForSubject !== []) {
+                $subjects[] = $tokensForSubject;
+            }
         }
 
-        return array_values(array_unique($tokens));
+        return $subjects;
     }
 
     private function normalizedValueSupported(string $dimension, string $value, string $label, string $excerpt): bool
@@ -388,14 +424,15 @@ class VacancyRequirementValidator
             '/<(?:system|assistant|developer|instruction|prompt)(?:\s[^>]*)?>[\s\S]*?\b'.$directive.'\b/iu',
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
             '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
-            '/\b(?:return|output|emit|print)\s+(?:an?\s+)?empty\s+(?:requirements?\s+)?(?:array|list)\b/iu',
+            '/\b(?:return|output|emit|print)\s+(?:an?\s+)?(?:empty\s+requirements?\s+(?:array|list)|empty\s+(?:array|list)\s+of\s+requirements?)\b/iu',
+            '/\b(?:return|output|produce|emit)\s+no\s+requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:any|all|the)\s+)?(?:extract(?:ing|ion)(?:\s+(?:of|any|the|all))*|pars(?:e|ing)|list(?:ing)?|identify(?:ing)?)\s+(?:(?:any|the|all)\s+)?requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:the|any|all)\s+)?(?:requirement\s+)?(?:extraction|parsing)\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:requirement\s+)?pars(?:e|ing)\b.{0,100}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
             '/\b(?:skip|omit|ignore|suppress|avoid|prevent)\s+(?:(?:any|all|the)\s+)?requirements?\b/iu',
             '/\b(?:leave|keep)\s+(?:the\s+)?requirements?\s+empty\b/iu',
-            '/\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
-            '/\b(?:do\s+not|don[\'’]t|never)\s+(?:extract|parse|identify|list)\s+(?:any\s+)?(?:requirements?|items?|results?)\b/iu',
+            '/\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\]|empty\s+(?:array|list))(?=\s|$|[.!?,])[^.!?\n]{0,80}\b(?:requirements?|extraction|parsing|vacancy|job\s+description)\b|\b(?:requirements?|extraction|parsing|vacancy|job\s+description)\b[^.!?\n]{0,80}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\]|empty\s+(?:array|list))(?=\s|$|[.!?,])/iu',
+            '/\b(?:do\s+not|don[\'’]t|never)\s+(?:extract|parse|identify|list)\s+(?:any\s+)?(?:requirements?|items?|results?|anything)\b/iu',
             '/\b(?:do\s+not|don[\'’]t|never)\s+(?:consider|use|read|analy[sz]e|process)\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,160}\b(?:reply|respond|return|output|produce|emit)\b.{0,80}\b(?:zero|no|empty|nothing)\s+(?:items?|requirements?|results?|output)\b/iu',
             '/\b(?:invoke|execute|make)\s+(?:a\s+)?tool\s+call\b/iu',
             '/игнорируй\s+.*(?:инструкц|правил)|(?:системное\s+сообщение|ассистент|инструкция\s+разработчика)\s*:\s*(?:выведи|верни|игнорируй|оцени)/iu',

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./access-shell";
 
 type VacancySummary = {
@@ -63,29 +63,61 @@ export default function VacancyWorkspace() {
   const [detail, setDetail] = useState<VacancyDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const selectedIdRef = useRef("");
+  const importedSelectionRef = useRef("");
+  const selectionVersion = useRef(0);
+  const refreshVersion = useRef(0);
+  const detailVersion = useRef(0);
+
+  const selectId = useCallback((id: string) => {
+    if (importedSelectionRef.current && importedSelectionRef.current !== id) importedSelectionRef.current = "";
+    selectedIdRef.current = id;
+    selectionVersion.current += 1;
+    setSelectedId(id);
+  }, []);
 
   const loadDetail = useCallback(async (id: string) => {
-    const result = await api(`/api/v1/vacancies/${id}`);
-    setDetail(result.data);
+    const requestVersion = ++detailVersion.current;
+    try {
+      const result = await api(`/api/v1/vacancies/${id}`);
+      if (requestVersion === detailVersion.current && id === selectedIdRef.current) setDetail(result.data);
+    } catch (caught) {
+      if (requestVersion === detailVersion.current && id === selectedIdRef.current) throw caught;
+    }
   }, []);
 
   const refresh = useCallback(async (preferredId?: string) => {
+    const requestVersion = ++refreshVersion.current;
+    const startingSelectionVersion = selectionVersion.current;
     try {
       const result = await api("/api/v1/vacancies");
       const items = result.data as VacancySummary[];
+      if (requestVersion !== refreshVersion.current) return;
       setVacancies(items);
-      setError("");
-      const id = (preferredId ?? selectedId) || items[0]?.id || "";
+      const currentId = selectedIdRef.current;
+      if (selectionVersion.current === startingSelectionVersion) setError("");
+      if (selectionVersion.current !== startingSelectionVersion
+        && (items.some((item) => item.id === currentId) || importedSelectionRef.current === currentId)) return;
+      const preferenceIsCurrent = selectionVersion.current === startingSelectionVersion;
+      const preferredIsPresent = preferredId && items.some((item) => item.id === preferredId);
+      const id = currentId && items.some((item) => item.id === currentId)
+        ? currentId
+        : (preferenceIsCurrent && preferredIsPresent ? preferredId : items[0]?.id) || "";
       if (id) {
-        setSelectedId(id);
+        if (id === importedSelectionRef.current) importedSelectionRef.current = "";
+        if (id !== currentId) selectId(id);
         await loadDetail(id);
       } else {
+        importedSelectionRef.current = "";
+        selectId("");
         setDetail(null);
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Vacancies could not be loaded.");
+      if (requestVersion === refreshVersion.current && selectionVersion.current === startingSelectionVersion) {
+        setError(caught instanceof Error ? caught.message : "Vacancies could not be loaded.");
+      }
     }
-  }, [loadDetail, selectedId]);
+  }, [loadDetail, selectId]);
 
   useEffect(() => {
     // Owner-scoped API hydration is the external synchronization performed by this effect.
@@ -111,7 +143,8 @@ export default function VacancyWorkspace() {
         body: JSON.stringify({ source_text: values.source_text, source_url: values.source_url || null }),
       });
       form.reset();
-      setSelectedId(result.data.id);
+      importedSelectionRef.current = result.data.id;
+      selectId(result.data.id);
       await refresh(result.data.id);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The vacancy could not be added.");
@@ -121,12 +154,16 @@ export default function VacancyWorkspace() {
   }
 
   async function select(id: string) {
-    setSelectedId(id);
+    selectId(id);
+    const currentSelectionVersion = selectionVersion.current;
+    setDetail(null);
     setError("");
     try {
       await loadDetail(id);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The vacancy could not be loaded.");
+      if (currentSelectionVersion === selectionVersion.current && selectedIdRef.current === id) {
+        setError(caught instanceof Error ? caught.message : "The vacancy could not be loaded.");
+      }
     }
   }
 

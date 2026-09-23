@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Home from "../page";
@@ -230,19 +230,30 @@ describe("access shell", () => {
   });
 
   it("selects the newly imported vacancy after refreshing the saved list", async () => {
-    const summaries = [
-      { id: "vacancy-old", title: "Old vacancy", company: null, source_url: null, analysis_status: "COMPLETED", error_code: null, snapshot_version: 1, recommendation: "APPLY", analysis_stale: false },
-      { id: "vacancy-new", title: "New vacancy", company: null, source_url: null, analysis_status: "PENDING", error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
-    ];
+    let poll: (() => void) | undefined;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
+      if (typeof handler === "function") poll = handler as () => void;
+      return 1;
+    }) as typeof window.setInterval);
+    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    const oldSummary = { id: "vacancy-old", title: "Old vacancy", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false };
+    const newSummary = { id: "vacancy-new", title: "New vacancy", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false };
+    const summaries = [oldSummary, newSummary];
     const detail = (id: string) => ({
       ...summaries.find((item) => item.id === id)!, source_type: "PASTED_TEXT",
       snapshot: { id: `snapshot-${id}`, version: 1, raw_text: "Laravel required.", source_url: null, imported_at: "2026-09-22T00:00:00Z" }, requirements: [], analysis: null,
     });
+    let resolvePoll!: (response: Response) => void;
+    const pollList = new Promise<Response>((resolve) => { resolvePoll = resolve; });
+    let listCalls = 0;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
       const path = String(input);
       if (path === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } });
       if (path === "/api/v1/career") return Response.json({ data: { facts: [], claims: [], sources: [] } });
-      if (path === "/api/v1/vacancies" && !options?.method) return Response.json({ data: summaries });
+      if (path === "/api/v1/vacancies" && !options?.method) {
+        listCalls += 1;
+        return listCalls === 1 ? Response.json({ data: [oldSummary] }) : listCalls === 2 ? pollList : Response.json({ data: summaries });
+      }
       if (path === "/api/v1/vacancies" && options?.method === "POST") return Response.json({ data: { id: "vacancy-new" } }, { status: 202 });
       if (path === "/api/v1/vacancies/vacancy-old") return Response.json({ data: detail("vacancy-old") });
       if (path === "/api/v1/vacancies/vacancy-new") return Response.json({ data: detail("vacancy-new") });
@@ -251,10 +262,143 @@ describe("access shell", () => {
 
     render(<Home />);
     await screen.findByRole("button", { name: /Old vacancy/ });
+    act(() => poll?.());
+    await waitFor(() => expect(listCalls).toBe(2));
     fireEvent.change(screen.getByLabelText("Vacancy text"), { target: { value: "Laravel required." } });
     fireEvent.click(screen.getByRole("button", { name: "Preserve and analyze" }));
 
     expect(await screen.findByRole("heading", { name: "New vacancy" })).toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([path]) => String(path) === "/api/v1/vacancies/vacancy-new")).toBe(true);
+    await act(async () => { resolvePoll(Response.json({ data: [oldSummary] })); });
+    expect(screen.getByRole("button", { name: /New vacancy/ })).toHaveClass("vacancy-selected");
+    expect(screen.getByRole("heading", { name: "New vacancy" })).toBeInTheDocument();
+  });
+
+  it("keeps a newer explicit selection when a polling list request resolves", async () => {
+    let poll: (() => void) | undefined;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
+      if (typeof handler === "function") poll = handler as () => void;
+      return 1;
+    }) as typeof window.setInterval);
+    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    const summaries = [
+      { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+      { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: "APPLY" as const, analysis_stale: false },
+    ];
+    const detail = (id: string) => ({
+      ...summaries.find((item) => item.id === id)!, source_type: "PASTED_TEXT" as const,
+      snapshot: { id: `snapshot-${id}`, version: 1, raw_text: "Laravel required.", source_url: null, imported_at: "2026-09-22T00:00:00Z" }, requirements: [], analysis: null,
+    });
+    let resolvePoll!: (response: Response) => void;
+    const pollList = new Promise<Response>((resolve) => { resolvePoll = resolve; });
+    let listCalls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Promise.resolve(Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } }));
+      if (path === "/api/v1/career") return Promise.resolve(Response.json({ data: { facts: [], claims: [], sources: [] } }));
+      if (path === "/api/v1/vacancies") {
+        listCalls += 1;
+        return listCalls === 1 ? Promise.resolve(Response.json({ data: summaries })) : pollList;
+      }
+      if (path === "/api/v1/vacancies/vacancy-a") return Promise.resolve(Response.json({ data: detail("vacancy-a") }));
+      if (path === "/api/v1/vacancies/vacancy-b") return Promise.resolve(Response.json({ data: detail("vacancy-b") }));
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    fireEvent.click(await screen.findByRole("button", { name: /Vacancy A/ }));
+    act(() => poll?.());
+    await waitFor(() => expect(listCalls).toBe(2));
+    fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
+    expect(await screen.findByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
+
+    await act(async () => { resolvePoll(Response.json({ data: summaries })); });
+
+    expect(screen.getByRole("button", { name: /Vacancy B/ })).toHaveClass("vacancy-selected");
+    expect(screen.getByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
+  });
+
+  it("ignores an older polling list response when refreshes overlap", async () => {
+    let poll: (() => void) | undefined;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
+      if (typeof handler === "function") poll = handler as () => void;
+      return 1;
+    }) as typeof window.setInterval);
+    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    const summaries = [
+      { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+      { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: "APPLY" as const, analysis_stale: false },
+    ];
+    const detailB = { ...summaries[1], source_type: "PASTED_TEXT" as const, snapshot: { id: "snapshot-b", version: 1, raw_text: "Laravel required.", source_url: null, imported_at: "2026-09-22T00:00:00Z" }, requirements: [], analysis: null };
+    let resolveOld!: (response: Response) => void;
+    let resolveNew!: (response: Response) => void;
+    const oldList = new Promise<Response>((resolve) => { resolveOld = resolve; });
+    const newList = new Promise<Response>((resolve) => { resolveNew = resolve; });
+    let listCalls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Promise.resolve(Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } }));
+      if (path === "/api/v1/career") return Promise.resolve(Response.json({ data: { facts: [], claims: [], sources: [] } }));
+      if (path === "/api/v1/vacancies") {
+        listCalls += 1;
+        return listCalls === 1 ? Promise.resolve(Response.json({ data: summaries })) : listCalls === 2 ? oldList : newList;
+      }
+      if (path === "/api/v1/vacancies/vacancy-b") return Promise.resolve(Response.json({ data: detailB }));
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    await screen.findByRole("button", { name: /Vacancy A/ });
+    act(() => { poll?.(); poll?.(); });
+    await waitFor(() => expect(listCalls).toBe(3));
+    fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
+    await screen.findByRole("heading", { name: "Vacancy B" });
+
+    await act(async () => { resolveNew(Response.json({ data: summaries })); });
+    await act(async () => { resolveOld(Response.json({ data: [summaries[0]] })); });
+
+    expect(screen.getByRole("button", { name: /Vacancy B/ })).toHaveClass("vacancy-selected");
+    expect(screen.getByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
+  });
+
+  it("falls back when the selected vacancy disappears during a refresh", async () => {
+    let poll: (() => void) | undefined;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
+      if (typeof handler === "function") poll = handler as () => void;
+      return 1;
+    }) as typeof window.setInterval);
+    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    const summaries = [
+      { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+      { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: "APPLY" as const, analysis_stale: false },
+    ];
+    const detail = (id: string) => ({ ...summaries.find((item) => item.id === id)!, source_type: "PASTED_TEXT" as const, snapshot: { id: `snapshot-${id}`, version: 1, raw_text: "Laravel required.", source_url: null, imported_at: "2026-09-22T00:00:00Z" }, requirements: [], analysis: null });
+    let resolvePoll!: (response: Response) => void;
+    const pollList = new Promise<Response>((resolve) => { resolvePoll = resolve; });
+    let listCalls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Promise.resolve(Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } }));
+      if (path === "/api/v1/career") return Promise.resolve(Response.json({ data: { facts: [], claims: [], sources: [] } }));
+      if (path === "/api/v1/vacancies") {
+        listCalls += 1;
+        return listCalls === 1 ? Promise.resolve(Response.json({ data: summaries })) : pollList;
+      }
+      if (path === "/api/v1/vacancies/vacancy-a") return Promise.resolve(Response.json({ data: detail("vacancy-a") }));
+      if (path === "/api/v1/vacancies/vacancy-b") return Promise.resolve(Response.json({ data: detail("vacancy-b") }));
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    await screen.findByRole("button", { name: /Vacancy A/ });
+    act(() => poll?.());
+    await waitFor(() => expect(listCalls).toBe(2));
+    fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
+    await screen.findByRole("heading", { name: "Vacancy B" });
+
+    await act(async () => { resolvePoll(Response.json({ data: [summaries[0]] })); });
+
+    expect(screen.getByRole("button", { name: /Vacancy A/ })).toHaveClass("vacancy-selected");
+    expect(screen.getByRole("heading", { name: "Vacancy A" })).toBeInTheDocument();
   });
 });
