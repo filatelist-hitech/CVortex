@@ -312,7 +312,7 @@ describe("access shell", () => {
     fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
     expect(await screen.findByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
 
-    await act(async () => { resolvePoll(Response.json({ data: summaries })); });
+    await act(async () => { resolvePoll(Response.json({ data: [summaries[0]] })); });
 
     expect(screen.getByRole("button", { name: /Vacancy B/ })).toHaveClass("vacancy-selected");
     expect(screen.getByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
@@ -396,9 +396,9 @@ describe("access shell", () => {
     fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
     await screen.findByRole("heading", { name: "Vacancy B" });
 
-    await act(async () => { resolvePoll(Response.json({ data: [summaries[0]] })); });
+    await act(async () => { resolvePoll(Response.json({ data: [summaries[1]] })); });
 
-    expect(screen.getByRole("button", { name: /Vacancy A/ })).toHaveClass("vacancy-selected");
-    expect(screen.getByRole("heading", { name: "Vacancy A" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Vacancy B/ })).toHaveClass("vacancy-selected");
+    expect(screen.getByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
   });
 });

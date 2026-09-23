@@ -1017,6 +1017,37 @@ class VacancyCoreTest extends TestCase
         ]], $source);
     }
 
+    public function test_generic_role_label_cannot_stand_in_for_a_qualification_subject(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $source = 'Strong backend skills are required.';
+
+        $this->expectException(VacancyOutputException::class);
+        $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'backend', $source),
+        ]], $source);
+    }
+
+    public function test_real_qualification_subject_remains_accepted_when_role_framing_is_present(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $source = 'Strong Kubernetes skills are required for this backend role.';
+
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $source),
+        ]], $source);
+
+        $this->assertSame('Kubernetes', $validated[0]['label']);
+    }
+
+    public function test_benign_api_empty_requirements_description_is_not_prompt_injection(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $source = 'The API may return no requirements when no fields are configured.';
+
+        $this->assertSame([], $validator->validate(['requirements' => []], $source));
+    }
+
     public function test_active_requires_cue_binds_the_technical_label_and_importance(): void
     {
         $source = 'This backend role requires Kubernetes.';

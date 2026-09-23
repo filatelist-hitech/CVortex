@@ -93,11 +93,12 @@ export default function VacancyWorkspace() {
       const result = await api("/api/v1/vacancies");
       const items = result.data as VacancySummary[];
       if (requestVersion !== refreshVersion.current) return;
+      // A response started before the latest explicit selection may update
+      // neither the list nor the selection: its snapshot is stale user intent.
+      if (selectionVersion.current !== startingSelectionVersion) return;
       setVacancies(items);
       const currentId = selectedIdRef.current;
       if (selectionVersion.current === startingSelectionVersion) setError("");
-      if (selectionVersion.current !== startingSelectionVersion
-        && (items.some((item) => item.id === currentId) || importedSelectionRef.current === currentId)) return;
       const preferenceIsCurrent = selectionVersion.current === startingSelectionVersion;
       const preferredIsPresent = preferredId && items.some((item) => item.id === preferredId);
       const id = currentId && items.some((item) => item.id === currentId)

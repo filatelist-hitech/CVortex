@@ -121,7 +121,7 @@ class VacancyRequirementValidator
     {
         $generic = $this->genericRequirementTerms();
         $labelTokens = $this->requirementSubjectTokens($label, array_merge($generic, $this->requirementModifiers()));
-        if ($labelTokens === []) {
+        if ($labelTokens === [] || (count($labelTokens) === 1 && in_array($labelTokens[0], $this->roleFragments(), true) && $this->normalize($label) === $labelTokens[0])) {
             return false;
         }
         $cueSubjects = $this->requirementCueSubjectTokens($excerpt, $generic);
@@ -174,6 +174,12 @@ class VacancyRequirementValidator
     private function genericRequirementTerms(): array
     {
         return ['experience', 'building', 'at', 'least', 'minimum', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
+    }
+
+    /** @return list<string> */
+    private function roleFragments(): array
+    {
+        return ['backend', 'frontend', 'fullstack', 'full-stack', 'developer', 'engineer', 'engineering', 'development', 'software', 'web', 'mobile', 'data', 'role', 'position', 'team', 'project', 'department', 'environment', 'context'];
     }
 
     /** @param list<string> $generic
@@ -425,7 +431,7 @@ class VacancyRequirementValidator
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
             '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
             '/\b(?:return|output|emit|print)\s+(?:an?\s+)?(?:empty\s+requirements?\s+(?:array|list)|empty\s+(?:array|list)\s+of\s+requirements?)\b/iu',
-            '/\b(?:return|output|produce|emit)\s+no\s+requirements?\b/iu',
+            '/(?<!may )\b(?:return|output|produce|emit)\s+no\s+requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:any|all|the)\s+)?(?:extract(?:ing|ion)(?:\s+(?:of|any|the|all))*|pars(?:e|ing)|list(?:ing)?|identify(?:ing)?)\s+(?:(?:any|the|all)\s+)?requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:the|any|all)\s+)?(?:requirement\s+)?(?:extraction|parsing)\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:requirement\s+)?pars(?:e|ing)\b.{0,100}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
