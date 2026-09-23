@@ -259,23 +259,27 @@ class VacancyMatchingService
             ? $this->experienceEvidenceTerms($requirement)
             : $this->normalize($requirement->label);
         foreach ($facts as $fact) {
-            $text = $this->normalize($fact->approvedAssertion());
-            if ($this->directSupportAllowed($requirement, $text)
-                && ! $this->candidateEvidenceNegated($requirement, $text)
-                && $this->languageEvidenceAllowed($requirement, $text)
-                && $this->languageQualificationMatches($requirement, $text)
-                && $this->containsRequirementTerms($text, $needle)) {
-                return ['type' => 'fact', 'id' => (string) $fact->id];
+            foreach ($this->candidateClauses($fact->approvedAssertion()) as $clause) {
+                $text = $this->normalize($clause);
+                if ($this->directSupportAllowed($requirement, $text)
+                    && ! $this->candidateEvidenceNegated($requirement, $text)
+                    && $this->languageEvidenceAllowed($requirement, $text)
+                    && $this->languageQualificationMatches($requirement, $text)
+                    && $this->containsRequirementTerms($text, $needle)) {
+                    return ['type' => 'fact', 'id' => (string) $fact->id];
+                }
             }
         }
         foreach ($claims as $claim) {
-            $text = $this->normalize($claim->statement);
-            if ($this->directSupportAllowed($requirement, $text)
-                && ! $this->candidateEvidenceNegated($requirement, $text)
-                && $this->languageEvidenceAllowed($requirement, $text)
-                && $this->languageQualificationMatches($requirement, $text)
-                && $this->containsRequirementTerms($text, $needle)) {
-                return ['type' => 'claim', 'id' => (string) $claim->id];
+            foreach ($this->candidateClauses($claim->statement) as $clause) {
+                $text = $this->normalize($clause);
+                if ($this->directSupportAllowed($requirement, $text)
+                    && ! $this->candidateEvidenceNegated($requirement, $text)
+                    && $this->languageEvidenceAllowed($requirement, $text)
+                    && $this->languageQualificationMatches($requirement, $text)
+                    && $this->containsRequirementTerms($text, $needle)) {
+                    return ['type' => 'claim', 'id' => (string) $claim->id];
+                }
             }
         }
 
@@ -303,12 +307,28 @@ class VacancyMatchingService
         }
         $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $tokens));
 
-        if ($requirement->dimension === 'WORK_FORMAT'
-            && preg_match('/\b(?:cannot|can\s+not|unable\s+to)\s+(?:work|be)\b.{0,40}\b(?:remote(?:ly)?|hybrid|on[ -]?site|office)\b/iu', $candidateText) === 1) {
+        return $this->subjectNegated($candidateText, $subject, $requirement->dimension);
+    }
+
+    private function subjectNegated(string $candidateText, string $subject, string $dimension): bool
+    {
+        if ($dimension === 'WORK_FORMAT'
+            && preg_match('/\b(?:cannot|can\s+not|unable\s+to|(?:do|does|did|have|has|had)\s+not|never)\s+(?:work|be)\b.{0,40}\b(?:remote(?:ly)?|hybrid|on[ -]?site|office)\b/iu', $candidateText) === 1) {
             return true;
         }
 
         return preg_match('/\b(?:no|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
+    }
+
+    /** @return list<string> */
+    private function candidateClauses(string $text): array
+    {
+        // A migration from a negative source system to positive production use
+        // describes two distinct occurrences of the same technology.
+        $text = preg_replace('/(\b(?:migrated|moved|moving)\s+from\b[^.;!?\n]+?)\s+to\s+(?=[\pL])/iu', '$1; ', $text) ?? $text;
+        $clauses = preg_split('/\.(?=\s|$|[A-ZА-Я])|[;!?\n\r]+|,\s*(?i:but|while)\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_filter(array_map('trim', $clauses), fn (string $clause): bool => $clause !== ''));
     }
 
     private function languageEvidenceAllowed(VacancyRequirement $requirement, string $candidateText): bool
@@ -426,16 +446,19 @@ class VacancyMatchingService
         ];
         $needle = $this->normalize($requirement->label);
         foreach ($families as $family) {
-            $required = array_values(array_filter($family, fn (string $term): bool => str_contains($needle, $term)));
+            $required = array_values(array_filter($family, fn (string $term): bool => $this->containsRequirementTerms($needle, $term)));
             if ($required === []) {
                 continue;
             }
             foreach ([['type' => 'fact', 'items' => $facts], ['type' => 'claim', 'items' => $claims]] as $source) {
                 foreach ($source['items'] as $item) {
-                    $text = $this->normalize($item instanceof CareerFact ? $item->approvedAssertion() : $item->statement);
-                    foreach (array_diff($family, $required) as $adjacent) {
-                        if (str_contains($text, $adjacent)) {
-                            return ['type' => $source['type'], 'id' => (string) $item->id];
+                    foreach ($this->candidateClauses($item instanceof CareerFact ? $item->approvedAssertion() : $item->statement) as $clause) {
+                        $text = $this->normalize($clause);
+                        foreach (array_diff($family, $required) as $adjacent) {
+                            if ($this->containsRequirementTerms($text, $adjacent)
+                                && ! $this->subjectNegated($text, preg_quote($adjacent, '/'), $requirement->dimension)) {
+                                return ['type' => $source['type'], 'id' => (string) $item->id];
+                            }
                         }
                     }
                 }
@@ -460,17 +483,19 @@ class VacancyMatchingService
         }
         $candidates = [];
         foreach ($facts as $fact) {
-            $rawText = $fact->approvedAssertion();
-            $text = $this->normalize($rawText);
-            if ($this->relevantStructuredEvidence($requirement, $rawText) && ! $this->candidateEvidenceNegated($requirement, $text)) {
-                $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $text, 'raw_text' => $rawText];
+            foreach ($this->candidateClauses($fact->approvedAssertion()) as $rawText) {
+                $text = $this->normalize($rawText);
+                if ($this->relevantStructuredEvidence($requirement, $rawText) && ! $this->candidateEvidenceNegated($requirement, $text)) {
+                    $candidates[] = ['type' => 'fact', 'id' => (string) $fact->id, 'text' => $text, 'raw_text' => $rawText];
+                }
             }
         }
         foreach ($claims as $claim) {
-            $rawText = $claim->statement;
-            $text = $this->normalize($rawText);
-            if ($this->relevantStructuredEvidence($requirement, $rawText) && ! $this->candidateEvidenceNegated($requirement, $text)) {
-                $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $text, 'raw_text' => $rawText];
+            foreach ($this->candidateClauses($claim->statement) as $rawText) {
+                $text = $this->normalize($rawText);
+                if ($this->relevantStructuredEvidence($requirement, $rawText) && ! $this->candidateEvidenceNegated($requirement, $text)) {
+                    $candidates[] = ['type' => 'claim', 'id' => (string) $claim->id, 'text' => $text, 'raw_text' => $rawText];
+                }
             }
         }
 
@@ -833,6 +858,13 @@ class VacancyMatchingService
 
     private function normalize(string $value): string
     {
-        return trim((string) preg_replace('/[^\pL\pN+#.:₽]+/u', ' ', mb_strtolower($value)));
+        $value = str_replace('’', "'", mb_strtolower($value));
+        $value = str_replace(
+            ["don't", "doesn't", "didn't", "haven't", "hasn't", "hadn't", "can't"],
+            ['do not', 'does not', 'did not', 'have not', 'has not', 'had not', 'cannot'],
+            $value,
+        );
+
+        return trim((string) preg_replace('/[^\pL\pN+#.:₽]+/u', ' ', $value));
     }
 }

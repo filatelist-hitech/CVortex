@@ -77,41 +77,38 @@ class VacancyAnalysisService
 
         try {
             if (! VacancyLlmRun::query()->where('vacancy_snapshot_id', $snapshot->id)->where('status', 'COMPLETED')->exists()) {
-                $this->extractRequirements($user, $vacancy, $snapshot);
+                $this->extractRequirements($user, $snapshot);
             }
             $analysis = $this->matching->analyze($user, $vacancy, $snapshot);
-            if ($this->isCurrentSnapshot($snapshot)) {
-                $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_COMPLETED, 'error_code' => null])->save();
-            }
+            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_COMPLETED);
 
             return $analysis;
         } catch (VacancyOutputException $exception) {
-            if ($this->isCurrentSnapshot($snapshot)) {
-                $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'INVALID_EXTRACTION_RESULT'])->save();
-            }
+            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'INVALID_EXTRACTION_RESULT');
             throw $exception;
         } catch (LlmProviderException $exception) {
-            if ($this->isCurrentSnapshot($snapshot)) {
-                $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR'])->save();
-            }
+            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR');
             throw $exception;
         } catch (QueryException) {
-            if ($this->isCurrentSnapshot($snapshot)) {
-                $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'ANALYSIS_ERROR'])->save();
-            }
+            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR');
             throw new SafeVacancyException;
+        } catch (Throwable $exception) {
+            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR');
+            throw $exception;
         }
     }
 
-    private function isCurrentSnapshot(VacancySnapshot $snapshot): bool
+    private function transitionCurrentSnapshot(VacancySnapshot $snapshot, string $status, ?string $errorCode = null): void
     {
-        $latestId = VacancySnapshot::query()->where('owner_id', $snapshot->owner_id)
-            ->where('vacancy_id', $snapshot->vacancy_id)->latest('version')->value('id');
-
-        return hash_equals((string) $snapshot->id, (string) $latestId);
+        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+            ->where('analysis_status', Vacancy::STATUS_RUNNING)
+            ->whereRaw(
+                'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
+                [$snapshot->version],
+            )->update(['analysis_status' => $status, 'error_code' => $errorCode, 'updated_at' => now()]);
     }
 
-    private function extractRequirements(User $user, Vacancy $vacancy, VacancySnapshot $snapshot): void
+    private function extractRequirements(User $user, VacancySnapshot $snapshot): void
     {
         try {
             $skill = $this->skills->vacancyRequirementExtraction();
@@ -128,7 +125,7 @@ class VacancyAnalysisService
                 'retry_count' => $retryCount,
             ]);
         } catch (Throwable $exception) {
-            $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'SETUP_ERROR'])->save();
+            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'SETUP_ERROR');
             throw $exception;
         }
 

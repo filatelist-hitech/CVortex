@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\AnalyzeVacancy;
 use App\Models\CareerFact;
 use App\Models\Claim;
 use App\Models\Vacancy;
@@ -14,6 +13,7 @@ use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
 use App\Services\VacancyIngestionService;
 use App\Services\VacancyMatchingService;
+use App\Services\VacancyReanalysisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -131,15 +131,11 @@ class VacancyController extends Controller
         ]]);
     }
 
-    public function reanalyze(Request $request, string $id): JsonResponse
+    public function reanalyze(Request $request, string $id, VacancyReanalysisService $service): JsonResponse
     {
-        $vacancy = Vacancy::query()->where('owner_id', $request->user()->id)->findOrFail($id);
-        $snapshot = VacancySnapshot::query()->where('owner_id', $request->user()->id)
-            ->where('vacancy_id', $vacancy->id)->latest('version')->firstOrFail();
-        $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null])->save();
-        AnalyzeVacancy::dispatch((string) $request->user()->id, (string) $snapshot->id)->afterCommit();
+        $result = $service->queue($request->user(), $id);
 
-        return response()->json(['data' => ['id' => $vacancy->id, 'analysis_status' => Vacancy::STATUS_PENDING]], 202);
+        return response()->json(['data' => ['id' => $id, 'analysis_status' => $result['status']]], 202);
     }
 
     /** @return list<array<string, mixed>> */

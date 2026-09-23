@@ -53,7 +53,11 @@ class VacancyRequirementValidator
             if ($this->normalize($label) === '') {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
-            if ($this->isInstructionAttack($label.' '.$excerpt) || $this->isMarketingNoise($excerpt)) {
+            if ($this->isInstructionAttack($label.' '.$excerpt)) {
+                continue;
+            }
+            $excerpt = $this->boundClause($label, $excerpt);
+            if ($this->isMarketingNoise($excerpt)) {
                 continue;
             }
             if ($this->hasNegatedRequirement($label, $excerpt)) {
@@ -84,6 +88,20 @@ class VacancyRequirementValidator
         }
 
         return $validated;
+    }
+
+    private function boundClause(string $label, string $excerpt): string
+    {
+        // Preserve key/value colons (Location: Berlin), but separate independent
+        // sentence, list and semicolon clauses before deriving any semantics.
+        $clauses = preg_split('/\.(?=\s|$|[A-ZА-Я])|[;!?\n\r]+|(?<=\s)[•●]+\s*/u', $excerpt, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $matches = array_values(array_filter(array_map('trim', $clauses),
+            fn (string $clause): bool => $this->labelSupportedByExcerpt($label, $clause)));
+        if (count($matches) !== 1) {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+
+        return $matches[0];
     }
 
     private function labelSupportedByExcerpt(string $label, string $excerpt): bool
@@ -138,6 +156,11 @@ class VacancyRequirementValidator
         preg_match_all('/\\b(?:this\\s+)?(?:[\\pL\\pN+#.-]+\\s+){0,4}(?:role|position)?\\s*requires\\s+(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)/iu', $excerpt, $active);
         foreach ($active['subject'] as $subject) {
             $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, array_merge($generic, ['this', 'that', 'role', 'position'])));
+        }
+
+        preg_match_all('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,5}[\pL\pN+#.-]+)/iu', $excerpt, $candidateDirected);
+        foreach ($candidateDirected['subject'] as $subject) {
+            $tokens = array_merge($tokens, $this->requirementSubjectTokens($subject, $generic));
         }
 
         return array_values(array_unique($tokens));
@@ -200,7 +223,7 @@ class VacancyRequirementValidator
         }
 
         $preferred = $this->hasPreferredCue($cueText);
-        $mandatory = preg_match('/\b(?:required|requires|mandatory|must\s+have|need(?:ed)?\s+to\s+have)\b|обязательн|требуется/iu', $cueText) === 1;
+        $mandatory = preg_match('/\b(?:required|requires?|mandatory|must\s+(?:have|know|use|operate)|needs?|need(?:ed)?\s+to\s+have|looking\s+for)\b|обязательн|требуется/iu', $cueText) === 1;
         if ($preferred && $mandatory) {
             return 'UNCERTAIN';
         }
@@ -312,11 +335,11 @@ class VacancyRequirementValidator
             $lastBoundary = $beforeBoundaries[0] === [] ? null : $beforeBoundaries[0][count($beforeBoundaries[0]) - 1];
             $clauseStart = $lastBoundary === null ? 0 : $lastBoundary[1] + 1;
             $clauseLength = ($afterBoundary[0][1] ?? strlen($after));
-            $clause = substr($text, $clauseStart, $start - $clauseStart).' '.substr($after, 0, $clauseLength);
+            $clause = substr($text, $clauseStart, $start - $clauseStart).' '.$match[0][0].' '.substr($after, 0, $clauseLength);
             $durations[] = [
                 'amount' => $match['amount'][0],
                 'unit' => $match['unit'][0],
-                'experience_context' => preg_match('/\bexperience\b|опыт[\pL]*/iu', $clause) === 1,
+                'experience_context' => preg_match('/\bexperience\b|опыт[\pL]*|\b(?:years?|months?)\s+(?:of|with)\s+[\pL][\pL\pN+#.-]*\s+(?:required|mandatory)\b/iu', $clause) === 1,
             ];
         }
 
@@ -494,16 +517,22 @@ class VacancyRequirementValidator
 
     private function isMarketingNoise(string $text): bool
     {
-        if (preg_match('/\b(?:we are looking for|we seek|our team is looking for)\b/iu', $text) === 1
-            && preg_match('/\b(?:with|who have|experience|skills?|proficiency|knowledge|degree|certification|required|requires|mandatory|must have)\b/iu', $text) === 1) {
+        // A grammatical requirement for the product, architecture or business
+        // is not a candidate qualification.
+        if (preg_match('/\b(?:our|the|this)\s+(?:mission|growth|success|business|product|service|architecture|system|stack)\s+(?:requires?|needs?|must)\b/iu', $text) === 1) {
+            return true;
+        }
+        if (preg_match('/\b(?:candidates?|applicants?|you|engineers?|developers?|the\s+(?:role|position))\b.{0,100}\b(?:requires?|needs?|must|looking\s+for|required|mandatory)\b/iu', $text) === 1) {
+            return false;
+        }
+        if (preg_match('/\b(?:we|our\s+(?:company|team))\b.{0,40}\b(?:looking\s+for|seek)\b.{0,100}\b(?:engineers?|developers?|candidates?|applicants?)\b.{0,60}\b(?:with|who\s+have)\b/iu', $text) === 1) {
+            return false;
+        }
+        if (preg_match('/\b(?i:we|our\s+(?:company|team))\b.{0,40}\b(?i:requires?|needs?|looking\s+for|seek)\b.{0,100}\b(?:(?i:experience|skills?|knowledge|proficiency|years?|certification|engineers?|developers?)|[A-Z][\pL\pN+#.-]{2,})\b/u', $text) === 1) {
             return false;
         }
 
-        if (preg_match('/\b(?:requires|is required|are required|must have|mandatory)\b/iu', $text) === 1) {
-            return false;
-        }
-
-        return preg_match('/\b(we are|our company|our mission|world.class|market leader|we offer|benefits include)\b|наша\s+(компания|миссия|команда)|мы\s+предлагаем/iu', $text) === 1;
+        return preg_match('/\b(?:we\s+are|our\s+(?:company|team|mission|growth|success|business)|world.class|market\s+leader|we\s+offer|benefits\s+include)\b|наша\s+(?:компания|миссия|команда)|мы\s+предлагаем/iu', $text) === 1;
     }
 
     private function normalize(string $value): string

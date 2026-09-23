@@ -33,5 +33,15 @@
     "name": "adjacent-does-not-upgrade-experience",
     "input": "Three years of commercial Symfony experience required.",
     "must_hold": ["no inference about candidate Laravel experience"]
+  },
+  {
+    "name": "multi-clause-fields-stay-bound-to-react",
+    "input": "Location: Berlin. React is required.",
+    "must_hold": ["React remains a technical requirement", "Berlin is not React's normalized value"]
+  },
+  {
+    "name": "marketing-requires-is-not-a-candidate-requirement",
+    "input": "Our mission requires us to transform the industry. Our product requires Redis at runtime. Our company requires Kubernetes experience.",
+    "must_hold": ["Kubernetes experience remains a candidate requirement", "mission and product requirements are omitted"]
   }
 ]

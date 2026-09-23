@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\VacancyAnalysis;
 use App\Models\VacancyRequirement;
 use App\Services\CareerFactService;
+use App\Services\DatabaseOwnerContext;
 use App\Services\TrustedCareerQuery;
 use App\Services\VacancyAnalysisService;
 use App\Services\VacancyIngestionService;
@@ -1055,7 +1056,7 @@ class VacancyCoreTest extends TestCase
             'Experience with Laravel required; notice period is 3 months.',
         ] as $ambiguousSource) {
             $outputs[] = ['requirements' => [
-                $this->requirement('EXPERIENCE', 'MANDATORY', $ambiguousSource, $ambiguousSource),
+                $this->requirement('EXPERIENCE', 'MANDATORY', $ambiguousSource === 'Experience with Laravel required; notice period is 3 months.' ? 'Laravel experience' : $ambiguousSource, $ambiguousSource),
             ]];
         }
         $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider($outputs));
@@ -1089,7 +1090,7 @@ class VacancyCoreTest extends TestCase
         $unrelated = app(VacancyIngestionService::class)->queue($user, $unrelatedDuration, null);
         app(VacancyAnalysisService::class)->analyze($user, $unrelated['snapshot']);
         $unrelatedDetail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$unrelated['vacancy']->id)->assertOk();
-        $this->assertSame('UNKNOWN', $unrelatedDetail->json('data.analysis.dimensions.1.result'));
+        $this->assertSame('GAP', $unrelatedDetail->json('data.analysis.dimensions.1.result'));
 
         $otherUser = $this->user('experience-clause-binding@example.test');
         app(CareerFactService::class)->createManual($otherUser, 'experience', '36 months of retail experience; Laravel backend developer.');
@@ -1305,6 +1306,179 @@ class VacancyCoreTest extends TestCase
             return $message === 'vacancy.operation_failed'
                 && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
         });
+    }
+
+    public function test_reanalysis_of_current_snapshot_is_idempotent_and_old_job_cannot_restore_pending(): void
+    {
+        Queue::fake();
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => []], ['requirements' => []]]));
+        $user = $this->user('reanalyze-current@example.test');
+        $service = app(VacancyIngestionService::class);
+        $old = $service->queue($user, 'Vacancy A.', 'https://jobs.example.test/reanalysis');
+        $new = $service->queue($user, 'Vacancy B.', 'https://jobs.example.test/reanalysis');
+        app(VacancyAnalysisService::class)->analyze($user, $new['snapshot']);
+
+        $this->actingAs($user)->postJson('/api/v1/vacancies/'.$new['vacancy']->id.'/reanalyze')->assertAccepted();
+        $this->actingAs($user)->postJson('/api/v1/vacancies/'.$new['vacancy']->id.'/reanalyze')->assertAccepted();
+        Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $job): bool => $job->snapshotId === (string) $new['snapshot']->id);
+        app(AnalyzeVacancy::class, ['ownerId' => (string) $user->id, 'snapshotId' => (string) $old['snapshot']->id])
+            ->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+        app(VacancyAnalysisService::class)->analyze($user, $new['snapshot']);
+
+        $this->assertSame('COMPLETED', $new['vacancy']->fresh()->analysis_status);
+        $this->assertSame($new['snapshot']->id, \DB::table('vacancy_snapshots')->where('vacancy_id', $new['vacancy']->id)->orderByDesc('version')->value('id'));
+    }
+
+    public function test_requirement_semantics_are_bound_to_one_labeled_clause(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        foreach ([
+            ['Location: Berlin. React is required.', 'React', 'TECHNICAL'],
+            ['Remote role. PostgreSQL required.', 'PostgreSQL', 'TECHNICAL'],
+            ['English B2 required. Laravel experience required.', 'Laravel experience', 'TECHNICAL'],
+            ['Salary up to 200000 RUB. Kubernetes required.', 'Kubernetes', 'TECHNICAL'],
+            ['3 years of PHP required. Berlin office.', 'PHP', 'EXPERIENCE'],
+            ['Node.js required. Location: Berlin.', 'Node.js', 'TECHNICAL'],
+        ] as [$source, $label, $dimension]) {
+            $item = $validator->validate(['requirements' => [
+                $this->requirement($dimension, 'MANDATORY', $label, $source),
+            ]], $source)[0];
+            $this->assertSame($dimension, $item['dimension'], $source);
+            $this->assertNotSame($source, $item['source_excerpt']);
+            $this->assertStringContainsString($item['source_excerpt'], $source);
+        }
+
+        $source = 'Location: Berlin. React is required.';
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('LOCATION', 'MANDATORY', 'React', $source, 'berlin'),
+            ]], $source);
+            $this->fail('A sibling clause supplied the normalized value.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+        $ambiguous = 'React is required. React is optional.';
+        $this->expectException(VacancyOutputException::class);
+        $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'React', $ambiguous),
+        ]], $ambiguous);
+    }
+
+    public function test_sibling_location_cannot_make_a_react_requirement_match(): void
+    {
+        Queue::fake();
+        $user = $this->user('react-clause-isolation@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Location: Berlin');
+        $source = 'Location: Berlin. React is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'React', $source, 'berlin'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        try {
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->fail('Sibling location evidence was accepted for React.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+        $this->assertSame('FAILED', $result['vacancy']->fresh()->analysis_status);
+        $this->assertDatabaseMissing('vacancy_requirements', ['vacancy_snapshot_id' => $result['snapshot']->id]);
+    }
+
+    public function test_candidate_evidence_negation_is_local_to_the_relevant_occurrence(): void
+    {
+        Queue::fake();
+        $negative = [
+            "I don't have Kubernetes experience", 'I don’t have Kubernetes experience',
+            'I do not have Kubernetes experience', 'I have never used Kubernetes',
+            'No Kubernetes experience', 'I lack Kubernetes experience',
+        ];
+        $positive = [
+            'I have Kubernetes experience', 'Kubernetes in production for 3 years',
+            'Commercial Kubernetes experience',
+            'Migrated from a system with no Kubernetes support to Kubernetes in production.',
+            'Old platform had no Kubernetes. New platform uses Kubernetes in production.',
+            'No Docker experience, but Kubernetes in production for 2 years.',
+        ];
+        foreach (array_merge($negative, $positive) as $index => $assertion) {
+            $user = $this->user('local-negation-'.$index.'@example.test');
+            app(CareerFactService::class)->createManual($user, 'skill', $assertion);
+            $source = 'Kubernetes is required.';
+            $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $source),
+            ]]]));
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->assertSame($index < count($negative) ? 'MAYBE' : 'STRONGLY_APPLY', $analysis->recommendation, $assertion);
+        }
+    }
+
+    public function test_marketing_and_system_requirements_do_not_become_candidate_requirements(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        foreach ([
+            'Our company requires Kubernetes.' => 'Kubernetes',
+            'Our company requires Kubernetes experience.' => 'Kubernetes experience',
+            'Our team needs PostgreSQL experience.' => 'PostgreSQL experience',
+            'We require English B2.' => 'English B2',
+            'We are looking for a Laravel engineer.' => 'Laravel engineer',
+            'Candidates must know PostgreSQL.' => 'PostgreSQL',
+            'The role requires English B2.' => 'English B2',
+            'The candidate needs 3 years of PHP experience.' => 'PHP experience',
+            'You must operate the Redis-backed service.' => 'Redis-backed service',
+        ] as $source => $label) {
+            $validated = $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', $label, $source),
+            ]], $source);
+            $this->assertCount(1, $validated, $source);
+            $this->assertSame('MANDATORY', $validated[0]['importance'], $source);
+        }
+        foreach ([
+            'Our mission requires us to transform the industry.' => 'transform',
+            'Our product requires Redis at runtime.' => 'Redis',
+            'Our architecture requires three regions.' => 'three regions',
+            'Our success requires passion.' => 'passion',
+            'Our growth requires innovation.' => 'innovation',
+            'Our stack needs Redis at runtime.' => 'Redis',
+        ] as $source => $label) {
+            $this->assertSame([], $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', $label, $source),
+            ]], $source), $source);
+        }
+    }
+
+    public function test_marketing_requires_cannot_supply_a_matched_requirement(): void
+    {
+        Queue::fake();
+        $user = $this->user('marketing-requires@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Transform industry');
+        $source = "Our mission requires us to transform the industry.\nOur company requires Kubernetes.";
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'transform', 'Our mission requires us to transform the industry.'),
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', 'Our company requires Kubernetes.'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertSame('MAYBE', $analysis->recommendation);
+        $this->assertDatabaseCount('vacancy_requirements', 1);
+        $this->assertDatabaseHas('vacancy_requirements', ['vacancy_snapshot_id' => $result['snapshot']->id, 'label' => 'Kubernetes']);
+    }
+
+    public function test_negated_adjacent_technology_and_contracted_remote_fact_are_not_evidence(): void
+    {
+        Queue::fake();
+        foreach ([
+            ['React is required.', 'React', 'No Vue experience.', 'MAYBE'],
+            ['Remote work required.', 'Remote work', "I don't work remotely.", 'MAYBE'],
+        ] as $index => [$source, $label, $assertion, $expected]) {
+            $user = $this->user('negated-adjacent-'.$index.'@example.test');
+            app(CareerFactService::class)->createManual($user, 'skill', $assertion);
+            $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', $label, $source, $index === 1 ? 'remote' : null),
+            ]]]));
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->assertSame($expected, $analysis->recommendation, $assertion);
+        }
     }
 
     private function user(string $email): User
