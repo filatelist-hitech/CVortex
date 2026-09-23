@@ -8,7 +8,7 @@ CVortex is a personal Job Search OS for adapting resumes to vacancies, generatin
 
 CVortex is in active pre-release development.
 
-The completed implementation slices are **M0 · Runnable Core**, **M1.1 · Access Core**, and **M1.2 · Career Core**. M1.3 Vacancy Core remediation is implemented and awaits independent PR #27 re-review. **M1.4 · Application Draft** remains blocked and has not started.
+The completed implementation and review slices are **M0 · Runnable Core**, **M1.1 · Access Core**, **M1.2 · Career Core**, and **M1.3 · Vacancy Core**. PR #27 is ready for merge into `stage`. **M1.4 · Application Draft** remains blocked until that merge and has not started.
 
 M1.2 is **not the MVP**. M1.1–M1.4 together form M1's first complete workflow and target Preview 0.1 (`v0.1.0`). M2 targets the practical application-package MVP (`v0.2.0`). A completed slice or merged PR does not create a release; release tags are created only from validated `main` commits.
 

@@ -1,11 +1,11 @@
 ---
 title: CVortex M1.3R — Vacancy Core Remediation Review
-status: ready
+status: completed
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: independent-reviewer
 created: 2026-09-19
-updated: 2026-09-19
+updated: 2026-09-23
 tags: [task, review, vacancy, security, concurrency]
 execution:
   workflow: review

@@ -1,9 +1,9 @@
 ---
 title: M1.3 Vacancy Core Implementation
-status: remediation-awaiting-independent-review
+status: review-pass-awaiting-merge
 owner: project
 created: 2026-09-19
-updated: 2026-09-21
+updated: 2026-09-23
 tags: [vacancy, matching, provenance, ai, m1]
 related:
   - "[[Phase-06-Data-Design|Phase 06 Data Design]]"
@@ -25,7 +25,7 @@ pasted untrusted text
 → seven explainable dimensions, gaps and recommendation
 ```
 
-The original independent review verdict is `CHANGES REQUIRED`. The M1.3R implementation and its bounded follow-up remediation await a separate independent verdict; this document does not declare that gate passed.
+The original review returned `CHANGES REQUIRED`. Final PR #27 remediation and review now pass; the PR awaits merge into `stage`. M1.4 has not started.
 
 The optional source URL is metadata only. The backend does not resolve DNS, open a socket, follow a redirect or fetch the URL. URL/server ingestion and job-board adapters remain M3 work.
 
