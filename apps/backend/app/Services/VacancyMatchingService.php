@@ -265,7 +265,7 @@ class VacancyMatchingService
                     && ! $this->candidateEvidenceNegated($requirement, $text)
                     && $this->languageEvidenceAllowed($requirement, $text)
                     && $this->languageQualificationMatches($requirement, $text)
-                    && ($requirement->dimension === 'LANGUAGE' || $this->containsRequirementTerms($text, $needle))) {
+                    && $this->directSubjectMatches($requirement, $text, $needle)) {
                     return ['type' => 'fact', 'id' => (string) $fact->id];
                 }
             }
@@ -277,7 +277,7 @@ class VacancyMatchingService
                     && ! $this->candidateEvidenceNegated($requirement, $text)
                     && $this->languageEvidenceAllowed($requirement, $text)
                     && $this->languageQualificationMatches($requirement, $text)
-                    && ($requirement->dimension === 'LANGUAGE' || $this->containsRequirementTerms($text, $needle))) {
+                    && $this->directSubjectMatches($requirement, $text, $needle)) {
                     return ['type' => 'claim', 'id' => (string) $claim->id];
                 }
             }
@@ -626,6 +626,26 @@ class VacancyMatchingService
         }
 
         return $terms !== [];
+    }
+
+    private function directSubjectMatches(VacancyRequirement $requirement, string $candidateText, string $needle): bool
+    {
+        return match ($requirement->dimension) {
+            'LANGUAGE' => true, // languageEvidenceAllowed binds the named language and its qualification.
+            'EXPERIENCE' => $this->containsRequirementTerms($candidateText, $needle),
+            default => $this->containsRequirementPhrase($candidateText, $needle),
+        };
+    }
+
+    private function containsRequirementPhrase(string $candidateText, string $requirementText): bool
+    {
+        $terms = preg_split('/\s+/u', $requirementText, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if ($terms === []) {
+            return false;
+        }
+        $phrase = implode('\\s+', array_map(fn (string $term): string => preg_quote($term, '/'), $terms));
+
+        return preg_match('/(?<![\pL\pN])'.$phrase.'(?![\pL\pN])/u', $candidateText) === 1;
     }
 
     private function structuredCandidateValue(string $dimension, string $text): ?string

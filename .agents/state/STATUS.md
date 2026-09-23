@@ -77,7 +77,7 @@ The remaining CareerFact supersession race is closed. The service locks and rech
 
 ## M1.3 review and remediation state
 
-The original M1.3 review returned `CHANGES REQUIRED`. A later push triggered four new actionable PR #27 findings; remediation is in progress and merge is blocked. M1.4 remains blocked until the eventual merge.
+The original M1.3 review returned `CHANGES REQUIRED`. Later pushes triggered six actionable PR #27 findings; remediation is in progress and merge is blocked. M1.4 remains blocked until the eventual merge.
 
 The remediation separates the non-superuser/non-BYPASSRLS `cvortex_app` runtime role from the migration role, forces owner-scoped RLS across all Vacancy tables, derives and clears owner context at HTTP/service/job boundaries, serializes same-owner/same-URL import through PostgreSQL advisory and row locks, enforces logical-identity and snapshot-version uniqueness, rejects instruction-directed provider output before matching, and makes VacancySnapshot creation-only in Eloquent and PostgreSQL.
 
@@ -166,6 +166,8 @@ Validation: targeted regressions first failed before fixes and passed after them
 ### M1.3R19 follow-up review findings — 2026-09-23
 
 After the state commit `daca403`, GitHub added four unresolved threads: connector words in concrete subjects (P1), full residency labels (P1), ordered CEFR matching (P2), and `resident of` candidate evidence (P2). All four were reproduced by tests before changes. A fresh code review found an adjacent language-subject collision when a source mentions another language; it was also reproduced. Local `make test` now passes (backend 148 tests / 938 assertions, four PostgreSQL-only skips; frontend 13/13), and `make lint` passes. Merge readiness is suspended until the fixes are committed, pushed, replied to, resolved, and validated on the new GitHub head.
+
+After `be4d22d`, GitHub added two more P1 threads: unordered compound candidate terms and contracted source negation. Both were reproduced before fixes and corrected with targeted regression tests. `make test` passed again (backend 150 tests / 947 assertions, four PostgreSQL-only skips; frontend 13/13). The four earlier threads received specific replies; all six remain unresolved pending the new head and CI. Merge remains blocked.
 
 ## Current authorized task
 

@@ -358,6 +358,26 @@ class VacancyCoreTest extends TestCase
             ->where('dimension', 'TECHNICAL')->value('result'));
     }
 
+    public function test_compound_technical_subject_requires_one_bound_candidate_phrase(): void
+    {
+        Queue::fake();
+        $user = $this->user('application-security-subject@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built application APIs and installed physical security controls');
+        $source = 'Application security is mandatory.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Application security', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertSame('GAP', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'TECHNICAL')->value('result'));
+
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built application security controls');
+        $analysis = app(VacancyMatchingService::class)->analyze($user, $result['vacancy'], $result['snapshot']);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'TECHNICAL')->value('result'));
+    }
+
     public function test_residency_and_industry_requirements_use_source_derived_dimensions(): void
     {
         $validator = app(VacancyRequirementValidator::class);
@@ -1096,6 +1116,20 @@ class VacancyCoreTest extends TestCase
             $this->requirement('TECHNICAL', 'PREFERRED', 'Degree', 'No degree is required.'),
             $this->requirement('EXPERIENCE', 'PREFERRED', 'Experience', 'Experience is not mandatory.'),
         ]], 'No degree is required. Experience is not mandatory.'));
+    }
+
+    public function test_contracted_source_negation_does_not_create_a_remote_work_requirement(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        foreach (["We don't require remote work.", "We don't need remote work.", "We aren't looking for remote work.", "Remote work isn't mandatory.", 'Remote work is not needed.', 'We do not require remote work.'] as $source) {
+            $this->assertSame([], $validator->validate(['requirements' => [
+                $this->requirement('WORK_FORMAT', 'MANDATORY', 'Remote work', $source, 'remote'),
+            ]], $source), $source);
+        }
+        $source = 'Remote work is mandatory.';
+        $this->assertCount(1, $validator->validate(['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Remote work', $source, 'remote'),
+        ]], $source));
     }
 
     public function test_negation_for_another_subject_does_not_remove_a_supported_requirement(): void

@@ -308,13 +308,19 @@ class VacancyRequirementValidator
 
     private function hasNegatedRequirement(string $label, string $excerpt): bool
     {
+        $excerpt = str_replace('’', "'", mb_strtolower($excerpt));
+        $excerpt = str_replace(
+            ["don't", "doesn't", "didn't", "isn't", "aren't"],
+            ['do not', 'does not', 'did not', 'is not', 'are not'],
+            $excerpt,
+        );
         $subjectTokens = $this->requirementSubjectTokens($label, $this->genericRequirementTerms());
         if ($subjectTokens === []) {
             return preg_match('/\bno\s+[\pL\s]{0,40}\brequired\b|\b(?:is|are)\s+not\s+(?:required|mandatory)\b|не\s+(?:требуется|обязател)/iu', $excerpt) === 1;
         }
         $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $subjectTokens));
 
-        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory)\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
+        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory|needed|necessary)\b|\b(?:do|does|did)\s+not\s+(?:require|need)\s+(?:any\s+)?'.$subject.'\b|\b(?:are|is)\s+not\s+looking\s+for\s+'.$subject.'\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
     }
 
     private function sourceDimension(string $label, string $excerpt): string

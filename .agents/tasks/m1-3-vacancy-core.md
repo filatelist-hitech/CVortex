@@ -14,7 +14,7 @@ related:
 
 # CVortex M1.3 — Vacancy Core
 
-The original review returned `CHANGES REQUIRED`. Four new actionable PR #27 threads appeared after the state push; their fixes await a fresh GitHub merge gate. M1.4 begins only after the PR eventually merges, under `.agents/tasks/m1-4-application-draft.md`.
+The original review returned `CHANGES REQUIRED`. Six actionable PR #27 threads appeared after later pushes; their fixes await a fresh GitHub merge gate. M1.4 begins only after the PR eventually merges, under `.agents/tasks/m1-4-application-draft.md`.
 
 ## Observable outcome
 
