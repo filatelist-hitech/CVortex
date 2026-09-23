@@ -135,6 +135,7 @@ export default function VacancyWorkspace() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
+    const startingSelectionVersion = selectionVersion.current;
     setBusy(true);
     setError("");
     try {
@@ -144,9 +145,11 @@ export default function VacancyWorkspace() {
         body: JSON.stringify({ source_text: values.source_text, source_url: values.source_url || null }),
       });
       form.reset();
-      importedSelectionRef.current = result.data.id;
-      selectId(result.data.id);
-      await refresh(result.data.id);
+      if (selectionVersion.current === startingSelectionVersion) {
+        importedSelectionRef.current = result.data.id;
+        selectId(result.data.id);
+      }
+      await refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The vacancy could not be added.");
     } finally {

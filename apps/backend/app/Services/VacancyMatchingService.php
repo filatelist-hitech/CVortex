@@ -257,7 +257,7 @@ class VacancyMatchingService
         }
         $needle = $requirement->dimension === 'EXPERIENCE'
             ? $this->experienceEvidenceTerms($requirement)
-            : $this->normalize($requirement->label);
+            : $this->concreteLabelSubject($requirement->label);
         foreach ($facts as $fact) {
             foreach ($this->candidateClauses($fact->approvedAssertion()) as $clause) {
                 $text = $this->normalize($clause);
@@ -288,6 +288,14 @@ class VacancyMatchingService
 
     private function directSupportAllowed(VacancyRequirement $requirement, string $candidateText): bool
     {
+        if ($requirement->dimension === 'DOMAIN') {
+            $subject = preg_quote($this->concreteLabelSubject($requirement->label), '/');
+            if ($subject === '') {
+                return false;
+            }
+
+            return preg_match('/\b'.$subject.'\s+(?:industry|sector|domain)\b|\b(?:industry|sector|domain)\s+(?:of\s+)?'.$subject.'\b/iu', $candidateText) === 1;
+        }
         if ($requirement->dimension !== 'EXPERIENCE') {
             return true;
         }
@@ -299,7 +307,7 @@ class VacancyMatchingService
     {
         $generic = ['experience', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
         $tokens = array_values(array_filter(
-            preg_split('/\s+/u', $this->normalize($requirement->label), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+            preg_split('/\s+/u', $this->concreteLabelSubject($requirement->label), -1, PREG_SPLIT_NO_EMPTY) ?: [],
             fn (string $token): bool => ! in_array($token, $generic, true) && ! is_numeric($token),
         ));
         if ($tokens === []) {
@@ -308,6 +316,17 @@ class VacancyMatchingService
         $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $tokens));
 
         return $this->subjectNegated($candidateText, $subject, $requirement->dimension);
+    }
+
+    private function concreteLabelSubject(string $label): string
+    {
+        $modifiers = ['strong', 'solid', 'good', 'excellent', 'deep', 'advanced', 'proven', 'practical', 'hands', 'on', 'extensive', 'commercial', 'professional', 'confident', 'fluent'];
+        $generic = ['skill', 'skills', 'knowledge', 'experience', 'proficiency', 'level', 'language', 'languages', 'technology', 'technologies', 'technical', 'framework', 'frameworks', 'platform', 'platforms', 'industry', 'sector', 'domain', 'competency', 'competencies', 'qualification', 'qualifications'];
+
+        return implode(' ', array_filter(
+            preg_split('/\s+/u', $this->normalize($label), -1, PREG_SPLIT_NO_EMPTY) ?: [],
+            fn (string $token): bool => ! in_array($token, $modifiers, true) && ! in_array($token, $generic, true),
+        ));
     }
 
     private function subjectNegated(string $candidateText, string $subject, string $dimension): bool
@@ -601,7 +620,7 @@ class VacancyMatchingService
     private function structuredCandidateValue(string $dimension, string $text): ?string
     {
         $patterns = match ($dimension) {
-            'LOCATION' => ['/(?:^|\b)(?:location|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|$)/u', '/^\s*(?:based|located|living|lives)\s+in\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|$)/u'],
+            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|$)/u', '/^\s*(?:based|located|living|lives|resident|residing)\s+in\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|$)/u'],
             'WORK_FORMAT' => [],
             'SALARY' => [],
             'EXPERIENCE' => [],

@@ -274,6 +274,40 @@ describe("access shell", () => {
     expect(screen.getByRole("heading", { name: "New vacancy" })).toBeInTheDocument();
   });
 
+  it("keeps a later explicit choice when an earlier import response arrives", async () => {
+    const summaries = [
+      { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+      { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+      { id: "vacancy-new", title: "Vacancy New", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
+    ];
+    const detail = (id: string) => ({ ...summaries.find((item) => item.id === id)!, source_type: "PASTED_TEXT" as const,
+      snapshot: { id: `snapshot-${id}`, version: 1, raw_text: "Laravel required.", source_url: null, imported_at: "2026-09-23T00:00:00Z" }, requirements: [], analysis: null });
+    let resolveImport!: (response: Response) => void;
+    const importResponse = new Promise<Response>((resolve) => { resolveImport = resolve; });
+    let imported = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/me") return Promise.resolve(Response.json({ data: { id: "user-1", email: "vacancy@example.test", role: "user", status: "ACTIVE" } }));
+      if (path === "/api/v1/career") return Promise.resolve(Response.json({ data: { facts: [], claims: [], sources: [] } }));
+      if (path === "/api/v1/vacancies" && options?.method === "POST") return importResponse;
+      if (path === "/api/v1/vacancies") return Promise.resolve(Response.json({ data: imported ? summaries : summaries.slice(0, 2) }));
+      if (path.startsWith("/api/v1/vacancies/")) return Promise.resolve(Response.json({ data: detail(path.split("/").at(-1)!) }));
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<Home />);
+    fireEvent.click(await screen.findByRole("button", { name: /Vacancy A/ }));
+    fireEvent.change(screen.getByLabelText("Vacancy text"), { target: { value: "Laravel required." } });
+    fireEvent.click(screen.getByRole("button", { name: "Preserve and analyze" }));
+    fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
+    await screen.findByRole("heading", { name: "Vacancy B" });
+    imported = true;
+    await act(async () => { resolveImport(Response.json({ data: { id: "vacancy-new" } }, { status: 202 })); });
+
+    expect(screen.getByRole("button", { name: /Vacancy B/ })).toHaveClass("vacancy-selected");
+    expect(screen.getByRole("heading", { name: "Vacancy B" })).toBeInTheDocument();
+  });
+
   it("keeps a newer explicit selection when a polling list request resolves", async () => {
     let poll: (() => void) | undefined;
     vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {

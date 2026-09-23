@@ -173,7 +173,7 @@ class VacancyRequirementValidator
     /** @return list<string> */
     private function genericRequirementTerms(): array
     {
-        return ['experience', 'building', 'at', 'least', 'minimum', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
+        return ['experience', 'building', 'at', 'least', 'minimum', 'required', 'mandatory', 'must', 'have', 'need', 'needed', 'with', 'of', 'for', 'and', 'or', 'skill', 'skills', 'knowledge', 'proficiency', 'level', 'language', 'languages', 'years', 'months', 'year', 'month', 'technology', 'technologies', 'technical', 'tech', 'stack', 'tool', 'tools', 'framework', 'frameworks', 'platform', 'platforms', 'industry', 'sector', 'domain', 'competency', 'competencies', 'qualification', 'qualifications', 'ability', 'abilities'];
     }
 
     /** @return list<string> */
@@ -325,7 +325,9 @@ class VacancyRequirementValidator
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
             $this->workFormatValue($excerpt) !== null => 'WORK_FORMAT',
-            preg_match('/\b(?:location|based in|city|relocat|локац|город)\b/iu', $text) === 1 => 'LOCATION',
+            preg_match('/\b(?:location|based in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
+                || ($label !== '' && preg_match('/\b'.preg_quote($label, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($label, '/').'\b/iu', $text) === 1) => 'LOCATION',
+            preg_match('/\b(?:industry|sector|domain)\s+experience\b|\bexperience\s+(?:in|within)\s+(?:the\s+)?[\pL\pN-]+\s+(?:industry|sector|domain)\b/iu', $text) === 1 => 'DOMAIN',
             $this->hasExperienceDuration($excerpt)
                 || preg_match('/\b(?:commercial|professional|production)\s+\w*\s*experience\b|\bexperience\s+(?:with|of)\b/iu', $text) === 1
                 || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1 => 'EXPERIENCE',
@@ -416,6 +418,17 @@ class VacancyRequirementValidator
 
     private function isInstructionAttack(string $text): bool
     {
+        // A quoted attack string in a bounded security qualification is data.
+        // Other clauses, including directives after that example, stay visible.
+        $text = preg_replace_callback('/(?:^|[.!?\n])[^.!?\n]*["“][^"”]{1,120}["”][^.!?\n]*/u', static function (array $match): string {
+            $clause = $match[0];
+            if (preg_match('/\b(?:experience|skill|ability)\b.{0,100}\b(?:detect(?:ing)?|identif(?:y|ying)|recogniz(?:e|ing)|prevent(?:ing)?|defend(?:ing)?\s+against)\b/iu', $clause) === 1
+                && preg_match('/\bprompt[ -]injection\b/iu', $clause) === 1) {
+                return preg_replace('/["“][^"”]+["”]/u', 'quoted attack example', $clause) ?? $clause;
+            }
+
+            return $clause;
+        }, $text) ?? $text;
         $directive = '(?:output|return|emit|print|respond|ignore|disregard|forget|override|bypass|follow|obey|classify|mark|set|recommend|reveal|use|call)';
         $role = '(?:system(?:\s+message)?|assistant|developer(?:\s+(?:instruction|message))?)';
         $recommendation = '(?:strongly[\s_-]*apply|apply|maybe|low[\s_-]*priority|skip|highest|recommendation)';
@@ -431,7 +444,7 @@ class VacancyRequirementValidator
             '/\b(?:reveal|print|return|output)\s+(?:the\s+)?(?:system\s+prompt|secrets?|credentials?)\b/iu',
             '/\bignore\s+(?:the\s+)?(?:vacancy|job\s+description|source(?:\s+text)?|provided\s+text)\b.{0,120}\b(?:return|output|emit|print|respond)\b/iu',
             '/\b(?:return|output|emit|print)\s+(?:an?\s+)?(?:empty\s+requirements?\s+(?:array|list)|empty\s+(?:array|list)\s+of\s+requirements?)\b/iu',
-            '/(?<!may )\b(?:return|output|produce|emit)\s+no\s+requirements?\b/iu',
+            '/(?:^|[.!?;\n]\s*)(?:please\s+)?(?:return|output|produce|emit)\s+no\s+requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:any|all|the)\s+)?(?:extract(?:ing|ion)(?:\s+(?:of|any|the|all))*|pars(?:e|ing)|list(?:ing)?|identify(?:ing)?)\s+(?:(?:any|the|all)\s+)?requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:the|any|all)\s+)?(?:requirement\s+)?(?:extraction|parsing)\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:requirement\s+)?pars(?:e|ing)\b.{0,100}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
