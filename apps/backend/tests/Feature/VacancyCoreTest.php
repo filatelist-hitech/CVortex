@@ -781,6 +781,39 @@ class VacancyCoreTest extends TestCase
         $this->assertContains($detail->json('data.analysis.dimensions.1.result'), ['GAP', 'UNKNOWN']);
     }
 
+    public function test_lack_statement_cannot_satisfy_a_direct_technical_requirement(): void
+    {
+        Queue::fake();
+        $user = $this->user('lack-technical-evidence@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'I lack Kubernetes experience.');
+        $source = 'Kubernetes is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MAYBE', $detail->json('data.analysis.recommendation'));
+        $this->assertSame('GAP', $detail->json('data.analysis.dimensions.0.result'));
+    }
+
+    public function test_location_sentence_punctuation_is_not_part_of_structured_value(): void
+    {
+        Queue::fake();
+        $user = $this->user('punctuated-location@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Location: Berlin.');
+        $source = 'Location: Berlin required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
+        $this->assertSame('MATCH', $detail->json('data.analysis.dimensions.4.result'));
+    }
+
     public function test_requirement_label_must_name_the_subject_of_the_importance_cue(): void
     {
         $source = 'Kubernetes is required for this backend role.';
@@ -910,6 +943,12 @@ class VacancyCoreTest extends TestCase
 
         $this->assertCount(1, $validated);
         $this->assertSame('Kubernetes experience', $validated[0]['label']);
+
+        $activeSource = 'Our company requires Kubernetes.';
+        $active = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $activeSource),
+        ]], $activeSource);
+        $this->assertCount(1, $active);
     }
 
     public function test_structured_matching_rejects_incidental_evidence_and_unknown_mandatory_blocks_apply(): void

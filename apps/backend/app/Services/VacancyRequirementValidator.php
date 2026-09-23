@@ -495,7 +495,11 @@ class VacancyRequirementValidator
     private function isMarketingNoise(string $text): bool
     {
         if (preg_match('/\b(?:we are looking for|we seek|our team is looking for)\b/iu', $text) === 1
-            && preg_match('/\b(?:with|who have|experience|skills?|proficiency|knowledge|degree|certification|required|must have)\b/iu', $text) === 1) {
+            && preg_match('/\b(?:with|who have|experience|skills?|proficiency|knowledge|degree|certification|required|requires|mandatory|must have)\b/iu', $text) === 1) {
+            return false;
+        }
+
+        if (preg_match('/\b(?:requires|is required|are required|must have|mandatory)\b/iu', $text) === 1) {
             return false;
         }
 

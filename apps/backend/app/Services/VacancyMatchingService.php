@@ -308,7 +308,7 @@ class VacancyMatchingService
             return true;
         }
 
-        return preg_match('/\b(?:no|without|never|not|cannot|can\s+not|unable\s+to)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not|cannot|can\s+not|unable\s+to)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
+        return preg_match('/\b(?:no|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
     }
 
     private function languageEvidenceAllowed(VacancyRequirement $requirement, string $candidateText): bool
@@ -595,7 +595,7 @@ class VacancyMatchingService
         }
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $text, $match) === 1) {
-                return trim(implode(':', array_slice($match, 1)));
+                return rtrim(trim(implode(':', array_slice($match, 1))), '.,;:!?');
             }
         }
 
