@@ -1,5 +1,5 @@
-merge-pr-27-into-stage
+m1-3r-vacancy-core-remediation-review
 
-Merge PR #27 from `feature/m1.3-vacancy-core` into `stage`. No merge has been performed in this state.
+Complete the four new actionable PR #27 review threads, revalidate, and repeat the independent merge gate against `stage`.
 
-After the merge succeeds, continue M1.4 from `.agents/tasks/m1-4-application-draft.md`; do not start M1.4 before the merge.
+Merge into `stage` is not authorized while these threads remain open. M1.4 remains blocked until a successful merge; its task specification is `.agents/tasks/m1-4-application-draft.md`.

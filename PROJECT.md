@@ -83,7 +83,7 @@ The canonical implementation sequence is `docs/01-Product/Roadmap.md`.
 
 Completed Foundation Era Phases 00–07 remain authoritative history. Implementation now proceeds through value-driven milestones and vertical slices beginning with `M0 Runnable Core`, then `M1 First Value`.
 
-`M0 Runnable Core`, `M1.1 Access Core` and `M1.2 Career Core` are completed / PASS. The original M1.3 Vacancy Core review returned `CHANGES REQUIRED`. Final PR #27 remediation review and validation now pass, and PR #27 is ready for merge into `stage`. M1.4 remains blocked until that merge actually occurs.
+`M0 Runnable Core`, `M1.1 Access Core` and `M1.2 Career Core` are completed / PASS. The original M1.3 Vacancy Core review returned `CHANGES REQUIRED`. Four new actionable PR #27 findings appeared after the last push; the merge gate is pending fresh remediation and validation. M1.4 remains blocked until the PR merges into `stage`.
 
 ## Delivery Governance
 

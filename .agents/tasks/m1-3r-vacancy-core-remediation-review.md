@@ -1,6 +1,6 @@
 ---
 title: CVortex M1.3R — Vacancy Core Remediation Review
-status: completed
+status: ready
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: independent-reviewer

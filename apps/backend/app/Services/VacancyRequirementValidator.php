@@ -321,12 +321,13 @@ class VacancyRequirementValidator
     {
         $text = $this->normalize($excerpt);
         $label = $this->normalize($label);
+        $place = preg_replace('/\s+residen(?:ce|cy)$/u', '', $label) ?? $label;
 
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
             $this->workFormatValue($excerpt) !== null => 'WORK_FORMAT',
             preg_match('/\b(?:location|based in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
-                || ($label !== '' && preg_match('/\b'.preg_quote($label, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($label, '/').'\b/iu', $text) === 1) => 'LOCATION',
+                || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
             preg_match('/\b(?:industry|sector|domain)\s+experience\b|\bexperience\s+(?:in|within)\s+(?:the\s+)?[\pL\pN-]+\s+(?:industry|sector|domain)\b/iu', $text) === 1 => 'DOMAIN',
             $this->hasExperienceDuration($excerpt)
                 || preg_match('/\b(?:commercial|professional|production)\s+\w*\s*experience\b|\bexperience\s+(?:with|of)\b/iu', $text) === 1

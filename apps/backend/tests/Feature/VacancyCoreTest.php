@@ -338,13 +338,35 @@ class VacancyCoreTest extends TestCase
         $this->assertSame('MAYBE', $analysis->recommendation);
     }
 
+    public function test_connector_inside_technology_name_remains_part_of_negated_subject(): void
+    {
+        Queue::fake();
+        $user = $this->user('ruby-on-rails-negation@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'No Ruby on Rails experience');
+        $source = 'Ruby on Rails is mandatory.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Ruby on Rails', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertSame('GAP', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'TECHNICAL')->value('result'));
+
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Ruby on Rails services');
+        $analysis = app(VacancyMatchingService::class)->analyze($user, $result['vacancy'], $result['snapshot']);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'TECHNICAL')->value('result'));
+    }
+
     public function test_residency_and_industry_requirements_use_source_derived_dimensions(): void
     {
         $validator = app(VacancyRequirementValidator::class);
         foreach ([
             ['Berlin residency is mandatory.', 'Berlin', 'berlin', 'LOCATION'],
+            ['Berlin residency is mandatory.', 'Berlin residency', 'berlin', 'LOCATION'],
             ['Berlin residence is required.', 'Berlin', 'berlin', 'LOCATION'],
             ['Resident in Berlin is required.', 'Berlin', 'berlin', 'LOCATION'],
+            ['Resident of Berlin is required.', 'Berlin', 'berlin', 'LOCATION'],
             ['Insurance industry experience is required.', 'Insurance', null, 'DOMAIN'],
             ['Education sector experience is required.', 'Education', null, 'DOMAIN'],
             ['Experience building residency permit APIs is required.', 'APIs', null, 'TECHNICAL'],
@@ -407,6 +429,36 @@ class VacancyCoreTest extends TestCase
         app(CareerFactService::class)->createManual($user, 'experience', 'Resident in Berlin');
         $analysis = app(VacancyMatchingService::class)->analyze($user, $result['vacancy'], $result['snapshot']);
         $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LOCATION')->value('result'));
+    }
+
+    public function test_resident_of_candidate_evidence_matches_source_location(): void
+    {
+        Queue::fake();
+        $user = $this->user('resident-of-berlin@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Resident of Berlin');
+        $source = 'Resident of Berlin is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Berlin', $source, 'berlin'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LOCATION')->value('result'));
+    }
+
+    public function test_full_residency_label_cannot_match_incidental_api_work(): void
+    {
+        Queue::fake();
+        $user = $this->user('berlin-residency-label@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Berlin residency permit APIs');
+        $source = 'Berlin residency is mandatory.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Berlin residency', $source, 'berlin'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertSame('UNKNOWN', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
             ->where('dimension', 'LOCATION')->value('result'));
     }
 
@@ -766,6 +818,38 @@ class VacancyCoreTest extends TestCase
             $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
             $this->assertSame($case['result'], $detail->json('data.analysis.dimensions.3.result'), $case['source']);
         }
+    }
+
+    public function test_ordered_cefr_levels_satisfy_only_equal_or_lower_requirements(): void
+    {
+        Queue::fake();
+        $source = 'Italian B2 or higher is required.';
+        foreach ([['Italian C1', 'MATCH'], ['Italian B2', 'MATCH'], ['Italian B1', 'GAP']] as $index => [$assertion, $expected]) {
+            $user = $this->user('italian-cefr-'.$index.'@example.test');
+            app(CareerFactService::class)->createManual($user, 'language', $assertion);
+            $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+                $this->requirement('LANGUAGE', 'MANDATORY', 'Italian B2', $source, 'B2'),
+            ]]]));
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->assertSame($expected, \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+                ->where('dimension', 'LANGUAGE')->value('result'), $assertion);
+        }
+    }
+
+    public function test_language_subject_comes_from_label_when_source_mentions_another_language(): void
+    {
+        Queue::fake();
+        $user = $this->user('italian-not-english@example.test');
+        app(CareerFactService::class)->createManual($user, 'language', 'English B2');
+        $source = 'Italian B2 is required for our English-language parser.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('LANGUAGE', 'MANDATORY', 'Italian B2', $source, 'B2'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertSame('GAP', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LANGUAGE')->value('result'));
     }
 
     public function test_language_level_source_grammar_rejects_incidental_english_and_accepts_proficiency(): void

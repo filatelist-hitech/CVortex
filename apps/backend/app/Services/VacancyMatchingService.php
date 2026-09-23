@@ -265,7 +265,7 @@ class VacancyMatchingService
                     && ! $this->candidateEvidenceNegated($requirement, $text)
                     && $this->languageEvidenceAllowed($requirement, $text)
                     && $this->languageQualificationMatches($requirement, $text)
-                    && $this->containsRequirementTerms($text, $needle)) {
+                    && ($requirement->dimension === 'LANGUAGE' || $this->containsRequirementTerms($text, $needle))) {
                     return ['type' => 'fact', 'id' => (string) $fact->id];
                 }
             }
@@ -277,7 +277,7 @@ class VacancyMatchingService
                     && ! $this->candidateEvidenceNegated($requirement, $text)
                     && $this->languageEvidenceAllowed($requirement, $text)
                     && $this->languageQualificationMatches($requirement, $text)
-                    && $this->containsRequirementTerms($text, $needle)) {
+                    && ($requirement->dimension === 'LANGUAGE' || $this->containsRequirementTerms($text, $needle))) {
                     return ['type' => 'claim', 'id' => (string) $claim->id];
                 }
             }
@@ -320,12 +320,14 @@ class VacancyMatchingService
 
     private function concreteLabelSubject(string $label): string
     {
-        $modifiers = ['strong', 'solid', 'good', 'excellent', 'deep', 'advanced', 'proven', 'practical', 'hands', 'on', 'extensive', 'commercial', 'professional', 'confident', 'fluent'];
         $generic = ['skill', 'skills', 'knowledge', 'experience', 'proficiency', 'level', 'language', 'languages', 'technology', 'technologies', 'technical', 'framework', 'frameworks', 'platform', 'platforms', 'industry', 'sector', 'domain', 'competency', 'competencies', 'qualification', 'qualifications'];
+        // Qualification words modify the leading subject; connector words inside
+        // a technology name (Ruby on Rails) remain part of that subject.
+        $label = preg_replace('/^(?:(?:strong|solid|good|excellent|deep|advanced|proven|practical|hands[ -]on|extensive|commercial|professional|confident|fluent)\s+)+/u', '', $this->normalize($label)) ?? $this->normalize($label);
 
         return implode(' ', array_filter(
-            preg_split('/\s+/u', $this->normalize($label), -1, PREG_SPLIT_NO_EMPTY) ?: [],
-            fn (string $token): bool => ! in_array($token, $modifiers, true) && ! in_array($token, $generic, true),
+            preg_split('/\s+/u', $label, -1, PREG_SPLIT_NO_EMPTY) ?: [],
+            fn (string $token): bool => ! in_array($token, $generic, true),
         ));
     }
 
@@ -377,19 +379,28 @@ class VacancyMatchingService
         }
         $required = $this->languageQualification($requirement->source_excerpt, $language);
 
-        return $required === null || $this->languageQualification($candidateText, $language) === $required;
+        if ($required === null) {
+            return true;
+        }
+        $actual = $this->languageQualification($candidateText, $language);
+        $cefr = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+        if (in_array($required, $cefr, true) && in_array($actual, $cefr, true)) {
+            return array_search($actual, $cefr, true) >= array_search($required, $cefr, true);
+        }
+
+        return $actual === $required;
     }
 
     private function languageToken(VacancyRequirement $requirement): ?string
     {
-        $text = $this->normalize($requirement->label.' '.$requirement->source_excerpt);
+        $label = $this->normalize($requirement->label);
         foreach (['english', 'russian', 'german', 'french', 'spanish'] as $language) {
-            if (preg_match('/\b'.$this->languagePattern($language).'\b/iu', $text) === 1) {
+            if (preg_match('/\b'.$this->languagePattern($language).'\b/iu', $label) === 1) {
                 return $language;
             }
         }
 
-        return $this->qualifiedLanguageToken($text);
+        return $this->qualifiedLanguageToken($label);
     }
 
     private function languagePattern(string $language): string
@@ -620,7 +631,7 @@ class VacancyMatchingService
     private function structuredCandidateValue(string $dimension, string $text): ?string
     {
         $patterns = match ($dimension) {
-            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|$)/u', '/^\s*(?:based|located|living|lives|resident|residing)\s+in\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|$)/u'],
+            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|$)/u', '/^\s*(?:based|located|living|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|$)/u'],
             'WORK_FORMAT' => [],
             'SALARY' => [],
             'EXPERIENCE' => [],

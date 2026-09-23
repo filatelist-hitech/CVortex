@@ -1,6 +1,6 @@
 ---
 title: CVortex M1.3 — Vacancy Core
-status: completed
+status: changes-required-remediation-awaiting-review
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: project
@@ -14,7 +14,7 @@ related:
 
 # CVortex M1.3 — Vacancy Core
 
-The original review returned `CHANGES REQUIRED`. Final PR #27 remediation and review now pass; delivery awaits merge into `stage`. M1.4 begins only after that merge, under `.agents/tasks/m1-4-application-draft.md`.
+The original review returned `CHANGES REQUIRED`. Four new actionable PR #27 threads appeared after the state push; their fixes await a fresh GitHub merge gate. M1.4 begins only after the PR eventually merges, under `.agents/tasks/m1-4-application-draft.md`.
 
 ## Observable outcome
 

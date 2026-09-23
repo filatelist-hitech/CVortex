@@ -77,7 +77,7 @@ The remaining CareerFact supersession race is closed. The service locks and rech
 
 ## M1.3 review and remediation state
 
-The original M1.3 review returned `CHANGES REQUIRED`. Final PR #27 remediation and review now pass; PR #27 is ready for merge into `stage`. M1.4 remains blocked until that merge.
+The original M1.3 review returned `CHANGES REQUIRED`. A later push triggered four new actionable PR #27 findings; remediation is in progress and merge is blocked. M1.4 remains blocked until the eventual merge.
 
 The remediation separates the non-superuser/non-BYPASSRLS `cvortex_app` runtime role from the migration role, forces owner-scoped RLS across all Vacancy tables, derives and clears owner context at HTTP/service/job boundaries, serializes same-owner/same-URL import through PostgreSQL advisory and row locks, enforces logical-identity and snapshot-version uniqueness, rejects instruction-directed provider output before matching, and makes VacancySnapshot creation-only in Eloquent and PostgreSQL.
 
@@ -163,9 +163,13 @@ Live GitHub intake covered 2 conversation comments, 100 submitted reviews, 162 i
 
 Validation: targeted regressions first failed before fixes and passed after them; `VacancyCoreTest` passed (480 assertions before the final adjacent fixes); final `make test` passed (backend 143 tests / 928 assertions, four PostgreSQL-only skips; frontend 13/13); `make lint` passed (Pint 123 files, Larastan 0 errors, ESLint, TypeScript); production frontend build, PHP syntax for both changed services, agent contract, Compose config, runtime credential check, PR contract, and `git diff --check` passed. Isolated PostgreSQL revalidation passed fresh migration, two runtime-role security suites of 44 assertions each, one-step `000010` rollback, two-migration rollback/re-up with preserved users; the independent-process import/reanalysis concurrency harness passed. PostgreSQL validation used an isolated Compose project with distinct ephemeral admin/runtime passwords. Disposable backend containers retained the known non-failing missing-`.env` warnings. The first PostgreSQL attempt started before PostgreSQL readiness and executed no suite; the healthy isolated rerun passed. The separate development-mode frontend build issue remains tracked.
 
+### M1.3R19 follow-up review findings — 2026-09-23
+
+After the state commit `daca403`, GitHub added four unresolved threads: connector words in concrete subjects (P1), full residency labels (P1), ordered CEFR matching (P2), and `resident of` candidate evidence (P2). All four were reproduced by tests before changes. A fresh code review found an adjacent language-subject collision when a source mentions another language; it was also reproduced. Local `make test` now passes (backend 148 tests / 938 assertions, four PostgreSQL-only skips; frontend 13/13), and `make lint` passes. Merge readiness is suspended until the fixes are committed, pushed, replied to, resolved, and validated on the new GitHub head.
+
 ## Current authorized task
 
-`merge-pr-27-into-stage` (PR #27 delivery only).
+`m1-3r-vacancy-core-remediation-review` (new PR #27 findings remediation).
 
 Authority is `.agents/state/NEXT.md` + blockers. M1.4 follows only after the merge succeeds.
 
