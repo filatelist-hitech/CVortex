@@ -83,7 +83,7 @@ The canonical implementation sequence is `docs/01-Product/Roadmap.md`.
 
 Completed Foundation Era Phases 00–07 remain authoritative history. Implementation now proceeds through value-driven milestones and vertical slices beginning with `M0 Runnable Core`, then `M1 First Value`.
 
-`M0 Runnable Core` and M1.1–M1.4 are completed / PASS. M1.4 Application Draft was squash-merged into `stage` by PR #31 on 2026-09-24. M2 implementation has not started; the next bounded task is the planning-only specification `.agents/tasks/m2-application-package-planning.md`.
+`M0 Runnable Core` and M1.1–M1.3 are completed / PASS. M1.4 Application Draft was squash-merged into `stage` by PR #31 on 2026-09-24, but Preview 0.1 real-user acceptance and feedback are not recorded, so the full M1.4 slice is not marked PASS. M2 implementation has not started; `.agents/tasks/m2-application-package-planning.md` is blocked until Preview 0.1 evidence is recorded.
 
 ## Delivery Governance
 

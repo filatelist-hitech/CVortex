@@ -312,7 +312,10 @@ unresolved threads (two existing conversation checkpoint comments remain).
 After merge, local `stage` was fast-forwarded to `origin/stage` at the merge
 SHA. The working tree was clean; the agent-contract smoke check and
 `git diff --check` passed; the M1.4 migration and application/Truth Guard
-revision code are present; no conflict markers were found. M1.4 is complete /
-PASS. M2 implementation has not started; `NEXT.md` points to the bounded M2
-planning task. The known development-mode frontend build issue remains tracked
-separately.
+revision code are present; no conflict markers were found. The M1.4
+implementation is merged and its independent remediation review is complete.
+However, no real-user end-to-end Preview 0.1 validation or observed feedback is
+recorded in the repository, so Preview 0.1 and the full M1.4 acceptance remain
+unvalidated, not PASS. The M2 planning task has not started and remains blocked
+until that evidence is available. The known development-mode frontend build
+issue remains tracked separately.
