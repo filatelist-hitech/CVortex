@@ -679,7 +679,7 @@ class VacancyMatchingService
     private function structuredCandidateValue(string $dimension, string $text): ?string
     {
         $patterns = match ($dimension) {
-            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|$)/u', '/^\s*(?:based|located|living|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|$)/u'],
+            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u', '/^\s*(?:based|located|living|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u'],
             'WORK_FORMAT' => [],
             'SALARY' => [],
             'EXPERIENCE' => [],

@@ -359,7 +359,8 @@ class VacancyRequirementValidator
         $workFormat = $this->workFormatValue($excerpt) !== null;
 
         return match (true) {
-            preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
+            preg_match('/\b(?:salary|compensation|pay|зарплат)\b\s*(?:(?:minimum|maximum|range|from|up\s+to|is|of|per|starting|between|required|mandatory)\b|[:=]|(?:usd|eur|rub|руб|₽)\b)|\b(?:competitive|base|annual|hourly|monthly)\s+salary\b/iu', $text) === 1
+                || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
             preg_match('/\b(?:location|based in|located in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
                 || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1)
                 || ($workFormat && $place !== '' && ! in_array($place, ['remote', 'remotely', 'hybrid', 'office', 'on-site', 'onsite'], true)

@@ -806,6 +806,16 @@ class VacancyCoreTest extends TestCase
         }
     }
 
+    public function test_salary_systems_experience_remains_a_technical_requirement(): void
+    {
+        $source = 'Experience building salary systems is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Experience building salary systems', $source),
+        ]], $source);
+
+        $this->assertSame('TECHNICAL', $validated[0]['dimension']);
+    }
+
     public function test_experience_normalized_value_requires_the_source_unit_and_supports_explicit_conversion(): void
     {
         $validator = app(VacancyRequirementValidator::class);
@@ -1432,6 +1442,7 @@ class VacancyCoreTest extends TestCase
         Queue::fake();
         foreach ([
             ['Based in Berlin', 'MATCH'],
+            ['Based in Berlin and open to relocation', 'MATCH'],
             ['Located in Berlin', 'MATCH'],
             ['Lives in Berlin', 'MATCH'],
             ['Living in Berlin', 'MATCH'],
