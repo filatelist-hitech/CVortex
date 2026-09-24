@@ -110,7 +110,7 @@ done < <(
 has_label() {
   local wanted="$1"
   local label
-  for label in "${labels[@]:-}"; do
+  for label in "${labels[@]}"; do
     [[ "$label" == "$wanted" ]] && return 0
   done
   return 1
@@ -120,7 +120,7 @@ count_prefix() {
   local prefix="$1"
   local count=0
   local label
-  for label in "${labels[@]:-}"; do
+  for label in "${labels[@]}"; do
     [[ "$label" == "$prefix"* ]] && count=$((count + 1))
   done
   printf '%d\n' "$count"
@@ -144,7 +144,7 @@ is_known_milestone() {
   esac
 }
 
-for label in "${labels[@]:-}"; do
+for label in "${labels[@]}"; do
   [[ -n "${canonical_labels[$label]:-}" ]] || fail "non-canonical label on PR: $label"
 done
 
@@ -221,7 +221,7 @@ fi
 
 metadata_checkpoint=0
 governance_checkpoint=0
-for comment in "${comments[@]:-}"; do
+for comment in "${comments[@]}"; do
   grep -Fq '## PR metadata / review checkpoint' <<<"$comment" && metadata_checkpoint=1
   grep -Fq '## Governance / validation checkpoint' <<<"$comment" && governance_checkpoint=1
 done
