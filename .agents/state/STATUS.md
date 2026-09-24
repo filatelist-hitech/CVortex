@@ -296,3 +296,23 @@ remote branch and PR heads match; GitHub reports `mergeStateStatus=CLEAN`.
 PR #31 remains OPEN and unmerged. M1.4 implementation and remediation review
 are complete; PR #31 is ready for human merge after the separate state commit's
 required checks and fresh review gate pass. M2 has not started.
+
+### M1.4 merge completion — 2026-09-25
+
+PR #31 was squash-merged into `stage` at 2026-09-24T21:24:30Z. The reviewed
+PR head was `7b6cb8971264cec00b0f211645673d1bb6196aa8`; merge/result SHA is
+`8e08f45270d1adf7f6412db09c34e0c94d15772a`. The independent remediation
+re-review of code at `dedd6c9` reported P0=0, P1=0 and P2=0; the commits after
+that review changed only `.agents/state/` files. Immediately before merge,
+`PR contract`, `Roadmap metadata` and `m0-quality` passed on the PR head,
+GitHub reported `mergeStateStatus=CLEAN`, and paginated feedback intake found
+zero submitted reviews, inline comments, review threads or actionable
+unresolved threads (two existing conversation checkpoint comments remain).
+
+After merge, local `stage` was fast-forwarded to `origin/stage` at the merge
+SHA. The working tree was clean; the agent-contract smoke check and
+`git diff --check` passed; the M1.4 migration and application/Truth Guard
+revision code are present; no conflict markers were found. M1.4 is complete /
+PASS. M2 implementation has not started; `NEXT.md` points to the bounded M2
+planning task. The known development-mode frontend build issue remains tracked
+separately.
