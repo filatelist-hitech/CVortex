@@ -39,7 +39,7 @@ jobs:
           has_label() {
             local wanted="$1"
             local label
-            for label in "${labels[@]:-}"; do
+            for label in "${labels[@]}"; do
               [[ "$label" == "$wanted" ]] && return 0
             done
             return 1
@@ -128,14 +128,14 @@ jobs:
           fail() { echo "error: $*" >&2; exit 1; }
           has_label() {
             local wanted="$1" label
-            for label in "${labels[@]:-}"; do
+            for label in "${labels[@]}"; do
               [[ "$label" == "$wanted" ]] && return 0
             done
             return 1
           }
           count_prefix() {
             local prefix="$1" count=0 label
-            for label in "${labels[@]:-}"; do
+            for label in "${labels[@]}"; do
               [[ "$label" == "$prefix"* ]] && count=$((count + 1))
             done
             printf '%d\n' "$count"
@@ -153,7 +153,7 @@ jobs:
             esac
           }
 
-          for label in "${labels[@]:-}"; do
+          for label in "${labels[@]}"; do
             known_label "$label" || fail "non-canonical label: $label"
           done
 
