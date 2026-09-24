@@ -1375,6 +1375,18 @@ class VacancyCoreTest extends TestCase
         $this->assertSame(['berlin', 'remote'], array_column($validated, 'normalized_value'));
     }
 
+    public function test_location_and_work_format_labels_bind_to_their_own_subjects(): void
+    {
+        $source = 'Remote work based in Berlin is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Remote work', $source, 'remote'),
+        ]], $source);
+
+        $this->assertSame(['LOCATION', 'WORK_FORMAT'], array_column($validated, 'dimension'));
+        $this->assertSame(['berlin', 'remote'], array_column($validated, 'normalized_value'));
+    }
+
     public function test_work_arrangement_location_allows_a_bounded_determiner(): void
     {
         $source = 'Hybrid work in our Berlin office is required.';
@@ -1490,6 +1502,23 @@ class VacancyCoreTest extends TestCase
             $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
             $this->assertSame($expected, $detail->json('data.analysis.dimensions.4.result'), $assertion);
         }
+    }
+
+    public function test_location_evidence_preserves_comma_separated_city_and_country(): void
+    {
+        Queue::fake();
+        $user = $this->user('city-country-location@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Location: Berlin, Germany');
+        $source = 'Berlin, Germany is the required work location.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin, Germany', $source, 'berlin germany'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('STRONGLY_APPLY', $analysis->recommendation);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LOCATION')->value('result'));
     }
 
     public function test_requirement_label_must_name_the_subject_of_the_importance_cue(): void
