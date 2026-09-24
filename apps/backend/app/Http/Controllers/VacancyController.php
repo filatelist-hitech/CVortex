@@ -43,6 +43,7 @@ class VacancyController extends Controller
                 'snapshot_version' => $snapshot?->version,
                 'recommendation' => $analysis?->recommendation,
                 'analysis_stale' => $analysis !== null && ! hash_equals($analysis->career_signature, $signature),
+                'analysis_run_stale' => $vacancy->analysisRunIsStale(),
                 'created_at' => $vacancy->created_at,
             ];
         });
@@ -90,6 +91,7 @@ class VacancyController extends Controller
             'source_url' => $vacancy->source_url,
             'analysis_status' => $vacancy->analysis_status,
             'error_code' => $vacancy->error_code,
+            'analysis_run_stale' => $vacancy->analysisRunIsStale(),
             'snapshot' => [
                 'id' => $snapshot->id,
                 'version' => $snapshot->version,

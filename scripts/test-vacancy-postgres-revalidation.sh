@@ -47,7 +47,7 @@ test "$constraint_present" = f
 
 echo 'vacancy-postgres-revalidation: rollback vacancy remediation migrations'
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
-  php artisan migrate:rollback --step=3 --force
+  php artisan migrate:rollback --step=4 --force
 users_after_rollback=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 test "$users_after_rollback" = "$users_after_first"
 

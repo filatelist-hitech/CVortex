@@ -364,6 +364,9 @@ class VacancyRequirementValidator
         $workFormat = $this->workFormatValue($excerpt) !== null;
         $workFormatSubject = $this->workFormatLabelValue($label, $excerpt) !== null;
         $locationSubject = $this->isLocationSubject($place, $text);
+        $experienceSubject = $this->requirementSubjectTokens($label, array_merge($this->genericRequirementTerms(), $this->requirementModifiers()));
+        $postfixExperience = $experienceSubject !== []
+            && preg_match('/\b'.implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $experienceSubject)).'\s+experience\s+(?:is|are)\s+(?:required|mandatory|needed|necessary|preferred|desirable)\b/iu', $text) === 1;
 
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)\b\s*(?:(?:minimum|maximum|range|from|up\s+to|is|of|per|starting|between|required|mandatory)\b|[:=]|(?:usd|eur|rub|руб|₽)\b)|\b(?:competitive|base|annual|hourly|monthly)\s+salary\b/iu', $text) === 1
@@ -375,9 +378,10 @@ class VacancyRequirementValidator
             $this->hasExperienceDuration($excerpt)
                 || preg_match('/\b(?:commercial|professional|production)\s+\w*\s*experience\b|\bexperience\s+(?:with|of)\b/iu', $text) === 1
                 || preg_match('/\bexperience\s+in\b/iu', $text) === 1
-                || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1 => 'EXPERIENCE',
+                || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1
+                || $postfixExperience => 'EXPERIENCE',
             $this->hasLanguageRequirement($label, $excerpt) => 'LANGUAGE',
-            preg_match('/\b(?:domain|industry|fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $label) === 1 => 'DOMAIN',
+            preg_match('/\b(?:fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\s+(?:industry\s+)?(?:experience|background|knowledge|expertise)\b|\b(?:experience|background|knowledge|expertise)\s+(?:in|within)\s+(?:the\s+)?(?:fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $text) === 1 => 'DOMAIN',
             default => 'TECHNICAL',
         };
     }
@@ -531,12 +535,12 @@ class VacancyRequirementValidator
 
             return $clause;
         }, $text) ?? $text;
-        $directive = '(?:output|return|emit|print|respond|ignore|disregard|forget|override|bypass|follow|obey|classify|mark|set|recommend|reveal|use|call)';
+        $directive = '(?:output|return|emit|print|respond|ignore|disregard|forget|override|bypass|follow|obey|classify|mark|set|recommend|reveal|use|call|extract|parse|list)';
         $role = '(?:system(?:\s+message)?|assistant|developer(?:\s+(?:instruction|message))?)';
         $recommendation = '(?:strongly[\s_-]*apply|apply|maybe|low[\s_-]*priority|skip|highest|recommendation)';
 
         $patterns = [
-            '/(?:^|[\r\n<{,])\s*["\']?'.$role.'["\']?\s*(?::|>|=)\s*'.$directive.'\b/iu',
+            '/(?:^|[\r\n<{,.!?;])\s*["\']?'.$role.'["\']?\s*(?::|>|=)\s*'.$directive.'\b/iu',
             '/\b(?:always\s+recommend|'.$directive.')\s+(?:this\s+candidate\s+)?(?:as\s+|to\s+)?'.$recommendation.'\b/iu',
             '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:(?:all|the)\s+)?(?:previous|prior|earlier|all)(?:\s+system)?\s+(?:prompts?|instructions?|rules?|directions?|context|messages?|facts?|skills?|requirements?)\b/iu',
             '/\b(?:ignore|disregard|forget|override|bypass)\s+(?:missing|candidate)\s+(?:facts?|skills?|requirements?)\b/iu',

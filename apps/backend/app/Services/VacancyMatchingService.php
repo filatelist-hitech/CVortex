@@ -708,7 +708,8 @@ class VacancyMatchingService
         }
 
         $ongoingTemporalQualifier = '(?:since\s+(?:19|20)\d{2}|from\s+(?:19|20)\d{2}\s+(?:to|through|until)\s+(?:present|now|current(?:ly)?))';
-        $locationBoundary = '(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|\s+'.$ongoingTemporalQualifier.'\b|$)';
+        $separatePredicate = '(?:(?:i|we|they|candidate)\s+)?(?:(?:am|are|is|was|were)\s+)?(?:(?:now|currently)\s+)?(?:working|work|works|prefer|prefers|open|willing|available|based|located|living|live|lives|residing|resident|remote(?:ly)?|hybrid|on[ -]?site)\b';
+        $locationBoundary = '(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b|'.$separatePredicate.')|\s+'.$ongoingTemporalQualifier.'\b|$)';
         $patterns = match ($dimension) {
             'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)'.$locationBoundary.'/u', '/^\s*(?:(?:now|currently)\s+)?(?:(?:i|we)\s+(?:(?:am|are)\s+)?)?(?:based|located|living|live|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)'.$locationBoundary.'/u'],
             'WORK_FORMAT' => [],
@@ -803,8 +804,10 @@ class VacancyMatchingService
     /** @return list<string> */
     private function candidateWorkFormatValues(string $text): array
     {
+        $text = preg_replace('/\b(?:remote|hybrid|office[ -]based|on[ -]?site|onsite)\s+(?:employee|worker|professional)\b.{0,120}\b(?:from\s+(?:19|20)\d{2}\s+(?:to|through|until)\s+(?:19|20)\d{2}|between\s+(?:19|20)\d{2}\s+and\s+(?:19|20)\d{2})\b/iu', ' ', $text) ?? $text;
+
         $patterns = [
-            'remote' => '/\b(?:current\s+)?work format\s*:\s*(?:remote|удаленно)\b|(?:^|[,;:])\s*(?:fully\s+)?remote\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:am|are|is|work|works|working)\s+(?:a\s+)?(?:fully\s+)?(?:remote(?:ly)?(?:\s+(?:employee|worker))?|from\s+home)\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:fully\s+)?remote\s+(?:work|arrangement|schedule|position|role)\b/iu',
+            'remote' => '/\b(?:current\s+)?work format\s*:\s*(?:remote|удаленно)\b|(?:^|[,;:])\s*(?:fully\s+)?remote\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:am|are|is|work|works|working)\s+(?:a\s+)?(?:fully\s+)?(?:remote(?:ly)?(?:\s+(?:employee|worker))?|from\s+home)\b|\b(?:am|are|is|work|works|working)\s+(?:fully\s+)?(?:remote(?:ly)?|from\s+home)\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:fully\s+)?remote\s+(?:work|arrangement|schedule|position|role)\b/iu',
             'hybrid' => '/\b(?:current\s+)?work format\s*:\s*(?:hybrid|гибрид)\b|(?:^|[,;:])\s*hybrid\s+(?:employee|worker|candidate|arrangement|schedule|position|role)\b|\b(?:i|we|candidate|employee|worker)\s+(?:(?:am|are|is)\s+)?(?:work|works|working)\s+hybrid\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+hybrid\s+(?:work|arrangement|schedule|position|role)\b/iu',
             'office' => '/\b(?:current\s+)?work format\s*:\s*(?:office|офис)\b|(?:^|[,;:])\s*(?:office[ -]based|on[ -]?site|onsite)\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:(?:am|are|is)\s+)?(?:work|works|working)\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:office|on[ -]?site|onsite)\s+(?:work|arrangement|schedule|position|role)\b/iu',
         ];
