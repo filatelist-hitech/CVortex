@@ -2346,9 +2346,11 @@ class VacancyCoreTest extends TestCase
             'zero experience with Kubernetes', 'no experience with Kubernetes',
             'none with Kubernetes', 'without any Kubernetes experience',
             'I never used Kubernetes', 'I am lacking Kubernetes experience',
+            'Kubernetes was not used in production',
         ];
         $positive = [
             'I have Kubernetes experience', '2 years of Kubernetes experience', 'Kubernetes in production for 3 years',
+            'Kubernetes was used in production', 'Kubernetes was not only used in production, but also in testing',
             'Commercial Kubernetes experience',
             'Migrated from a system with no Kubernetes support to Kubernetes in production.',
             'Old platform had no Kubernetes. New platform uses Kubernetes in production.',

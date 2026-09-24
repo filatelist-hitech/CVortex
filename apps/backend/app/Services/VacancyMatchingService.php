@@ -341,7 +341,7 @@ class VacancyMatchingService
             return true;
         }
 
-        return preg_match('/\b(?:no|none|zero|0|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking|do\s+not\s+have|does\s+not\s+have)\s+(?:(?:any|zero|0|\d+(?:[.,]\d+)?)\s+)?(?:(?:years?|months?)\s+(?:of\s+)?)?(?:experience\s+(?:with|in)\s+)?(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|none|zero|0|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:experience|background|knowledge|skills?)\b/iu', $candidateText) === 1;
+        return preg_match('/\b(?:no|none|zero|0|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking|do\s+not\s+have|does\s+not\s+have)\s+(?:(?:any|zero|0|\d+(?:[.,]\d+)?)\s+)?(?:(?:years?|months?)\s+(?:of\s+)?)?(?:experience\s+(?:with|in)\s+)?(?:[\pL\pN+#.-]+\s+){0,5}'.$subject.'\b|\b'.$subject.'\b.{0,40}\b(?:no|none|zero|0|without|never|not|cannot|can\s+not|unable\s+to|lack|lacking)\s+(?:experience|background|knowledge|skills?)\b|\b'.$subject.'\b.{0,40}\b(?:(?:was|were|is|are)\s+not(?!\s+only)|(?:has|have|had)\s+not\s+been)\s+(?:used|applied|deployed|implemented|adopted|required|needed)\b/iu', $candidateText) === 1;
     }
 
     /** @return list<string> */
