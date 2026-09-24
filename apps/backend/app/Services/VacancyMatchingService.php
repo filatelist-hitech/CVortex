@@ -17,7 +17,10 @@ class VacancyMatchingService
 {
     public const ANALYSIS_VERSION = '1.0.0';
 
-    public function __construct(private readonly TrustedCareerQuery $career) {}
+    public function __construct(
+        private readonly TrustedCareerQuery $career,
+        private readonly LanguageCatalog $languages = new LanguageCatalog,
+    ) {}
 
     public function careerSignature(User $user): string
     {
@@ -394,6 +397,11 @@ class VacancyMatchingService
     private function languageToken(VacancyRequirement $requirement): ?string
     {
         $label = $this->normalize($requirement->label);
+        $knownLanguage = $this->languages->tokenFromText($label);
+        if ($knownLanguage !== null) {
+            return $knownLanguage;
+        }
+
         foreach (['english', 'russian', 'german', 'french', 'spanish'] as $language) {
             if (preg_match('/\b'.$this->languagePattern($language).'\b/iu', $label) === 1) {
                 return $language;
@@ -405,6 +413,11 @@ class VacancyMatchingService
 
     private function languagePattern(string $language): string
     {
+        $pattern = $this->languages->pattern($language);
+        if ($pattern !== null) {
+            return $pattern;
+        }
+
         return match ($language) {
             'english' => '(?:english|английск\pL*)',
             'russian' => '(?:russian|русск\pL*)',

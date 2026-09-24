@@ -7,6 +7,8 @@ use App\Models\VacancyRequirement;
 
 class VacancyRequirementValidator
 {
+    public function __construct(private readonly LanguageCatalog $languages) {}
+
     /** @param array<string, mixed> $output
      * @return list<array{dimension: string, importance: string, label: string, normalized_value: ?string, source_excerpt: string, confidence: float}>
      */
@@ -383,7 +385,25 @@ class VacancyRequirementValidator
         $text = $this->normalize($label.' '.$excerpt);
 
         return preg_match('/\b'.$languages.'\s+(?:(?:at\s+)?'.$qualifier.'(?:\s+level)?|(?:language\s+)?(?:proficiency|level)(?:\s+at)?\s+'.$qualifier.'|is\s+required|required)\b|\b'.$qualifier.'(?:[ -]level)?\s+(?:proficiency\s+)?(?:in\s+)?'.$languages.'\b|\b(?:proficiency|level)\s+(?:at\s+)?(?:in\s+)?'.$languages.'\b|\b'.$languages.'\s+(?:language\s+)?(?:proficiency|level)\b/iu', $text) === 1
-            || $this->qualifiedLanguageToken($text) !== null;
+            || $this->qualifiedLanguageToken($text) !== null
+            || $this->unqualifiedLanguageRequirement($label, $excerpt);
+    }
+
+    private function unqualifiedLanguageRequirement(string $label, string $excerpt): bool
+    {
+        $language = $this->languages->tokenFromText($label);
+        $pattern = $language === null ? null : $this->languages->pattern($language);
+        if ($language === null || $pattern === null) {
+            return false;
+        }
+
+        $remainder = preg_replace('/(?<![\\pL\\pN])'.$pattern.'(?![\\pL\\pN])/iu', ' ', $this->normalize($label), 1) ?? $label;
+        $remainder = preg_replace('/\\b(?:language|proficiency|level|a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?|required|mandatory|needed|necessary|preferred|desirable|is|at|in|of)\\b/iu', ' ', $remainder) ?? $remainder;
+        if (trim(preg_replace('/[^\\pL\\pN]+/u', ' ', $remainder) ?? $remainder) !== '') {
+            return false;
+        }
+
+        return preg_match('/(?<![\\pL\\pN])'.$pattern.'\\s+(?:(?:language\\s+)?(?:is\\s+)?(?:required|mandatory|needed|necessary|preferred|desirable))\\b/iu', $this->normalize($excerpt)) === 1;
     }
 
     private function qualifiedLanguageToken(string $text): ?string
@@ -487,6 +507,7 @@ class VacancyRequirementValidator
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:any|all|the)\s+)?(?:extract(?:ing|ion)(?:\s+(?:of|any|the|all))*|pars(?:e|ing)|list(?:ing)?|identify(?:ing)?)\s+(?:(?:any|the|all)\s+)?requirements?\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:(?:the|any|all)\s+)?(?:requirement\s+)?(?:extraction|parsing)\b/iu',
             '/\b(?:avoid|prevent|skip|omit|ignore|suppress|do\s+not|don[\'’]t|never)\s+(?:requirement\s+)?pars(?:e|ing)\b.{0,100}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\])/iu',
+            '/\b(?:do\s+not|don[\'’]t|never)\s+(?:output|return|emit|produce|list)\s+(?:(?:any|all|the)\s+)?requirements?\b/iu',
             '/\b(?:skip|omit|ignore|suppress|avoid|prevent)\s+(?:(?:any|all|the)\s+)?requirements?\b/iu',
             '/\b(?:leave|keep)\s+(?:the\s+)?requirements?\s+empty\b/iu',
             '/\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\]|empty\s+(?:array|list))(?=\s|$|[.!?,])[^.!?\n]{0,80}\b(?:requirements?|extraction|parsing|vacancy|job\s+description)\b|\b(?:requirements?|extraction|parsing|vacancy|job\s+description)\b[^.!?\n]{0,80}\b(?:return|output|produce|emit)\s+(?:nothing|no\s+requirements?|\[\]|empty\s+(?:array|list))(?=\s|$|[.!?,])/iu',
@@ -574,6 +595,11 @@ class VacancyRequirementValidator
 
     private function languageTokenFromLabel(string $label): ?string
     {
+        $knownLanguage = $this->languages->tokenFromText($this->normalize($label));
+        if ($knownLanguage !== null) {
+            return $knownLanguage;
+        }
+
         foreach (['english' => '(?:english|английск\\pL*)', 'russian' => '(?:russian|русск\\pL*)', 'german' => '(?:german|немецк\\pL*)', 'french' => '(?:french|французск\\pL*)', 'spanish' => '(?:spanish|испанск\\pL*)'] as $language => $pattern) {
             if (preg_match('/\\b'.$pattern.'\\b/iu', $this->normalize($label)) === 1) {
                 return $language;
@@ -586,6 +612,11 @@ class VacancyRequirementValidator
     private function canonicalLanguageName(string $language): string
     {
         $language = $this->normalize($language);
+        $knownLanguage = $this->languages->tokenFromText($language);
+        if ($knownLanguage !== null) {
+            return $knownLanguage;
+        }
+
         foreach (['english' => '(?:english|английск\\pL*)', 'russian' => '(?:russian|русск\\pL*)', 'german' => '(?:german|немецк\\pL*)', 'french' => '(?:french|французск\\pL*)', 'spanish' => '(?:spanish|испанск\\pL*)'] as $canonical => $pattern) {
             if (preg_match('/\\b'.$pattern.'\\b/iu', $language) === 1) {
                 return $canonical;
