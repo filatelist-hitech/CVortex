@@ -585,6 +585,10 @@ class VacancyMatchingService
         }
         $experienceContext = $this->normalize($duration['context']);
 
+        if (count($tokens) > 1) {
+            return $this->containsRequirementPhrase($experienceContext, implode(' ', $tokens));
+        }
+
         foreach ($tokens as $token) {
             if (! $this->containsRequirementTerms($experienceContext, $token)) {
                 return false;

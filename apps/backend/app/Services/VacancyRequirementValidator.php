@@ -154,7 +154,7 @@ class VacancyRequirementValidator
 
     private function hasCandidateDirectedCue(string $excerpt): bool
     {
-        return preg_match('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?=[\pL\pN+#.-])/iu', $excerpt) === 1;
+        return preg_match('/\b(?:needs?|must\s+(?:know|use|operate|have|work|be))\s+(?=[\pL\pN+#.-])/iu', $excerpt) === 1;
     }
 
     /** @param list<string> $generic
@@ -209,6 +209,14 @@ class VacancyRequirementValidator
         preg_match_all('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,12}[\pL\pN+#.-]+)/iu', $excerpt, $candidateDirected);
         foreach ($candidateDirected['subject'] as $subject) {
             $subject = preg_replace('/\s+(?:for|in|on|to\s+succeed\s+in)\s+(?:(?:this|the|our)\s+)?(?:[\pL\pN+#.-]+\s+)?(?:role|position|team|project|department|environment|context)\b.*$/iu', '', $subject) ?? $subject;
+            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
+            if ($tokensForSubject !== []) {
+                $subjects[] = $tokensForSubject;
+            }
+        }
+
+        preg_match_all('/\bmust\s+(?<subject>(?:work|be)\s+(?:[\pL\pN+#.-]+\s+){0,11}[\pL\pN+#.-]+)/iu', $excerpt, $arrangementDirected);
+        foreach ($arrangementDirected['subject'] as $subject) {
             $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
             if ($tokensForSubject !== []) {
                 $subjects[] = $tokensForSubject;
@@ -275,7 +283,7 @@ class VacancyRequirementValidator
         }
 
         $preferred = $this->hasPreferredCue($cueText);
-        $mandatory = preg_match('/\b(?:required|requires?|mandatory|must\s+(?:have|know|use|operate)|needs?|need(?:ed)?\s+to\s+have|looking\s+for)\b|обязательн|требуется/iu', $cueText) === 1;
+        $mandatory = preg_match('/\b(?:required|requires?|mandatory|must\s+(?:have|know|use|operate|work|be)|needs?|need(?:ed)?\s+to\s+have|looking\s+for)\b|обязательн|требуется/iu', $cueText) === 1;
         if ($preferred && $mandatory) {
             return 'UNCERTAIN';
         }
@@ -328,12 +336,15 @@ class VacancyRequirementValidator
         $text = $this->normalize($excerpt);
         $label = $this->normalize($label);
         $place = preg_replace('/\s+residen(?:ce|cy)$/u', '', $label) ?? $label;
+        $workFormat = $this->workFormatValue($excerpt) !== null;
 
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
-            $this->workFormatValue($excerpt) !== null => 'WORK_FORMAT',
             preg_match('/\b(?:location|based in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
-                || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
+                || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1)
+                || ($workFormat && $place !== '' && ! in_array($place, ['remote', 'remotely', 'hybrid', 'office', 'on-site', 'onsite'], true)
+                    && preg_match('/\b(?:in|at|within)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
+            $workFormat => 'WORK_FORMAT',
             preg_match('/\b(?:industry|sector|domain)\s+experience\b|\bexperience\s+(?:in|within)\s+(?:the\s+)?[\pL\pN-]+\s+(?:industry|sector|domain)\b/iu', $text) === 1 => 'DOMAIN',
             $this->hasExperienceDuration($excerpt)
                 || preg_match('/\b(?:commercial|professional|production)\s+\w*\s*experience\b|\bexperience\s+(?:with|of)\b/iu', $text) === 1

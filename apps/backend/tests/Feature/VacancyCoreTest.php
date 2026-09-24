@@ -416,6 +416,29 @@ class VacancyCoreTest extends TestCase
             ->where('dimension', 'EXPERIENCE')->value('result'));
     }
 
+    public function test_duration_backed_experience_requires_a_bound_compound_subject(): void
+    {
+        Queue::fake();
+        $user = $this->user('application-security-duration@example.test');
+        $facts = app(CareerFactService::class);
+        $facts->createManual($user, 'experience', '3 years of experience building application APIs and physical security controls');
+        $source = '3 years of application security experience is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', '3 years of application security experience', $source, 'years:3'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('UNKNOWN', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'EXPERIENCE')->value('result'));
+        $this->assertSame('MAYBE', $analysis->recommendation);
+
+        $facts->createManual($user, 'experience', '3 years of application security experience');
+        $analysis = app(VacancyMatchingService::class)->analyze($user, $result['vacancy'], $result['snapshot']);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'EXPERIENCE')->value('result'));
+    }
+
     public function test_residency_and_industry_requirements_use_source_derived_dimensions(): void
     {
         $validator = app(VacancyRequirementValidator::class);
@@ -1186,6 +1209,30 @@ class VacancyCoreTest extends TestCase
         $this->assertSame('MANDATORY', $validated[0]['importance']);
     }
 
+    public function test_must_work_wording_sets_mandatory_source_importance(): void
+    {
+        $source = 'Candidates must work remotely.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('WORK_FORMAT', 'UNCERTAIN', 'work remotely', $source, 'remote'),
+        ]], $source);
+
+        $this->assertCount(1, $validated);
+        $this->assertSame('WORK_FORMAT', $validated[0]['dimension']);
+        $this->assertSame('MANDATORY', $validated[0]['importance']);
+    }
+
+    public function test_clause_can_support_location_and_work_format_requirements(): void
+    {
+        $source = 'Remote work in Berlin is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Remote work', $source, 'remote'),
+        ]], $source);
+
+        $this->assertSame(['LOCATION', 'WORK_FORMAT'], array_column($validated, 'dimension'));
+        $this->assertSame(['berlin', 'remote'], array_column($validated, 'normalized_value'));
+    }
+
     public function test_negation_for_another_subject_does_not_remove_a_supported_requirement(): void
     {
         $source = 'No degree is required; Kubernetes is required.';
@@ -1284,7 +1331,7 @@ class VacancyCoreTest extends TestCase
             ]]]));
             $result = app(VacancyIngestionService::class)->queue($user, $source, null);
             $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
-            $this->assertSame($expected === 'MATCH' ? 'APPLY' : 'MAYBE', $analysis->recommendation, $assertion);
+            $this->assertSame($expected === 'MATCH' ? 'STRONGLY_APPLY' : 'MAYBE', $analysis->recommendation, $assertion);
             $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
             $this->assertSame($expected, $detail->json('data.analysis.dimensions.4.result'), $assertion);
         }
