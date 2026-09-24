@@ -224,3 +224,10 @@ The nine live actionable findings were reproduced or verified against the curren
 On code HEAD `a85512bcaeca5be2bb23d140cc842496b7b37c98`, `make test` passed (backend 182 tests / 1049 assertions, four PostgreSQL-only skips; frontend 14/14); `make lint` passed (Pint 126 files, Larastan 0 errors, ESLint and TypeScript); targeted regressions, PHP syntax, production frontend build, Compose config, runtime-credential check, PR contract, implementation/review agent contracts, and `git diff --check` passed. Isolated PostgreSQL fresh migration, legacy duplicate upgrade, rollback/re-up, preserved-data checks, runtime role/RLS security suites (44 assertions twice), Vacancy revalidation and independent-process concurrency harness passed. Disposable PostgreSQL resources and temporary credentials were removed.
 
 Fresh paginated GitHub intake covered all 123 review threads. Each of the nine actionable findings received a specific `Fixed in a85512b` reply and was resolved; unresolved actionable threads are zero. `PR contract`, `Roadmap metadata`, and `m0-quality` pass on both the code head and the separate merge-ready state commit; the final post-state-commit intake found no new comments, unresolved actionable threads, or merge blockers, and GitHub reports `mergeStateStatus=CLEAN`. PR #27 is ready for merge into `stage`, remains open and unmerged, and M1.4 has not started.
+### M1.3 completion — 2026-09-24
+
+M1.3 Vacancy Core and its final remediation/review are complete. PR #27 was
+squash-merged into `stage` at merge commit
+`6a619258c25ee55a05ecbe7dbe8df8430841e9c1` on 2026-09-24T12:47:48Z.
+The live post-merge state confirms PR #27 is merged and `stage` contains the
+reviewed head `a52142e9613bf7f90f6d6462c77ef98fb73e63fd`. M1.4 has not started.
