@@ -48,6 +48,27 @@ type VacancyDetail = VacancySummary & {
   analysis: Analysis | null;
 };
 
+type ClaimUsage = {
+  assertion: string;
+  claim_ids: string[];
+  supporting_claims: Array<{ id: string; statement: string; truth_status: string; career_facts: Array<{ id: string; statement: string; status: string; provenance_type: string; source_excerpt: string }> }>;
+};
+type DraftItem = {
+  id: string;
+  kind: "RESUME_RECOMMENDATION" | "COVER_DRAFT";
+  variant: "SHORT" | "STANDARD" | null;
+  section: string | null;
+  before: string | null;
+  content: string;
+  reason: string | null;
+  risk: string | null;
+  status: "DRAFT" | "ACCEPTED" | "REJECTED" | "BLOCKED" | "APPROVED";
+  validation_result: "NOT_VALIDATED" | "PASS" | "BLOCK" | "USER_RESOLUTION_REQUIRED" | "FAILED";
+  claim_usages: ClaimUsage[];
+  approvals: Array<{ action: string; content_hash: string; validation_result: string; created_at: string }>;
+};
+type Preparation = { id: string; vacancy_id: string; status: "DRAFT" | "APPROVED"; stale: boolean; items: DraftItem[] };
+
 const dimensionNames: Record<string, string> = {
   TECHNICAL: "Technical",
   EXPERIENCE: "Experience",
@@ -203,6 +224,112 @@ export default function VacancyWorkspace() {
         <section className="review-section"><p className="eyebrow">Seven dimensions</p><div className="dimension-grid">{detail.analysis.dimensions.map((dimension) => <article className={`dimension-card ${dimension.result.toLowerCase()}`} key={dimension.dimension}><div className="fact-meta"><h3>{dimensionNames[dimension.dimension]}</h3><span className="badge">{dimension.result.replaceAll("_", " ")}</span></div><p>{dimension.explanation}</p><p className="muted">Origin: deterministic policy</p>{dimension.candidate_evidence.length > 0 && <details><summary>Confirmed candidate evidence</summary><ul>{dimension.candidate_evidence.map((evidence) => <li key={`${evidence.type}-${evidence.id}`}><strong>{evidence.type} · {evidence.status}</strong><span>{evidence.statement}</span>{evidence.provenance_type && <small>Provenance: {evidence.provenance_type}</small>}</li>)}</ul></details>}</article>)}</div></section>
         <section className="vacancy-grid"><div className="panel"><h3>Material gaps</h3>{detail.analysis.material_gaps.length === 0 ? <p className="empty">No material gap detected.</p> : <ul>{detail.analysis.material_gaps.map((gap) => <li key={`${gap.requirement_id}-${gap.category}`}><strong>{gap.label}</strong> — {gap.category}</li>)}</ul>}</div><div className="panel"><h3>Unknowns</h3>{detail.analysis.uncertainties.length === 0 ? <p className="empty">No unresolved uncertainty recorded.</p> : <ul>{detail.analysis.uncertainties.map((item) => <li key={`${item.requirement_id}-${item.reason}`}><strong>{item.label}</strong> — {item.reason}</li>)}</ul>}</div></section>
       </>}
+      {detail.analysis && (detail.analysis.stale || detail.analysis_status !== "COMPLETED"
+        ? <section className="review-section"><p className="eyebrow">Preview 0.1 · saved preparation</p><h3>Prepare for {detail.title || "Untitled vacancy"}</h3><p className="empty">Reanalyze this vacancy against current confirmed Career Facts before preparing drafts.</p></section>
+        : <ApplicationDraftPanel key={detail.id} vacancyId={detail.id} vacancyTitle={detail.title || "Untitled vacancy"} />)}
     </div>}
+  </section>;
+}
+
+function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
+  const [preparation, setPreparation] = useState<Preparation | null>(null);
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const requestVersion = useRef(0);
+
+  const refresh = useCallback(async (id: string, version = requestVersion.current) => {
+    const result = await api(`/api/v1/applications/preparations/${id}`);
+    if (version !== requestVersion.current) return;
+    const data = result.data as Preparation;
+    setPreparation(data);
+    setEdits(Object.fromEntries(data.items.map((item) => [item.id, item.content])));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const version = ++requestVersion.current;
+    api(`/api/v1/vacancies/${vacancyId}/preparation`, { method: "POST" })
+      .then(async (result) => {
+        if (!active || version !== requestVersion.current) return;
+        const data = result.data as Preparation;
+        setPreparation(data);
+        setEdits(Object.fromEntries(data.items.map((item) => [item.id, item.content])));
+        await refresh(data.id, version);
+      })
+      .catch((caught) => {
+        if (active && version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Preparation could not be loaded.");
+      })
+      .finally(() => { if (active && version === requestVersion.current) setLoading(false); });
+    return () => { active = false; requestVersion.current += 1; };
+  }, [refresh, vacancyId]);
+
+  async function generate() {
+    if (!preparation || preparation.stale) return;
+    const version = requestVersion.current;
+    setBusy("generate");
+    setError("");
+    try {
+      const result = await api(`/api/v1/applications/preparations/${preparation.id}/generate`, { method: "POST" });
+      if (version === requestVersion.current) {
+        setPreparation(result.data as Preparation);
+        setEdits(Object.fromEntries((result.data as Preparation).items.map((item) => [item.id, item.content])));
+      }
+    } catch (caught) {
+      if (version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Draft generation failed.");
+    } finally { if (version === requestVersion.current) setBusy(""); }
+  }
+
+  async function act(item: DraftItem, action: "accept" | "edit" | "reject" | "approve") {
+    if (!preparation || preparation.stale || busy) return;
+    const version = requestVersion.current;
+    setBusy(item.id);
+    setError("");
+    try {
+      const result = action === "approve"
+        ? await api(`/api/v1/applications/draft-items/${item.id}/approve`, { method: "POST" })
+        : await api(`/api/v1/applications/draft-items/${item.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ action, ...(action === "edit" ? { content: edits[item.id] ?? item.content } : {}) }),
+          });
+      if (version === requestVersion.current) {
+        setPreparation(result.data as Preparation);
+        setEdits(Object.fromEntries((result.data as Preparation).items.map((draft) => [draft.id, draft.content])));
+      }
+    } catch (caught) {
+      if (version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Draft review action failed.");
+      if (version === requestVersion.current) await refresh(preparation.id, version).catch(() => undefined);
+    } finally { if (version === requestVersion.current) setBusy(""); }
+  }
+
+  return <section className="review-section application-draft" aria-labelledby="application-draft-title">
+    <p className="eyebrow">Preview 0.1 · saved preparation</p>
+    <h3 id="application-draft-title">Prepare for {vacancyTitle}</h3>
+    <p className="muted">Recommendations and cover drafts stay private. Approval does not submit an application or contact an employer.</p>
+    {loading && <p className="loading" role="status">Loading saved preparation…</p>}
+    {error && <div className="alert error" role="alert"><span>{error}</span></div>}
+    {preparation?.stale && <p className="stale-callout" role="status"><strong>Preparation is stale.</strong><span>Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing.</span></p>}
+    {preparation && !loading && <>
+      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
+      {preparation.items.map((item) => <article className="application-draft-item" key={item.id}>
+        <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
+        {item.before && <p><strong>Before</strong><br />{item.before}</p>}
+        {item.kind === "RESUME_RECOMMENDATION" && <p><strong>Reason</strong><br />{item.reason}</p>}
+        {item.kind === "RESUME_RECOMMENDATION" && <p><strong>Risk</strong><br />{item.risk}</p>}
+        <label>{item.kind === "COVER_DRAFT" ? "Draft content" : "After · recommendation, not confirmed career truth"}<textarea value={edits[item.id] ?? item.content} maxLength={6000} rows={item.kind === "COVER_DRAFT" ? 8 : 4} disabled={preparation.stale || item.status === "REJECTED" || item.status === "APPROVED"} onChange={(event) => setEdits((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
+        {item.claim_usages.length > 0 && <details><summary>Claim and Career Fact provenance</summary><ul className="claim-list">{item.claim_usages.map((usage, index) => <li key={`${item.id}-${index}`}><span>Candidate assertion: {usage.assertion}</span>{usage.supporting_claims.map((claim) => <div key={claim.id}><strong>Claim · {claim.truth_status}</strong><p>{claim.statement}</p>{claim.career_facts.map((fact) => <div key={fact.id}><strong>Career Fact · {fact.status}</strong><p>{fact.statement}</p><small>{fact.provenance_type}: {fact.source_excerpt}</small></div>)}</div>)}</li>)}</ul></details>}
+        {item.approvals.length > 0 && <details><summary>Approval history</summary><ul>{item.approvals.map((approval, index) => <li key={`${item.id}-approval-${index}`}>{approval.action} · {approval.validation_result} · {approval.content_hash.slice(0, 12)}</li>)}</ul></details>}
+        <div className="actions">
+          {item.status !== "REJECTED" && item.status !== "APPROVED" && <>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
+            <button type="button" className="danger" disabled={Boolean(busy) || preparation.stale} onClick={() => void act(item, "reject")}>Reject</button>
+          </>}
+          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || item.validation_result !== "PASS"} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
+          {item.status === "APPROVED" && <span className="confirmed-badge">Approved draft · not submitted</span>}
+        </div>
+      </article>)}
+    </>}
   </section>;
 }

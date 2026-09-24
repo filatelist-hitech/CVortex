@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApplicationPreparationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CareerController;
 use App\Http\Controllers\CareerExtractionController;
@@ -32,6 +33,11 @@ Route::prefix('v1')->group(function (): void {
                 Route::post('/vacancies', [VacancyController::class, 'store'])->name('vacancies.store');
                 Route::get('/vacancies/{id}', [VacancyController::class, 'show'])->name('vacancies.show');
                 Route::post('/vacancies/{id}/reanalyze', [VacancyController::class, 'reanalyze'])->name('vacancies.reanalyze');
+                Route::post('/vacancies/{vacancyId}/preparation', [ApplicationPreparationController::class, 'open'])->name('applications.preparation.open');
+                Route::get('/applications/preparations/{id}', [ApplicationPreparationController::class, 'show'])->name('applications.preparation.show');
+                Route::post('/applications/preparations/{id}/generate', [ApplicationPreparationController::class, 'generate'])->name('applications.preparation.generate');
+                Route::patch('/applications/draft-items/{id}', [ApplicationPreparationController::class, 'updateItem'])->name('applications.draft-items.update');
+                Route::post('/applications/draft-items/{id}/approve', [ApplicationPreparationController::class, 'approve'])->name('applications.draft-items.approve');
             });
         });
     });

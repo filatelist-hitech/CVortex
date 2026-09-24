@@ -16,6 +16,16 @@ class RuntimeSkillRegistry
         return $this->load('vacancy-requirement-extraction/v1', 'vacancy.requirement-extraction');
     }
 
+    public function applicationDraftGeneration(): RuntimeSkillDefinition
+    {
+        return $this->load('application-draft-generation/v1', 'application.draft-generation');
+    }
+
+    public function applicationTruthReview(): RuntimeSkillDefinition
+    {
+        return $this->load('application-truth-review/v1', 'application.truth-review');
+    }
+
     private function load(string $relativeDirectory, string $expectedId): RuntimeSkillDefinition
     {
         $directory = rtrim((string) config('ai.asset_root'), '/').'/skills/'.$relativeDirectory;

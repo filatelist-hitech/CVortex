@@ -11,6 +11,14 @@ return [
             'output_cost_micros_per_million_tokens' => filled(env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS'))
                 ? (int) env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null,
         ],
+        'standard_semantic_generation' => [
+            'provider' => env('AI_PROVIDER', 'none'),
+            'model' => env('OPENAI_APPLICATION_DRAFT_MODEL'),
+            'input_cost_micros_per_million_tokens' => filled(env('OPENAI_APPLICATION_INPUT_COST_MICROS_PER_MILLION_TOKENS'))
+                ? (int) env('OPENAI_APPLICATION_INPUT_COST_MICROS_PER_MILLION_TOKENS') : null,
+            'output_cost_micros_per_million_tokens' => filled(env('OPENAI_APPLICATION_OUTPUT_COST_MICROS_PER_MILLION_TOKENS'))
+                ? (int) env('OPENAI_APPLICATION_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null,
+        ],
     ],
     'providers' => [
         'openai' => [

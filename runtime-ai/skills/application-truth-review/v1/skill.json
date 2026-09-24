@@ -1,0 +1,7 @@
+{
+  "id": "application.truth-review",
+  "version": "1.0.0",
+  "prompt_version": "1.0.0",
+  "default_model_policy": "standard_semantic_generation",
+  "description": "Assists deterministic Truth Guard with semantic support review; cannot establish facts or approve content."
+}
