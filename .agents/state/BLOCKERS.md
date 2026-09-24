@@ -1,5 +1,5 @@
 # Blockers
 
-- PR #27 merge readiness is suspended for two fresh P1 review findings on `e1cd473`: contracted passive negation is missed, and current-location parsing retains ongoing temporal qualifiers. Reproduction and remediation are in progress.
+- PR #27 merge readiness is suspended. Live GraphQL reviewThreads pagination on 2026-09-24 returned nine unresolved threads: `4093134423` contracted passive negation (P1); `4093134434` ongoing location qualifier (P1); `4093170068` location capture across a second predicate (P1); `4093170072` historical remote employee misread as current work format (P1); `4093170075` no UI recovery for stale RUNNING analyses (P2); `4093199228` postfix subject experience misclassified (P1); `4093199235` banking/retail product subjects misclassified as domain experience (P2); `4093267980` role-prefixed extraction suppression accepted (P1); `4093267993` migration clears a real analysis failure into unrecoverable PENDING (P2). Reproduction and remediation are pending.
 - M1.4 remains blocked until PR #27 is actually merged into `stage`.
 - The pre-existing Compose frontend build with `NODE_ENV=development` fails while prerendering `/_global-error`; `NODE_ENV=production` passes. It is tracked by `frontend-build-environment-follow-up` and does not block PR #27 merge readiness.

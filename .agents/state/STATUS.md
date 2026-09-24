@@ -212,3 +212,7 @@ Fresh paginated GitHub intake after the last code push covered 149 submitted rev
 ### M1.3R23 readiness suspended — 2026-09-24
 
 The fresh GitHub review on state commit `e1cd473` added two P1 findings: contraction normalization turns `wasn't` into tokens that bypass the passive-negation grammar, and ongoing location intervals such as `since 2018` are captured as part of the place. Merge-ready permission is revoked; remediation and validation are required before merge. The earlier green checks and zero-thread snapshot do not authorize merge on this head. M1.4 remains blocked.
+
+### M1.3R24 readiness remains suspended — 2026-09-24
+
+Live PR #27 intake on `f9a1df0` confirms the PR remains open against `stage`; local, remote and PR HEADs match, and `PR contract`, `Roadmap metadata`, and `m0-quality` pass on that SHA. Paginated GraphQL reports nine unresolved review threads, including seven new findings after the earlier two-finding intake: location conjunction capture, historical remote employee work-format evidence, stale RUNNING analysis recovery, postfix experience classification, banking/retail product subject classification, role-prefixed extraction suppression, and migration reconciliation that can clear an actual matching failure. GitHub reports `mergeStateStatus=BLOCKED`. Merge readiness remains suspended pending reproduction, repair, validation and fresh review. M1.4 remains blocked.

@@ -1,5 +1,3 @@
-m1-3r-vacancy-core-remediation-review
+m1-3-vacancy-core-remediation-review
 
-Reproduce and fix the two fresh PR #27 findings on `e1cd473`: contracted passive negation such as `wasn't used`, and stripping ongoing temporal qualifiers such as `since 2018` from current location values. Add regression coverage, validate, push, then repeat the complete checks and paginated GitHub review intake.
-
-Do not merge PR #27 or begin M1.4 until the final gate is green again. M1.4 follows only after the actual merge; task specification: `.agents/tasks/m1-4-application-draft.md`.
+Reproduce and remediate the nine currently unresolved PR #27 findings on live head `f9a1df06fa5504d31fb7b9e03f61fe7010b1f57a` (live intake 2026-09-24): contracted passive negation; ongoing/current location temporal qualifiers; conjunction-bound location capture; historical remote-employee evidence; stale RUNNING UI recovery; postfix experience classification; product subjects containing banking/retail; role-prefixed extraction suppression; and migration reconciliation that clears an actual matching failure. Add fail-first regression tests where practical, fix only confirmed root causes, run full project and isolated PostgreSQL validation, and repeat independent diff review. Do not merge PR #27 or start M1.4. After code checks pass, refresh paginated GitHub review state, reply to and resolve only verified closed findings, and only then consider a separate merge-ready state commit whose own SHA passes CI and a fresh review gate.
