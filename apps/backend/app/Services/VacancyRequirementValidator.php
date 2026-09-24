@@ -66,8 +66,7 @@ class VacancyRequirementValidator
                 continue;
             }
             $dimension = $this->sourceDimension($label, $excerpt);
-            $requiresSubjectIdentity = in_array($dimension, ['TECHNICAL', 'DOMAIN', 'EXPERIENCE', 'LANGUAGE'], true)
-                || $this->hasCandidateDirectedCue($excerpt);
+            $requiresSubjectIdentity = in_array($dimension, ['TECHNICAL', 'DOMAIN', 'EXPERIENCE', 'LANGUAGE'], true);
             $identifiesSubject = ! $requiresSubjectIdentity || ($dimension === 'LANGUAGE'
                 ? $this->languageTokenFromLabel($label) !== null
                 : $this->labelIdentifiesRequirement($label, $excerpt));
@@ -125,6 +124,10 @@ class VacancyRequirementValidator
         $labelTokens = $this->requirementSubjectTokens($label, array_merge($generic, $this->requirementModifiers()));
         if ($labelTokens === [] || (count($labelTokens) === 1 && in_array($labelTokens[0], $this->roleFragments(), true) && $this->normalize($label) === $labelTokens[0])) {
             return false;
+        }
+        $experienceSubject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $labelTokens));
+        if (preg_match('/\\bexperience\\s+(?:in|with|of)\\s+(?:the\\s+)?'.$experienceSubject.'\\b/iu', $this->normalize($excerpt)) === 1) {
+            return true;
         }
         $cueSubjects = $this->requirementCueSubjectTokens($excerpt, $generic);
         if ($this->hasCandidateDirectedCue($excerpt)) {
@@ -350,7 +353,7 @@ class VacancyRequirementValidator
             return true;
         }
 
-        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory|needed|necessary)\b|\b(?:is|are)\s+not\s+required\s+to\s+'.$subject.'\b|\b(?:do|does|did)\s+not\s+(?:require|need)\s+(?:any\s+)?'.$subject.'\b|\b(?:are|is)\s+not\s+looking\s+for\s+'.$subject.'\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
+        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory|needed|necessary)\b|\b'.$subject.'\b.{0,40}\bno\s+longer\s+(?:required|mandatory|needed|necessary)\b|\b(?:is|are)\s+not\s+required\s+to\s+'.$subject.'\b|\b(?:do|does|did)\s+not\s+(?:require|need)\s+(?:any\s+)?'.$subject.'\b|\bno\s+longer\s+(?:require|requires|need|needs)\s+(?:any\s+)?'.$subject.'\b|\b(?:are|is)\s+not\s+looking\s+for\s+'.$subject.'\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
     }
 
     private function sourceDimension(string $label, string $excerpt): string
@@ -359,20 +362,19 @@ class VacancyRequirementValidator
         $label = $this->normalize($label);
         $place = preg_replace('/\s+residen(?:ce|cy)$/u', '', $label) ?? $label;
         $workFormat = $this->workFormatValue($excerpt) !== null;
-        $workFormatSubject = $this->workFormatValue($label) !== null;
+        $workFormatSubject = $this->workFormatLabelValue($label, $excerpt) !== null;
+        $locationSubject = $this->isLocationSubject($place, $text);
 
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)\b\s*(?:(?:minimum|maximum|range|from|up\s+to|is|of|per|starting|between|required|mandatory)\b|[:=]|(?:usd|eur|rub|руб|₽)\b)|\b(?:competitive|base|annual|hourly|monthly)\s+salary\b/iu', $text) === 1
                 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
-            (preg_match('/\b(?:location|based in|located in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
-                && ! ($workFormat && $workFormatSubject))
-                || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1)
-                || ($workFormat && $place !== '' && ! in_array($place, ['remote', 'remotely', 'hybrid', 'office', 'on-site', 'onsite'], true)
-                    && preg_match('/\b(?:in|at|within)\s+(?:(?:the|our|a|an|my|your|their|its|this|that)\s+)?'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
-            $workFormat => 'WORK_FORMAT',
+            $locationSubject && ! ($workFormat && $workFormatSubject) => 'LOCATION',
+            $workFormat && ($workFormatSubject || $this->requirementSubjectTokens($label, $this->genericRequirementTerms()) === [])
+                && ! $this->isWorkFormatProductSubject($label, $text) => 'WORK_FORMAT',
             preg_match('/\b(?:industry|sector|domain)\s+experience\b|\bexperience\s+(?:in|within)\s+(?:the\s+)?[\pL\pN-]+\s+(?:industry|sector|domain)\b/iu', $text) === 1 => 'DOMAIN',
             $this->hasExperienceDuration($excerpt)
                 || preg_match('/\b(?:commercial|professional|production)\s+\w*\s*experience\b|\bexperience\s+(?:with|of)\b/iu', $text) === 1
+                || preg_match('/\bexperience\s+in\b/iu', $text) === 1
                 || preg_match('/\bexperience\s+(?:with|of)\b/iu', $label) === 1 => 'EXPERIENCE',
             $this->hasLanguageRequirement($label, $excerpt) => 'LANGUAGE',
             preg_match('/\b(?:domain|industry|fintech|e[ -]?commerce|healthcare|retail|banking|telecom)\b/iu', $label) === 1 => 'DOMAIN',
@@ -475,6 +477,45 @@ class VacancyRequirementValidator
         }
 
         return null;
+    }
+
+    private function workFormatLabelValue(string $label, string $excerpt): ?string
+    {
+        if (preg_match('/^(?:(?:current|preferred|available)\s+)?(?:work\s+format|format\s+of\s+work)$/u', $label) === 1) {
+            return $this->workFormatValue($excerpt);
+        }
+
+        foreach ([
+            'remote' => '/^(?:(?:work\s+)?(?:fully\s+)?remote(?:ly)?|fully\s+remote)(?:\s+(?:work|position|role|arrangement|schedule|job))?$/u',
+            'hybrid' => '/^hybrid(?:\s+(?:work|position|role|arrangement|schedule|job))?$/u',
+            'office' => '/^(?:office(?:[ -]based)?|on[ -]?site|onsite)(?:\s+(?:work|position|role|arrangement|schedule|job))?$/u',
+        ] as $value => $pattern) {
+            if (preg_match($pattern, $label) === 1 && $this->workFormatValue($excerpt) === $value) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function isLocationSubject(string $place, string $text): bool
+    {
+        if ($place === '' || in_array($place, ['remote', 'remotely', 'hybrid', 'office', 'on-site', 'onsite'], true)) {
+            return false;
+        }
+        $subject = preg_quote($place, '/');
+
+        return preg_match('/\b(?:based|located|living|lives|resident|residing)\s+(?:in|at|of)\s+(?:(?:the|our|a|an|my|your|their|its|this|that)\s+)?'.$subject.'\b/iu', $text) === 1
+            || preg_match('/\b(?:remote|hybrid|on[ -]?site|onsite|office)\s+work\s+(?:based\s+)?in\s+(?:(?:the|our|a|an|my|your|their|its|this|that)\s+)?'.$subject.'\b/iu', $text) === 1
+            || preg_match('/\b(?:remote|hybrid|on[ -]?site|onsite|office)\s+work\s+in\s+(?:(?:the|our|a|an|my|your|their|its|this|that)\s+)?'.$subject.'\s+office\b/iu', $text) === 1
+            || preg_match('/\b'.$subject.'\b.{0,40}\b(?:residen(?:ce|cy)|work\s+location|location|city)\b|\b(?:location|city|residen(?:ce|cy))\b\s*:?\s*(?:is\s+)?'.$subject.'\b/iu', $text) === 1;
+    }
+
+    private function isWorkFormatProductSubject(string $label, string $text): bool
+    {
+        return preg_match('/\b(?:platform|product|system|application|software|tool|service|api|architecture|stack|solution|technology|network|cluster)\b/iu', $text) === 1
+            && preg_match('/\b(?:experience|building|developing|designing|working\s+on|work\s+with)\b/iu', $text) === 1
+            && $this->workFormatValue($label) !== null;
     }
 
     private function isInstructionAttack(string $text): bool

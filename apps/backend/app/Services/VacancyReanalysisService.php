@@ -22,17 +22,14 @@ class VacancyReanalysisService
                     ->lockForUpdate()->findOrFail($vacancyId);
                 $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)
                     ->where('vacancy_id', $vacancy->id)->orderByDesc('version')->orderByDesc('id')->firstOrFail();
-                if ($vacancy->analysis_status === Vacancy::STATUS_RUNNING) {
+                if ($vacancy->analysis_status === Vacancy::STATUS_RUNNING && ! $vacancy->analysisRunIsStale()) {
                     return ['snapshot' => $snapshot, 'status' => $vacancy->analysis_status];
                 }
-                if ($vacancy->analysis_status === Vacancy::STATUS_PENDING) {
-                    // A second dispatch is harmless under the snapshot-unique
-                    // job policy and can recover a missing queued attempt.
-                    AnalyzeVacancy::dispatch((string) $user->id, (string) $snapshot->id)->afterCommit();
-
-                    return ['snapshot' => $snapshot, 'status' => Vacancy::STATUS_PENDING];
+                if ($vacancy->analysis_status !== Vacancy::STATUS_PENDING) {
+                    $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null])->save();
                 }
-                $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null])->save();
+                // A second dispatch is harmless under the snapshot-unique
+                // job policy and can recover stale or missing queued work.
                 AnalyzeVacancy::dispatch((string) $user->id, (string) $snapshot->id)->afterCommit();
 
                 return ['snapshot' => $snapshot, 'status' => Vacancy::STATUS_PENDING];

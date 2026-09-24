@@ -37,17 +37,17 @@ run_suite first
 users_after_first=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 test "$users_after_first" -gt 0
 
-echo 'vacancy-postgres-revalidation: rollback snapshot-history migration'
+echo 'vacancy-postgres-revalidation: rollback snapshot-history and aggregate-state migrations'
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
-  php artisan migrate:rollback --step=1 --force
+  php artisan migrate:rollback --step=2 --force
 constraint_present=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'vacancy_snapshots_owner_id_content_hash_unique')")
 test "$constraint_present" = f
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
   php artisan migrate --force
 
-echo 'vacancy-postgres-revalidation: rollback remediation migrations'
+echo 'vacancy-postgres-revalidation: rollback vacancy remediation migrations'
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
-  php artisan migrate:rollback --step=2 --force
+  php artisan migrate:rollback --step=3 --force
 users_after_rollback=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 test "$users_after_rollback" = "$users_after_first"
 

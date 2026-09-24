@@ -45,6 +45,13 @@ class VacancyIngestionService
                         ->orderByDesc('id')
                         ->first();
                     if ($current !== null && hash_equals((string) $current->content_hash, $contentHash)) {
+                        if ($vacancy->analysisRunIsStale()) {
+                            $vacancy->forceFill([
+                                'analysis_status' => Vacancy::STATUS_PENDING,
+                                'error_code' => null,
+                            ])->save();
+                        }
+
                         return ['vacancy' => $vacancy, 'snapshot' => $current, 'duplicate' => true];
                     }
                 }

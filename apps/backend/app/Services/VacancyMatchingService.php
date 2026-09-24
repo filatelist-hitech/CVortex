@@ -558,11 +558,19 @@ class VacancyMatchingService
                 $candidateValueText = in_array($requirement->dimension, ['EXPERIENCE', 'SALARY'], true)
                     ? $candidate['raw_text']
                     : $candidate['text'];
-                $actual = $this->structuredCandidateValue($requirement->dimension, $candidateValueText);
-                if ($actual === null) {
+                $actualValues = $requirement->dimension === 'WORK_FORMAT'
+                    ? $this->candidateWorkFormatValues($candidateValueText)
+                    : array_filter([$this->structuredCandidateValue($requirement->dimension, $candidateValueText)]);
+                if ($actualValues === []) {
                     continue;
                 }
-                $compatible = $this->structuredCompatible($requirement->dimension, $expected, $actual);
+                $compatible = false;
+                foreach ($actualValues as $actual) {
+                    if ($this->structuredCompatible($requirement->dimension, $expected, $actual)) {
+                        $compatible = true;
+                        break;
+                    }
+                }
             }
             if ($compatible) {
                 return ['result' => 'MATCH', 'evidence' => ['type' => $candidate['type'], 'id' => $candidate['id']]];
@@ -582,7 +590,7 @@ class VacancyMatchingService
     private function relevantStructuredEvidence(VacancyRequirement $requirement, string $candidateText): bool
     {
         if ($requirement->dimension === 'WORK_FORMAT') {
-            return $this->candidateWorkFormatValue($candidateText) !== null;
+            return $this->candidateWorkFormatValues($candidateText) !== [];
         }
         if ($requirement->dimension !== 'EXPERIENCE') {
             return true;
@@ -692,15 +700,12 @@ class VacancyMatchingService
     private function structuredCandidateValue(string $dimension, string $text): ?string
     {
         $patterns = match ($dimension) {
-            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u', '/^\s*(?:based|located|living|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u'],
+            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u', '/^\s*(?:(?:i|we)\s+(?:(?:am|are)\s+)?)?(?:based|located|living|live|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u'],
             'WORK_FORMAT' => [],
             'SALARY' => [],
             'EXPERIENCE' => [],
             default => [],
         };
-        if ($dimension === 'WORK_FORMAT') {
-            return $this->candidateWorkFormatValue($text);
-        }
         if ($dimension === 'EXPERIENCE') {
             $duration = $this->candidateExperienceDuration($text);
             if ($duration === null) {
@@ -778,20 +783,22 @@ class VacancyMatchingService
         ];
     }
 
-    private function candidateWorkFormatValue(string $text): ?string
+    /** @return list<string> */
+    private function candidateWorkFormatValues(string $text): array
     {
         $patterns = [
-            'remote' => '/\b(?:work format|формат работы)\s*:\s*(?:remote|удаленно)\b|(?:^|[,;:])\s*(?:fully\s+)?remote\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:am|are|is|work|works|worked|working)\s+(?:a\s+)?(?:fully\s+)?(?:remote(?:ly)?(?:\s+(?:employee|worker))?|from\s+home)\b|\b(?:prefer|prefers|preferred|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:fully\s+)?remote\s+(?:work|arrangement|schedule|position|role)\b/iu',
-            'hybrid' => '/\b(?:work format|формат работы)\s*:\s*(?:hybrid|гибрид)\b|(?:^|[,;:])\s*hybrid\s+(?:employee|worker|candidate|arrangement|schedule|position|role)\b|\b(?:i|we|candidate|employee|worker)\s+(?:work|works|worked|working)\s+hybrid\b|\b(?:prefer|prefers|preferred|open\s+to|available\s+for|seeking|looking\s+for)\s+hybrid\s+(?:work|arrangement|schedule|position|role)\b/iu',
-            'office' => '/\b(?:work format|формат работы)\s*:\s*(?:office|офис)\b|(?:^|[,;:])\s*(?:office[ -]based|on[ -]?site|onsite)\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:work|works|worked|working)\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\b(?:prefer|prefers|preferred|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:office|on[ -]?site|onsite)\s+(?:work|arrangement|schedule|position|role)\b/iu',
+            'remote' => '/\b(?:current\s+)?work format\s*:\s*(?:remote|удаленно)\b|(?:^|[,;:])\s*(?:fully\s+)?remote\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:am|are|is|work|works|working)\s+(?:a\s+)?(?:fully\s+)?(?:remote(?:ly)?(?:\s+(?:employee|worker))?|from\s+home)\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:fully\s+)?remote\s+(?:work|arrangement|schedule|position|role)\b/iu',
+            'hybrid' => '/\b(?:current\s+)?work format\s*:\s*(?:hybrid|гибрид)\b|(?:^|[,;:])\s*hybrid\s+(?:employee|worker|candidate|arrangement|schedule|position|role)\b|\b(?:i|we|candidate|employee|worker)\s+(?:(?:am|are|is)\s+)?(?:work|works|working)\s+hybrid\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+hybrid\s+(?:work|arrangement|schedule|position|role)\b/iu',
+            'office' => '/\b(?:current\s+)?work format\s*:\s*(?:office|офис)\b|(?:^|[,;:])\s*(?:office[ -]based|on[ -]?site|onsite)\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:(?:am|are|is)\s+)?(?:work|works|working)\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\b(?:prefer|prefers|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:office|on[ -]?site|onsite)\s+(?:work|arrangement|schedule|position|role)\b/iu',
         ];
+        $values = [];
         foreach ($patterns as $value => $pattern) {
             if (preg_match($pattern, $text) === 1) {
-                return $value;
+                $values[] = $value;
             }
         }
 
-        return null;
+        return $values;
     }
 
     /** @return array{currency: string, period: ?string, minimum: ?float, maximum: ?float}|null */

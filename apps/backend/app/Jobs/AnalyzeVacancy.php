@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\AI\Exceptions\VacancyOutputException;
 use App\Models\User;
+use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
 use App\Services\DatabaseOwnerContext;
 use App\Services\VacancyAnalysisService;
@@ -20,7 +21,7 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
-    public int $uniqueFor = 600;
+    public int $uniqueFor = Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
 
     public function __construct(public readonly string $ownerId, public readonly string $snapshotId) {}
 

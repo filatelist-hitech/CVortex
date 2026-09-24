@@ -11,8 +11,10 @@ use App\Jobs\AnalyzeVacancy;
 use App\Models\CareerFact;
 use App\Models\CareerSource;
 use App\Models\User;
+use App\Models\Vacancy;
 use App\Models\VacancyAnalysis;
 use App\Models\VacancyRequirement;
+use App\Models\VacancySnapshot;
 use App\Services\CareerFactService;
 use App\Services\DatabaseOwnerContext;
 use App\Services\TrustedCareerQuery;
@@ -536,6 +538,23 @@ class VacancyCoreTest extends TestCase
                 $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
             }
         }
+    }
+
+    public function test_located_in_classification_is_bound_to_the_labeled_place(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $technicalSource = 'Experience with distributed systems located in multiple regions is required.';
+        $technical = $validator->validate(['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', 'distributed systems', $technicalSource),
+        ]], $technicalSource);
+        $this->assertSame('EXPERIENCE', $technical[0]['dimension']);
+
+        $locationSource = 'Candidates must be located in Berlin.';
+        $location = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Berlin', $locationSource, 'berlin'),
+        ]], $locationSource);
+        $this->assertSame('LOCATION', $location[0]['dimension']);
+        $this->assertSame('berlin', $location[0]['normalized_value']);
     }
 
     public function test_domain_parser_mention_is_not_industry_experience(): void
@@ -1481,12 +1500,15 @@ class VacancyCoreTest extends TestCase
     {
         Queue::fake();
         foreach ([
+            ['I am based in Berlin', 'MATCH'],
+            ['I live in Berlin', 'MATCH'],
             ['Based in Berlin', 'MATCH'],
             ['Based in Berlin and open to relocation', 'MATCH'],
             ['Located in Berlin', 'MATCH'],
             ['Lives in Berlin', 'MATCH'],
             ['Living in Berlin', 'MATCH'],
             ['Worked on Berlin migration', 'UNKNOWN'],
+            ['Built an API for Berlin office', 'UNKNOWN'],
             ['Built Berlin deployment tooling', 'UNKNOWN'],
             ['Berlin cluster support', 'UNKNOWN'],
         ] as $index => [$assertion, $expected]) {
@@ -1502,6 +1524,154 @@ class VacancyCoreTest extends TestCase
             $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
             $this->assertSame($expected, $detail->json('data.analysis.dimensions.4.result'), $assertion);
         }
+    }
+
+    public function test_historical_work_format_is_not_current_availability_but_current_statements_are(): void
+    {
+        Queue::fake();
+        foreach ([
+            ['I worked remotely on project X in 2022.', 'Current work format: remote.', 'Current work format', 'remote', 'UNKNOWN'],
+            ['I work remotely.', 'Current work format: remote.', 'Current work format', 'remote', 'MATCH'],
+            ['Open to remote work and available for office work.', 'Office-based work is required.', 'Office work', 'office', 'MATCH'],
+        ] as $index => [$careerEvidence, $source, $label, $value, $expected]) {
+            $user = $this->user('current-work-format-'.$index.'@example.test');
+            app(CareerFactService::class)->createManual($user, 'experience', $careerEvidence);
+            $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+                $this->requirement('WORK_FORMAT', 'MANDATORY', $label, $source, $value),
+            ]]]));
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $actual = \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+                ->where('dimension', 'WORK_FORMAT')->value('result');
+            $this->assertSame($expected, $actual, $careerEvidence);
+        }
+    }
+
+    public function test_candidate_may_explicitly_accept_multiple_work_formats(): void
+    {
+        Queue::fake();
+        $user = $this->user('multiple-work-formats@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Open to remote work and available for office work.');
+        $source = 'Office-based work is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Office work', $source, 'office'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'WORK_FORMAT')->value('result'));
+    }
+
+    public function test_technical_mentions_of_a_city_do_not_prove_candidate_location(): void
+    {
+        Queue::fake();
+        $user = $this->user('technical-city-mention@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Built an API for Berlin office operations.');
+        $source = 'Candidates must be located in Berlin.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('UNKNOWN', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LOCATION')->value('result'));
+    }
+
+    public function test_experience_in_source_is_not_downgraded_to_a_technical_requirement(): void
+    {
+        $source = 'Experience in Kubernetes is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Experience in Kubernetes', $source),
+        ]], $source);
+
+        $this->assertSame('EXPERIENCE', $validated[0]['dimension']);
+
+        Queue::fake();
+        $user = $this->user('experience-in-kubernetes@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Proficient in Kubernetes.');
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Experience in Kubernetes', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+        $this->assertNotSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'EXPERIENCE')->value('result'));
+    }
+
+    public function test_no_longer_required_subjects_are_not_persisted_as_mandatory(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        foreach ([
+            'Kubernetes is no longer required.',
+            'We no longer require Kubernetes.',
+        ] as $source) {
+            $this->assertSame([], $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $source),
+            ]], $source), $source);
+        }
+    }
+
+    public function test_remote_work_platform_is_a_technical_requirement(): void
+    {
+        $source = 'Experience building a remote work collaboration platform is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'remote work collaboration platform', $source),
+        ]], $source);
+
+        $this->assertSame('TECHNICAL', $validated[0]['dimension']);
+    }
+
+    public function test_stale_running_analysis_is_reclaimed_for_explicit_retry(): void
+    {
+        Queue::fake();
+        $user = $this->user('stale-analysis-retry@example.test');
+        $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', null);
+        $result['vacancy']->forceFill(['analysis_status' => 'RUNNING'])->save();
+        \DB::table('vacancies')->where('id', $result['vacancy']->id)->update(['updated_at' => now()->subMinutes(20)]);
+
+        $this->actingAs($user)->postJson('/api/v1/vacancies/'.$result['vacancy']->id.'/reanalyze')->assertAccepted();
+        $this->assertSame('PENDING', $result['vacancy']->fresh()->analysis_status);
+        Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $queued): bool => $queued->snapshotId === (string) $result['snapshot']->id);
+    }
+
+    public function test_duplicate_import_reclaims_stale_running_analysis(): void
+    {
+        Queue::fake();
+        $user = $this->user('stale-analysis-import@example.test');
+        $service = app(VacancyIngestionService::class);
+        $source = 'Laravel is required.';
+        $sourceUrl = 'https://jobs.example.test/stale-analysis';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'source_url' => $sourceUrl,
+            'analysis_status' => 'RUNNING',
+        ]);
+        \DB::table('vacancies')->where('id', $vacancy->id)->update(['updated_at' => now()->subMinutes(20)]);
+        $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, $source, $sourceUrl,
+            hash('sha256', $service->canonicalText($source)), now()->subHour());
+
+        $duplicate = $service->queue($user, $source, $sourceUrl);
+
+        $this->assertTrue($duplicate['duplicate']);
+        $this->assertSame('PENDING', $duplicate['vacancy']->fresh()->analysis_status);
+        Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $queued): bool => $queued->snapshotId === (string) $snapshot->id);
+    }
+
+    public function test_recent_running_analysis_is_not_reclaimed(): void
+    {
+        Queue::fake();
+        $user = $this->user('active-analysis-not-reclaimed@example.test');
+        $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', null);
+        $result['vacancy']->forceFill(['analysis_status' => 'RUNNING'])->save();
+
+        $response = $this->actingAs($user)->postJson('/api/v1/vacancies/'.$result['vacancy']->id.'/reanalyze')->assertAccepted();
+
+        $this->assertSame('RUNNING', $response->json('data.analysis_status'));
+        $this->assertSame('RUNNING', $result['vacancy']->fresh()->analysis_status);
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
     }
 
     public function test_location_evidence_preserves_comma_separated_city_and_country(): void
