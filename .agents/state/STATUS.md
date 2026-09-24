@@ -264,27 +264,35 @@ passed on fixed implementation head `e02b6b4`. The default development-mode
 frontend build still fails prerendering `/_global-error`. PR #31 remains open
 pending human review/merge; M1.4 is not merged.
 
-### M1.4 independent remediation review — 2026-09-24
+### M1.4 independent review and remediation complete — 2026-09-25
 
-The independent review invalidated the earlier zero-finding verdict: it found
+The independent review invalidated the earlier zero-finding verdict, finding
 two P1 and multiple P2 defects in strict OpenAI schema compatibility, the
 Truth Guard's authority boundary, edited-draft recovery, provider errors,
 output validation, revision history, UI stale actions, and generated
-recommendation rationale. Local remediation now requires exact Claim text for
-PASS, batches semantic reviews, fails closed on unsupported content, restores
-recovery after BLOCK, records append-only content revisions with revision-linked
-approval events, bounds nested output, returns safe provider errors, and
-prevents approval/rejection actions while the visible editor is dirty.
+recommendation rationale. Commit `dedd6c9` remediates these issues: PASS now
+requires exact current Claim wording, semantic reviews are batched, unsupported
+content fails closed, blocked content can be corrected, draft revisions are
+append-only and approvals reference a revision, output is bounded, provider
+errors are controlled, and visible unsaved edits disable state-changing UI
+actions.
 
-Local validation on the uncommitted remediation diff: `make test` PASS (backend
-200 tests / 1213 assertions, six PostgreSQL-only skips; frontend 15/15);
-`make lint` PASS (Pint 139 files, PHPStan, ESLint and TypeScript); production
-frontend build PASS; isolated PostgreSQL fresh migration, runtime-role RLS and
-cross-owner suite PASS (45 assertions), rollback/re-up PASS with a second
-45-assertion runtime-role run and preserved parent data (users=4, facts=4,
-vacancies=4). The PostgreSQL suite also interleaves a revision change during
-approval validation and confirms no stale approval. Compose config, PHP syntax,
-runtime Skill JSON, both agent contracts, shell syntax and `git diff --check`
-PASS. Disposable backend tests retain the known non-failing missing-`.env`
-warning. This remediation has not yet been committed or pushed; PR #31 requires
-new-head CI and fresh paginated GitHub review before any merge-ready status.
+Independent re-review of `origin/stage...dedd6c9` found P0=0, P1=0, P2=0.
+Local validation passed: `make test` (backend 200 tests / 1213 assertions,
+six PostgreSQL-only skips; frontend 15/15), `make lint` (Pint 139 files,
+PHPStan, ESLint, TypeScript), production frontend build, PHP syntax, runtime
+Skill JSON, Compose config, both agent contracts, shell syntax and
+`git diff --check`. The isolated PostgreSQL gate passed fresh migration,
+runtime-role/RLS and cross-owner checks (45 assertions), rollback/re-up with a
+second 45-assertion run, parent-data preservation (users=4, facts=4,
+vacancies=4), and stale-approval interleaving. Disposable backend tests emit
+the known non-failing missing-`.env` warning.
+
+On `dedd6c9`, required checks `PR contract`, `Roadmap metadata`, and
+`m0-quality` passed. Fresh paginated GitHub intake found two historical
+checkpoint conversation comments, zero submitted reviews, zero inline comments,
+zero review threads and zero actionable unresolved threads. Local, upstream,
+remote branch and PR heads match; GitHub reports `mergeStateStatus=CLEAN`.
+PR #31 remains OPEN and unmerged. M1.4 implementation and remediation review
+are complete; PR #31 is ready for human merge after the separate state commit's
+required checks and fresh review gate pass. M2 has not started.
