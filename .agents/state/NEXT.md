@@ -1,3 +1,4 @@
-m1-3r-vacancy-core-remediation-review
+1. Merge PR #27 into `stage` after its separate merge-ready state commit passes the mandatory checks and a fresh GitHub review/merge-state gate.
+2. After confirming the merge, start M1.4 using `.agents/tasks/m1-4-application-draft.md`.
 
-Reproduce and remediate the nine currently unresolved PR #27 findings on live head `f9a1df06fa5504d31fb7b9e03f61fe7010b1f57a` (live intake 2026-09-24): contracted passive negation; ongoing/current location temporal qualifiers; conjunction-bound location capture; historical remote-employee evidence; stale RUNNING UI recovery; postfix experience classification; product subjects containing banking/retail; role-prefixed extraction suppression; and migration reconciliation that clears an actual matching failure. Add fail-first regression tests where practical, fix only confirmed root causes, run full project and isolated PostgreSQL validation, and repeat independent diff review. Do not merge PR #27 or start M1.4. After code checks pass, refresh paginated GitHub review state, reply to and resolve only verified closed findings, and only then consider a separate merge-ready state commit whose own SHA passes CI and a fresh review gate.
+Do not merge from this task and do not start M1.4 before the merge is confirmed.
