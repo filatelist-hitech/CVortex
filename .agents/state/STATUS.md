@@ -259,7 +259,7 @@ migration/rollback/re-up/data-preservation and owner/RLS suite (33 assertions
 per run), `git diff --check`, and PR contract. Disposable Laravel/PostgreSQL
 containers emitted the known non-failing warning because `.env` is absent.
 The production frontend build passed before the backend/runtime-AI/docs/tests
-remediation; required CI passed on prior head `6391b8b` and must be rerun on
-the fixed head. The default development-mode frontend build still fails
-prerendering `/_global-error`. PR #31 remains open pending human review/merge;
-M1.4 is not merged.
+remediation; required CI (`PR contract`, `Roadmap metadata`, `m0-quality`)
+passed on fixed implementation head `e02b6b4`. The default development-mode
+frontend build still fails prerendering `/_global-error`. PR #31 remains open
+pending human review/merge; M1.4 is not merged.
