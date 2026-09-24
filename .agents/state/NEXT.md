@@ -1,4 +1,5 @@
-1. Merge PR #27 into `stage`.
-2. After confirming the merge, start M1.4 using `.agents/tasks/m1-4-application-draft.md`.
+1. M1.4 — Application Draft.
 
-Do not merge from this task and do not start M1.4 before the merge is confirmed.
+Requirements and completion criteria: `.agents/tasks/m1-4-application-draft.md`.
+That task specification is the source of truth. Do not start any later
+milestone before M1.4 is complete.
