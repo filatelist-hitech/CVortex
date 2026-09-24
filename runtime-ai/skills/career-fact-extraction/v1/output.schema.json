@@ -16,8 +16,8 @@
             "type": "string",
             "enum": ["skill", "experience", "achievement", "education", "language", "certification", "employment_period", "seniority", "leadership", "responsibility", "technology_depth"]
           },
-          "assertion": {"type": "string", "maxLength": 1000},
-          "source_excerpt": {"type": "string", "maxLength": 2000},
+          "assertion": {"type": "string"},
+          "source_excerpt": {"type": "string"},
           "confidence": {"type": "number", "minimum": 0, "maximum": 1}
         }
       }

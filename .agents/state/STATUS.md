@@ -231,3 +231,68 @@ squash-merged into `stage` at merge commit
 `6a619258c25ee55a05ecbe7dbe8df8430841e9c1` on 2026-09-24T12:47:48Z.
 The live post-merge state confirms PR #27 is merged and `stage` contains the
 reviewed head `a52142e9613bf7f90f6d6462c77ef98fb73e63fd`. M1.4 has not started.
+
+### M1.4 Application Draft — 2026-09-24
+
+M1.4 is implemented on `feature/m1.4-application-draft`, commit `eb43e36`,
+and delivered in open PR #31 targeting `stage`. The slice adds owner-scoped,
+RLS-enforced saved application preparations, provenance-bound recommendations
+and cover drafts, deterministic truth/schema validation around provider-neutral
+generation and review, explicit human approval, and a saved frontend review
+flow. No employer submission capability was added.
+
+An independent review found one P1: manual edit review could PASS while only
+listing a supported substring and omitting an unsupported clause. Commit
+`3e4e5af` fixes this at the Truth Guard contract: review Skill v2 returns an
+ordered FACTUAL/NON_FACTUAL segmentation, and the backend requires its exact
+concatenation to equal the complete candidate content before accepting PASS.
+The regression test returns PASS for only the supported substring of a mixed
+supported/unsupported edit and verifies BLOCK. Independent re-review of the
+full final diff returned P0=0, P1=0, P2=0.
+
+Post-fix validation passed: targeted ApplicationDraft suite (8 tests / 74
+assertions); `make test` (backend 191 tests / 1123 assertions; five
+PostgreSQL-only tests skipped under SQLite; frontend 15/15); `make lint`
+(Pint 138 files, Larastan 0 errors, ESLint and TypeScript); PHP syntax, runtime
+Skill v2 JSON validation, Compose config, isolated PostgreSQL fresh
+migration/rollback/re-up/data-preservation and owner/RLS suite (33 assertions
+per run), `git diff --check`, and PR contract. Disposable Laravel/PostgreSQL
+containers emitted the known non-failing warning because `.env` is absent.
+The production frontend build passed before the backend/runtime-AI/docs/tests
+remediation; required CI (`PR contract`, `Roadmap metadata`, `m0-quality`)
+passed on fixed implementation head `e02b6b4`. The default development-mode
+frontend build still fails prerendering `/_global-error`. PR #31 remains open
+pending human review/merge; M1.4 is not merged.
+
+### M1.4 independent review and remediation complete — 2026-09-25
+
+The independent review invalidated the earlier zero-finding verdict, finding
+two P1 and multiple P2 defects in strict OpenAI schema compatibility, the
+Truth Guard's authority boundary, edited-draft recovery, provider errors,
+output validation, revision history, UI stale actions, and generated
+recommendation rationale. Commit `dedd6c9` remediates these issues: PASS now
+requires exact current Claim wording, semantic reviews are batched, unsupported
+content fails closed, blocked content can be corrected, draft revisions are
+append-only and approvals reference a revision, output is bounded, provider
+errors are controlled, and visible unsaved edits disable state-changing UI
+actions.
+
+Independent re-review of `origin/stage...dedd6c9` found P0=0, P1=0, P2=0.
+Local validation passed: `make test` (backend 200 tests / 1213 assertions,
+six PostgreSQL-only skips; frontend 15/15), `make lint` (Pint 139 files,
+PHPStan, ESLint, TypeScript), production frontend build, PHP syntax, runtime
+Skill JSON, Compose config, both agent contracts, shell syntax and
+`git diff --check`. The isolated PostgreSQL gate passed fresh migration,
+runtime-role/RLS and cross-owner checks (45 assertions), rollback/re-up with a
+second 45-assertion run, parent-data preservation (users=4, facts=4,
+vacancies=4), and stale-approval interleaving. Disposable backend tests emit
+the known non-failing missing-`.env` warning.
+
+On `dedd6c9`, required checks `PR contract`, `Roadmap metadata`, and
+`m0-quality` passed. Fresh paginated GitHub intake found two historical
+checkpoint conversation comments, zero submitted reviews, zero inline comments,
+zero review threads and zero actionable unresolved threads. Local, upstream,
+remote branch and PR heads match; GitHub reports `mergeStateStatus=CLEAN`.
+PR #31 remains OPEN and unmerged. M1.4 implementation and remediation review
+are complete; PR #31 is ready for human merge after the separate state commit's
+required checks and fresh review gate pass. M2 has not started.

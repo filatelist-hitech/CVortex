@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "segments"],
+  "properties": {
+    "status": {"type": "string", "enum": ["PASS", "BLOCK", "USER_RESOLUTION_REQUIRED"]},
+    "segments": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "kind", "claim_ids"],
+        "properties": {
+          "text": {"type": "string", "minLength": 1, "maxLength": 6000},
+          "kind": {"type": "string", "enum": ["FACTUAL", "NON_FACTUAL"]},
+          "claim_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

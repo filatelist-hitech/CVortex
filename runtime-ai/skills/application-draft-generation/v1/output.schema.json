@@ -1,0 +1,51 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recommendations", "short_cover", "standard_cover"],
+  "properties": {
+    "recommendations": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["requirement_id", "section", "before", "after", "reason", "risk", "claim_usages"],
+        "properties": {
+          "requirement_id": {"type": "string"},
+          "section": {"type": "string"},
+          "before": {"type": "string"},
+          "after": {"type": "string"},
+          "reason": {"type": "string"},
+          "risk": {"type": "string"},
+          "claim_usages": {"$ref": "#/$defs/claim_usages"}
+        }
+      }
+    },
+    "short_cover": {"$ref": "#/$defs/cover"},
+    "standard_cover": {"$ref": "#/$defs/cover"}
+  },
+  "$defs": {
+    "claim_usages": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assertion", "claim_ids"],
+        "properties": {
+          "assertion": {"type": "string"},
+          "claim_ids": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string"}}
+        }
+      }
+    },
+    "cover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content", "claim_usages"],
+      "properties": {
+        "content": {"type": "string"},
+        "claim_usages": {"$ref": "#/$defs/claim_usages"}
+      }
+    }
+  }
+}

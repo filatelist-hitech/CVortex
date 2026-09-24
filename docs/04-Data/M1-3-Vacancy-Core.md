@@ -1,6 +1,6 @@
 ---
 title: M1.3 Vacancy Core Implementation
-status: remediation-awaiting-independent-review
+status: implemented
 owner: project
 created: 2026-09-19
 updated: 2026-09-24
@@ -25,7 +25,7 @@ pasted untrusted text
 → seven explainable dimensions, gaps and recommendation
 ```
 
-The original review returned `CHANGES REQUIRED`. Six actionable PR #27 review findings appeared after later pushes; the updated remediation awaits a fresh GitHub merge gate. M1.4 has not started.
+M1.3 implementation and final review are complete. PR #27 was squash-merged into `stage` at `6a619258c25ee55a05ecbe7dbe8df8430841e9c1` on 2026-09-24; the reviewed code head is `a52142e9613bf7f90f6d6462c77ef98fb73e63fd`.
 
 The optional source URL is metadata only. The backend does not resolve DNS, open a socket, follow a redirect or fetch the URL. URL/server ingestion and job-board adapters remain M3 work.
 

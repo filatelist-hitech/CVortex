@@ -26,10 +26,11 @@ Completed Phases 00–07 remain historical foundation. The active implementation
 | M1.2 | `m1-2-career-core.md` | pasted career text becomes reviewed CONFIRMED facts/Claims |
 | M1.3 | `m1-3-vacancy-core.md` | pasted vacancy receives explainable match/gaps/apply recommendation |
 | M1.4 | `m1-4-application-draft.md` | truthful resume recommendations + cover drafts can be reviewed/approved |
+| M2 planning | `m2-application-package-planning.md` | Preview 0.1 findings define one bounded application-package implementation task |
 
 Only the task named by `NEXT.md` is executable.
 
-M2–M6 stay at roadmap level until the previous value checkpoint is validated. Do not pre-expand them into giant execution contracts merely to feel prepared.
+M2–M6 implementation detail stays at roadmap level until the previous value checkpoint is validated. After Preview 0.1, the bounded M2 planning task may define the next implementation contract; do not pre-expand later milestones into giant execution specs.
 
 ## Legacy phase specs
 

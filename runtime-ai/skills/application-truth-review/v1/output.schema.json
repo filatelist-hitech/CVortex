@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "assertions"],
+  "properties": {
+    "status": {"type": "string", "enum": ["PASS", "BLOCK", "USER_RESOLUTION_REQUIRED"]},
+    "assertions": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "claim_ids"],
+        "properties": {
+          "text": {"type": "string", "minLength": 1, "maxLength": 1000},
+          "claim_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

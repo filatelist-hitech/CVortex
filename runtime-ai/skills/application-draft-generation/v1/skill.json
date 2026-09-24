@@ -1,0 +1,7 @@
+{
+  "id": "application.draft-generation",
+  "version": "1.0.0",
+  "prompt_version": "1.0.0",
+  "default_model_policy": "standard_semantic_generation",
+  "description": "Creates resume recommendations and two truthful cover-letter drafts from owner-scoped confirmed Claims."
+}

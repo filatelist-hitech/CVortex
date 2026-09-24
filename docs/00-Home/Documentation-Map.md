@@ -15,6 +15,7 @@ related:
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
   - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
   - "[[../10-Operations/Local-Development|Local Development]]"
+  - "[[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]]"
 ---
 
 # Documentation Map
@@ -36,6 +37,7 @@ related:
 - [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — accepted conceptual data, ownership, provenance and audit model.
 - [[../04-Data/M1-2-Career-Core|M1.2 Career Core Implementation]] — implemented Career lifecycle, API, provenance, Truth Guard and runtime-AI boundary.
 - [[../04-Data/M1-3-Vacancy-Core|M1.3 Vacancy Core Implementation]] — pasted-text snapshots, requirement extraction, explainable matching, recommendation and API boundary.
+- [[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]] — saved Preview 0.1 preparation, recommendation/draft provenance, Truth Guard review, explicit approval and API boundary.
 - [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
 - [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
 - [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.

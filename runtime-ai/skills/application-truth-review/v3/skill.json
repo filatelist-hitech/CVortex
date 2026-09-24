@@ -1,0 +1,7 @@
+{
+  "id": "application.truth-review",
+  "version": "3.0.0",
+  "prompt_version": "3.0.0",
+  "default_model_policy": "standard_semantic_generation",
+  "description": "Reviews a bounded batch of candidate content items with exact coverage and Claim provenance."
+}

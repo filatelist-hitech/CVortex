@@ -1,5 +1,5 @@
-1. M1.4 — Application Draft.
+# Next Authorized Task
 
-Requirements and completion criteria: `.agents/tasks/m1-4-application-draft.md`.
-That task specification is the source of truth. Do not start any later
-milestone before M1.4 is complete.
+Merge PR #31 into `stage` after confirming the required checks and fresh GitHub
+review state pass on the final commit. M2 may begin only after the merge is
+confirmed.
