@@ -1,5 +1,4 @@
 # Next Authorized Task
 
-Merge PR #31 into `stage` after confirming the required checks and fresh GitHub
-review state pass on the final commit. M2 may begin only after the merge is
-confirmed.
+`.agents/tasks/m2-application-package-planning.md` — planning only. This task
+is blocked until Preview 0.1 real-user validation and feedback are recorded.
