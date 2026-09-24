@@ -163,10 +163,13 @@ class ApplicationPostgresFakeProvider implements LlmProvider
             ];
         } elseif ($request->schemaName === 'application_truth_review') {
             $input = json_decode($request->untrustedSourceText, true, flags: JSON_THROW_ON_ERROR);
-            $output = ['status' => 'PASS', 'assertions' => array_map(
-                fn (array $usage): array => ['text' => $usage['assertion'], 'claim_ids' => $usage['claim_ids']],
-                $input['proposed_claim_usages'],
-            )];
+            $claimIds = array_values(array_unique(array_merge(...array_map(
+                fn (array $usage): array => $usage['claim_ids'],
+                $input['proposed_claim_usages'] ?: [[]],
+            ))));
+            $output = ['status' => 'PASS', 'segments' => [[
+                'text' => $input['candidate_content'], 'kind' => 'FACTUAL', 'claim_ids' => $claimIds,
+            ]]];
         } else {
             throw new \LogicException('Unexpected runtime Skill.');
         }

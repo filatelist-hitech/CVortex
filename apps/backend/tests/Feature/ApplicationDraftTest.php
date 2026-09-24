@@ -146,7 +146,7 @@ class ApplicationDraftTest extends TestCase
         $this->assertDatabaseMissing('application_approval_events', ['draft_item_id' => $recommendation['id'], 'action' => 'APPROVED']);
     }
 
-    public function test_factual_edit_is_revalidated_and_unsupported_text_is_blocked(): void
+    public function test_truth_guard_blocks_pass_when_review_omits_an_unsupported_edit_clause(): void
     {
         Queue::fake();
         $user = $this->user('draft-edit@example.test');
@@ -159,7 +159,10 @@ class ApplicationDraftTest extends TestCase
         $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
         $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')->assertOk();
         $itemId = \DB::table('application_draft_items')->where('preparation_id', $preparation['id'])->where('kind', 'COVER_DRAFT')->value('id');
-        $provider->nextReview = ['status' => 'BLOCK', 'assertions' => []];
+        $claimId = (string) \DB::table('application_claim_usages')->where('draft_item_id', $itemId)->value('claim_id');
+        $provider->nextReview = ['status' => 'PASS', 'assertions' => [[
+            'text' => 'I built Laravel APIs.', 'claim_ids' => [$claimId],
+        ]]];
         $edited = $this->patchJson('/api/v1/applications/draft-items/'.$itemId, [
             'action' => 'edit', 'content' => 'I led 100 engineers and built Laravel APIs.',
         ])->assertOk()->json('data');
@@ -304,10 +307,24 @@ class ApplicationDraftFakeProvider implements LlmProvider
             ];
         } elseif ($request->schemaName === 'application_truth_review') {
             $input = json_decode($request->untrustedSourceText, true, flags: JSON_THROW_ON_ERROR);
-            $output = $this->nextReview ?? [
-                'status' => 'PASS',
-                'assertions' => array_map(fn (array $usage): array => ['text' => $usage['assertion'], 'claim_ids' => $usage['claim_ids']], $input['proposed_claim_usages']),
-            ];
+            $review = $this->nextReview;
+            if ($review !== null) {
+                $output = [
+                    'status' => $review['status'],
+                    'segments' => array_map(fn (array $assertion): array => [
+                        'text' => $assertion['text'], 'kind' => 'FACTUAL', 'claim_ids' => $assertion['claim_ids'],
+                    ], $review['assertions']),
+                ];
+            } else {
+                $claimIds = array_values(array_unique(array_merge(...array_map(
+                    fn (array $usage): array => $usage['claim_ids'],
+                    $input['proposed_claim_usages'] ?: [[]],
+                ))));
+                $output = [
+                    'status' => 'PASS',
+                    'segments' => [['text' => $input['candidate_content'], 'kind' => 'FACTUAL', 'claim_ids' => $claimIds]],
+                ];
+            }
             $this->nextReview = null;
         } else {
             throw new \LogicException('Unexpected test Skill.');

@@ -85,29 +85,38 @@ class ApplicationTruthGuard
         }
 
         $output = $response->output;
-        if (array_diff(array_keys($output), ['status', 'assertions']) !== [] || array_diff(['status', 'assertions'], array_keys($output)) !== [] || ! in_array($output['status'] ?? null, [
+        if (array_diff(array_keys($output), ['status', 'segments']) !== [] || array_diff(['status', 'segments'], array_keys($output)) !== [] || ! in_array($output['status'] ?? null, [
             TruthGuard::PASS,
             TruthGuard::BLOCK,
             TruthGuard::USER_RESOLUTION_REQUIRED,
-        ], true) || ! is_array($output['assertions'] ?? null) || ! array_is_list($output['assertions'])) {
+        ], true) || ! is_array($output['segments'] ?? null) || ! array_is_list($output['segments'])) {
             $this->record($run, $response, 'BLOCK');
 
             return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
         }
 
+        if ($output['status'] !== TruthGuard::PASS) {
+            $this->record($run, $response, $output['status']);
+
+            return ['status' => $output['status'], 'usages' => [], 'response' => $response, 'skill' => $skill];
+        }
+
         $usages = [];
-        foreach ($output['assertions'] as $assertion) {
-            if (! is_array($assertion) || array_diff(array_keys($assertion), ['text', 'claim_ids']) !== []
-                || array_diff(['text', 'claim_ids'], array_keys($assertion)) !== []
-                || ! is_string($assertion['text']) || trim($assertion['text']) === ''
-                || ! str_contains($content, $assertion['text'])
-                || ! is_array($assertion['claim_ids']) || ! array_is_list($assertion['claim_ids'])) {
+        $coveredContent = '';
+        foreach ($output['segments'] as $segment) {
+            if (! is_array($segment) || array_diff(array_keys($segment), ['text', 'kind', 'claim_ids']) !== []
+                || array_diff(['text', 'kind', 'claim_ids'], array_keys($segment)) !== []
+                || ! is_string($segment['text']) || $segment['text'] === ''
+                || ! in_array($segment['kind'], ['FACTUAL', 'NON_FACTUAL'], true)
+                || ! is_array($segment['claim_ids']) || ! array_is_list($segment['claim_ids'])) {
                 $this->record($run, $response, 'BLOCK');
 
                 return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
             }
-            $ids = array_values(array_unique(array_map('strval', $assertion['claim_ids'])));
-            if ($ids === []) {
+            $coveredContent .= $segment['text'];
+            $ids = array_values(array_unique(array_map('strval', $segment['claim_ids'])));
+            if (($segment['kind'] === 'FACTUAL' && $ids === [])
+                || ($segment['kind'] === 'NON_FACTUAL' && $ids !== [])) {
                 $this->record($run, $response, 'BLOCK');
 
                 return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
@@ -120,18 +129,23 @@ class ApplicationTruthGuard
                     return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
                 }
             }
-            $usages[] = ['assertion' => $assertion['text'], 'claim_ids' => $ids];
+            if ($segment['kind'] === 'FACTUAL') {
+                $usages[] = ['assertion' => $segment['text'], 'claim_ids' => $ids];
+            }
+        }
+        if (! hash_equals($content, $coveredContent)) {
+            $this->record($run, $response, 'BLOCK');
+
+            return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
         }
 
-        if ($output['status'] === TruthGuard::PASS) {
-            foreach ($proposedUsages as $usage) {
-                $reviewed = collect($usages)->first(fn (array $item): bool => hash_equals($item['assertion'], $usage['assertion']));
-                if (! str_contains($content, $usage['assertion']) || $usage['claim_ids'] === []
-                    || $reviewed === null || array_diff($usage['claim_ids'], $reviewed['claim_ids']) !== []) {
-                    $this->record($run, $response, 'BLOCK');
+        foreach ($proposedUsages as $usage) {
+            $reviewed = collect($usages)->first(fn (array $item): bool => str_contains($item['assertion'], $usage['assertion']));
+            if (! str_contains($content, $usage['assertion']) || $usage['claim_ids'] === []
+                || $reviewed === null || array_diff($usage['claim_ids'], $reviewed['claim_ids']) !== []) {
+                $this->record($run, $response, 'BLOCK');
 
-                    return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
-                }
+                return ['status' => TruthGuard::BLOCK, 'usages' => [], 'response' => $response, 'skill' => $skill];
             }
         }
 
