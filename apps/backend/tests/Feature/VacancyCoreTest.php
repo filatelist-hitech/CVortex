@@ -615,6 +615,28 @@ class VacancyCoreTest extends TestCase
             ->where('dimension', 'LOCATION')->value('result'));
     }
 
+    public function test_historical_residence_does_not_supply_current_candidate_location(): void
+    {
+        Queue::fake();
+        $user = $this->user('historical-residence@example.test');
+        $career = app(CareerFactService::class);
+        $career->createManual($user, 'experience', 'Based in London from 2018 to 2020.');
+        $source = 'Candidates must be located in Berlin.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('UNKNOWN', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LOCATION')->value('result'));
+
+        $career->createManual($user, 'experience', 'I am based in Berlin.');
+        $analysis = app(VacancyMatchingService::class)->analyze($user, $result['vacancy'], $result['snapshot']);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'LOCATION')->value('result'));
+    }
+
     public function test_full_residency_label_cannot_match_incidental_api_work(): void
     {
         Queue::fake();
@@ -995,6 +1017,27 @@ class VacancyCoreTest extends TestCase
             app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
             $detail = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
             $this->assertSame($case['result'], $detail->json('data.analysis.dimensions.3.result'), $case['source']);
+        }
+    }
+
+    public function test_native_language_evidence_satisfies_fluent_but_not_the_reverse(): void
+    {
+        Queue::fake();
+        foreach ([
+            ['required' => 'Fluent English', 'candidate' => 'Native English', 'expected' => 'MATCH'],
+            ['required' => 'Native English', 'candidate' => 'Fluent English', 'expected' => 'GAP'],
+        ] as $index => $case) {
+            $user = $this->user('native-language-order-'.$index.'@example.test');
+            app(CareerFactService::class)->createManual($user, 'language', $case['candidate']);
+            $source = $case['required'].' is required.';
+            $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+                $this->requirement('LANGUAGE', 'MANDATORY', $case['required'], $source),
+            ]]]));
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+            $this->assertSame($case['expected'], \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+                ->where('dimension', 'LANGUAGE')->value('result'));
         }
     }
 

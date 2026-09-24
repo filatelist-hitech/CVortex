@@ -391,6 +391,10 @@ class VacancyMatchingService
             return array_search($actual, $cefr, true) >= array_search($required, $cefr, true);
         }
 
+        if ($required === 'fluent' && $actual === 'native') {
+            return true;
+        }
+
         return $actual === $required;
     }
 
@@ -699,6 +703,10 @@ class VacancyMatchingService
 
     private function structuredCandidateValue(string $dimension, string $text): ?string
     {
+        if ($dimension === 'LOCATION' && $this->hasHistoricallyBoundLocation($text)) {
+            return null;
+        }
+
         $patterns = match ($dimension) {
             'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u', '/^\s*(?:(?:i|we)\s+(?:(?:am|are)\s+)?)?(?:based|located|living|live|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u'],
             'WORK_FORMAT' => [],
@@ -721,6 +729,13 @@ class VacancyMatchingService
         }
 
         return null;
+    }
+
+    private function hasHistoricallyBoundLocation(string $text): bool
+    {
+        $period = '(?:from\s+(?:19|20)\d{2}\s+(?:to|through|until)\s+(?:19|20)\d{2}|between\s+(?:19|20)\d{2}\s+and\s+(?:19|20)\d{2})';
+
+        return preg_match('/\b(?:(?:based|located|living|live|lives|resident|residing)\s+(?:in|at|of)\s+|(?:location|residence|локация|город)\s*:?\s*)[^.!?;]{1,100}\b'.$period.'\b/iu', $text) === 1;
     }
 
     private function structuredCompatible(string $dimension, string $expected, string $actual): bool
