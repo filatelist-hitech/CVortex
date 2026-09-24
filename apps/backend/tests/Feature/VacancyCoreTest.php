@@ -405,6 +405,46 @@ class VacancyCoreTest extends TestCase
         $this->assertCount(2, $validated);
     }
 
+    public function test_located_in_requirement_is_classified_as_location(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+
+        $location = 'Candidates must be located in Berlin.';
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Berlin', $location, 'berlin'),
+        ]], $location);
+        $this->assertSame('LOCATION', $validated[0]['dimension']);
+    }
+
+    public function test_compound_identity_and_access_subject_is_not_split_into_partial_label(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $compound = 'Identity and access management is required.';
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Identity', $compound),
+            ]], $compound);
+            $this->fail('A partial label represented the compound identity and access management subject.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Identity and access management', $compound),
+        ]], $compound);
+        $this->assertSame('Identity and access management', $validated[0]['label']);
+    }
+
+    public function test_no_need_for_subject_is_not_a_requirement(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $negated = 'No need for Kubernetes.';
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $negated),
+        ]], $negated);
+        $this->assertSame([], $validated);
+    }
+
     public function test_compound_experience_subject_requires_one_bound_candidate_phrase(): void
     {
         Queue::fake();

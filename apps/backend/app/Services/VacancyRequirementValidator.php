@@ -149,10 +149,11 @@ class VacancyRequirementValidator
     /** @param list<list<string>> $subjects
      * @param  list<string>  $excludedTerms
      */
-    private function appendCueSubjects(array &$subjects, string $subject, array $excludedTerms): void
+    private function appendCueSubjects(array &$subjects, string $subject, array $excludedTerms, bool $allowConjunctionSplit = false): void
     {
         $subject = preg_replace('/\bresidency\s+permit\b/iu', ' ', $subject) ?? $subject;
-        $enumerated = preg_split('/\s*,\s*|\s+(?:and|or)\s+/iu', $subject) ?: [$subject];
+        $separator = $allowConjunctionSplit ? '/\s*,\s*|\s+and\s+/iu' : '/\s*,\s*/u';
+        $enumerated = preg_split($separator, $subject) ?: [$subject];
         foreach ($enumerated as $item) {
             $tokens = $this->requirementSubjectTokens($item, $excludedTerms);
             if ($tokens !== []) {
@@ -205,9 +206,16 @@ class VacancyRequirementValidator
         $subjects = [];
         $subjectTerms = array_merge($generic, $this->requirementModifiers(), ['a', 'an', 'the', 'our', 'this', 'that', 'residence', 'resident', 'residing', 'backend', 'frontend', 'fullstack', 'full-stack', 'developer', 'engineer', 'engineering']);
         $cue = '(?:required|mandatory|must\\s+have|need(?:ed)?\\s+to\\s+have|will\\s+be\\s+a\\s+plus|nice\\s+to\\s+have|preferred|desirable|optional)';
-        preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?:is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $passive);
-        foreach ($passive['subject'] as $subject) {
-            $this->appendCueSubjects($subjects, $subject, array_merge($subjectTerms, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position']));
+        preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?<copula>is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $passive, PREG_SET_ORDER);
+        foreach ($passive as $match) {
+            $subject = $match['subject'];
+            $pluralAgreement = ($match['copula'] ?? '') === 'are'
+                || preg_match('/\s+(?:are|were)$/iu', $subject) === 1;
+            $subject = preg_replace('/\s+(?:are|were)$/iu', '', $subject) ?? $subject;
+            $cueSubjects = preg_split('/\\s+(?:required|mandatory|must\\s+have|need(?:ed)?\\s+to\\s+have|preferred|desirable|optional)\\s+and\\s+/iu', $subject) ?: [$subject];
+            foreach ($cueSubjects as $cueSubject) {
+                $this->appendCueSubjects($subjects, $cueSubject, array_merge($subjectTerms, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position']), $pluralAgreement);
+            }
         }
 
         preg_match_all('/\\b(?:this\\s+)?(?:[\\pL\\pN+#.-]+\\s+){0,4}(?:role|position)?\\s*requires\\s+(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)/iu', $excerpt, $active);
@@ -336,6 +344,9 @@ class VacancyRequirementValidator
             return preg_match('/\bno\s+[\pL\s]{0,40}\brequired\b|\b(?:is|are)\s+not\s+(?:required|mandatory)\b|не\s+(?:требуется|обязател)/iu', $excerpt) === 1;
         }
         $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $subjectTokens));
+        if (preg_match('/\bno\s+need\s+for\s+'.$subject.'\b/iu', $excerpt) === 1) {
+            return true;
+        }
 
         return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory|needed|necessary)\b|\b(?:is|are)\s+not\s+required\s+to\s+'.$subject.'\b|\b(?:do|does|did)\s+not\s+(?:require|need)\s+(?:any\s+)?'.$subject.'\b|\b(?:are|is)\s+not\s+looking\s+for\s+'.$subject.'\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
     }
@@ -349,7 +360,7 @@ class VacancyRequirementValidator
 
         return match (true) {
             preg_match('/\b(?:salary|compensation|pay|зарплат)/iu', $text) === 1 || preg_match('/\b\d+[\d .]*(?:usd|eur|rub|руб|₽)\b/iu', $text) === 1 => 'SALARY',
-            preg_match('/\b(?:location|based in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
+            preg_match('/\b(?:location|based in|located in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
                 || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1)
                 || ($workFormat && $place !== '' && ! in_array($place, ['remote', 'remotely', 'hybrid', 'office', 'on-site', 'onsite'], true)
                     && preg_match('/\b(?:in|at|within)\s+(?:(?:the|our|a|an|my|your|their|its|this|that)\s+)?'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
