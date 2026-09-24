@@ -215,8 +215,16 @@ class VacancyRequirementValidator
             }
         }
 
-        preg_match_all('/\bmust\s+(?<subject>(?:work|be)\s+(?:[\pL\pN+#.-]+\s+){0,11}[\pL\pN+#.-]+)/iu', $excerpt, $arrangementDirected);
+        preg_match_all('/\bmust\s+(?<subject>work\s+(?:[\pL\pN+#.-]+\s+){0,11}[\pL\pN+#.-]+|be\s+(?:remote|remotely|hybrid|office|on[ -]?site|onsite)\b)/iu', $excerpt, $arrangementDirected);
         foreach ($arrangementDirected['subject'] as $subject) {
+            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
+            if ($tokensForSubject !== []) {
+                $subjects[] = $tokensForSubject;
+            }
+        }
+
+        preg_match_all('/\bmust\s+be\s+(?:[\pL\pN+#.-]+\s+){1,4}(?:in|at|with|of)\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,5}[\pL\pN+#.-]+)/iu', $excerpt, $qualifiedDirected);
+        foreach ($qualifiedDirected['subject'] as $subject) {
             $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
             if ($tokensForSubject !== []) {
                 $subjects[] = $tokensForSubject;
@@ -247,7 +255,8 @@ class VacancyRequirementValidator
             $aliases = [
                 'remote' => ['remote', 'remotely', 'work from home', 'удаленно'],
                 'hybrid' => ['hybrid', 'гибрид'],
-                'office' => ['office', 'on-site', 'onsite', 'офис'],
+                // “Berlin office” names a place, not an office work arrangement.
+                'office' => ['office required', 'office mandatory', 'office-based', 'office based', 'office work', 'office position', 'office role', 'office arrangement', 'work in the office', 'working in the office', 'based in the office', 'on-site', 'onsite', 'офисная работа', 'офисный формат', 'офисный режим', 'офисная позиция', 'работа в офисе'],
             ];
             $supported = [];
             foreach ($aliases as $canonical => $forms) {
@@ -343,7 +352,7 @@ class VacancyRequirementValidator
             preg_match('/\b(?:location|based in|city|relocat(?:e|ion)?|локац|город)\b/iu', $text) === 1
                 || ($place !== '' && preg_match('/\b'.preg_quote($place, '/').'\s+residen(?:ce|cy)\b|\bresiden(?:ce|cy|t)\s+(?:in|at|of)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1)
                 || ($workFormat && $place !== '' && ! in_array($place, ['remote', 'remotely', 'hybrid', 'office', 'on-site', 'onsite'], true)
-                    && preg_match('/\b(?:in|at|within)\s+'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
+                    && preg_match('/\b(?:in|at|within)\s+(?:(?:the|our|a|an|my|your|their|its|this|that)\s+)?'.preg_quote($place, '/').'\b/iu', $text) === 1) => 'LOCATION',
             $workFormat => 'WORK_FORMAT',
             preg_match('/\b(?:industry|sector|domain)\s+experience\b|\bexperience\s+(?:in|within)\s+(?:the\s+)?[\pL\pN-]+\s+(?:industry|sector|domain)\b/iu', $text) === 1 => 'DOMAIN',
             $this->hasExperienceDuration($excerpt)

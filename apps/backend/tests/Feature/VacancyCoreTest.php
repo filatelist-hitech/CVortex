@@ -1221,6 +1221,26 @@ class VacancyCoreTest extends TestCase
         $this->assertSame('MANDATORY', $validated[0]['importance']);
     }
 
+    public function test_must_be_predicate_does_not_replace_concrete_subject_label(): void
+    {
+        $source = 'Candidates must be proficient in Kubernetes.';
+        $validator = app(VacancyRequirementValidator::class);
+
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Proficient', $source),
+            ]], $source);
+            $this->fail('A predicate label replaced the concrete Kubernetes subject.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Kubernetes', $source),
+        ]], $source);
+        $this->assertSame('MANDATORY', $validated[0]['importance']);
+    }
+
     public function test_clause_can_support_location_and_work_format_requirements(): void
     {
         $source = 'Remote work in Berlin is required.';
@@ -1231,6 +1251,18 @@ class VacancyCoreTest extends TestCase
 
         $this->assertSame(['LOCATION', 'WORK_FORMAT'], array_column($validated, 'dimension'));
         $this->assertSame(['berlin', 'remote'], array_column($validated, 'normalized_value'));
+    }
+
+    public function test_work_arrangement_location_allows_a_bounded_determiner(): void
+    {
+        $source = 'Hybrid work in our Berlin office is required.';
+        $validated = app(VacancyRequirementValidator::class)->validate(['requirements' => [
+            $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Hybrid work', $source, 'hybrid'),
+        ]], $source);
+
+        $this->assertSame(['LOCATION', 'WORK_FORMAT'], array_column($validated, 'dimension'));
+        $this->assertSame(['berlin', 'hybrid'], array_column($validated, 'normalized_value'));
     }
 
     public function test_negation_for_another_subject_does_not_remove_a_supported_requirement(): void
