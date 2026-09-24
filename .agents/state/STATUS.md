@@ -241,14 +241,25 @@ and cover drafts, deterministic truth/schema validation around provider-neutral
 generation and review, explicit human approval, and a saved frontend review
 flow. No employer submission capability was added.
 
-Validation passed: `make test` (backend 191 tests / 1123 assertions; five
-PostgreSQL-only tests skipped under SQLite; frontend 15/15), `make lint`,
-production frontend build, PHP syntax, runtime skill JSON validation, Compose
-config, isolated PostgreSQL fresh migration/rollback/re-up/data-preservation
-and owner/RLS suite (33 assertions per run), implementation agent contract,
-`git diff --check`, and PR contract. Disposable Laravel containers emitted a
-non-failing warning because `.env` is absent. The default development-mode
-frontend build still fails prerendering `/_global-error`; the production build
-and required CI pass. PR #31's required `PR contract`, `Roadmap metadata`, and
-`m0-quality` checks passed. The final code review found P0=0, P1=0, P2=0.
-PR #31 remains open pending human review/merge; M1.4 is not merged.
+An independent review found one P1: manual edit review could PASS while only
+listing a supported substring and omitting an unsupported clause. Commit
+`3e4e5af` fixes this at the Truth Guard contract: review Skill v2 returns an
+ordered FACTUAL/NON_FACTUAL segmentation, and the backend requires its exact
+concatenation to equal the complete candidate content before accepting PASS.
+The regression test returns PASS for only the supported substring of a mixed
+supported/unsupported edit and verifies BLOCK. Independent re-review of the
+full final diff returned P0=0, P1=0, P2=0.
+
+Post-fix validation passed: targeted ApplicationDraft suite (8 tests / 74
+assertions); `make test` (backend 191 tests / 1123 assertions; five
+PostgreSQL-only tests skipped under SQLite; frontend 15/15); `make lint`
+(Pint 138 files, Larastan 0 errors, ESLint and TypeScript); PHP syntax, runtime
+Skill v2 JSON validation, Compose config, isolated PostgreSQL fresh
+migration/rollback/re-up/data-preservation and owner/RLS suite (33 assertions
+per run), `git diff --check`, and PR contract. Disposable Laravel/PostgreSQL
+containers emitted the known non-failing warning because `.env` is absent.
+The production frontend build passed before the backend/runtime-AI/docs/tests
+remediation; required CI passed on prior head `6391b8b` and must be rerun on
+the fixed head. The default development-mode frontend build still fails
+prerendering `/_global-error`. PR #31 remains open pending human review/merge;
+M1.4 is not merged.
