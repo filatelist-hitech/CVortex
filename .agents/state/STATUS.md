@@ -231,3 +231,24 @@ squash-merged into `stage` at merge commit
 `6a619258c25ee55a05ecbe7dbe8df8430841e9c1` on 2026-09-24T12:47:48Z.
 The live post-merge state confirms PR #27 is merged and `stage` contains the
 reviewed head `a52142e9613bf7f90f6d6462c77ef98fb73e63fd`. M1.4 has not started.
+
+### M1.4 Application Draft — 2026-09-24
+
+M1.4 is implemented on `feature/m1.4-application-draft`, commit `eb43e36`,
+and delivered in open PR #31 targeting `stage`. The slice adds owner-scoped,
+RLS-enforced saved application preparations, provenance-bound recommendations
+and cover drafts, deterministic truth/schema validation around provider-neutral
+generation and review, explicit human approval, and a saved frontend review
+flow. No employer submission capability was added.
+
+Validation passed: `make test` (backend 191 tests / 1123 assertions; five
+PostgreSQL-only tests skipped under SQLite; frontend 15/15), `make lint`,
+production frontend build, PHP syntax, runtime skill JSON validation, Compose
+config, isolated PostgreSQL fresh migration/rollback/re-up/data-preservation
+and owner/RLS suite (33 assertions per run), implementation agent contract,
+`git diff --check`, and PR contract. Disposable Laravel containers emitted a
+non-failing warning because `.env` is absent. The default development-mode
+frontend build still fails prerendering `/_global-error`; the production build
+and required CI pass. PR #31's required `PR contract`, `Roadmap metadata`, and
+`m0-quality` checks passed. The final code review found P0=0, P1=0, P2=0.
+PR #31 remains open pending human review/merge; M1.4 is not merged.

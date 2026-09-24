@@ -1,5 +1,6 @@
-1. M1.4 — Application Draft.
+1. M2 — Define bounded application-package implementation from Preview 0.1
+   findings (`.agents/tasks/m2-application-package-planning.md`).
 
-Requirements and completion criteria: `.agents/tasks/m1-4-application-draft.md`.
-That task specification is the source of truth. Do not start any later
-milestone before M1.4 is complete.
+This is a planning task only. Begin after Preview 0.1 is validated; do not
+implement the M2 application package until a separate bounded implementation
+spec becomes the NEXT task.
