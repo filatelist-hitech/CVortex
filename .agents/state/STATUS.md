@@ -186,3 +186,13 @@ fresh worktree: bootstrap/build/start, Nginx/browser shell, health behavior,
 PostgreSQL/Redis failure and recovery, PostgreSQL/private-storage persistence,
 Redis disposal, host exposure, backend/frontend quality checks and production
 frontend build.
+
+### M1.3R20 final PR #27 merge gate — 2026-09-24
+
+M1.3 implementation and PR #27 remediation are complete. The failed `m0-quality` on `c6a48fe` was the frontend regression `ignores an older polling list response when refreshes overlap`: the assertion raced the delayed optional poll, so `listCalls` was still 1 instead of 3. Test synchronization was corrected in `d3faf30`; `m0-quality` passed on subsequent pushed heads, including final code head `06d3994c035b37b997944611d65b61241843b932`.
+
+The final remediation added fail-closed handling for direct do-not-output suppression, source-bound recognition and evidence matching for unqualified catalogued languages, and label-bound classification when location and work-format cues share a clause. Regression tests cover the suppression phrase, Italian-language evidence, distinct Remote work/Berlin subjects, and comma-separated city/country evidence. The comma-separated location finding was not reproducible: normalization already preserves both place tokens for structured comparison; the exact scenario now has end-to-end regression coverage. Independent review of the final remediation diff found P0=0, P1=0, P2=0.
+
+Validation on `06d3994`: targeted regressions PASS; `make test` PASS (backend 167 tests / 988 assertions, 4 PostgreSQL-only skips; frontend 13/13); `make lint` PASS (Pint 124 files, Larastan 0 errors, ESLint and TypeScript); `bash scripts/check-pr-contract.sh 27` PASS; `bash scripts/check-agent-contract.sh implementation .agents/tasks/m1-3r-vacancy-core-remediation-review.md --write --user-override` PASS; PHP syntax for changed backend files PASS; and `git diff --check` PASS. PostgreSQL revalidation was not repeated because this remediation changed no schema, RLS, database ownership, or concurrency behavior; the immediately preceding isolated PostgreSQL validation remains recorded above.
+
+Fresh paginated GitHub intake: 132 submitted reviews, 210 inline comments, 2 conversation comments, and 101 review threads across two GraphQL pages. All actionable findings received specific replies; GraphQL reports zero unresolved threads. `PR contract`, `Roadmap metadata`, and `m0-quality` all PASS on `06d3994`; local HEAD, origin branch HEAD, and PR HEAD match. GitHub reports `mergeStateStatus=CLEAN`. PR #27 is open and unmerged; M1.4 has not started. This records readiness for merge into `stage`, not a completed merge.
