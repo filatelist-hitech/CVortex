@@ -66,9 +66,9 @@ class VacancyRequirementValidator
             $dimension = $this->sourceDimension($label, $excerpt);
             $requiresSubjectIdentity = in_array($dimension, ['TECHNICAL', 'DOMAIN', 'EXPERIENCE', 'LANGUAGE'], true)
                 || $this->hasCandidateDirectedCue($excerpt);
-            $identifiesSubject = $dimension === 'LANGUAGE'
+            $identifiesSubject = ! $requiresSubjectIdentity || ($dimension === 'LANGUAGE'
                 ? $this->languageTokenFromLabel($label) !== null
-                : $this->labelIdentifiesRequirement($label, $excerpt);
+                : $this->labelIdentifiesRequirement($label, $excerpt));
             if (! $this->labelSupportedByExcerpt($label, $excerpt)
                 || ($requiresSubjectIdentity && ! $identifiesSubject)) {
                 throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
@@ -138,12 +138,27 @@ class VacancyRequirementValidator
     private function labelMatchesCueSubject(array $labelTokens, array $cueSubjects): bool
     {
         foreach ($cueSubjects as $subject) {
-            if (array_diff($labelTokens, $subject) === []) {
+            if (array_diff($subject, $labelTokens) === []) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /** @param list<list<string>> $subjects
+     * @param  list<string>  $excludedTerms
+     */
+    private function appendCueSubjects(array &$subjects, string $subject, array $excludedTerms): void
+    {
+        $subject = preg_replace('/\bresidency\s+permit\b/iu', ' ', $subject) ?? $subject;
+        $enumerated = preg_split('/\s*,\s*|\s+(?:and|or)\s+/iu', $subject) ?: [$subject];
+        foreach ($enumerated as $item) {
+            $tokens = $this->requirementSubjectTokens($item, $excludedTerms);
+            if ($tokens !== []) {
+                $subjects[] = $tokens;
+            }
+        }
     }
 
     /** @return list<string> */
@@ -188,47 +203,32 @@ class VacancyRequirementValidator
     private function requirementCueSubjectTokens(string $excerpt, array $generic): array
     {
         $subjects = [];
-        $subjectTerms = array_merge($generic, $this->requirementModifiers());
+        $subjectTerms = array_merge($generic, $this->requirementModifiers(), ['a', 'an', 'the', 'our', 'this', 'that', 'residence', 'resident', 'residing', 'backend', 'frontend', 'fullstack', 'full-stack', 'developer', 'engineer', 'engineering']);
         $cue = '(?:required|mandatory|must\\s+have|need(?:ed)?\\s+to\\s+have|will\\s+be\\s+a\\s+plus|nice\\s+to\\s+have|preferred|desirable|optional)';
         preg_match_all('/(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)(?:\\s+(?:is|are|be))?\\s+'.$cue.'\\b/iu', $excerpt, $passive);
         foreach ($passive['subject'] as $subject) {
-            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position']));
-            if ($tokensForSubject !== []) {
-                $subjects[] = $tokensForSubject;
-            }
+            $this->appendCueSubjects($subjects, $subject, array_merge($subjectTerms, ['is', 'are', 'be', 'using', 'this', 'that', 'role', 'position']));
         }
 
         preg_match_all('/\\b(?:this\\s+)?(?:[\\pL\\pN+#.-]+\\s+){0,4}(?:role|position)?\\s*requires\\s+(?<subject>(?:[\\pL\\pN+#.-]+\\s+){0,5}[\\pL\\pN+#.-]+)/iu', $excerpt, $active);
         foreach ($active['subject'] as $subject) {
-            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['this', 'that', 'role', 'position']));
-            if ($tokensForSubject !== []) {
-                $subjects[] = $tokensForSubject;
-            }
+            $this->appendCueSubjects($subjects, $subject, array_merge($subjectTerms, ['this', 'that', 'role', 'position']));
         }
 
         preg_match_all('/\b(?:needs?|must\s+(?:know|use|operate|have))\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,12}[\pL\pN+#.-]+)/iu', $excerpt, $candidateDirected);
         foreach ($candidateDirected['subject'] as $subject) {
             $subject = preg_replace('/\s+(?:for|in|on|to\s+succeed\s+in)\s+(?:(?:this|the|our)\s+)?(?:[\pL\pN+#.-]+\s+)?(?:role|position|team|project|department|environment|context)\b.*$/iu', '', $subject) ?? $subject;
-            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
-            if ($tokensForSubject !== []) {
-                $subjects[] = $tokensForSubject;
-            }
+            $this->appendCueSubjects($subjects, $subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
         }
 
         preg_match_all('/\bmust\s+(?<subject>work\s+(?:[\pL\pN+#.-]+\s+){0,11}[\pL\pN+#.-]+|be\s+(?:remote|remotely|hybrid|office|on[ -]?site|onsite)\b)/iu', $excerpt, $arrangementDirected);
         foreach ($arrangementDirected['subject'] as $subject) {
-            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
-            if ($tokensForSubject !== []) {
-                $subjects[] = $tokensForSubject;
-            }
+            $this->appendCueSubjects($subjects, $subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
         }
 
         preg_match_all('/\bmust\s+be\s+(?:[\pL\pN+#.-]+\s+){1,4}(?:in|at|with|of)\s+(?<subject>(?:[\pL\pN+#.-]+\s+){0,5}[\pL\pN+#.-]+)/iu', $excerpt, $qualifiedDirected);
         foreach ($qualifiedDirected['subject'] as $subject) {
-            $tokensForSubject = $this->requirementSubjectTokens($subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
-            if ($tokensForSubject !== []) {
-                $subjects[] = $tokensForSubject;
-            }
+            $this->appendCueSubjects($subjects, $subject, array_merge($subjectTerms, ['role', 'position', 'team', 'project', 'department', 'environment', 'context']));
         }
 
         return $subjects;

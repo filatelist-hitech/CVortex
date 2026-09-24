@@ -569,7 +569,7 @@ class VacancyMatchingService
     private function relevantStructuredEvidence(VacancyRequirement $requirement, string $candidateText): bool
     {
         if ($requirement->dimension === 'WORK_FORMAT') {
-            return $this->workFormatValue($candidateText) !== null;
+            return $this->candidateWorkFormatValue($candidateText) !== null;
         }
         if ($requirement->dimension !== 'EXPERIENCE') {
             return true;
@@ -686,7 +686,7 @@ class VacancyMatchingService
             default => [],
         };
         if ($dimension === 'WORK_FORMAT') {
-            return $this->workFormatValue($text);
+            return $this->candidateWorkFormatValue($text);
         }
         if ($dimension === 'EXPERIENCE') {
             $duration = $this->candidateExperienceDuration($text);
@@ -765,12 +765,12 @@ class VacancyMatchingService
         ];
     }
 
-    private function workFormatValue(string $text): ?string
+    private function candidateWorkFormatValue(string $text): ?string
     {
         $patterns = [
-            'remote' => '/\b(?:work format|формат работы)\s*:\s*(?:remote|удаленно)\b|\b(?:fully\s+)?remote\s+(?:work|position|role|arrangement|schedule|job|required)\b|\bfully\s+remote\b|\bwork(?:ing)?\s+(?:fully\s+)?remotely?\b|\bwork\s+from\s+home\b|\b(?:удаленная?|дистанционная?)\s+(?:работа|позиция|формат|занятость)\b|\b(?:работа|работать|формат)\s+удаленно\b/iu',
-            'hybrid' => '/\b(?:work format|формат работы)\s*:\s*(?:hybrid|гибрид)\b|\bhybrid\s+(?:work|working|position|role|arrangement|schedule|required)\b|\b(?:гибридный|гибридная|гибридное)\s+(?:режим|работа|формат|позиция)\b|\bгибрид\s+(?:работа|формат|требуется)\b/iu',
-            'office' => '/\b(?:work format|формат работы)\s*:\s*(?:office|офис)\b|\b(?:on[ -]?site|onsite)\s+(?:work|position|role|arrangement|schedule|required)\b|\boffice(?:[ -]based|\s+required)\b|\bwork\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\bbased\s+in\s+(?:the\s+)?office\b|\b(?:офисная|офисный|офисное)\s+(?:работа|формат|режим|позиция)\b|\bработа\s+в\s+офисе\b/iu',
+            'remote' => '/\b(?:work format|формат работы)\s*:\s*(?:remote|удаленно)\b|(?:^|[,;:])\s*(?:fully\s+)?remote\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:am|are|is|work|works|worked|working)\s+(?:a\s+)?(?:fully\s+)?(?:remote(?:ly)?(?:\s+(?:employee|worker))?|from\s+home)\b|\b(?:prefer|prefers|preferred|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:fully\s+)?remote\s+(?:work|arrangement|schedule|position|role)\b/iu',
+            'hybrid' => '/\b(?:work format|формат работы)\s*:\s*(?:hybrid|гибрид)\b|(?:^|[,;:])\s*hybrid\s+(?:employee|worker|candidate|arrangement|schedule|position|role)\b|\b(?:i|we|candidate|employee|worker)\s+(?:work|works|worked|working)\s+hybrid\b|\b(?:prefer|prefers|preferred|open\s+to|available\s+for|seeking|looking\s+for)\s+hybrid\s+(?:work|arrangement|schedule|position|role)\b/iu',
+            'office' => '/\b(?:work format|формат работы)\s*:\s*(?:office|офис)\b|(?:^|[,;:])\s*(?:office[ -]based|on[ -]?site|onsite)\s+(?:employee|worker|candidate|professional)\b|\b(?:i|we|candidate|employee|worker)\s+(?:work|works|worked|working)\s+(?:on[ -]?site|onsite|in\s+(?:the\s+)?office)\b|\b(?:prefer|prefers|preferred|open\s+to|available\s+for|seeking|looking\s+for)\s+(?:office|on[ -]?site|onsite)\s+(?:work|arrangement|schedule|position|role)\b/iu',
         ];
         foreach ($patterns as $value => $pattern) {
             if (preg_match($pattern, $text) === 1) {

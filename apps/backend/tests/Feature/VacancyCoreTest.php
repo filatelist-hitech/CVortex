@@ -378,6 +378,33 @@ class VacancyCoreTest extends TestCase
             ->where('dimension', 'TECHNICAL')->value('result'));
     }
 
+    public function test_label_must_cover_the_complete_concrete_cue_subject(): void
+    {
+        $source = 'Application security is required.';
+        $validator = app(VacancyRequirementValidator::class);
+
+        try {
+            $validator->validate(['requirements' => [
+                $this->requirement('TECHNICAL', 'MANDATORY', 'Application', $source),
+            ]], $source);
+            $this->fail('A partial label replaced the complete application security subject.');
+        } catch (VacancyOutputException $exception) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $exception->category);
+        }
+
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Application security', $source),
+        ]], $source);
+        $this->assertSame('Application security', $validated[0]['label']);
+
+        $enumerated = 'Application security and penetration testing are required.';
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Application security', $enumerated),
+            $this->requirement('TECHNICAL', 'MANDATORY', 'Penetration testing', $enumerated),
+        ]], $enumerated);
+        $this->assertCount(2, $validated);
+    }
+
     public function test_compound_experience_subject_requires_one_bound_candidate_phrase(): void
     {
         Queue::fake();
@@ -1131,6 +1158,23 @@ class VacancyCoreTest extends TestCase
         app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
         $updated = $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)->assertOk();
         $this->assertSame('MATCH', $updated->json('data.analysis.dimensions.5.result'));
+    }
+
+    public function test_remote_product_work_does_not_become_candidate_arrangement(): void
+    {
+        Queue::fake();
+        $user = $this->user('remote-product-is-not-arrangement@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Built a remote work collaboration platform and a remote employee monitoring product.');
+        $source = 'Office required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'Office', $source, 'office'),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('MAYBE', $analysis->recommendation);
+        $this->assertSame('UNKNOWN', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'WORK_FORMAT')->value('result'));
     }
 
     public function test_inability_statement_cannot_satisfy_a_structured_work_format_requirement(): void
