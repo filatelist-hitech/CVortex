@@ -609,11 +609,29 @@ class VacancyMatchingService
     private function experienceSubjectTokensFrom(string $text): array
     {
         $subject = preg_replace('/\b(?:at\s+least|minimum)?\s*\d+(?:[.,]\d+)?\s*\+?\s*(?:years?|months?|лет|год(?:а|ов)?|месяц[\pL]*)\b/iu', ' ', $text) ?? '';
+        $tokens = [];
+        $connector = null;
+        $ignored = ['required', 'mandatory', 'require', 'requires', 'requiring', 'requirement', 'experience', 'commercial', 'years', 'months', 'least', 'minimum', 'with', 'for', 'and', 'we', 'candidate', 'must', 'have', 'need', 'needed'];
 
-        return array_values(array_filter(
-            array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []),
-            fn (string $token): bool => mb_strlen($token) > 2 && ! in_array($token, ['required', 'mandatory', 'require', 'requires', 'requiring', 'requirement', 'experience', 'commercial', 'years', 'months', 'least', 'minimum', 'with', 'for', 'and', 'we', 'candidate', 'must', 'have', 'need', 'needed'], true),
-        ));
+        foreach (array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($subject)) ?: []) as $token) {
+            if (in_array($token, ['on', 'in', 'of'], true)) {
+                if ($tokens !== []) {
+                    $connector = $token;
+                }
+
+                continue;
+            }
+            if (mb_strlen($token) <= 2 || in_array($token, $ignored, true)) {
+                continue;
+            }
+            if ($connector !== null) {
+                $tokens[] = $connector;
+                $connector = null;
+            }
+            $tokens[] = $token;
+        }
+
+        return $tokens;
     }
 
     private function containsRequirementTerms(string $candidateText, string $requirementText): bool
@@ -630,9 +648,15 @@ class VacancyMatchingService
 
     private function directSubjectMatches(VacancyRequirement $requirement, string $candidateText, string $needle): bool
     {
+        $experienceSubjectTokens = $requirement->dimension === 'EXPERIENCE'
+            ? ($this->experienceSubjectTokens($requirement) ?? [])
+            : [];
+
         return match ($requirement->dimension) {
             'LANGUAGE' => true, // languageEvidenceAllowed binds the named language and its qualification.
-            'EXPERIENCE' => $this->containsRequirementTerms($candidateText, $needle),
+            'EXPERIENCE' => count($experienceSubjectTokens) > 1
+                ? $this->containsRequirementPhrase($candidateText, implode(' ', $experienceSubjectTokens))
+                : $this->containsRequirementTerms($candidateText, $needle),
             default => $this->containsRequirementPhrase($candidateText, $needle),
         };
     }

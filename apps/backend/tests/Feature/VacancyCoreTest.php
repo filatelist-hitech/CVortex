@@ -378,6 +378,44 @@ class VacancyCoreTest extends TestCase
             ->where('dimension', 'TECHNICAL')->value('result'));
     }
 
+    public function test_compound_experience_subject_requires_one_bound_candidate_phrase(): void
+    {
+        Queue::fake();
+        $user = $this->user('application-security-experience@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Experience with application APIs and physical security controls');
+        $source = 'Experience with application security is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', 'Experience with application security', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('GAP', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'EXPERIENCE')->value('result'));
+        $this->assertSame('MAYBE', $analysis->recommendation);
+
+        app(CareerFactService::class)->createManual($user, 'experience', 'Experience with application security projects');
+        $analysis = app(VacancyMatchingService::class)->analyze($user, $result['vacancy'], $result['snapshot']);
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'EXPERIENCE')->value('result'));
+    }
+
+    public function test_experience_subject_preserves_connector_words_in_technology_names(): void
+    {
+        Queue::fake();
+        $user = $this->user('ruby-on-rails-experience@example.test');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Experience building Ruby on Rails applications');
+        $source = 'Experience with Ruby on Rails is required.';
+        $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+            $this->requirement('EXPERIENCE', 'MANDATORY', 'Experience with Ruby on Rails', $source),
+        ]]]));
+        $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+        $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+            ->where('dimension', 'EXPERIENCE')->value('result'));
+    }
+
     public function test_residency_and_industry_requirements_use_source_derived_dimensions(): void
     {
         $validator = app(VacancyRequirementValidator::class);
@@ -1130,6 +1168,22 @@ class VacancyCoreTest extends TestCase
         $this->assertCount(1, $validator->validate(['requirements' => [
             $this->requirement('WORK_FORMAT', 'MANDATORY', 'Remote work', $source, 'remote'),
         ]], $source));
+    }
+
+    public function test_required_to_source_negation_does_not_create_a_remote_work_requirement(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+        $source = 'You are not required to work remotely.';
+        $this->assertSame([], $validator->validate(['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'work remotely', $source, 'remote'),
+        ]], $source));
+
+        $positive = 'You are required to work remotely.';
+        $validated = $validator->validate(['requirements' => [
+            $this->requirement('WORK_FORMAT', 'MANDATORY', 'work remotely', $positive, 'remote'),
+        ]], $positive);
+        $this->assertCount(1, $validated);
+        $this->assertSame('MANDATORY', $validated[0]['importance']);
     }
 
     public function test_negation_for_another_subject_does_not_remove_a_supported_requirement(): void

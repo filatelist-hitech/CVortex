@@ -231,8 +231,8 @@ describe("access shell", () => {
 
   it("selects the newly imported vacancy after refreshing the saved list", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
-      if (typeof handler === "function") poll = handler as () => void;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
+      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
       return 1;
     }) as typeof window.setInterval);
     vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
@@ -310,8 +310,8 @@ describe("access shell", () => {
 
   it("keeps a newer explicit selection when a polling list request resolves", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
-      if (typeof handler === "function") poll = handler as () => void;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
+      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
       return 1;
     }) as typeof window.setInterval);
     vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
@@ -354,8 +354,8 @@ describe("access shell", () => {
 
   it("ignores an older polling list response when refreshes overlap", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
-      if (typeof handler === "function") poll = handler as () => void;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
+      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
       return 1;
     }) as typeof window.setInterval);
     vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
@@ -383,7 +383,8 @@ describe("access shell", () => {
 
     render(<Home />);
     await screen.findByRole("button", { name: /Vacancy A/ });
-    act(() => { poll?.(); poll?.(); });
+    await waitFor(() => expect(poll).toBeTypeOf("function"));
+    act(() => { poll!(); poll!(); });
     await waitFor(() => expect(listCalls).toBe(3));
     fireEvent.click(screen.getByRole("button", { name: /Vacancy B/ }));
     await screen.findByRole("heading", { name: "Vacancy B" });
@@ -397,8 +398,8 @@ describe("access shell", () => {
 
   it("falls back when the selected vacancy disappears during a refresh", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler) => {
-      if (typeof handler === "function") poll = handler as () => void;
+    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
+      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
       return 1;
     }) as typeof window.setInterval);
     vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);

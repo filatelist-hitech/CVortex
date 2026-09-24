@@ -320,7 +320,7 @@ class VacancyRequirementValidator
         }
         $subject = implode('\\s+', array_map(fn (string $token): string => preg_quote($token, '/'), $subjectTokens));
 
-        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory|needed|necessary)\b|\b(?:do|does|did)\s+not\s+(?:require|need)\s+(?:any\s+)?'.$subject.'\b|\b(?:are|is)\s+not\s+looking\s+for\s+'.$subject.'\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
+        return preg_match('/\bno\s+(?:[\pL\s]{0,40}\s)?'.$subject.'\b.{0,40}\brequired\b|\b'.$subject.'\b.{0,40}\b(?:is|are)\s+not\s+(?:required|mandatory|needed|necessary)\b|\b(?:is|are)\s+not\s+required\s+to\s+'.$subject.'\b|\b(?:do|does|did)\s+not\s+(?:require|need)\s+(?:any\s+)?'.$subject.'\b|\b(?:are|is)\s+not\s+looking\s+for\s+'.$subject.'\b|\b'.$subject.'\b.{0,40}\bне\s+(?:требуется|обязател)/iu', $excerpt) === 1;
     }
 
     private function sourceDimension(string $label, string $excerpt): string
