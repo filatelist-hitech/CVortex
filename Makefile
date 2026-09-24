@@ -9,10 +9,18 @@ init:
 	@if [ ! -f .env ]; then \
 		cp .env.example .env; \
 		password=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo bin2hex(random_bytes(24));'); \
+		runtime_password=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo bin2hex(random_bytes(24));'); \
 		key=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo "base64:".base64_encode(random_bytes(32));'); \
-		awk -v password="$$password" -v key="$$key" 'BEGIN { FS=OFS="=" } $$1=="POSTGRES_PASSWORD" { print $$1, password; next } $$1=="APP_KEY" { print $$1, key; next } { print }' .env > .env.tmp; \
+		awk -v password="$$password" -v runtime_password="$$runtime_password" -v key="$$key" 'BEGIN { FS=OFS="=" } $$1=="POSTGRES_PASSWORD" { print $$1, password; next } $$1=="POSTGRES_RUNTIME_PASSWORD" { print $$1, runtime_password; next } $$1=="APP_KEY" { print $$1, key; next } { print }' .env > .env.tmp; \
 		mv .env.tmp .env; \
 	fi
+	@admin_password=$$(awk -F= '$$1=="POSTGRES_PASSWORD" {print substr($$0, index($$0, "=")+1)}' .env); \
+		runtime_password=$$(awk -F= '$$1=="POSTGRES_RUNTIME_PASSWORD" {print substr($$0, index($$0, "=")+1)}' .env); \
+		if [ -z "$$runtime_password" ] || [ "$$runtime_password" = "$$admin_password" ]; then \
+			runtime_password=$$(docker run --rm php:8.4.25-cli-bookworm php -r 'echo bin2hex(random_bytes(24));'); \
+			awk -v runtime_password="$$runtime_password" 'BEGIN { FS=OFS="="; found=0 } $$1=="POSTGRES_RUNTIME_PASSWORD" { print $$1, runtime_password; found=1; next } { print } END { if (! found) print "POSTGRES_RUNTIME_PASSWORD", runtime_password }' .env > .env.tmp; \
+			mv .env.tmp .env; \
+		fi
 	docker compose build
 	docker compose run --rm --no-deps --user root backend sh -lc 'mkdir -p storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache vendor && chown -R www-data:www-data storage bootstrap/cache vendor'
 	docker compose run --rm --no-deps backend composer install --no-interaction --prefer-dist
@@ -53,4 +61,5 @@ shell:
 	@if [ -n "$(COMMAND)" ]; then docker compose exec $(SERVICE) sh -lc '$(COMMAND)'; else docker compose exec $(SERVICE) sh; fi
 
 migrate:
-	docker compose exec backend php artisan migrate --force
+	docker compose exec -T postgres bash /docker-entrypoint-initdb.d/10-runtime-role.sh
+	docker compose run --rm --no-deps migration php artisan migrate --force

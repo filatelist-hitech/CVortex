@@ -8,16 +8,26 @@ class RuntimeSkillRegistry
 {
     public function careerFactExtraction(): RuntimeSkillDefinition
     {
-        $directory = rtrim((string) config('ai.asset_root'), '/').'/skills/career-fact-extraction/v1';
+        return $this->load('career-fact-extraction/v1', 'career.fact-extraction');
+    }
+
+    public function vacancyRequirementExtraction(): RuntimeSkillDefinition
+    {
+        return $this->load('vacancy-requirement-extraction/v1', 'vacancy.requirement-extraction');
+    }
+
+    private function load(string $relativeDirectory, string $expectedId): RuntimeSkillDefinition
+    {
+        $directory = rtrim((string) config('ai.asset_root'), '/').'/skills/'.$relativeDirectory;
         $manifest = $this->json($directory.'/skill.json');
         $schema = $this->json($directory.'/output.schema.json');
         $prompt = file_get_contents($directory.'/system.prompt.md');
         if ($prompt === false
-            || ($manifest['id'] ?? null) !== 'career.fact-extraction'
+            || ($manifest['id'] ?? null) !== $expectedId
             || ! is_string($manifest['version'] ?? null)
             || ! is_string($manifest['prompt_version'] ?? null)
             || ! is_string($manifest['default_model_policy'] ?? null)) {
-            throw new \RuntimeException('The career extraction Skill assets are invalid.');
+            throw new \RuntimeException('The runtime Skill assets are invalid.');
         }
 
         return new RuntimeSkillDefinition(

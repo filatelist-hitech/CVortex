@@ -16,9 +16,9 @@ trap cleanup EXIT
 
 "${compose[@]}" exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
   -c "CREATE DATABASE \"$database\"" >/dev/null
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --force \
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate --force \
   --path=database/migrations/2026_09_12_000001_create_access_core_tables.php >/dev/null
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --force \
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate --force \
   --path=database/migrations/2026_09_13_000002_add_auth_generation_to_users.php >/dev/null
 
 "${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
@@ -98,14 +98,14 @@ INSERT INTO llm_runs VALUES ('01JLEGACYRUN00000000000000','01JLEGACYUSER00000000
 INSERT INTO migrations (migration,batch) VALUES ('2026_09_13_000003_create_career_core_tables',2);
 SQL
 
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --force >/dev/null
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate --force >/dev/null
 "${compose[@]}" exec -T -e DB_DATABASE="$database" backend php tests/Support/verify_career_upgrade.php
 
 before_rollback=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM career_facts')
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate:rollback --step=3 --force >/dev/null
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate:rollback --step=3 --force >/dev/null
 after_rollback=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM career_facts')
 test "$before_rollback" = "$after_rollback"
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --force >/dev/null
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate --force >/dev/null
 
 "${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
 INSERT INTO users (id,email,password,role,status,auth_generation,created_at,updated_at)

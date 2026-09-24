@@ -26,7 +26,7 @@ cleanup() {
 trap cleanup EXIT
 
 "${compose[@]}" exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$database\"" >/dev/null
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan migrate --force >/dev/null
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate --force >/dev/null
 
 set +e
 (printf '%s\n' "$password" | "${compose[@]}" exec -T -e DB_DATABASE="$database" backend php artisan user:bootstrap-admin first-admin@example.test) >"$output_one" 2>&1 &
@@ -109,7 +109,7 @@ if test "$same_email_registered" -ne 1 || test "$same_email_failed" -ne 1 || tes
 fi
 
 docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$disable_database\"" >/dev/null
-docker compose exec -T -e DB_DATABASE="$disable_database" backend php artisan migrate --force >/dev/null
+docker compose run --rm --no-deps -e DB_DATABASE="$disable_database" migration php artisan migrate --force >/dev/null
 disable_ids=$(docker compose exec -T -e DB_DATABASE="$disable_database" backend php tests/Support/prepare_disable_concurrency.php)
 disable_id_one=$(sed -n '1p' <<<"$disable_ids")
 disable_id_two=$(sed -n '2p' <<<"$disable_ids")

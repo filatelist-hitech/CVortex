@@ -1,11 +1,11 @@
 ---
 title: CVortex M1.3 — Vacancy Core
-status: ready
+status: changes-required-remediation-awaiting-review
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-23
 tags: [task, vacancy, matching, truth-first, ai]
 related:
   - ../../docs/01-Product/Roadmap.md
@@ -13,6 +13,8 @@ related:
 ---
 
 # CVortex M1.3 — Vacancy Core
+
+The original review returned `CHANGES REQUIRED`. Six actionable PR #27 threads appeared after later pushes; their fixes await a fresh GitHub merge gate. M1.4 begins only after the PR eventually merges, under `.agents/tasks/m1-4-application-draft.md`.
 
 ## Observable outcome
 

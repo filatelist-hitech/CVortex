@@ -33,12 +33,12 @@ class OpenAiResponsesProvider
                         'role' => 'user',
                         'content' => [[
                             'type' => 'input_text',
-                            'text' => "UNTRUSTED CAREER SOURCE DATA:\n".$request->untrustedSourceText,
+                            'text' => $request->untrustedDataLabel.":\n".$request->untrustedSourceText,
                         ]],
                     ]],
                     'text' => ['format' => [
                         'type' => 'json_schema',
-                        'name' => 'career_facts',
+                        'name' => $request->schemaName,
                         'strict' => true,
                         'schema' => $request->schema,
                     ]],
