@@ -350,7 +350,7 @@ class VacancyMatchingService
         // A migration from a negative source system to positive production use
         // describes two distinct occurrences of the same technology.
         $text = preg_replace('/(\b(?:migrated|moved|moving)\s+from\b[^.;!?\n]+?)\s+to\s+(?=[\pL])/iu', '$1; ', $text) ?? $text;
-        $clauses = preg_split('/\.(?=\s|$|[A-ZА-Я])|[;!?\n\r]+|,\s*(?i:but|while)\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $clauses = preg_split('/\.(?=\s|$|[A-ZА-Я])|[;!?\n\r]+|,\s*(?i:but|while|now|currently)\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         return array_values(array_filter(array_map('trim', $clauses), fn (string $clause): bool => $clause !== ''));
     }
@@ -707,8 +707,10 @@ class VacancyMatchingService
             return null;
         }
 
+        $ongoingTemporalQualifier = '(?:since\s+(?:19|20)\d{2}|from\s+(?:19|20)\d{2}\s+(?:to|through|until)\s+(?:present|now|current(?:ly)?))';
+        $locationBoundary = '(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|\s+'.$ongoingTemporalQualifier.'\b|$)';
         $patterns = match ($dimension) {
-            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u', '/^\s*(?:(?:i|we)\s+(?:(?:am|are)\s+)?)?(?:based|located|living|live|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)(?=[.!?;,)]|\s+(?:and|but)\s+(?:(?:open|willing|available)\s+to\s+(?:relocat(?:e|ion)|move)\b)|$)/u'],
+            'LOCATION' => ['/(?:^|\b)(?:location|residence|локация|город)\s*:?\s*([\pL\pN .-]+?)'.$locationBoundary.'/u', '/^\s*(?:(?:now|currently)\s+)?(?:(?:i|we)\s+(?:(?:am|are)\s+)?)?(?:based|located|living|live|lives|resident|residing)\s+(?:in|at|of)\s+(?:the\s+)?([\pL\pN .-]+?)'.$locationBoundary.'/u'],
             'WORK_FORMAT' => [],
             'SALARY' => [],
             'EXPERIENCE' => [],
@@ -973,8 +975,8 @@ class VacancyMatchingService
     {
         $value = str_replace('’', "'", mb_strtolower($value));
         $value = str_replace(
-            ["don't", "doesn't", "didn't", "haven't", "hasn't", "hadn't", "can't"],
-            ['do not', 'does not', 'did not', 'have not', 'has not', 'had not', 'cannot'],
+            ["don't", "doesn't", "didn't", "haven't", "hasn't", "hadn't", "can't", "isn't", "aren't", "wasn't", "weren't"],
+            ['do not', 'does not', 'did not', 'have not', 'has not', 'had not', 'cannot', 'is not', 'are not', 'was not', 'were not'],
             $value,
         );
 

@@ -637,6 +637,28 @@ class VacancyCoreTest extends TestCase
             ->where('dimension', 'LOCATION')->value('result'));
     }
 
+    public function test_ongoing_location_intervals_match_the_current_place_without_the_date(): void
+    {
+        Queue::fake();
+        foreach ([
+            'Based in Berlin since 2018.',
+            'Based in Berlin from 2018 to present.',
+            'Based in London from 2018 to 2020, now based in Berlin.',
+        ] as $index => $location) {
+            $user = $this->user('ongoing-location-'.$index.'@example.test');
+            app(CareerFactService::class)->createManual($user, 'experience', $location);
+            $source = 'Candidates must be located in Berlin.';
+            $this->app->instance(LlmProvider::class, new VacancyFakeLlmProvider([['requirements' => [
+                $this->requirement('LOCATION', 'MANDATORY', 'Berlin', $source, 'berlin'),
+            ]]]));
+            $result = app(VacancyIngestionService::class)->queue($user, $source, null);
+            $analysis = app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+
+            $this->assertSame('MATCH', \DB::table('vacancy_match_dimensions')->where('vacancy_analysis_id', $analysis->id)
+                ->where('dimension', 'LOCATION')->value('result'), $location);
+        }
+    }
+
     public function test_full_residency_label_cannot_match_incidental_api_work(): void
     {
         Queue::fake();
@@ -2347,10 +2369,12 @@ class VacancyCoreTest extends TestCase
             'none with Kubernetes', 'without any Kubernetes experience',
             'I never used Kubernetes', 'I am lacking Kubernetes experience',
             'Kubernetes was not used in production',
+            'Kubernetes wasn\'t used in production', 'Kubernetes wasn’t used in production',
         ];
         $positive = [
             'I have Kubernetes experience', '2 years of Kubernetes experience', 'Kubernetes in production for 3 years',
             'Kubernetes was used in production', 'Kubernetes was not only used in production, but also in testing',
+            'Kubernetes wasn\'t only used in production',
             'Commercial Kubernetes experience',
             'Migrated from a system with no Kubernetes support to Kubernetes in production.',
             'Old platform had no Kubernetes. New platform uses Kubernetes in production.',
