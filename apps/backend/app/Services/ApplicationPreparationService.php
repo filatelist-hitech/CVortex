@@ -12,6 +12,7 @@ use App\AI\RuntimeSkillRegistry;
 use App\Models\ApplicationApprovalEvent;
 use App\Models\ApplicationClaimUsage;
 use App\Models\ApplicationDraftItem;
+use App\Models\ApplicationDraftRevision;
 use App\Models\ApplicationLlmRun;
 use App\Models\ApplicationPreparation;
 use App\Models\CareerFact;
@@ -94,7 +95,15 @@ class ApplicationPreparationService
         $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->findOrFail($preparation->vacancy_analysis_id);
         $context = $this->contextBuilder->build($user, $snapshot, $analysis);
         $allowedClaims = $this->claimMap($user, $context['claims']);
-        $skill = $this->skills->applicationDraftGeneration();
+        try {
+            $skill = $this->skills->applicationDraftGeneration();
+        } catch (\Throwable $exception) {
+            throw new LlmProviderException(
+                LlmProviderException::NOT_CONFIGURED,
+                'Application draft generation is unavailable.',
+                previous: $exception,
+            );
+        }
         $run = $this->newRun($user, $preparation, 'application_draft_generation', $skill);
         try {
             $response = $this->provider->generateStructured(new LlmRequest(
@@ -113,8 +122,16 @@ class ApplicationPreparationService
                 untrustedDataLabel: 'UNTRUSTED VACANCY AND CONFIRMED CAREER DATA',
             ));
             $items = $this->validateGeneration($response->output, $context, $allowedClaims);
-            foreach ($items as &$item) {
-                $guard = $this->truthGuard->validate($user, $preparation, $item['content'], $item['claim_usages'], $allowedClaims);
+            $reviewCandidates = [];
+            foreach ($items as $index => $item) {
+                $reviewCandidates['generation-'.$index] = [
+                    'content' => $item['content'],
+                    'proposed_usages' => $item['claim_usages'],
+                ];
+            }
+            $reviews = $this->truthGuard->validateMany($user, $preparation, $reviewCandidates, $allowedClaims);
+            foreach ($items as $index => &$item) {
+                $guard = $reviews['generation-'.$index] ?? ['status' => TruthGuard::BLOCK, 'usages' => []];
                 $item['claim_usages'] = $guard['usages'];
                 $item['validation_result'] = $guard['status'];
                 $item['status'] = $guard['status'] === TruthGuard::PASS ? 'DRAFT' : 'BLOCKED';
@@ -146,10 +163,12 @@ class ApplicationPreparationService
                         'risk' => $item['risk'],
                         'status' => $item['status'],
                         'validation_result' => $item['validation_result'],
+                        'revision_number' => 1,
                         'validated_content_hash' => $item['validation_result'] === TruthGuard::PASS ? hash('sha256', $item['content']) : null,
                         'validated_at' => $item['validation_result'] === TruthGuard::PASS ? now() : null,
                     ])->save();
                     $this->replaceUsages($user, $draft, $item['claim_usages'], $allowedClaims);
+                    $this->recordRevision($user, $draft, 'GENERATED', $item['validation_result'], $item['claim_usages']);
                 }
             });
         } catch (\Throwable $exception) {
@@ -187,16 +206,17 @@ class ApplicationPreparationService
             }
             $this->assertCurrent($user, $lockedPreparation);
             $this->lockClaims($user, array_keys($available));
+            $revisionNumber = (int) $locked->revision_number + 1;
             $locked->forceFill([
                 'content' => trim($content),
                 'status' => $guard['status'] === TruthGuard::PASS ? 'DRAFT' : 'BLOCKED',
                 'validation_result' => $guard['status'],
+                'revision_number' => $revisionNumber,
                 'validated_content_hash' => $guard['status'] === TruthGuard::PASS ? hash('sha256', trim($content)) : null,
                 'validated_at' => now(),
             ])->save();
-            if ($guard['status'] === TruthGuard::PASS || $guard['usages'] !== []) {
-                $this->replaceUsages($user, $locked, $guard['usages'], $available);
-            }
+            $this->replaceUsages($user, $locked, $guard['usages'], $available);
+            $this->recordRevision($user, $locked, 'EDITED', $guard['status'], $guard['usages']);
             $this->recordAction($user, $locked, 'EDITED', $guard['status']);
             $lockedPreparation->forceFill(['status' => ApplicationPreparation::STATUS_DRAFT])->save();
         });
@@ -254,9 +274,7 @@ class ApplicationPreparationService
                 'validated_content_hash' => $guard['status'] === TruthGuard::PASS ? hash('sha256', $locked->content) : null,
                 'validated_at' => now(),
             ])->save();
-            if ($guard['status'] === TruthGuard::PASS || $guard['usages'] !== []) {
-                $this->replaceUsages($user, $locked, $guard['usages'], $available);
-            }
+            $this->replaceUsages($user, $locked, $guard['usages'], $available);
             $this->recordAction($user, $locked, 'ACCEPTED', $guard['status']);
         });
 
@@ -334,6 +352,9 @@ class ApplicationPreparationService
     {
         $this->assertOwner($user, $preparation);
         $items = ApplicationDraftItem::query()->where('owner_id', $user->id)->where('preparation_id', $preparation->id)->orderBy('created_at')->get();
+        $revisions = ApplicationDraftRevision::query()->where('owner_id', $user->id)
+            ->whereIn('draft_item_id', $items->pluck('id'))->orderBy('draft_item_id')->orderBy('revision_number')->get()
+            ->groupBy('draft_item_id');
 
         return [
             'id' => (string) $preparation->id,
@@ -351,9 +372,20 @@ class ApplicationPreparationService
                 'risk' => $item->risk,
                 'status' => $item->status,
                 'validation_result' => $item->validation_result,
+                'revision_number' => (int) $item->revision_number,
                 'claim_usages' => $this->presentUsages($user, $item),
+                'revisions' => ($revisions->get($item->id) ?? collect())->map(fn (ApplicationDraftRevision $revision): array => [
+                    'revision_number' => (int) $revision->revision_number,
+                    'action' => $revision->action,
+                    'content' => $revision->content,
+                    'content_hash' => $revision->content_hash,
+                    'validation_result' => $revision->validation_result,
+                    'claim_usages' => $revision->claim_usages,
+                    'actor_user_id' => (string) $revision->actor_user_id,
+                    'created_at' => $revision->created_at,
+                ])->all(),
                 'approvals' => ApplicationApprovalEvent::query()->where('owner_id', $user->id)->where('draft_item_id', $item->id)
-                    ->orderBy('created_at')->orderBy('id')->get(['action', 'content_hash', 'validation_result', 'created_at']),
+                    ->orderBy('created_at')->orderBy('id')->get(['action', 'revision_number', 'content_hash', 'validation_result', 'created_at']),
             ])->all(),
         ];
     }
@@ -365,24 +397,30 @@ class ApplicationPreparationService
      */
     private function validateGeneration(array $output, array $context, array $allowedClaims): array
     {
-        if (array_diff(['recommendations', 'short_cover', 'standard_cover'], array_keys($output)) !== []
-            || array_diff(array_keys($output), ['recommendations', 'short_cover', 'standard_cover']) !== []
+        if (! $this->hasExactKeys($output, ['recommendations', 'short_cover', 'standard_cover'])
             || ! is_array($output['recommendations']) || ! array_is_list($output['recommendations'])
+            || count($output['recommendations']) > 12
             || ! is_array($output['short_cover']) || ! is_array($output['standard_cover'])) {
             throw ValidationException::withMessages(['generation' => 'Generated content failed schema validation.']);
         }
 
         $requirementIds = array_fill_keys(array_column($context['requirements'], 'id'), true);
         $items = [];
+        $seenRequirements = [];
         foreach ($output['recommendations'] as $recommendation) {
-            if (! is_array($recommendation) || array_diff(['requirement_id', 'section', 'before', 'after', 'reason', 'risk', 'claim_usages'], array_keys($recommendation)) !== []
-                || ! isset($requirementIds[(string) ($recommendation['requirement_id'] ?? '')])
+            if (! is_array($recommendation) || ! $this->hasExactKeys($recommendation, ['requirement_id', 'section', 'before', 'after', 'reason', 'risk', 'claim_usages'])
+                || ! is_string($recommendation['requirement_id'] ?? null)
+                || ! isset($requirementIds[$recommendation['requirement_id']])
+                || isset($seenRequirements[$recommendation['requirement_id']])
                 || ! is_string($recommendation['section']) || trim($recommendation['section']) === ''
-                || ! is_string($recommendation['before']) || ! is_string($recommendation['after']) || trim($recommendation['after']) === ''
-                || ! is_string($recommendation['reason']) || trim($recommendation['reason']) === ''
-                || ! is_string($recommendation['risk']) || trim($recommendation['risk']) === '') {
+                || mb_strlen(trim($recommendation['section'])) > 120
+                || ! is_string($recommendation['before']) || mb_strlen(trim($recommendation['before'])) > 6000
+                || ! is_string($recommendation['after']) || trim($recommendation['after']) === '' || mb_strlen(trim($recommendation['after'])) > 6000
+                || ! is_string($recommendation['reason']) || trim($recommendation['reason']) === '' || mb_strlen(trim($recommendation['reason'])) > 1000
+                || ! is_string($recommendation['risk']) || trim($recommendation['risk']) === '' || mb_strlen(trim($recommendation['risk'])) > 1000) {
                 throw ValidationException::withMessages(['generation' => 'Generated recommendation failed semantic boundary validation.']);
             }
+            $seenRequirements[$recommendation['requirement_id']] = true;
             $usages = $this->validateUsages($recommendation['claim_usages'], $allowedClaims, $recommendation['after']);
             if ($usages === []) {
                 throw ValidationException::withMessages(['generation' => 'A resume recommendation must trace to confirmed Claims.']);
@@ -391,22 +429,24 @@ class ApplicationPreparationService
             if (! $beforeIsClaim) {
                 throw ValidationException::withMessages(['generation' => 'The recommendation Before value must be supported by an existing confirmed Claim.']);
             }
-            $requirement = collect($context['requirements'])->firstWhere('id', (string) $recommendation['requirement_id']);
+            $requirement = collect($context['requirements'])->firstWhere('id', $recommendation['requirement_id']);
             $items[] = [
                 'kind' => ApplicationDraftItem::KIND_RECOMMENDATION,
                 'variant' => null,
                 'section' => trim($recommendation['section']),
                 'before_text' => trim($recommendation['before']),
                 'content' => trim($recommendation['after']),
-                'reason' => trim($recommendation['reason']),
-                'risk' => trim($recommendation['risk']),
+                // These visible explanations are guidance, not candidate facts; do not trust free-form model prose here.
+                'reason' => 'Review the supported Claim against this vacancy requirement.',
+                'risk' => 'Keep candidate wording within the confirmed Claim.',
                 'vacancy_requirement_id' => $requirement['id'],
                 'claim_usages' => $usages,
             ];
         }
         foreach (['SHORT' => 'short_cover', 'STANDARD' => 'standard_cover'] as $variant => $key) {
             $cover = $output[$key];
-            if (array_diff(['content', 'claim_usages'], array_keys($cover)) !== [] || ! is_string($cover['content']) || trim($cover['content']) === '') {
+            if (! $this->hasExactKeys($cover, ['content', 'claim_usages'])
+                || ! is_string($cover['content']) || trim($cover['content']) === '' || mb_strlen(trim($cover['content'])) > 6000) {
                 throw ValidationException::withMessages(['generation' => 'Cover draft failed schema validation.']);
             }
             $usages = $this->validateUsages($cover['claim_usages'], $allowedClaims, $cover['content']);
@@ -436,13 +476,17 @@ class ApplicationPreparationService
         }
         $result = [];
         foreach ($usages as $usage) {
-            if (! is_array($usage) || ! isset($usage['assertion'], $usage['claim_ids'])
+            if (! is_array($usage) || ! $this->hasExactKeys($usage, ['assertion', 'claim_ids'])
                 || ! is_string($usage['assertion']) || trim($usage['assertion']) === ''
+                || mb_strlen(trim($usage['assertion'])) > 6000
                 || ! str_contains($content, $usage['assertion'])
-                || ! is_array($usage['claim_ids']) || ! array_is_list($usage['claim_ids']) || $usage['claim_ids'] === []) {
+                || ! is_array($usage['claim_ids']) || ! array_is_list($usage['claim_ids']) || $usage['claim_ids'] === [] || count($usage['claim_ids']) > 8) {
                 throw ValidationException::withMessages(['generation' => 'Candidate assertion provenance is missing or invalid.']);
             }
-            $ids = array_values(array_unique(array_map('strval', $usage['claim_ids'])));
+            if (array_filter($usage['claim_ids'], fn (mixed $id): bool => ! is_string($id)) !== []) {
+                throw ValidationException::withMessages(['generation' => 'Candidate assertion provenance is missing or invalid.']);
+            }
+            $ids = array_values(array_unique($usage['claim_ids']));
             foreach ($ids as $id) {
                 if (! isset($allowedClaims[$id])) {
                     throw ValidationException::withMessages(['generation' => 'Cross-owner or untrusted Claim provenance was rejected.']);
@@ -452,6 +496,15 @@ class ApplicationPreparationService
         }
 
         return $result;
+    }
+
+    /** @param array<string, mixed> $value
+     * @param  list<string>  $expected
+     */
+    private function hasExactKeys(array $value, array $expected): bool
+    {
+        return array_diff(array_keys($value), $expected) === []
+            && array_diff($expected, array_keys($value)) === [];
     }
 
     /** @param list<array{assertion: string, claim_ids: list<string>}> $usages
@@ -498,21 +551,14 @@ class ApplicationPreparationService
     /** @return array<string, Claim> */
     private function linkedClaims(User $user, ApplicationDraftItem $item): array
     {
-        $ids = ApplicationClaimUsage::query()->where('owner_id', $user->id)->where('draft_item_id', $item->id)->pluck('claim_id');
-        $trusted = collect($this->contextBuilder->build(
+        $preparation = ApplicationPreparation::query()->where('owner_id', $user->id)->findOrFail($item->preparation_id);
+        $context = $this->contextBuilder->build(
             $user,
-            VacancySnapshot::query()->where('owner_id', $user->id)->findOrFail(ApplicationPreparation::query()->where('owner_id', $user->id)->findOrFail($item->preparation_id)->vacancy_snapshot_id),
-            VacancyAnalysis::query()->where('owner_id', $user->id)->findOrFail(ApplicationPreparation::query()->where('owner_id', $user->id)->findOrFail($item->preparation_id)->vacancy_analysis_id),
-        )['claims'])->keyBy('id');
-        $claims = [];
-        foreach ($ids as $id) {
-            $claim = Claim::query()->where('owner_id', $user->id)->find($id);
-            if ($claim !== null && $trusted->has((string) $claim->id) && $this->claims->evaluate($claim) === TruthGuard::PASS) {
-                $claims[(string) $claim->id] = $claim;
-            }
-        }
+            VacancySnapshot::query()->where('owner_id', $user->id)->findOrFail($preparation->vacancy_snapshot_id),
+            VacancyAnalysis::query()->where('owner_id', $user->id)->findOrFail($preparation->vacancy_analysis_id),
+        );
 
-        return $claims;
+        return $this->claimMap($user, $context['claims']);
     }
 
     /** @param list<array<string, mixed>> $claims
@@ -610,8 +656,27 @@ class ApplicationPreparationService
             'draft_item_id' => $item->id,
             'actor_user_id' => $user->id,
             'action' => $action,
+            'revision_number' => $item->revision_number,
             'content_hash' => hash('sha256', $item->content),
             'validation_result' => $validationResult,
+            'created_at' => now(),
+        ])->save();
+    }
+
+    /** @param list<array{assertion: string, claim_ids: list<string>}> $usages */
+    private function recordRevision(User $user, ApplicationDraftItem $item, string $action, string $validationResult, array $usages): void
+    {
+        $revision = new ApplicationDraftRevision;
+        $revision->forceFill([
+            'owner_id' => $user->id,
+            'draft_item_id' => $item->id,
+            'actor_user_id' => $user->id,
+            'revision_number' => $item->revision_number,
+            'action' => $action,
+            'content' => $item->content,
+            'content_hash' => hash('sha256', $item->content),
+            'validation_result' => $validationResult,
+            'claim_usages' => $usages,
             'created_at' => now(),
         ])->save();
     }

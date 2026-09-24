@@ -53,6 +53,16 @@ type ClaimUsage = {
   claim_ids: string[];
   supporting_claims: Array<{ id: string; statement: string; truth_status: string; career_facts: Array<{ id: string; statement: string; status: string; provenance_type: string; source_excerpt: string }> }>;
 };
+type DraftRevision = {
+  revision_number: number;
+  action: "GENERATED" | "EDITED";
+  content: string;
+  content_hash: string;
+  validation_result: string;
+  claim_usages: Array<{ assertion: string; claim_ids: string[] }>;
+  actor_user_id: string;
+  created_at: string;
+};
 type DraftItem = {
   id: string;
   kind: "RESUME_RECOMMENDATION" | "COVER_DRAFT";
@@ -63,9 +73,11 @@ type DraftItem = {
   reason: string | null;
   risk: string | null;
   status: "DRAFT" | "ACCEPTED" | "REJECTED" | "BLOCKED" | "APPROVED";
+  revision_number: number;
   validation_result: "NOT_VALIDATED" | "PASS" | "BLOCK" | "USER_RESOLUTION_REQUIRED" | "FAILED";
   claim_usages: ClaimUsage[];
-  approvals: Array<{ action: string; content_hash: string; validation_result: string; created_at: string }>;
+  revisions: DraftRevision[];
+  approvals: Array<{ action: string; revision_number: number; content_hash: string; validation_result: string; created_at: string }>;
 };
 type Preparation = { id: string; vacancy_id: string; status: "DRAFT" | "APPROVED"; stale: boolean; items: DraftItem[] };
 
@@ -239,12 +251,12 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
   const [error, setError] = useState("");
   const requestVersion = useRef(0);
 
-  const refresh = useCallback(async (id: string, version = requestVersion.current) => {
+  const refresh = useCallback(async (id: string, version = requestVersion.current, preserveEdits = false) => {
     const result = await api(`/api/v1/applications/preparations/${id}`);
     if (version !== requestVersion.current) return;
     const data = result.data as Preparation;
     setPreparation(data);
-    setEdits(Object.fromEntries(data.items.map((item) => [item.id, item.content])));
+    setEdits((current) => Object.fromEntries(data.items.map((item) => [item.id, preserveEdits ? current[item.id] ?? item.content : item.content])));
   }, []);
 
   useEffect(() => {
@@ -299,7 +311,7 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
       }
     } catch (caught) {
       if (version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Draft review action failed.");
-      if (version === requestVersion.current) await refresh(preparation.id, version).catch(() => undefined);
+      if (version === requestVersion.current) await refresh(preparation.id, version, true).catch(() => undefined);
     } finally { if (version === requestVersion.current) setBusy(""); }
   }
 
@@ -313,20 +325,21 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
     {preparation && !loading && <>
       {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
       {preparation.items.map((item) => <article className="application-draft-item" key={item.id}>
-        <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
+        <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`} · Revision {item.revision_number}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
         {item.before && <p><strong>Before</strong><br />{item.before}</p>}
         {item.kind === "RESUME_RECOMMENDATION" && <p><strong>Reason</strong><br />{item.reason}</p>}
         {item.kind === "RESUME_RECOMMENDATION" && <p><strong>Risk</strong><br />{item.risk}</p>}
-        <label>{item.kind === "COVER_DRAFT" ? "Draft content" : "After · recommendation, not confirmed career truth"}<textarea value={edits[item.id] ?? item.content} maxLength={6000} rows={item.kind === "COVER_DRAFT" ? 8 : 4} disabled={preparation.stale || item.status === "REJECTED" || item.status === "APPROVED"} onChange={(event) => setEdits((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
+        <label>{item.kind === "COVER_DRAFT" ? "Draft content" : "After · recommendation, not confirmed career truth"}<textarea value={edits[item.id] ?? item.content} maxLength={6000} rows={item.kind === "COVER_DRAFT" ? 8 : 4} disabled={Boolean(busy) || preparation.stale || item.status === "REJECTED" || item.status === "APPROVED"} onChange={(event) => setEdits((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
         {item.claim_usages.length > 0 && <details><summary>Claim and Career Fact provenance</summary><ul className="claim-list">{item.claim_usages.map((usage, index) => <li key={`${item.id}-${index}`}><span>Candidate assertion: {usage.assertion}</span>{usage.supporting_claims.map((claim) => <div key={claim.id}><strong>Claim · {claim.truth_status}</strong><p>{claim.statement}</p>{claim.career_facts.map((fact) => <div key={fact.id}><strong>Career Fact · {fact.status}</strong><p>{fact.statement}</p><small>{fact.provenance_type}: {fact.source_excerpt}</small></div>)}</div>)}</li>)}</ul></details>}
-        {item.approvals.length > 0 && <details><summary>Approval history</summary><ul>{item.approvals.map((approval, index) => <li key={`${item.id}-approval-${index}`}>{approval.action} · {approval.validation_result} · {approval.content_hash.slice(0, 12)}</li>)}</ul></details>}
+        {item.revisions.length > 0 && <details><summary>Draft revision history</summary><ol>{item.revisions.map((revision) => <li key={`${item.id}-revision-${revision.revision_number}`}><p>Revision {revision.revision_number} · {revision.action} · Truth Guard {revision.validation_result} · {revision.content_hash.slice(0, 12)}</p><blockquote>{revision.content}</blockquote>{revision.claim_usages.map((usage, index) => <small key={`${revision.revision_number}-${index}`}>{usage.assertion} · Claim IDs: {usage.claim_ids.join(", ")}</small>)}</li>)}</ol></details>}
+        {item.approvals.length > 0 && <details><summary>Approval history</summary><ul>{item.approvals.map((approval, index) => <li key={`${item.id}-approval-${index}`}>{approval.action} · revision {approval.revision_number} · {approval.validation_result} · {approval.content_hash.slice(0, 12)}</li>)}</ul></details>}
         <div className="actions">
           {item.status !== "REJECTED" && item.status !== "APPROVED" && <>
-            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
-            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
-            <button type="button" className="danger" disabled={Boolean(busy) || preparation.stale} onClick={() => void act(item, "reject")}>Reject</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) === item.content} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
+            <button type="button" className="danger" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "reject")}>Reject</button>
           </>}
-          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || item.validation_result !== "PASS"} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
+          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || item.validation_result !== "PASS" || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
           {item.status === "APPROVED" && <span className="confirmed-badge">Approved draft · not submitted</span>}
         </div>
       </article>)}

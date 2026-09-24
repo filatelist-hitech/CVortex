@@ -34,11 +34,24 @@ echo 'application-postgres-boundary: fresh administrative migration'
 
 echo 'application-postgres-boundary: runtime-role security suite'
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
-  php artisan test --filter=ApplicationPostgresSecurityTest
+  php artisan test --filter=ApplicationPostgresSecurityTest --display-warnings
+
+echo 'application-postgres-boundary: seed pre-existing parent data before migration rollback/re-up'
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan tinker --execute='
+  $user = App\Models\User::query()->create(["email" => "application-boundary-baseline@example.test", "password" => Illuminate\Support\Facades\Hash::make(Illuminate\Support\Str::random(48))]);
+  app(App\Services\CareerFactService::class)->createManual($user, "skill", "Boundary preservation fact.");
+  App\Models\Vacancy::query()->create(["owner_id" => $user->id, "source_type" => "PASTED_TEXT", "title" => "Boundary preservation vacancy", "analysis_status" => "PENDING"]);
+'
 
 before_users=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 before_facts=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM career_facts')
 before_vacancies=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM vacancies')
+baseline_user=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM users WHERE email = 'application-boundary-baseline@example.test'")
+baseline_fact=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM career_facts f JOIN users u ON u.id = f.owner_id WHERE u.email = 'application-boundary-baseline@example.test' AND f.assertion_approved = 'Boundary preservation fact.'")
+baseline_vacancy=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM vacancies v JOIN users u ON u.id = v.owner_id WHERE u.email = 'application-boundary-baseline@example.test'")
+test "$baseline_user" = 1
+test "$baseline_fact" = 1
+test "$baseline_vacancy" = 1
 
 echo 'application-postgres-boundary: rollback application preparation migration'
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate:rollback --step=1 --force
@@ -52,10 +65,16 @@ after_vacancies=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$datab
 test "$after_users" = "$before_users"
 test "$after_facts" = "$before_facts"
 test "$after_vacancies" = "$before_vacancies"
+test "$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM users WHERE email = 'application-boundary-baseline@example.test'")" = "$baseline_user"
+test "$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM career_facts f JOIN users u ON u.id = f.owner_id WHERE u.email = 'application-boundary-baseline@example.test' AND f.assertion_approved = 'Boundary preservation fact.'")" = "$baseline_fact"
+test "$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM vacancies v JOIN users u ON u.id = v.owner_id WHERE u.email = 'application-boundary-baseline@example.test'")" = "$baseline_vacancy"
 
 echo 'application-postgres-boundary: migrate up again and rerun security suite'
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate --force
+test "$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM users WHERE email = 'application-boundary-baseline@example.test'")" = "$baseline_user"
+test "$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM career_facts f JOIN users u ON u.id = f.owner_id WHERE u.email = 'application-boundary-baseline@example.test' AND f.assertion_approved = 'Boundary preservation fact.'")" = "$baseline_fact"
+test "$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc "SELECT count(*) FROM vacancies v JOIN users u ON u.id = v.owner_id WHERE u.email = 'application-boundary-baseline@example.test'")" = "$baseline_vacancy"
 "${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" backend \
-  php artisan test --filter=ApplicationPostgresSecurityTest
+  php artisan test --filter=ApplicationPostgresSecurityTest --display-warnings
 
 echo "application-postgres-boundary: PASS (preserved users=$after_users facts=$after_facts vacancies=$after_vacancies)"

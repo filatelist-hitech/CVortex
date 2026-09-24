@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
-class ApplicationApprovalEvent extends Model
+class ApplicationDraftRevision extends Model
 {
     use HasUlids;
 
@@ -15,6 +15,9 @@ class ApplicationApprovalEvent extends Model
 
     protected function casts(): array
     {
-        return ['revision_number' => 'integer', 'created_at' => 'datetime'];
+        return [
+            'claim_usages' => 'array',
+            'created_at' => 'datetime',
+        ];
     }
 }

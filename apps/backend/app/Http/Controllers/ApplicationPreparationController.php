@@ -43,9 +43,13 @@ class ApplicationPreparationController extends Controller
             'content' => ['required_if:action,edit', 'nullable', 'string', 'max:6000'],
         ]);
 
-        $resource = $data['action'] === 'edit'
-            ? $service->edit($request->user(), $item, trim((string) $data['content']))
-            : $service->decide($request->user(), $item, $data['action']);
+        try {
+            $resource = $data['action'] === 'edit'
+                ? $service->edit($request->user(), $item, trim((string) $data['content']))
+                : $service->decide($request->user(), $item, $data['action']);
+        } catch (LlmProviderException) {
+            return response()->json(['message' => 'Draft truth validation is temporarily unavailable.', 'error' => ['code' => 'VALIDATION_UNAVAILABLE']], 503);
+        }
 
         return response()->json(['data' => $resource]);
     }
@@ -54,6 +58,10 @@ class ApplicationPreparationController extends Controller
     {
         $item = ApplicationDraftItem::query()->where('owner_id', $request->user()->id)->findOrFail($id);
 
-        return response()->json(['data' => $service->approve($request->user(), $item)]);
+        try {
+            return response()->json(['data' => $service->approve($request->user(), $item)]);
+        } catch (LlmProviderException) {
+            return response()->json(['message' => 'Draft truth validation is temporarily unavailable.', 'error' => ['code' => 'VALIDATION_UNAVAILABLE']], 503);
+        }
     }
 }

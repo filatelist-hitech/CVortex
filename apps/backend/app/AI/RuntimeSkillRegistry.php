@@ -23,7 +23,7 @@ class RuntimeSkillRegistry
 
     public function applicationTruthReview(): RuntimeSkillDefinition
     {
-        return $this->load('application-truth-review/v2', 'application.truth-review');
+        return $this->load('application-truth-review/v3', 'application.truth-review');
     }
 
     private function load(string $relativeDirectory, string $expectedId): RuntimeSkillDefinition

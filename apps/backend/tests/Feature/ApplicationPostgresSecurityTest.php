@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\AI\Contracts\LlmProvider;
 use App\AI\Data\LlmRequest;
 use App\AI\Data\LlmResponse;
+use App\Models\ApplicationDraftItem;
 use App\Models\ApplicationPreparation;
 use App\Models\User;
 use App\Models\VacancyAnalysis;
@@ -63,7 +64,7 @@ class ApplicationPostgresSecurityTest extends TestCase
         $this->assertFalse($role->rolsuper);
         $this->assertFalse($role->rolbypassrls);
 
-        $tables = ['application_preparations', 'application_draft_items', 'application_claim_usages', 'application_approval_events', 'application_llm_runs'];
+        $tables = ['application_preparations', 'application_draft_items', 'application_claim_usages', 'application_approval_events', 'application_llm_runs', 'application_draft_revisions'];
         $flags = collect(DB::select("SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace = 'public'::regnamespace AND relname LIKE 'application_%' AND relkind = 'r'"))->keyBy('relname');
         foreach ($tables as $table) {
             $this->assertTrue($flags[$table]->relrowsecurity, $table.' must have RLS enabled.');
@@ -74,10 +75,12 @@ class ApplicationPostgresSecurityTest extends TestCase
         $context->run((string) $owner->id, function () use ($owner, $other, $preparation, $otherVacancy, $otherClaimId, $draftId, $otherDraftId): void {
             $this->assertSame(1, DB::table('application_preparations')->count());
             $this->assertSame(3, DB::table('application_draft_items')->count());
+            $this->assertSame(3, DB::table('application_draft_revisions')->count());
             $this->assertSame(0, DB::table('application_approval_events')->count());
             $this->assertNotNull(DB::table('application_preparations')->where('id', $preparation->id)->first());
             $this->assertSame(0, DB::table('application_preparations')->where('owner_id', $other->id)->count());
             $this->assertNull(DB::table('application_draft_items')->where('id', $otherDraftId)->first());
+            $this->assertSame(0, DB::table('application_draft_revisions')->where('draft_item_id', $otherDraftId)->count());
             $this->assertSame(0, DB::table('application_draft_items')->where('id', $otherDraftId)->update(['status' => 'APPROVED']));
 
             try {
@@ -88,6 +91,18 @@ class ApplicationPostgresSecurityTest extends TestCase
                     'career_signature' => str_repeat('0', 64), 'status' => 'DRAFT', 'created_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->fail('A preparation linked to another owner vacancy was accepted.');
+            } catch (QueryException) {
+                $this->addToAssertionCount(1);
+            }
+
+            try {
+                DB::table('application_draft_revisions')->insert([
+                    'id' => (string) Str::ulid(), 'owner_id' => $owner->id, 'draft_item_id' => $otherDraftId,
+                    'actor_user_id' => $owner->id, 'revision_number' => 2, 'action' => 'EDITED',
+                    'content' => 'Foreign history link', 'content_hash' => hash('sha256', 'Foreign history link'),
+                    'validation_result' => 'BLOCK', 'claim_usages' => '[]', 'created_at' => now(),
+                ]);
+                $this->fail('A revision with a foreign owner-bound item was accepted.');
             } catch (QueryException) {
                 $this->addToAssertionCount(1);
             }
@@ -104,6 +119,60 @@ class ApplicationPostgresSecurityTest extends TestCase
         });
 
         $this->assertSame(0, DB::table('application_preparations')->count(), 'Owner context leaked after scoped work.');
+    }
+
+    public function test_stale_approval_cannot_win_against_a_concurrent_revision_on_postgres(): void
+    {
+        Queue::fake();
+        $provider = new ApplicationPostgresFakeProvider;
+        $this->app->instance(LlmProvider::class, $provider);
+        $context = app(DatabaseOwnerContext::class);
+        $owner = $this->user('approve-race@example.test');
+        $context->run((string) $owner->id, fn () => app(CareerFactService::class)->createManual($owner, 'skill', 'Built Laravel APIs.'));
+        $queued = app(VacancyIngestionService::class)->queue($owner, 'Backend Engineer. Laravel is required.', null);
+        $analysis = app(VacancyAnalysisService::class)->analyze($owner, $queued['snapshot']);
+        $this->ensureMatchedClaim($context, $owner, $analysis);
+        $preparation = $context->run((string) $owner->id, fn (): ApplicationPreparation => app(ApplicationPreparationService::class)->open($owner, (string) $queued['vacancy']->id));
+        $generated = $context->run((string) $owner->id, fn (): array => app(ApplicationPreparationService::class)->generate($owner, $preparation));
+        $cover = collect($generated['items'])->firstWhere('variant', 'SHORT');
+        $item = $context->run((string) $owner->id, fn (): ApplicationDraftItem => ApplicationDraftItem::query()->where('owner_id', $owner->id)->findOrFail($cover['id']));
+        $context->run((string) $owner->id, fn () => app(ApplicationPreparationService::class)->decide($owner, $item, 'accept'));
+        $item = $context->run((string) $owner->id, fn (): ApplicationDraftItem => ApplicationDraftItem::query()->where('owner_id', $owner->id)->findOrFail($cover['id']));
+
+        $racedContent = 'Built Laravel APIs and led 100 engineers.';
+        $ownerId = (string) $owner->id;
+        $itemId = (string) $item->id;
+        $contentHash = hash('sha256', $racedContent);
+        $provider->afterNextReview = function () use ($ownerId, $itemId, $racedContent, $contentHash): void {
+            $now = now();
+            DB::table('application_draft_revisions')->insert([
+                'id' => (string) Str::ulid(), 'owner_id' => $ownerId, 'draft_item_id' => $itemId,
+                'actor_user_id' => $ownerId, 'revision_number' => 2, 'action' => 'EDITED',
+                'content' => $racedContent, 'content_hash' => $contentHash,
+                'validation_result' => 'BLOCK', 'claim_usages' => '[]', 'created_at' => $now,
+            ]);
+            DB::table('application_draft_items')->where('owner_id', $ownerId)->where('id', $itemId)->update([
+                'content' => $racedContent, 'status' => 'BLOCKED', 'validation_result' => 'BLOCK',
+                'revision_number' => 2, 'validated_content_hash' => null, 'validated_at' => null,
+                'updated_at' => $now,
+            ]);
+            DB::table('application_claim_usages')->where('owner_id', $ownerId)->where('draft_item_id', $itemId)->delete();
+            DB::table('application_approval_events')->insert([
+                'id' => (string) Str::ulid(), 'owner_id' => $ownerId, 'draft_item_id' => $itemId,
+                'actor_user_id' => $ownerId, 'action' => 'EDITED', 'revision_number' => 2,
+                'content_hash' => $contentHash, 'validation_result' => 'BLOCK', 'created_at' => $now,
+            ]);
+        };
+
+        $result = $context->run((string) $owner->id, fn (): array => app(ApplicationPreparationService::class)->approve($owner, $item));
+        $current = collect($result['items'])->firstWhere('id', $itemId);
+
+        $this->assertSame($racedContent, $current['content']);
+        $this->assertSame(2, $current['revision_number']);
+        $this->assertSame('BLOCKED', $current['status']);
+        $approvedEventCount = $context->run((string) $owner->id, fn (): int => DB::table('application_approval_events')
+            ->where('owner_id', $ownerId)->where('draft_item_id', $itemId)->where('action', 'APPROVED')->count());
+        $this->assertSame(0, $approvedEventCount);
     }
 
     private function user(string $email): User
@@ -139,6 +208,8 @@ class ApplicationPostgresSecurityTest extends TestCase
 
 class ApplicationPostgresFakeProvider implements LlmProvider
 {
+    public ?\Closure $afterNextReview = null;
+
     public function generateStructured(LlmRequest $request): LlmResponse
     {
         if ($request->schemaName === 'vacancy_requirements') {
@@ -150,8 +221,8 @@ class ApplicationPostgresFakeProvider implements LlmProvider
             $input = json_decode($request->untrustedSourceText, true, flags: JSON_THROW_ON_ERROR);
             $claim = $input['confirmed_claims'][0];
             $requirement = $input['vacancy']['requirements'][0];
-            $item = ['assertion' => 'Built Laravel APIs for backend services.', 'claim_ids' => [$claim['id']]];
-            $cover = ['assertion' => 'I built Laravel APIs.', 'claim_ids' => [$claim['id']]];
+            $item = ['assertion' => $claim['statement'], 'claim_ids' => [$claim['id']]];
+            $cover = ['assertion' => $claim['statement'], 'claim_ids' => [$claim['id']]];
             $output = [
                 'recommendations' => [[
                     'requirement_id' => $requirement['id'], 'section' => 'Experience', 'before' => $claim['statement'],
@@ -163,13 +234,23 @@ class ApplicationPostgresFakeProvider implements LlmProvider
             ];
         } elseif ($request->schemaName === 'application_truth_review') {
             $input = json_decode($request->untrustedSourceText, true, flags: JSON_THROW_ON_ERROR);
-            $claimIds = array_values(array_unique(array_merge(...array_map(
-                fn (array $usage): array => $usage['claim_ids'],
-                $input['proposed_claim_usages'] ?: [[]],
-            ))));
-            $output = ['status' => 'PASS', 'segments' => [[
-                'text' => $input['candidate_content'], 'kind' => 'FACTUAL', 'claim_ids' => $claimIds,
-            ]]];
+            $output = ['reviews' => array_map(function (array $candidate): array {
+                $claimIds = array_values(array_unique(array_merge(...array_map(
+                    fn (array $usage): array => $usage['claim_ids'],
+                    $candidate['proposed_claim_usages'] ?: [[]],
+                ))));
+
+                return [
+                    'item_id' => $candidate['item_id'],
+                    'status' => 'PASS',
+                    'segments' => [[
+                        'text' => $candidate['candidate_content'], 'kind' => 'FACTUAL', 'claim_ids' => $claimIds,
+                    ]],
+                ];
+            }, $input['candidate_items'])];
+            $afterReview = $this->afterNextReview;
+            $this->afterNextReview = null;
+            $afterReview?->__invoke();
         } else {
             throw new \LogicException('Unexpected runtime Skill.');
         }

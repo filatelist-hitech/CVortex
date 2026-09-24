@@ -17,6 +17,6 @@ class ApplicationDraftItem extends Model
 
     protected function casts(): array
     {
-        return ['validated_at' => 'datetime'];
+        return ['revision_number' => 'integer', 'validated_at' => 'datetime'];
     }
 }

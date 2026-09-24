@@ -263,3 +263,28 @@ remediation; required CI (`PR contract`, `Roadmap metadata`, `m0-quality`)
 passed on fixed implementation head `e02b6b4`. The default development-mode
 frontend build still fails prerendering `/_global-error`. PR #31 remains open
 pending human review/merge; M1.4 is not merged.
+
+### M1.4 independent remediation review — 2026-09-24
+
+The independent review invalidated the earlier zero-finding verdict: it found
+two P1 and multiple P2 defects in strict OpenAI schema compatibility, the
+Truth Guard's authority boundary, edited-draft recovery, provider errors,
+output validation, revision history, UI stale actions, and generated
+recommendation rationale. Local remediation now requires exact Claim text for
+PASS, batches semantic reviews, fails closed on unsupported content, restores
+recovery after BLOCK, records append-only content revisions with revision-linked
+approval events, bounds nested output, returns safe provider errors, and
+prevents approval/rejection actions while the visible editor is dirty.
+
+Local validation on the uncommitted remediation diff: `make test` PASS (backend
+200 tests / 1213 assertions, six PostgreSQL-only skips; frontend 15/15);
+`make lint` PASS (Pint 139 files, PHPStan, ESLint and TypeScript); production
+frontend build PASS; isolated PostgreSQL fresh migration, runtime-role RLS and
+cross-owner suite PASS (45 assertions), rollback/re-up PASS with a second
+45-assertion runtime-role run and preserved parent data (users=4, facts=4,
+vacancies=4). The PostgreSQL suite also interleaves a revision change during
+approval validation and confirms no stale approval. Compose config, PHP syntax,
+runtime Skill JSON, both agent contracts, shell syntax and `git diff --check`
+PASS. Disposable backend tests retain the known non-failing missing-`.env`
+warning. This remediation has not yet been committed or pushed; PR #31 requires
+new-head CI and fresh paginated GitHub review before any merge-ready status.

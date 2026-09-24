@@ -13,6 +13,7 @@ return new class extends Migration
         'application_claim_usages',
         'application_approval_events',
         'application_llm_runs',
+        'application_draft_revisions',
     ];
 
     public function up(): void
@@ -44,6 +45,7 @@ return new class extends Migration
             $table->text('risk')->nullable();
             $table->string('status', 24)->default('DRAFT');
             $table->string('validation_result', 32)->default('NOT_VALIDATED');
+            $table->unsignedInteger('revision_number')->default(1);
             $table->string('validated_content_hash', 64)->nullable();
             $table->timestampTz('validated_at')->nullable();
             $table->timestamps();
@@ -67,6 +69,7 @@ return new class extends Migration
             $table->foreignUlid('draft_item_id')->constrained('application_draft_items')->cascadeOnDelete();
             $table->foreignUlid('actor_user_id')->constrained('users')->cascadeOnDelete();
             $table->string('action', 16);
+            $table->unsignedInteger('revision_number');
             $table->string('content_hash', 64);
             $table->string('validation_result', 32);
             $table->timestampTz('created_at')->useCurrent();
@@ -95,6 +98,22 @@ return new class extends Migration
             $table->unsignedBigInteger('estimated_cost_micros')->nullable();
             $table->timestamps();
             $table->index(['owner_id', 'preparation_id', 'created_at']);
+        });
+
+        Schema::create('application_draft_revisions', function (Blueprint $table): void {
+            $table->ulid('id')->primary();
+            $table->foreignUlid('owner_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUlid('draft_item_id')->constrained('application_draft_items')->cascadeOnDelete();
+            $table->foreignUlid('actor_user_id')->constrained('users')->cascadeOnDelete();
+            $table->unsignedInteger('revision_number');
+            $table->string('action', 16);
+            $table->text('content');
+            $table->string('content_hash', 64);
+            $table->string('validation_result', 32);
+            $table->json('claim_usages');
+            $table->timestampTz('created_at')->useCurrent();
+            $table->unique(['draft_item_id', 'owner_id', 'revision_number'], 'application_draft_revision_number_unique');
+            $table->index(['owner_id', 'draft_item_id', 'revision_number']);
         });
 
         if (DB::getDriverName() === 'pgsql') {
@@ -127,6 +146,16 @@ ALTER TABLE application_approval_events
   ADD CONSTRAINT application_approval_events_actor_owner_check CHECK (actor_user_id = owner_id),
   ADD CONSTRAINT application_approval_events_item_owner_fk FOREIGN KEY (draft_item_id, owner_id) REFERENCES application_draft_items (id, owner_id) ON DELETE CASCADE;
 
+ALTER TABLE application_draft_revisions
+  ADD CONSTRAINT application_draft_revisions_action_check CHECK (action IN ('GENERATED', 'EDITED')),
+  ADD CONSTRAINT application_draft_revisions_validation_check CHECK (validation_result IN ('NOT_VALIDATED', 'PASS', 'BLOCK', 'USER_RESOLUTION_REQUIRED', 'FAILED')),
+  ADD CONSTRAINT application_draft_revisions_actor_owner_check CHECK (actor_user_id = owner_id),
+  ADD CONSTRAINT application_draft_revisions_item_owner_fk FOREIGN KEY (draft_item_id, owner_id) REFERENCES application_draft_items (id, owner_id) ON DELETE CASCADE;
+
+ALTER TABLE application_approval_events
+  ADD CONSTRAINT application_approval_events_revision_fk FOREIGN KEY (draft_item_id, owner_id, revision_number)
+    REFERENCES application_draft_revisions (draft_item_id, owner_id, revision_number) ON DELETE CASCADE;
+
 ALTER TABLE application_llm_runs
   ADD CONSTRAINT application_llm_runs_status_check CHECK (status IN ('RUNNING', 'COMPLETED', 'FAILED')),
   ADD CONSTRAINT application_llm_runs_preparation_owner_fk FOREIGN KEY (preparation_id, owner_id) REFERENCES application_preparations (id, owner_id) ON DELETE CASCADE;
@@ -153,6 +182,7 @@ SQL);
         }
 
         Schema::dropIfExists('application_approval_events');
+        Schema::dropIfExists('application_draft_revisions');
         Schema::dropIfExists('application_claim_usages');
         Schema::dropIfExists('application_draft_items');
         Schema::dropIfExists('application_llm_runs');

@@ -473,7 +473,7 @@ describe("access shell", () => {
     type TestPreparation = { id: string; vacancy_id: string; status: "DRAFT" | "APPROVED"; stale: boolean; items: Array<Record<string, unknown>> };
     const empty: TestPreparation = { id: "prep-app", vacancy_id: vacancy.id, status: "DRAFT", stale: false, items: [] };
     const generated: TestPreparation = { ...empty, items: [
-      { id: "cover-short", kind: "COVER_DRAFT", variant: "SHORT", section: null, before: null, content: "I built Laravel APIs.", reason: null, risk: null, status: "DRAFT", validation_result: "PASS", claim_usages: [{ assertion: "I built Laravel APIs.", claim_ids: ["claim-1"], supporting_claims: [] }], approvals: [] },
+      { id: "cover-short", kind: "COVER_DRAFT", variant: "SHORT", section: null, before: null, content: "Built Laravel APIs.", reason: null, risk: null, status: "DRAFT", revision_number: 1, validation_result: "PASS", claim_usages: [{ assertion: "Built Laravel APIs.", claim_ids: ["claim-1"], supporting_claims: [] }], revisions: [{ revision_number: 1, action: "GENERATED", content: "Built Laravel APIs.", content_hash: "revision-one", validation_result: "PASS", claim_usages: [{ assertion: "Built Laravel APIs.", claim_ids: ["claim-1"] }], actor_user_id: "user-1", created_at: "2026-09-24T00:00:00Z" }], approvals: [] },
     ] };
     let current = empty;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
@@ -489,7 +489,21 @@ describe("access shell", () => {
         return Response.json({ data: current });
       }
       if (path === "/api/v1/applications/draft-items/cover-short" && options?.method === "PATCH") {
-        current = { ...generated, items: generated.items.map((item) => ({ ...item, status: "ACCEPTED" })) };
+        const body = JSON.parse(String(options.body)) as { action: string; content?: string };
+        if (body.action === "edit") {
+          current = { ...generated, items: generated.items.map((item) => {
+            const content = body.content?.trim() ?? String(item.content);
+            return {
+              ...item,
+              content,
+              revision_number: 2,
+              revisions: [...(item.revisions as Array<Record<string, unknown>>), { revision_number: 2, action: "EDITED", content, content_hash: "revision-two", validation_result: "PASS", claim_usages: [{ assertion: content, claim_ids: ["claim-1"] }], actor_user_id: "user-1", created_at: "2026-09-24T00:01:00Z" }],
+              status: "DRAFT",
+            };
+          }) };
+        } else {
+          current = { ...current, items: current.items.map((item) => ({ ...item, status: "ACCEPTED" })) };
+        }
         return Response.json({ data: current });
       }
       if (path === "/api/v1/applications/draft-items/cover-short/approve" && options?.method === "POST") {
@@ -504,10 +518,24 @@ describe("access shell", () => {
     expect(await screen.findByRole("heading", { name: "Prepare for Backend Engineer" })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Generate recommendations and cover drafts" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Generate recommendations and cover drafts" }));
-    expect(await screen.findByDisplayValue("I built Laravel APIs.")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("Built Laravel APIs.")).toBeInTheDocument();
     expect(screen.getByText(/not submit an application or contact an employer/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue("Built Laravel APIs."), { target: { value: "Built Laravel APIs. " } });
+    expect(screen.getByRole("button", { name: "Accept draft" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Save edit and revalidate" }));
+    await waitFor(() => expect(screen.getByDisplayValue("Built Laravel APIs.")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Draft revision history"));
+    expect(screen.getByText(/Revision 1 · GENERATED/)).toBeInTheDocument();
+    expect(screen.getByText(/Revision 2 · EDITED/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Accept draft" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Explicitly approve content" }));
+    const approve = await screen.findByRole("button", { name: "Explicitly approve content" });
+    const acceptedDraft = screen.getByDisplayValue("Built Laravel APIs.");
+    fireEvent.change(acceptedDraft, { target: { value: "Locally changed after acceptance." } });
+    expect(approve).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeDisabled();
+    fireEvent.change(screen.getByDisplayValue("Locally changed after acceptance."), { target: { value: "Built Laravel APIs." } });
+    expect(approve).toBeEnabled();
+    fireEvent.click(approve);
     await waitFor(() => expect(screen.getByText("Approved draft · not submitted")).toBeInTheDocument());
     expect(fetchMock.mock.calls.some(([input]) => /submit|send|employer/.test(String(input)))).toBe(false);
   });

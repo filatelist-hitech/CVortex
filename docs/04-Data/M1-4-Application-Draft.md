@@ -24,21 +24,21 @@ current Vacancy analysis + relevant confirmed Claims
 → user review, edit/revalidation, rejection or explicit approval
 ```
 
-This is Preview 0.1. It does not create a final document package, claim `READY_TO_APPLY`, submit an application or contact an employer.
+This is Preview 0.1. It does not create a final document package, claim `READY_TO_APPLY`, submit an application or contact an employer. Candidate-facing factual wording is conservative: generated and edited factual spans must copy an existing confirmed Claim exactly; unsupported paraphrases remain blocked until the user confirms new Claim wording in Career.
 
 ## Persistence and state
 
 `ApplicationPreparation` is owner-scoped to one Vacancy snapshot and Career signature. Opening the same current context resumes its saved preparation. A changed snapshot or confirmed Career signature makes the preparation stale and blocks generation, edits and approval until it is reopened against current analyzed context.
 
-`ApplicationDraftItem` stores resume recommendations or one of exactly two cover variants (`SHORT`, `STANDARD`), its content, Before/After, reason/risk, review status and Truth Guard result. `ApplicationClaimUsage` maps factual text segments to same-owner Claims; response provenance includes the supporting confirmed Career Fact and source excerpt. Truth review v2 must return ordered text segments whose exact concatenation matches the complete candidate content before `PASS` is accepted, preventing omitted text from inheriting a partial review. `ApplicationApprovalEvent` records accept/edit/reject/approve actions, the content hash and validation result. `ApplicationLlmRun` stores skill/model-policy identity, provider metadata, validation status and safe error category; it does not store raw prompt, candidate text or credentials.
+`ApplicationDraftItem` stores resume recommendations or one of exactly two cover variants (`SHORT`, `STANDARD`), its current revision number, content, Before/After, reason/risk, review status and Truth Guard result. `ApplicationDraftRevision` appends each generated or edited content version with its hash, validation result, Claim usage snapshot, actor and timestamp; action events reference the exact revision number. `ApplicationClaimUsage` maps factual text segments to same-owner Claims; response provenance includes the supporting confirmed Career Fact and source excerpt. Truth review v3 batches independent draft-item reviews and must return ordered text segments whose exact concatenation matches each complete candidate item before `PASS` is accepted, preventing omitted text from inheriting a partial review. Code additionally requires every factual span to equal a current Claim statement byte-for-byte and permits only whitespace or punctuation outside those spans; model `PASS` alone cannot extend a Claim. `ApplicationApprovalEvent` records accept/edit/reject/approve actions, the content hash and validation result. `ApplicationLlmRun` stores skill/model-policy identity, provider metadata, validation status and safe error category; it does not store raw prompt, candidate text or credentials.
 
-All five tables have owner-composite relationships and forced PostgreSQL RLS. API ownership comes from the authenticated active user and `db-owner-context`; client-supplied owner or provenance is ignored. PostgreSQL composite foreign keys reject cross-owner Vacancy, requirement, Claim and preparation links.
+All six tables have owner-composite relationships and forced PostgreSQL RLS. API ownership comes from the authenticated active user and `db-owner-context`; client-supplied owner or provenance is ignored. PostgreSQL composite foreign keys reject cross-owner Vacancy, requirement, Claim and preparation links.
 
 Review state is `DRAFT`, `ACCEPTED`, `REJECTED`, `APPROVED` or `BLOCKED`. A factual edit invalidates the previous content hash and is revalidated. Accept and edit do not approve. Approval locks the item and current Claim/Career evidence, checks the current context and validated hash, then stores an approval event. There is no `APPLIED` state or employer-facing action.
 
 ## API
 
-All endpoints are under authenticated, active-user `/api/v1` routes. The JSON resource returns preparation status/staleness and items with content, recommendation details, Claim/Career provenance and approval history.
+All endpoints are under authenticated, active-user `/api/v1` routes. The JSON resource returns preparation status/staleness and items with current content, complete revision history, recommendation details, Claim/Career provenance and revision-linked approval history.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -52,7 +52,7 @@ Generation and semantic review use versioned Skills through the existing provide
 
 ## Validation
 
-The feature suite covers saved resume, explicit approval, cross-user ID access, foreign Claim rejection, unsupported and supported edits, pending-fact exclusion, vacancy prompt injection as data, staleness and provider failure/retry. PostgreSQL validation uses the repository runtime role to verify forced RLS, owner-scoped reads/writes, cross-owner composite links and migration rollback/re-up while preserving existing user, Career Fact and Vacancy rows.
+The feature suite covers saved resume, explicit approval, cross-user ID access, foreign Claim rejection, unsupported and supported edits, pending-fact exclusion, vacancy prompt injection as data, staleness and provider failure/retry. PostgreSQL validation uses the repository runtime role to verify forced RLS, owner-scoped reads/writes, cross-owner composite links, revision ownership and migration rollback/re-up while preserving existing user, Career Fact and Vacancy rows.
 
 ```bash
 make test

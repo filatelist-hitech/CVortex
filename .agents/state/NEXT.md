@@ -1,6 +1,10 @@
-1. M2 — Define bounded application-package implementation from Preview 0.1
-   findings (`.agents/tasks/m2-application-package-planning.md`).
+# Next Authorized Task
 
-This is a planning task only. Begin after Preview 0.1 is validated; do not
-implement the M2 application package until a separate bounded implementation
-spec becomes the NEXT task.
+Complete the independent remediation gate for M1.4 PR #31:
+
+1. Commit and push the verified remediation to `feature/m1.4-application-draft`.
+2. Wait for mandatory checks on the pushed SHA.
+3. Refresh paginated GitHub reviews, comments and review threads; address every
+   actionable finding and revalidate any resulting push.
+4. Stop without merging. Only after the final gate passes may the next action
+   be `merge PR #31 → stage`; M2 may begin only after the merge is confirmed.
