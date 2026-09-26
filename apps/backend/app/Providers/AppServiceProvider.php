@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +19,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        if (! config('mcp.enabled')) {
+            Passport::ignoreRoutes();
+        } else {
+            Passport::authorizationView('mcp.authorize');
+        }
+
         $this->app->bind(
             LlmProvider::class,
             ConfiguredLlmProvider::class,

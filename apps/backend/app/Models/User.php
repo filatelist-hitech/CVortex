@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\Contracts\OAuthenticatable;
+use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements OAuthenticatable
 {
-    use HasUlids, Notifiable;
+    use HasApiTokens, HasUlids, Notifiable;
 
     public const ROLE_ADMIN = 'admin';
 

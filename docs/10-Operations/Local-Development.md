@@ -55,4 +55,10 @@ Do not use `docker compose down --volumes` in the normal workflow: it destroys t
 
 ## Local runtime contract
 
+### Optional local MCP Gateway
+
+The gateway is disabled by default (`MCP_ENABLED=false`). To validate it locally, set `MCP_ENABLED=true` in the ignored root `.env`, generate Passport signing keys once as the PHP-FPM user with `docker compose exec -T -u www-data backend php artisan passport:keys`, run `make migrate`, and recreate backend/Horizon so the environment flag is loaded. Keep keys in ignored private backend storage; never print or commit tokens. The entry point is `http://127.0.0.1:${CVORTEX_PORT:-8080}/mcp/v1` and Nginx still binds only to loopback. If Laravel routes are cached, clear the route cache after changing the flag. Obtain a user-scoped OAuth token through the documented Passport authorization flow and use MCP Inspector's Streamable HTTP transport with a Bearer header. Do not use a shared static token or browser cookie.
+
+Local validation does not establish ChatGPT connectivity. Before enabling a remote connection, verify a supported account/workspace, HTTPS or tunnel routing, reachable OAuth authorization endpoints, `resource` audience checks, secure cookies and Platform tunnel access/billing. See [MCP Gateway v1](../02-Architecture/MCP-Gateway.md). The existing `AI_PROVIDER`/`OPENAI_API_KEY` path remains configured independently; submitting a draft needs the current application Truth Guard provider.
+
 Frontend uses `next dev`; backend uses PHP-FPM. Source changes arrive through bind mounts while `vendor`, `node_modules` and `.next` stay container-managed. The browser uses only the same-origin `/api/v1` boundary and must not receive Docker service names or backend secrets.
