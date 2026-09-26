@@ -3,7 +3,7 @@ title: MCP Gateway v1
 status: active
 owner: project
 created: 2026-09-25
-updated: 2026-09-26
+updated: 2026-09-27
 tags: [architecture, mcp, ai, security]
 related: [../03-ADR/ADR-0020-inbound-mcp-gateway.md, ../08-Security/Threat-Model.md]
 ---
@@ -29,7 +29,7 @@ The MCP adapter is an additional inbound access channel. It never serves arbitra
 
 ## Authentication and deployment
 
-`MCP_ENABLED=false` is the default. When enabled, `/mcp/v1` and OAuth discovery/registration routes become available through the existing loopback-bound Nginx. `/mcp/v1` requires a Bearer token with `mcp:use`; browser cookies cannot authenticate to it. Passport authorization uses the existing CVortex web login/session and a local explicit consent form. OAuth client registration currently allows the documented callback-ID-specific ChatGPT path; the stable callback path requires a separate issuer/OAuth connection review. Registration/discovery has an IP rate limit, while authenticated reads and writes have separate per-user limits. Disabling a user revokes their OAuth access and refresh tokens. Passport keys must be generated once in ignored private storage and kept out of Git/logs.
+`MCP_ENABLED=false` is the default. When enabled, `/mcp/v1` and OAuth discovery/registration routes become available through the existing loopback-bound Nginx. `/mcp/v1` requires a Bearer token with `mcp:use`; browser cookies cannot authenticate to it. Passport authorization uses the existing CVortex web login/session and a local explicit consent form. DCR uses a parsed, component-based redirect policy: the approved external callback is HTTPS on the exact `chatgpt.com` host, default/443 port, and exactly one URL-safe callback-ID segment at `/connector/oauth/`; native callbacks use HTTP on `localhost`, an actual IPv4 loopback address, or `[::1]`, any valid port, and exactly `/oauth/callback`. Query, fragment, userinfo, percent-encoded paths and path descendants are rejected. Passport stores the accepted complete URI for the subsequent OAuth flow. Registration/discovery has an IP rate limit, while authenticated reads and writes have separate per-user limits. Disabling a user revokes their OAuth access and refresh tokens. Passport keys must be generated once in ignored private storage and kept out of Git/logs.
 
 The local Inspector path is validated. ChatGPT E2E is **not** validated: account/workspace entitlement, external reachability and OAuth `resource` audience propagation/verification remain open. A tunnel does not itself expose the OAuth authorization server. A public connection needs HTTPS, secure cookies, a reachable authorization endpoint, audience binding and renewed security review. Do not infer API-credit or tunnel pricing from a Plus subscription.
 
@@ -40,10 +40,12 @@ All tools require the same authenticated principal and `mcp:use`; `user_id` is n
 | Tool | Class / side effect | Input | Output | Errors / approval |
 |---|---|---|---|---|
 | `vacancy_get` | read; one owned vacancy | `vacancy_id` | ID, title, company, analysis status, untrusted flag | `NOT_FOUND`, `VALIDATION_FAILED`; no approval |
-| `application_context_get` | read; current analyzed snapshot only | `vacancy_id` | normalized requirements plus only relevant PASS claims backed by CONFIRMED Career Facts; no source excerpts | `NOT_FOUND`, `VALIDATION_FAILED`; no approval |
+| `application_context_get` | read; one owned vacancy | `vacancy_id` | vacancy metadata/status; for a current completed analysis, normalized requirements plus only relevant PASS claims backed by CONFIRMED Career Facts; no source excerpts | `NOT_FOUND`, `VALIDATION_FAILED`; no approval |
 | `application_draft_submit` | one reversible cover draft; no send | `vacancy_id`, `SHORT`/`STANDARD`, content ≤6000 chars, ≤30 assertion-to-Claim mappings | draft/preparation IDs, `PASS`, `PENDING_REVIEW`, approval required | `TRUTH_GUARD_BLOCKED`, `VALIDATION_UNAVAILABLE`, `VALIDATION_FAILED`, `NOT_FOUND`; explicit CVortex approval remains necessary |
 
 `PENDING_REVIEW` is an MCP response label for the existing persisted `application_draft_items.status = DRAFT`; it does not introduce a database state. The write route rejects duplicate variants and a stale or already approved preparation. A passing draft receives a revision and owner-scoped provenance. The tool set has no accept/approve/fact-confirm/apply/email/recruiter-message operation. Client UI confirmation is supplementary and cannot replace CVortex approval.
+
+When an owned vacancy has no `COMPLETED` analysis, `application_context_get` still returns its bounded metadata and current status with empty `requirements` and `confirmed_claims`; `untrusted_vacancy_data` remains true. This lets a persisted vacancy remain readable after provider failure without presenting unavailable derived data as successful analysis. Raw source text remains excluded.
 
 The HTTP layer returns 401 for missing/invalid bearer tokens, 403 for missing scope or disabled user, and 429 when rate limited. Tool-level errors use `isError=true` and a stable code; internal exception text, SQL and stack traces are suppressed. Logs keep request ID, user ID, known method/tool name, safe result code, HTTP status and latency only; they omit arguments, content, tokens and private career data. A forged `user_id` argument fails schema validation and never changes the authenticated principal.
 

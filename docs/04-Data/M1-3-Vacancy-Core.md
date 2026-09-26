@@ -3,7 +3,7 @@ title: M1.3 Vacancy Core Implementation
 status: implemented
 owner: project
 created: 2026-09-19
-updated: 2026-09-24
+updated: 2026-09-27
 tags: [vacancy, matching, provenance, ai, m1]
 related:
   - "[[Phase-06-Data-Design|Phase 06 Data Design]]"
@@ -95,6 +95,12 @@ All routes are authenticated, active-user, same-origin `/api/v1` routes. Acting 
 `VacancyLlmRun` records snapshot/owner, Skill/Prompt versions, logical ModelPolicy, actual provider/model, request ID, status, usage, latency, retry, safe validation category and estimated cost when available. It stores no raw vacancy text or credentials. A failed provider/schema/semantic run leaves the snapshot intact, exposes a stable safe error code and never produces a confident recommendation.
 
 The frontend renders raw text as inert React text, never trusted HTML. It labels source wording, CVortex inference, confirmed candidate evidence, unknown data and deterministic blockers separately. Polling refreshes and an older import response may update the list but cannot replace a newer explicit selection or detail; overlapping older list/detail responses are ignored, and a selected vacancy removed from the refreshed list follows the existing first-item fallback. There is no ATS probability or numeric universal score.
+
+## Preview persistence and RLS diagnostics
+
+Preview `Saved vacancies` reads `GET /api/v1/vacancies`; `Preserve and analyze` posts to `POST /api/v1/vacancies`. The backend synchronously persists the owner-scoped `Vacancy` and immutable `VacancySnapshot` before dispatching analysis and returns their stable ULID identifiers. A provider failure changes analysis state to `FAILED / PROVIDER_ERROR`; it does not remove or replace the raw snapshot. Refreshing the Preview reloads the same records from the backend.
+
+The PostgreSQL runtime role has forced row-level security. A direct Eloquent count under `cvortex_app` without `cvortex.owner_id` can return zero because RLS hides every owner's rows; this is not evidence that Preview used browser storage or another database. Inspect through the authenticated API or establish `DatabaseOwnerContext` for the intended owner. Do not disable RLS to make diagnostics return rows.
 
 ## Validation entry points
 

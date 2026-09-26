@@ -3,14 +3,14 @@ title: MCP Gateway Foundation research
 status: EVIDENCE_COLLECTED
 owner: project
 created: 2026-09-25
-updated: 2026-09-26
+updated: 2026-09-27
 tags: [research, mcp, openai, authentication]
 related: [../../docs/03-ADR/ADR-0020-inbound-mcp-gateway.md]
 ---
 
 # MCP Gateway Foundation — current evidence
 
-Research date: 2026-09-25 (Europe/Moscow). Question: how can CVortex expose bounded user-specific read and reversible draft tools to external MCP clients without replacing the existing Responses API or weakening owner isolation and human approval? Recheck by 2026-10-25 or before any ChatGPT/tunnel deployment, whichever comes first. Product availability and pricing can change sooner.
+Research date: 2026-09-25 (Europe/Moscow), OAuth redirect standards rechecked 2026-09-27. Question: how can CVortex expose bounded user-specific read and reversible draft tools to external MCP clients without replacing the existing Responses API or weakening owner isolation and human approval? Recheck by 2026-10-25 or before any ChatGPT/tunnel deployment, whichever comes first. Product availability and pricing can change sooner.
 
 ## OpenAI capability and billing
 
@@ -32,6 +32,14 @@ The current stable [MCP 2026-07-28 specification](https://modelcontextprotocol.i
 For user-specific ChatGPT data, [OpenAI's OAuth guidance](https://developers.openai.com/plugins/build/auth) calls for OAuth 2.1 style authorization code + PKCE S256, protected-resource and authorization-server metadata, scope and per-tool security schemes, and token issuer/audience/expiry checks. ChatGPT supports CIMD, DCR and predefined clients; the current Laravel MCP + Passport route uses DCR, not CIMD. The Laravel package exposes metadata and S256 but Passport's standard token path has **not** been verified to echo OAuth `resource` into a CVortex MCP audience claim and enforce that audience. This is an explicit ChatGPT connection gate, not a passing E2E claim. The local Inspector bearer-token proof does not exercise ChatGPT OAuth.
 
 Source spot-check on 2026-09-26 confirms the documented Developer Mode plan/read/write capability, OAuth `resource` requirement and tunnel prerequisites above. This is documentation evidence, not validation of the current account. The configured DCR allowlist accepts ChatGPT's callback-ID-specific URI; the stable redirect URI and complete authorization-code flow remain unvalidated.
+
+### Redirect URI validation — 2026-09-27
+
+Standards evidence: [RFC 8252 §7.3](https://www.rfc-editor.org/rfc/rfc8252.html#section-7.3) specifies HTTP loopback IP-literal redirects and requires authorization servers to allow any port so native clients can bind an ephemeral port. [RFC 8252 §8.3](https://www.rfc-editor.org/rfc/rfc8252.html#section-8.3) says `localhost` works similarly but is not recommended because IP literals avoid hostname-resolution ambiguity. [RFC 8252 §8.4](https://www.rfc-editor.org/rfc/rfc8252.html#section-8.4) requires registration of the complete redirect URI and exact matching, with only the loopback port exception. The current OAuth security BCP, [RFC 9700 §4.1.3](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.1.3), likewise recommends exact redirect matching except for native localhost ports.
+
+Decision/implementation: accept the exact native path `/oauth/callback` on `127.0.0.0/8`, `[::1]`, or exact `localhost`, over HTTP and with a valid explicit port; accept the existing ChatGPT callback shape only on exact `https://chatgpt.com/connector/oauth/{callback-id}` with no non-default port, query, fragment or userinfo. The callback ID is one URL-safe path segment, not a descendant path. Reject encoded paths outright so URI decoding cannot change path structure. `localhost` remains a compatibility option; native clients should prefer loopback IP literals. The app DCR route applies this parsed policy directly rather than relying on the package's redirect-domain prefix matcher.
+
+Validation evidence is recorded in [MCP Gateway validation](../../docs/10-Operations/MCP-Gateway-Validation.md); this standards review does not establish ChatGPT account E2E or OAuth resource/audience compliance.
 
 Sources: [MCP transport](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports), [MCP authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization), [OpenAI OAuth requirements](https://developers.openai.com/plugins/build/auth), [Laravel MCP](https://laravel.com/docs/13.x/mcp), [Laravel Passport](https://laravel.com/docs/13.x/passport).
 

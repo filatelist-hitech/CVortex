@@ -3,8 +3,7 @@
 return [
     'enabled' => (bool) env('MCP_ENABLED', false),
     'authorization_server' => null,
-    'redirect_domains' => [
-        'https://chatgpt.com/connector/oauth/',
-    ],
+    // DCR is handled by RegisterOAuthClientController's structured URI policy.
+    'redirect_domains' => [],
     'custom_schemes' => [],
 ];

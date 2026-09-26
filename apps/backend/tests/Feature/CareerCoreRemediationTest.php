@@ -119,6 +119,7 @@ class CareerCoreRemediationTest extends TestCase
     public function test_api_review_flow_records_human_actions_and_keeps_one_candidate_pending(): void
     {
         $user = $this->user('api-review@example.test');
+        Queue::fake();
         $provider = new RecordingProvider([['facts' => [
             $this->candidate('Confirmed source wording.'),
             $this->candidate('Editable source wording.'),
@@ -127,9 +128,9 @@ class CareerCoreRemediationTest extends TestCase
         ]]]);
         $this->app->instance(LlmProvider::class, $provider);
 
-        $this->actingAs($user)->postJson('/api/v1/career/extractions', [
-            'source_text' => 'Confirmed source wording. Editable source wording. Rejected source wording. Left pending wording.',
-        ])->assertAccepted();
+        $sourceText = 'Confirmed source wording. Editable source wording. Rejected source wording. Left pending wording.';
+        $this->actingAs($user)->postJson('/api/v1/career/extractions', ['source_text' => $sourceText])->assertAccepted();
+        app(CareerExtractionService::class)->extract($user, $sourceText);
 
         $facts = CareerFact::query()->where('owner_id', $user->id)->orderBy('assertion_original')->get()->keyBy('assertion_original');
         $this->actingAs($user)->patchJson('/api/v1/career/facts/'.$facts['Confirmed source wording.']->id.'/review', ['action' => 'confirm'])->assertOk();

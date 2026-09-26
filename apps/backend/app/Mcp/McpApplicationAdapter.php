@@ -2,6 +2,7 @@
 
 namespace App\Mcp;
 
+use App\AI\Exceptions\LlmProviderException;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancyAnalysis;
@@ -43,7 +44,12 @@ class McpApplicationAdapter
         return $this->ownerContext->run((string) $user->id, function () use ($user, $vacancyId): array {
             $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
             if ($vacancy->analysis_status !== Vacancy::STATUS_COMPLETED) {
-                throw ValidationException::withMessages(['vacancy' => 'A completed analysis is required.']);
+                return [
+                    'vacancy' => $this->vacancy($user, $vacancyId),
+                    'requirements' => [],
+                    'confirmed_claims' => [],
+                    'untrusted_vacancy_data' => true,
+                ];
             }
             $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
                 ->orderByDesc('version')->orderByDesc('id')->firstOrFail();
@@ -79,6 +85,11 @@ class McpApplicationAdapter
     public function submitDraft(User $user, string $vacancyId, string $variant, string $content, array $claimUsages): array
     {
         return $this->ownerContext->run((string) $user->id, function () use ($user, $vacancyId, $variant, $content, $claimUsages): array {
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+            if ($vacancy->analysis_status === Vacancy::STATUS_FAILED && $vacancy->error_code === 'PROVIDER_ERROR') {
+                throw new LlmProviderException(LlmProviderException::PROVIDER, 'Vacancy analysis is unavailable.');
+            }
+
             $preparation = $this->preparations->open($user, $vacancyId);
 
             return $this->preparations->submitExternalCover($user, $preparation, $variant, $content, $claimUsages);
