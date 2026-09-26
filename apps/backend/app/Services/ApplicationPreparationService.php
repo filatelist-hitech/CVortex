@@ -184,6 +184,64 @@ class ApplicationPreparationService
         return $this->resource($user, $preparation);
     }
 
+    /** @param list<array{assertion: string, claim_ids: list<string>}> $proposedUsages
+     * @return array<string, mixed>
+     */
+    public function submitExternalCover(User $user, ApplicationPreparation $preparation, string $variant, string $content, array $proposedUsages): array
+    {
+        $this->assertOwner($user, $preparation);
+        $this->assertCurrent($user, $preparation);
+        if (! in_array($variant, ['SHORT', 'STANDARD'], true) || trim($content) === '' || mb_strlen($content) > 6000) {
+            throw ValidationException::withMessages(['draft' => 'Invalid cover draft.']);
+        }
+        if (ApplicationDraftItem::query()->where('owner_id', $user->id)->where('preparation_id', $preparation->id)
+            ->where('kind', ApplicationDraftItem::KIND_COVER)->where('variant', $variant)->exists()) {
+            throw ValidationException::withMessages(['draft' => 'This cover variant already exists.']);
+        }
+        $context = $this->contextBuilder->build(
+            $user,
+            VacancySnapshot::query()->where('owner_id', $user->id)->findOrFail($preparation->vacancy_snapshot_id),
+            VacancyAnalysis::query()->where('owner_id', $user->id)->findOrFail($preparation->vacancy_analysis_id),
+        );
+        $allowedClaims = $this->claimMap($user, $context['claims']);
+        $usages = $this->validateUsages($proposedUsages, $allowedClaims, $content);
+        $guard = $this->truthGuard->validate($user, $preparation, trim($content), $usages, $allowedClaims);
+        if ($guard['status'] !== TruthGuard::PASS) {
+            throw ValidationException::withMessages(['draft' => 'TRUTH_GUARD_BLOCKED']);
+        }
+
+        return DB::transaction(function () use ($user, $preparation, $variant, $content, $guard, $allowedClaims): array {
+            $locked = ApplicationPreparation::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($preparation->id);
+            $this->assertCurrent($user, $locked);
+            if ($locked->status !== ApplicationPreparation::STATUS_DRAFT) {
+                throw ValidationException::withMessages(['draft' => 'Preparation is no longer open for drafts.']);
+            }
+            if (ApplicationDraftItem::query()->where('owner_id', $user->id)->where('preparation_id', $locked->id)
+                ->where('kind', ApplicationDraftItem::KIND_COVER)->where('variant', $variant)->exists()) {
+                throw ValidationException::withMessages(['draft' => 'This cover variant already exists.']);
+            }
+            $currentClaims = $this->lockClaims($user, array_keys($allowedClaims));
+            $draft = new ApplicationDraftItem;
+            $draft->forceFill([
+                'owner_id' => $user->id, 'preparation_id' => $locked->id,
+                'kind' => ApplicationDraftItem::KIND_COVER, 'variant' => $variant,
+                'content' => trim($content), 'status' => 'DRAFT',
+                'validation_result' => TruthGuard::PASS, 'revision_number' => 1,
+                'validated_content_hash' => hash('sha256', trim($content)), 'validated_at' => now(),
+            ])->save();
+            $this->replaceUsages($user, $draft, $guard['usages'], $currentClaims);
+            $this->recordRevision($user, $draft, 'GENERATED', TruthGuard::PASS, $guard['usages']);
+
+            return [
+                'draft_id' => (string) $draft->id,
+                'preparation_id' => (string) $locked->id,
+                'validation_result' => TruthGuard::PASS,
+                'review_state' => 'PENDING_REVIEW',
+                'requires_cvortex_approval' => true,
+            ];
+        });
+    }
+
     /** @return array<string, mixed> */
     public function edit(User $user, ApplicationDraftItem $item, string $content): array
     {
