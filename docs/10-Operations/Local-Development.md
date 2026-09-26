@@ -3,7 +3,7 @@ title: Local Development
 status: active
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-25
 tags: [operations, local, docker, m0]
 related:
   - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
@@ -56,3 +56,5 @@ Do not use `docker compose down --volumes` in the normal workflow: it destroys t
 ## Local runtime contract
 
 Frontend uses `next dev`; backend uses PHP-FPM. Source changes arrive through bind mounts while `vendor`, `node_modules` and `.next` stay container-managed. The browser uses only the same-origin `/api/v1` boundary and must not receive Docker service names or backend secrets.
+
+When `AI_PROVIDER=openai`, Horizon keeps its `internal` network for application dependencies and uses a dedicated `provider-egress` network for outbound provider requests. The worker has no published host port.
