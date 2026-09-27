@@ -16,6 +16,14 @@ class LlmProviderException extends \RuntimeException
 
     public const NOT_CONFIGURED = 'NOT_CONFIGURED';
 
+    public const RATE_LIMITED = 'RATE_LIMITED';
+
+    public const TEMPORARY_UNAVAILABLE = 'TEMPORARY_UNAVAILABLE';
+
+    public const INVALID_CONFIGURATION = 'INVALID_CONFIGURATION';
+
+    private bool $diagnosticRecorded = false;
+
     public function __construct(
         public readonly string $category,
         string $message = 'The configured LLM provider failed.',
@@ -29,5 +37,25 @@ class LlmProviderException extends \RuntimeException
         public readonly ?int $estimatedCostMicros = null,
     ) {
         parent::__construct($message, previous: $previous);
+    }
+
+    public function isRetryable(): bool
+    {
+        return in_array($this->category, [self::TRANSPORT, self::RATE_LIMITED, self::TEMPORARY_UNAVAILABLE], true);
+    }
+
+    public function requiresConfiguration(): bool
+    {
+        return in_array($this->category, [self::NOT_CONFIGURED, self::INVALID_CONFIGURATION], true);
+    }
+
+    public function markDiagnosticRecorded(): void
+    {
+        $this->diagnosticRecorded = true;
+    }
+
+    public function diagnosticRecorded(): bool
+    {
+        return $this->diagnosticRecorded;
     }
 }

@@ -99,11 +99,13 @@ class ApplicationPreparationService
         try {
             $skill = $this->skills->applicationDraftGeneration();
         } catch (\Throwable $exception) {
-            throw new LlmProviderException(
+            $normalized = new LlmProviderException(
                 LlmProviderException::NOT_CONFIGURED,
                 'Application draft generation is unavailable.',
                 previous: $exception,
             );
+            $this->recordProviderFailure($normalized, $user, $preparation, 'application_draft_generation');
+            throw $normalized;
         }
         $run = $this->newRun($user, $preparation, 'application_draft_generation', $skill);
         try {
@@ -176,12 +178,25 @@ class ApplicationPreparationService
             if ($run->status === 'RUNNING') {
                 $run->forceFill(['status' => 'FAILED', 'validation_result' => 'BLOCK', 'error_category' => $exception instanceof LlmProviderException ? $exception->category : 'OUTPUT_REJECTED'])->save();
             }
-            if (! $exception instanceof ValidationException) {
-                app(IncidentRecorder::class)->record(
-                    $exception instanceof LlmProviderException ? 'LLM_PROVIDER_UNAVAILABLE' : 'APPLICATION_GENERATION_FAILED',
-                    'Application draft generation failed.', 'application', 'ERROR', $exception,
-                    ['llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'application_draft_generation'],
-                );
+            if (! $exception instanceof ValidationException
+                && ! ($exception instanceof LlmProviderException && $exception->diagnosticRecorded())) {
+                if ($exception instanceof LlmProviderException) {
+                    $this->recordProviderFailure($exception, $user, $preparation, 'application_draft_generation', $run->id);
+                } else {
+                    app(IncidentRecorder::class)->record(
+                        'APPLICATION_GENERATION_FAILED',
+                        'Application draft generation failed.',
+                        'application',
+                        'ERROR',
+                        $exception,
+                        [
+                            'llm_run_id' => $run->id,
+                            'application_id' => $preparation->id,
+                            'user_id' => $user->id,
+                            'operation' => 'application_draft_generation',
+                        ],
+                    );
+                }
             }
             if ($exception instanceof ValidationException || $exception instanceof LlmProviderException) {
                 throw $exception;
@@ -190,6 +205,37 @@ class ApplicationPreparationService
         }
 
         return $this->resource($user, $preparation);
+    }
+
+    private function recordProviderFailure(
+        LlmProviderException $exception,
+        User $user,
+        ApplicationPreparation $preparation,
+        string $operation,
+        ?string $llmRunId = null,
+    ): void {
+        $context = [
+            'application_id' => $preparation->id,
+            'user_id' => $user->id,
+            'operation' => $operation,
+            'retryable' => $exception->isRetryable(),
+        ];
+        if ($llmRunId !== null) {
+            $context['llm_run_id'] = $llmRunId;
+        }
+        if ($exception->providerName !== null) {
+            $context['provider'] = $exception->providerName;
+        }
+
+        app(IncidentRecorder::class)->record(
+            'LLM_PROVIDER_UNAVAILABLE',
+            'Application draft generation failed.',
+            'application',
+            'ERROR',
+            $exception,
+            $context,
+        );
+        $exception->markDiagnosticRecorded();
     }
 
     /** @return array<string, mixed> */

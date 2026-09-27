@@ -30,8 +30,8 @@ class ApplicationPreparationController extends Controller
         $preparation = ApplicationPreparation::query()->where('owner_id', $request->user()->id)->findOrFail($id);
         try {
             return response()->json(['data' => $service->generate($request->user(), $preparation)]);
-        } catch (LlmProviderException) {
-            return response()->json(['message' => 'Draft generation is temporarily unavailable.', 'error' => ['code' => 'GENERATION_UNAVAILABLE']], 503);
+        } catch (LlmProviderException $exception) {
+            return $this->providerFailure($exception, 'GENERATION_UNAVAILABLE', 'Draft generation');
         }
     }
 
@@ -47,8 +47,8 @@ class ApplicationPreparationController extends Controller
             $resource = $data['action'] === 'edit'
                 ? $service->edit($request->user(), $item, trim((string) $data['content']))
                 : $service->decide($request->user(), $item, $data['action']);
-        } catch (LlmProviderException) {
-            return response()->json(['message' => 'Draft truth validation is temporarily unavailable.', 'error' => ['code' => 'VALIDATION_UNAVAILABLE']], 503);
+        } catch (LlmProviderException $exception) {
+            return $this->providerFailure($exception, 'VALIDATION_UNAVAILABLE', 'Draft truth validation');
         }
 
         return response()->json(['data' => $resource]);
@@ -60,8 +60,26 @@ class ApplicationPreparationController extends Controller
 
         try {
             return response()->json(['data' => $service->approve($request->user(), $item)]);
-        } catch (LlmProviderException) {
-            return response()->json(['message' => 'Draft truth validation is temporarily unavailable.', 'error' => ['code' => 'VALIDATION_UNAVAILABLE']], 503);
+        } catch (LlmProviderException $exception) {
+            return $this->providerFailure($exception, 'VALIDATION_UNAVAILABLE', 'Draft truth validation');
         }
+    }
+
+    private function providerFailure(LlmProviderException $exception, string $code, string $operation): JsonResponse
+    {
+        $message = match (true) {
+            $exception->isRetryable() => $operation.' is temporarily unavailable.',
+            $exception->requiresConfiguration() => $operation.' needs configuration. Contact your administrator.',
+            default => $operation.' could not be completed. Contact your administrator.',
+        };
+
+        return response()->json([
+            'message' => $message,
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+                'retryable' => $exception->isRetryable(),
+            ],
+        ], 503);
     }
 }

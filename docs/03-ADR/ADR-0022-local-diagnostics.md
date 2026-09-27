@@ -33,7 +33,7 @@ The backend keeps accepted `/api/v1` and owner-derived identity boundaries. This
 
 ## Consequences
 
-The Error Center can search recent request, job, LLM and application IDs and show counts, but the bounded occurrences are not an exhaustive event archive. If PostgreSQL is unavailable, stderr is the incident source until recovery. Docker log rotation bounds local raw logs; operators must export logs separately if longer retention is required. Browser telemetry accepts only a fixed event kind and bounded component slug, and derives user identity from the session.
+The Error Center can search recent request, job, LLM and application IDs and show counts, but the bounded occurrences are not an exhaustive event archive. If PostgreSQL is unavailable, stderr is the incident source until recovery. Docker log rotation bounds local raw logs; operators must export logs separately if longer retention is required. Browser telemetry accepts only a fixed event kind and a finite server-validated component allowlist (`browser`, `app-root`, `global-root`), and derives user identity from the session. This bounds browser-created fingerprint combinations while preserving open incidents under the lifecycle retention rule. API retryability is classified by failure category; an HTTP 503 alone does not make an operation retryable.
 
 ## Alternatives
 

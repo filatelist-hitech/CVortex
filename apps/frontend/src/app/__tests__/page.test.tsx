@@ -96,7 +96,7 @@ describe("access shell", () => {
     fireEvent.change(screen.getByLabelText("Career or resume text"), { target: { value: "Synthetic career text." } });
     fireEvent.click(screen.getByRole("button", { name: "Extract pending facts" }));
 
-    expect(await screen.findByText("Career extraction is temporarily unavailable. Manual fact entry is still available.")).toBeInTheDocument();
+    expect(await screen.findByText("Career extraction could not be completed. Manual fact entry is still available.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add confirmed fact" })).toBeEnabled();
   });
 
@@ -114,7 +114,7 @@ describe("access shell", () => {
     fireEvent.change(screen.getByLabelText("Career or resume text"), { target: { value: "Synthetic career text." } });
     fireEvent.click(screen.getByRole("button", { name: "Extract pending facts" }));
 
-    expect(await screen.findByText("Request failed. Please try again.")).toBeInTheDocument();
+    expect(await screen.findByText("The request could not be completed.")).toBeInTheDocument();
     expect(screen.queryByText(/SQLSTATE private/)).not.toBeInTheDocument();
   });
 

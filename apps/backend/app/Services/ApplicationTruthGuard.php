@@ -8,6 +8,7 @@ use App\AI\Data\LlmResponse;
 use App\AI\Data\ModelPolicy;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\IncidentRecorder;
 use App\Models\ApplicationLlmRun;
 use App\Models\ApplicationPreparation;
 use App\Models\Claim;
@@ -23,6 +24,7 @@ class ApplicationTruthGuard
         private readonly LlmProvider $provider,
         private readonly RuntimeSkillRegistry $skills,
         private readonly TruthGuard $claims,
+        private readonly IncidentRecorder $incidents,
     ) {}
 
     /** @param list<array{assertion: string, claim_ids: list<string>}> $proposedUsages
@@ -82,11 +84,13 @@ class ApplicationTruthGuard
         try {
             $skill = $this->skills->applicationTruthReview();
         } catch (\Throwable $exception) {
-            throw new LlmProviderException(
+            $normalized = new LlmProviderException(
                 LlmProviderException::NOT_CONFIGURED,
                 'The application Truth Guard is unavailable.',
                 previous: $exception,
             );
+            $this->recordProviderFailure($normalized, $user, $preparation);
+            throw $normalized;
         }
 
         $run = new ApplicationLlmRun;
@@ -119,7 +123,7 @@ class ApplicationTruthGuard
                 untrustedDataLabel: 'UNTRUSTED APPLICATION CONTENT AND CLAIM DATA',
             ));
         } catch (LlmProviderException $exception) {
-            $this->recordFailure($run, $exception);
+            $this->recordFailure($run, $exception, $user, $preparation);
             throw $exception;
         } catch (\Throwable $exception) {
             $normalized = new LlmProviderException(
@@ -127,7 +131,7 @@ class ApplicationTruthGuard
                 'Application Truth Guard failed safely.',
                 previous: $exception,
             );
-            $this->recordFailure($run, $normalized);
+            $this->recordFailure($run, $normalized, $user, $preparation);
             throw $normalized;
         }
 
@@ -325,7 +329,7 @@ class ApplicationTruthGuard
         return ['status' => TruthGuard::BLOCK, 'usages' => []];
     }
 
-    private function recordFailure(ApplicationLlmRun $run, LlmProviderException $exception): void
+    private function recordFailure(ApplicationLlmRun $run, LlmProviderException $exception, User $user, ApplicationPreparation $preparation): void
     {
         $run->forceFill([
             'provider' => $exception->providerName,
@@ -339,6 +343,38 @@ class ApplicationTruthGuard
             'validation_result' => 'NOT_VALIDATED',
             'error_category' => $exception->category,
         ])->save();
+
+        $this->recordProviderFailure($exception, $user, $preparation, $run);
+    }
+
+    private function recordProviderFailure(
+        LlmProviderException $exception,
+        User $user,
+        ApplicationPreparation $preparation,
+        ?ApplicationLlmRun $run = null,
+    ): void {
+        $context = [
+            'application_id' => $preparation->id,
+            'user_id' => $user->id,
+            'operation' => 'application_truth_review',
+            'retryable' => $exception->isRetryable(),
+        ];
+        if ($run !== null) {
+            $context['llm_run_id'] = $run->id;
+        }
+        if ($exception->providerName !== null) {
+            $context['provider'] = $exception->providerName;
+        }
+
+        $this->incidents->record(
+            'LLM_PROVIDER_UNAVAILABLE',
+            'Application Truth Guard provider failed.',
+            'application',
+            'ERROR',
+            $exception,
+            $context,
+        );
+        $exception->markDiagnosticRecorded();
     }
 
     private function record(ApplicationLlmRun $run, LlmResponse $response, string $status): void

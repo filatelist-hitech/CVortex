@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "../access-shell";
+import { ApiError, api } from "../access-shell";
 import Diagnostics from "../diagnostics";
 import ErrorPage from "../error";
 
@@ -13,8 +13,21 @@ describe("diagnostic UI", () => {
         code: "INTERNAL_ERROR", request_id: "req_test", retryable: true,
       },
     }, { status: 500 }));
-    await expect(api("/api/v1/fail")).rejects.toThrow("[INTERNAL_ERROR] Reference: req_test You can retry.");
-    await expect(api("/api/v1/fail")).rejects.not.toThrow("SQLSTATE");
+    const failure = await api("/api/v1/fail").catch((error) => error);
+    expect(failure).toBeInstanceOf(ApiError);
+    expect(failure).toMatchObject({ code: "INTERNAL_ERROR", retryable: true });
+    expect(failure.message).toContain("[INTERNAL_ERROR] Reference: req_test You can retry.");
+    expect(failure.message).not.toContain("SQLSTATE");
+  });
+
+  it("does not describe a non-retryable provider configuration error as retryable", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+      error: { code: "GENERATION_UNAVAILABLE", request_id: "req_config", retryable: false },
+    }, { status: 503 }));
+    const failure = await api("/api/v1/applications/generate").catch((error) => error);
+    expect(failure).toMatchObject({ code: "GENERATION_UNAVAILABLE", retryable: false });
+    expect(failure.message).toContain("needs administrator configuration");
+    expect(failure.message).not.toContain("retry");
   });
 
   it("lists and filters incidents, then resolves detail", async () => {
@@ -54,6 +67,40 @@ describe("diagnostic UI", () => {
     fireEvent.change(screen.getByLabelText("search"), { target: { value: "req_test" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining("search=req_test&page=1"), expect.anything()));
+  });
+
+  it("shows every incident category by default and clears filters with Show all incidents", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+      data: { data: [], current_page: 1, last_page: 1, total: 0 },
+    }));
+    render(<Diagnostics />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/diagnostics/incidents?page=1", expect.anything()));
+    expect(screen.getByLabelText("severity")).toHaveValue("");
+    expect(screen.getByLabelText("status")).toHaveValue("");
+    expect(screen.getByText(/All incident severities and statuses are shown by default/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("severity"), { target: { value: "ERROR" } });
+    fireEvent.change(screen.getByLabelText("application id"), { target: { value: "app_test" } });
+    fireEvent.click(screen.getByRole("button", { name: "Show all incidents" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/diagnostics/incidents?page=1", expect.anything()));
+    expect(screen.getByLabelText("severity")).toHaveValue("");
+    expect(screen.getByLabelText("application id")).toHaveValue("");
+  });
+
+  it("offers a Retry action only when the API marks the failure retryable", async () => {
+    let retryable = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({
+      error: { code: "INTERNAL_ERROR", request_id: "req_list", retryable },
+    }, { status: 503 }));
+    render(<Diagnostics />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("The operation could not be completed.");
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+
+    retryable = true;
+    fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("renders a recovery action without an exception message", () => {

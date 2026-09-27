@@ -36,7 +36,13 @@ final class ErrorCatalog
                 $status === 403 ? 'You do not have access to this action.' : 'The request could not be completed.', $status, false, 'INFO');
         }
         if ($exception instanceof LlmProviderException) {
-            return self::entry('LLM_PROVIDER_UNAVAILABLE', 'The analysis service is temporarily unavailable. Please retry later.', 503, true, 'ERROR');
+            $message = match (true) {
+                $exception->isRetryable() => 'The analysis service is temporarily unavailable. Please retry later.',
+                $exception->requiresConfiguration() => 'The analysis provider needs configuration. Contact your administrator.',
+                default => 'The analysis could not be completed. Contact your administrator.',
+            };
+
+            return self::entry('LLM_PROVIDER_UNAVAILABLE', $message, 503, $exception->isRetryable(), 'ERROR');
         }
         if ($exception instanceof SafeCareerException || $exception instanceof SafeVacancyException) {
             return self::entry($exception instanceof SafeCareerException ? 'CAREER_OPERATION_FAILED' : 'VACANCY_OPERATION_FAILED',

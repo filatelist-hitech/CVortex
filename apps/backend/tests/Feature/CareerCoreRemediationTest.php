@@ -481,12 +481,12 @@ class CareerCoreRemediationTest extends TestCase
             app(CareerExtractionService::class)->extract($user, 'Synthetic provider failure source.');
             $this->fail('Provider failure must fail.');
         } catch (LlmProviderException $exception) {
-            $this->assertSame(LlmProviderException::PROVIDER, $exception->category);
+            $this->assertSame(LlmProviderException::TEMPORARY_UNAVAILABLE, $exception->category);
         }
         $this->assertDatabaseMissing('career_facts', ['owner_id' => $user->id]);
         $this->assertDatabaseHas('llm_runs', [
             'owner_id' => $user->id,
-            'error_category' => LlmProviderException::PROVIDER,
+            'error_category' => LlmProviderException::TEMPORARY_UNAVAILABLE,
             'provider_request_id' => 'req-provider-failure',
             'input_tokens' => 5,
             'output_tokens' => 0,

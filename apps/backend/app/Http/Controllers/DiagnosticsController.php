@@ -13,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 final class DiagnosticsController extends Controller
 {
+    private const BROWSER_COMPONENTS = ['browser', 'app-root', 'global-root'];
+
     public function index(Request $request): JsonResponse
     {
         $this->requireAdmin($request);
@@ -81,7 +83,7 @@ final class DiagnosticsController extends Controller
     {
         abort_if(strlen($request->getContent()) > 2048, 413);
         $data = $request->validate([
-            'component' => ['required', 'string', 'max:64', 'regex:/\A[a-z0-9._-]+\z/i'],
+            'component' => ['required', Rule::in(self::BROWSER_COMPONENTS)],
             'kind' => ['required', Rule::in(['runtime', 'rejection', 'render'])],
         ]);
         $recorder->record('FRONTEND_RUNTIME_ERROR', 'A browser operation failed.', $data['component'], 'ERROR', null, [

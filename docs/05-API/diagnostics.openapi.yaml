@@ -22,8 +22,8 @@ paths:
               properties:
                 component:
                   type: string
-                  maxLength: 64
-                  pattern: '^[a-zA-Z0-9._-]+$'
+                  enum: [browser, app-root, global-root]
+                  description: Server-allowlisted component label; arbitrary client labels are rejected.
                 kind:
                   type: string
                   enum: [runtime, rejection, render]
@@ -126,7 +126,9 @@ components:
             code: { type: string }
             message: { type: string }
             request_id: { type: string }
-            retryable: { type: boolean }
+            retryable:
+              type: boolean
+              description: True only for failure categories that may succeed on retry; HTTP status alone does not determine this value.
         errors: { type: object, additionalProperties: true }
     Incident:
       type: object

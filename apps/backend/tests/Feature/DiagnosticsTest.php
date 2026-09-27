@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\AI\Exceptions\LlmProviderException;
 use App\Diagnostics\IncidentRecorder;
 use App\Diagnostics\Redactor;
 use App\Diagnostics\StructuredLogs;
@@ -30,6 +31,11 @@ class DiagnosticsTest extends TestCase
         parent::setUp();
         Route::get('/api/v1/_diagnostics-test/fail', fn () => throw new \RuntimeException('Authorization: Bearer SECRET_CANARY api_key=SECRET_CANARY password=SECRET_CANARY'));
         Route::get('/api/v1/_diagnostics-test/controlled', fn () => response()->json(['error' => ['code' => 'PROVIDER_ERROR']], 503));
+        Route::get('/api/v1/_diagnostics-test/controlled-retryable', fn () => response()->json(['error' => ['code' => 'PROVIDER_ERROR', 'retryable' => true]], 503));
+        Route::get('/api/v1/_diagnostics-test/provider-rate-limited', fn () => throw new LlmProviderException(LlmProviderException::RATE_LIMITED));
+        Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE));
+        Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
+        Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
     }
 
     public function test_internal_error_is_safe_correlated_and_grouped(): void
@@ -93,11 +99,26 @@ class DiagnosticsTest extends TestCase
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($record->context));
     }
 
-    public function test_controlled_error_receives_reference_without_changing_its_code(): void
+    public function test_controlled_error_does_not_infer_retryability_from_http_status(): void
     {
         $this->getJson('/api/v1/_diagnostics-test/controlled')->assertStatus(503)
-            ->assertJsonPath('error.code', 'PROVIDER_ERROR')->assertJsonPath('error.retryable', true)
+            ->assertJsonPath('error.code', 'PROVIDER_ERROR')->assertJsonPath('error.retryable', false)
             ->assertJsonStructure(['error' => ['request_id', 'message']]);
+        $this->getJson('/api/v1/_diagnostics-test/controlled-retryable')->assertStatus(503)
+            ->assertJsonPath('error.code', 'PROVIDER_ERROR')->assertJsonPath('error.retryable', true);
+    }
+
+    public function test_provider_error_contract_uses_failure_category_for_retryability(): void
+    {
+        $this->getJson('/api/v1/_diagnostics-test/provider-rate-limited')->assertStatus(503)
+            ->assertJsonPath('error.retryable', true);
+        $this->getJson('/api/v1/_diagnostics-test/provider-temporary')->assertStatus(503)
+            ->assertJsonPath('error.retryable', true);
+        $configured = $this->getJson('/api/v1/_diagnostics-test/provider-config')->assertStatus(503)
+            ->assertJsonPath('error.retryable', false)->json();
+        $this->assertStringNotContainsString('retry', strtolower($configured['error']['message']));
+        $this->getJson('/api/v1/_diagnostics-test/provider-invalid-config')->assertStatus(503)
+            ->assertJsonPath('error.retryable', false);
     }
 
     public function test_admin_only_diagnostics_and_lifecycle(): void
@@ -118,6 +139,26 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('audit_events', ['event_type' => 'diagnostics.incident.status_changed']);
     }
 
+    public function test_application_id_filter_search_and_detail_use_occurrence_correlation(): void
+    {
+        $user = $this->user('user');
+        $admin = $this->user('admin');
+        $applicationId = (string) Str::ulid();
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Application provider failed.', 'application', context: [
+            'application_id' => $applicationId,
+            'user_id' => $user->id,
+            'llm_run_id' => (string) Str::ulid(),
+        ]);
+        $incidentId = DB::table('diagnostic_incidents')->value('id');
+
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?application_id='.$applicationId)
+            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?search='.$applicationId)
+            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$incidentId)
+            ->assertOk()->assertJsonPath('data.occurrences.0.application_id', $applicationId);
+    }
+
     public function test_browser_report_ignores_untrusted_details_and_requires_auth(): void
     {
         $this->postJson('/api/v1/diagnostics/report', ['component' => 'app'])->assertUnauthorized();
@@ -129,7 +170,19 @@ class DiagnosticsTest extends TestCase
         $event = DB::table('diagnostic_occurrences')->first();
         $this->assertSame($user->id, $event->user_id);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($event));
+        $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => 'browser', 'kind' => 'rejection'])->assertStatus(202);
+        $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => 'global-root', 'kind' => 'render'])->assertStatus(202);
+        $this->assertDatabaseCount('diagnostic_incidents', 3);
+        $this->assertDatabaseCount('diagnostic_occurrences', 3);
         $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => '../../bad', 'kind' => 'runtime'])->assertUnprocessable();
+        foreach (range(1, 4) as $index) {
+            $this->as($user)->postJson('/api/v1/diagnostics/report', [
+                'component' => 'client-component-'.$index,
+                'kind' => 'runtime',
+            ])->assertUnprocessable();
+        }
+        $this->assertDatabaseCount('diagnostic_incidents', 3);
+        $this->assertDatabaseCount('diagnostic_occurrences', 3);
     }
 
     public function test_final_queue_failure_is_correlated(): void

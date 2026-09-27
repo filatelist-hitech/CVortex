@@ -35,7 +35,7 @@ final class EnsureRequestId
                 };
                 $error['message'] ??= 'The request could not be completed.';
                 $error['request_id'] = $requestId;
-                $error['retryable'] ??= $response->getStatusCode() === 503;
+                $error['retryable'] ??= $error['code'] === 'RATE_LIMITED';
                 $body['error'] = $error;
                 $response->setData($body);
             }

@@ -293,7 +293,7 @@ class ApplicationDraftTest extends TestCase
         $this->assertSame([], $oversizedItem['claim_usages']);
     }
 
-    public function test_truth_review_provider_failures_are_controlled_for_edit_and_approval(): void
+    public function test_truth_review_provider_failures_are_recorded_once_for_edit_accept_and_approval(): void
     {
         Queue::fake();
         $user = $this->user('draft-review-failure@example.test');
@@ -308,19 +308,65 @@ class ApplicationDraftTest extends TestCase
         $cover = collect($generated['items'])->firstWhere('variant', 'SHORT');
 
         $provider->failNextReview = true;
-        $editFailure = $this->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
+        $editFailure = $this->withHeader('X-Request-ID', 'req_truth_edit')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
             'action' => 'edit', 'content' => 'I built and maintained Laravel APIs.',
-        ])->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->json();
+        ])->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($editFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'content' => $cover['content'], 'status' => 'DRAFT']);
 
+        $provider->failNextReview = true;
+        $acceptFailure = $this->withHeader('X-Request-ID', 'req_truth_accept')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
+            'action' => 'accept',
+        ])->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
+        $this->assertStringNotContainsString('private provider detail', json_encode($acceptFailure, JSON_THROW_ON_ERROR));
+        $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'status' => 'DRAFT']);
+
         $this->patchJson('/api/v1/applications/draft-items/'.$cover['id'], ['action' => 'accept'])->assertOk();
         $provider->failNextReview = true;
-        $approvalFailure = $this->postJson('/api/v1/applications/draft-items/'.$cover['id'].'/approve')
-            ->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->json();
+        $approvalFailure = $this->withHeader('X-Request-ID', 'req_truth_approve')->postJson('/api/v1/applications/draft-items/'.$cover['id'].'/approve')
+            ->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($approvalFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'status' => 'ACCEPTED']);
         $this->assertDatabaseMissing('application_approval_events', ['draft_item_id' => $cover['id'], 'action' => 'APPROVED']);
+
+        foreach (['req_truth_edit', 'req_truth_accept', 'req_truth_approve'] as $requestId) {
+            $this->assertDatabaseHas('diagnostic_occurrences', [
+                'request_id' => $requestId,
+                'application_id' => $preparation['id'],
+                'user_id' => $user->id,
+                'operation' => 'application_truth_review',
+            ]);
+        }
+        $this->assertSame(3, \DB::table('diagnostic_occurrences')->where('application_id', $preparation['id'])->whereNotNull('llm_run_id')->count());
+        $this->assertDatabaseCount('diagnostic_incidents', 1);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_UNAVAILABLE', 'occurrence_count' => 3]);
+    }
+
+    public function test_generation_truth_guard_failure_is_recorded_only_once_with_application_correlation(): void
+    {
+        Queue::fake();
+        $user = $this->user('draft-generation-truth-failure@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $provider = new ApplicationDraftFakeProvider;
+        $provider->failNextReview = true;
+        $this->app->instance(LlmProvider::class, $provider);
+        $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
+        $this->actingAs($user);
+        $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
+
+        $this->withHeader('X-Request-ID', 'req_truth_generate')->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(503)->assertJsonPath('error.code', 'GENERATION_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+
+        $this->assertDatabaseCount('diagnostic_incidents', 1);
+        $this->assertDatabaseCount('diagnostic_occurrences', 1);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_truth_generate',
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+            'operation' => 'application_truth_review',
+        ]);
+        $this->assertNotNull(\DB::table('diagnostic_occurrences')->value('llm_run_id'));
     }
 
     public function test_approval_rejects_a_revision_changed_while_truth_validation_is_in_flight(): void
@@ -459,9 +505,17 @@ class ApplicationDraftTest extends TestCase
             ->shouldReceive('applicationDraftGeneration')->once()->andThrow(new \RuntimeException('private skill detail'))->getMock());
 
         $response = $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
-            ->assertStatus(503)->assertJsonPath('error.code', 'GENERATION_UNAVAILABLE')->json();
+            ->assertStatus(503)->assertJsonPath('error.code', 'GENERATION_UNAVAILABLE')
+            ->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('private skill detail', json_encode($response, JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('retry', strtolower($response['message']));
         $this->assertDatabaseCount('application_draft_items', 0);
+        $this->assertDatabaseCount('diagnostic_occurrences', 1);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+            'operation' => 'application_draft_generation',
+        ]);
     }
 
     public function test_supported_edit_revalidates_using_confirmed_context_only_and_keeps_injection_as_data(): void
@@ -590,6 +644,8 @@ class ApplicationDraftFakeProvider implements LlmProvider
 
     public bool $failNextReview = false;
 
+    public string $nextReviewFailureCategory = LlmProviderException::TRANSPORT;
+
     public ?\Closure $afterNextReview = null;
 
     /** @var list<LlmRequest> */
@@ -603,7 +659,7 @@ class ApplicationDraftFakeProvider implements LlmProvider
         }
         if ($request->schemaName === 'application_truth_review' && $this->failNextReview) {
             $this->failNextReview = false;
-            throw new LlmProviderException(LlmProviderException::TRANSPORT, 'private provider detail');
+            throw new LlmProviderException($this->nextReviewFailureCategory, 'private provider detail');
         }
         if ($request->schemaName === 'vacancy_requirements') {
             $output = ['requirements' => [[
