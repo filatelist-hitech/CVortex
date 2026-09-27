@@ -1,0 +1,181 @@
+openapi: 3.1.0
+info:
+  title: CVortex diagnostics API
+  version: 1.0.0
+  description: Bounded contract for the diagnostics endpoints within the existing /api/v1 API.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+paths:
+  /diagnostics/report:
+    post:
+      summary: Report a sanitized browser failure
+      description: Authenticated active user. Rate limited to ten reports per minute per user. Supplied identity, message and stack are ignored.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [component, kind]
+              properties:
+                component:
+                  type: string
+                  maxLength: 64
+                  pattern: '^[a-zA-Z0-9._-]+$'
+                kind:
+                  type: string
+                  enum: [runtime, rejection, render]
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      request_id: { type: string }
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /diagnostics/incidents:
+    get:
+      summary: List grouped incidents
+      description: Admin only; newest last_seen_at first, 25 per page.
+      parameters:
+        - { name: severity, in: query, schema: { type: string, enum: [WARNING, ERROR, CRITICAL] } }
+        - { name: status, in: query, schema: { type: string, enum: [OPEN, RESOLVED, IGNORED] } }
+        - { name: service, in: query, schema: { type: string, maxLength: 32 } }
+        - { name: component, in: query, schema: { type: string, maxLength: 96 } }
+        - { name: environment, in: query, schema: { type: string, maxLength: 32 } }
+        - { name: error_code, in: query, schema: { type: string, maxLength: 96 } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: search, in: query, description: Exact request/job/LLM/application ID or error code, schema: { type: string, maxLength: 128 } }
+        - { name: request_id, in: query, schema: { type: string, maxLength: 128 } }
+        - { name: job_id, in: query, schema: { type: string, maxLength: 128 } }
+        - { name: llm_run_id, in: query, schema: { type: string, maxLength: 26 } }
+        - { name: application_id, in: query, schema: { type: string, maxLength: 26 } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: Laravel paginator in data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Incident' }
+                      current_page: { type: integer }
+                      total: { type: integer }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /diagnostics/incidents/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Read an incident with recent occurrences
+      description: Admin only.
+      responses:
+        '200': { $ref: '#/components/responses/Detail' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      summary: Change incident lifecycle status
+      description: Admin only; action is audited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [OPEN, RESOLVED, IGNORED] }
+      responses:
+        '200': { $ref: '#/components/responses/Detail' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: cvortex_session
+      description: First-party Sanctum stateful session; mutating requests also require XSRF token.
+  schemas:
+    Error:
+      type: object
+      required: [message, error]
+      properties:
+        message: { type: string }
+        error:
+          type: object
+          required: [code, message, request_id, retryable]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            request_id: { type: string }
+            retryable: { type: boolean }
+        errors: { type: object, additionalProperties: true }
+    Incident:
+      type: object
+      required: [id, status, severity, error_code, service, component, environment, message, occurrence_count, first_seen_at, last_seen_at]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [OPEN, RESOLVED, IGNORED] }
+        severity: { type: string }
+        error_code: { type: string }
+        service: { type: string }
+        component: { type: string }
+        environment: { type: string }
+        message: { type: string }
+        exception_class: { type: [string, 'null'] }
+        occurrence_count: { type: integer }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+    Occurrence:
+      type: object
+      properties:
+        id: { type: string }
+        request_id: { type: [string, 'null'] }
+        job_id: { type: [string, 'null'] }
+        llm_run_id: { type: [string, 'null'] }
+        application_id: { type: [string, 'null'] }
+        user_id: { type: [string, 'null'] }
+        route: { type: [string, 'null'] }
+        operation: { type: [string, 'null'] }
+        provider: { type: [string, 'null'] }
+        attempt: { type: [integer, 'null'] }
+        safe_stack: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+  responses:
+    Error:
+      description: Safe API error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Detail:
+      description: Incident and at most twenty recent persisted occurrences
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  incident: { $ref: '#/components/schemas/Incident' }
+                  occurrences:
+                    type: array
+                    items: { $ref: '#/components/schemas/Occurrence' }

@@ -9,6 +9,7 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Data\RuntimeSkillDefinition;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\IncidentRecorder;
 use App\Models\ApplicationApprovalEvent;
 use App\Models\ApplicationClaimUsage;
 use App\Models\ApplicationDraftItem;
@@ -174,6 +175,13 @@ class ApplicationPreparationService
         } catch (\Throwable $exception) {
             if ($run->status === 'RUNNING') {
                 $run->forceFill(['status' => 'FAILED', 'validation_result' => 'BLOCK', 'error_category' => $exception instanceof LlmProviderException ? $exception->category : 'OUTPUT_REJECTED'])->save();
+            }
+            if (! $exception instanceof ValidationException) {
+                app(IncidentRecorder::class)->record(
+                    $exception instanceof LlmProviderException ? 'LLM_PROVIDER_UNAVAILABLE' : 'APPLICATION_GENERATION_FAILED',
+                    'Application draft generation failed.', 'application', 'ERROR', $exception,
+                    ['llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'application_draft_generation'],
+                );
             }
             if ($exception instanceof ValidationException || $exception instanceof LlmProviderException) {
                 throw $exception;

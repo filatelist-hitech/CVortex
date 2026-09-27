@@ -1,0 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { reportBrowserError } from "./report-browser-error";
+
+export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const [reference, setReference] = useState<string | null>(null);
+  useEffect(() => { void reportBrowserError("render", "app-root").then(setReference); }, []);
+  return <main className="shell"><section className="status-card" role="alert"><p className="eyebrow">Recovery</p><h1>Page unavailable</h1><p className="tagline">The page could not be shown. Try again or reload.</p><p>Error: FRONTEND_RUNTIME_ERROR</p>{(reference || error.digest) && <p>Reference: {reference || error.digest}</p>}<div className="actions"><button type="button" onClick={reset}>Retry</button><button type="button" className="secondary" onClick={() => window.location.reload()}>Reload</button></div></section></main>;
+}

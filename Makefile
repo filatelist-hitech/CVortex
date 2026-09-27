@@ -3,7 +3,7 @@ SHELL := /bin/sh
 SERVICE ?= backend
 COMMAND ?=
 
-.PHONY: init up down restart test lint logs shell migrate
+.PHONY: init up down restart test lint logs logs-pretty failed-jobs diagnostics-prune shell migrate
 
 init:
 	@if [ ! -f .env ]; then \
@@ -57,6 +57,15 @@ lint:
 
 logs:
 	docker compose logs --tail=200 $(SERVICE)
+
+logs-pretty:
+	docker compose logs --no-color --no-log-prefix --tail=200 $(SERVICE) | python3 scripts/pretty-logs.py
+
+failed-jobs:
+	docker compose exec -T backend php artisan diagnostics:failed-jobs
+
+diagnostics-prune:
+	docker compose exec -T backend php artisan diagnostics:prune
 
 shell:
 	@if [ -n "$(COMMAND)" ]; then docker compose exec $(SERVICE) sh -lc '$(COMMAND)'; else docker compose exec $(SERVICE) sh; fi

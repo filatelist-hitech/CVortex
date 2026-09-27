@@ -14,10 +14,19 @@ const safeErrorMessages: Record<string, string> = {
   INVALID_EXTRACTION_RESULT: "Career extraction returned unsupported data. Nothing was trusted.",
   CAREER_OPERATION_FAILED: "The Career operation could not be completed. Please try again.",
   VACANCY_OPERATION_FAILED: "The vacancy operation could not be completed. Please try again.",
+  LLM_PROVIDER_UNAVAILABLE: "The analysis service is temporarily unavailable. Please retry later.",
+  LLM_OUTPUT_INVALID: "Analysis returned unsupported data. Please retry later.",
+  INTERNAL_ERROR: "The operation could not be completed. Please try later.",
+  PERMISSION_DENIED: "You do not have access to this action.",
+  AUTH_REQUIRED: "Please sign in and try again.",
+  VALIDATION_FAILED: "Please check the submitted information.",
+  RATE_LIMITED: "Too many requests. Please try later.",
 };
 
 export async function api(path: string, options: RequestInit = {}) {
-  const response = await fetch(path, {
+  let response: Response;
+  try {
+    response = await fetch(path, {
     credentials: "same-origin",
     headers: {
       Accept: "application/json",
@@ -25,11 +34,17 @@ export async function api(path: string, options: RequestInit = {}) {
       ...(options.method && options.method !== "GET" ? { "X-XSRF-TOKEN": csrf() } : {}),
     },
     ...options,
-  });
+    });
+  } catch {
+    throw new Error("The connection failed. Check your network and retry. [NETWORK_ERROR]");
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const code = typeof body?.error?.code === "string" ? body.error.code : "";
-    throw new Error(safeErrorMessages[code] ?? "Request failed. Please try again.");
+    const reference = typeof body?.error?.request_id === "string" ? body.error.request_id : response.headers.get("X-Request-ID");
+    const safeCode = /^[A-Z][A-Z0-9_]{2,95}$/.test(code) ? code : "REQUEST_FAILED";
+    const explanation = safeErrorMessages[code] ?? "Request failed. Please try again.";
+    throw new Error(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${body?.error?.retryable ? " You can retry." : ""}`);
   }
   return response.status === 204 ? null : response.json();
 }
@@ -74,7 +89,7 @@ export default function AccessShell({ registrationRoute = false }: { registratio
   }
 
   if (user) {
-    return <CareerWorkspace email={user.email} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
+    return <CareerWorkspace email={user.email} role={user.role} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
   }
 
   const registrationUnavailable = mode === "register" && (!registrationRoute || !token);

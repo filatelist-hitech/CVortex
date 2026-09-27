@@ -28,6 +28,10 @@ External vacancies, recruiter messages, uploads, HTML/web/API responses and tool
 
 Security validation is required before each future ingestion, fetcher, parser, credential or context implementation; human approval does not mitigate a failed technical control.
 
+## Diagnostics extension (2026-09-27)
+
+Admin-only incident APIs expose sanitized operational metadata and bounded stack frames; normal users cannot enumerate them. Browser telemetry is authenticated and rate limited, validates a fixed kind and bounded component slug, ignores client-supplied identity/message/stack and derives `user_id` server-side. JSON log processing recursively masks secret-like fields, but code must still avoid logging arbitrary raw content and exception messages. Raw stderr logs and queryable incidents have independent failure paths; incident persistence errors cannot replace the original application error. Tests exercise cross-role access, untrusted telemetry and fake-secret canaries.
+
 ## MCP Gateway extension (2026-09-27)
 
 The disabled-by-default [MCP Gateway](../02-Architecture/MCP-Gateway.md) is an external **read-only** boundary with exactly `vacancy_get` and `application_context_get`. OAuth bearer scope, active-user enforcement, owner-scoped queries/RLS, strict schemas, bounded output and rate limiting address token misuse, IDOR and excessive disclosure. Vacancy-derived text stays untrusted data. MCP exposes no mutation, approval, fact-review, application-state, message-send, arbitrary URL, filesystem, SQL, shell or secret access. OAuth uses authorization code + PKCE, strict parsed redirect validation, issuer/resource-bound access tokens and bearer-only MCP POSTs; browser cookies do not authenticate MCP.

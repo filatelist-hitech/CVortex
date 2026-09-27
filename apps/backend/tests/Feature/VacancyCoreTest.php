@@ -2379,8 +2379,9 @@ class VacancyCoreTest extends TestCase
             ->assertStatus(500)
             ->assertJsonPath('error.code', 'VACANCY_OPERATION_FAILED');
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldHaveReceived('error')->once()->withArgs(function (string $message, array $context) use ($private): bool {
-            return $message === 'vacancy.operation_failed'
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'VACANCY_OPERATION_FAILED'
                 && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
         });
     }

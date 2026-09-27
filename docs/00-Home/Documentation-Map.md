@@ -3,7 +3,7 @@ title: Documentation Map
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-19
+updated: 2026-09-27
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
@@ -38,6 +38,7 @@ related:
 - [[../04-Data/M1-2-Career-Core|M1.2 Career Core Implementation]] — implemented Career lifecycle, API, provenance, Truth Guard and runtime-AI boundary.
 - [[../04-Data/M1-3-Vacancy-Core|M1.3 Vacancy Core Implementation]] — pasted-text snapshots, requirement extraction, explainable matching, recommendation and API boundary.
 - [[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]] — saved Preview 0.1 preparation, recommendation/draft provenance, Truth Guard review, explicit approval and API boundary.
+- [[../04-Data/Diagnostics|Diagnostics data model]] — grouped incidents, occurrences, correlation and retention.
 - [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
 - [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
 - [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.
@@ -45,6 +46,7 @@ related:
 - [[../07-Design/Figma-Handoff|Figma Handoff]] — Figma bootstrap/review/drift procedure and current capability limitation.
 - [[../10-Operations/Local-Development|Local Development]] — clean bootstrap and stable Make interface.
 - [[../10-Operations/M0-Runbook|M0 Runbook]] — health diagnosis, recovery and validation commands.
+- [[../10-Operations/Logging-and-Diagnostics|Logging and Diagnostics]] — structured events, Error Center and CLI fallback.
 
 ## Documentation areas
 

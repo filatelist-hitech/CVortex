@@ -8,6 +8,7 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Exceptions\CareerOutputException;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\IncidentRecorder;
 use App\Exceptions\SafeCareerException;
 use App\Jobs\ExtractCareerSource;
 use App\Models\CareerFact;
@@ -17,6 +18,7 @@ use App\Models\LlmRun;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class CareerExtractionService
@@ -170,6 +172,9 @@ class CareerExtractionService
                 'validation_result' => $exception->category,
                 'error_category' => $exception->category,
             ])->forceFill($failureMetadata)->save();
+            app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', 'Career extraction returned unsupported data.', 'career', 'ERROR', $exception, [
+                'llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'career_text_extraction',
+            ]);
             throw $exception;
         } catch (LlmProviderException $exception) {
             $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR'])->save();
@@ -185,6 +190,23 @@ class CareerExtractionService
                 'validation_result' => 'NOT_VALIDATED',
                 'error_category' => $exception->category,
             ])->save();
+            try {
+                $shared = Log::sharedContext();
+            } catch (Throwable) {
+                $shared = [];
+            }
+            if (isset($shared['job_id'])) {
+                try {
+                    Log::shareContext(['llm_run_id' => $run->id]);
+                } catch (Throwable) {
+                    // Keep the provider failure as the primary error.
+                }
+            } else {
+                app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Career extraction provider failed.', 'career', 'ERROR', $exception, [
+                    'llm_run_id' => $run->id, 'user_id' => $user->id, 'provider' => $exception->providerName,
+                    'operation' => 'career_text_extraction',
+                ]);
+            }
             throw $exception;
         }
 

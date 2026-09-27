@@ -8,6 +8,7 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\VacancyOutputException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\IncidentRecorder;
 use App\Exceptions\SafeVacancyException;
 use App\Models\User;
 use App\Models\Vacancy;
@@ -17,6 +18,7 @@ use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class VacancyAnalysisService
@@ -172,6 +174,9 @@ class VacancyAnalysisService
                 'validation_result' => $exception->category,
                 'error_category' => $exception->category,
             ])->save();
+            app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', 'Vacancy analysis returned unsupported data.', 'vacancy', 'ERROR', $exception, [
+                'llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'vacancy_requirement_extraction',
+            ]);
             throw $exception;
         } catch (LlmProviderException $exception) {
             $run->forceFill([
@@ -186,6 +191,23 @@ class VacancyAnalysisService
                 'validation_result' => 'NOT_VALIDATED',
                 'error_category' => $exception->category,
             ])->save();
+            try {
+                $shared = Log::sharedContext();
+            } catch (Throwable) {
+                $shared = [];
+            }
+            if (isset($shared['job_id'])) {
+                try {
+                    Log::shareContext(['llm_run_id' => $run->id]);
+                } catch (Throwable) {
+                    // Keep the provider failure as the primary error.
+                }
+            } else {
+                app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Vacancy analysis provider failed.', 'vacancy', 'ERROR', $exception, [
+                    'llm_run_id' => $run->id, 'user_id' => $user->id, 'provider' => $exception->providerName,
+                    'operation' => 'vacancy_requirement_extraction',
+                ]);
+            }
             throw $exception;
         }
     }

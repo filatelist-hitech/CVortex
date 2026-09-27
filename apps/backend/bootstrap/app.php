@@ -1,9 +1,10 @@
 <?php
 
+use App\Diagnostics\ErrorCatalog;
+use App\Diagnostics\IncidentRecorder;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsureRequestId;
 use App\Http\Middleware\SetDatabaseOwnerContext;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use League\OAuth2\Server\Exception\OAuthServerException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -38,14 +38,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 return false;
             }
 
-            if ((request()->is('api/v1/career*') || request()->is('api/v1/vacancies*'))
-                && ! $exception instanceof ValidationException
-                && ! $exception instanceof AuthenticationException
-                && (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500)) {
-                Log::error(request()->is('api/v1/vacancies*') ? 'vacancy.operation_failed' : 'career.operation_failed', [
-                    'operation' => request()->route()?->getName() ?? 'private-domain',
-                    'exception_type' => $exception::class,
-                ]);
+            if (request()->is('api/v1/*')) {
+                $entry = ErrorCatalog::classify($exception, (string) request()->segment(3));
+                if ($entry['status'] < 500) {
+                    return true;
+                }
+                app(IncidentRecorder::class)->record($entry['code'], $entry['message'],
+                    (string) (request()->segment(3) ?? 'api'), $entry['severity'], $exception, [
+                        'request_id' => request()->attributes->get('request_id'),
+                        'user_id' => request()->user()?->id,
+                        'route' => request()->route()?->getName(),
+                        'operation' => request()->route()?->getName(),
+                    ]);
 
                 return false;
             }
@@ -53,14 +57,18 @@ return Application::configure(basePath: dirname(__DIR__))
             return true;
         });
         $exceptions->render(function (Throwable $exception, Request $request) {
-            if (($request->is('api/v1/career*') || $request->is('api/v1/vacancies*'))
-                && ! $exception instanceof ValidationException
-                && ! $exception instanceof AuthenticationException
-                && (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500)) {
+            if ($request->is('api/v1/*')) {
+                $entry = ErrorCatalog::classify($exception, (string) $request->segment(3));
+
                 return response()->json([
-                    'message' => 'The private operation could not be completed. Please try again.',
-                    'error' => ['code' => $request->is('api/v1/vacancies*') ? 'VACANCY_OPERATION_FAILED' : 'CAREER_OPERATION_FAILED'],
-                ], 500);
+                    'message' => $entry['message'],
+                    'error' => [
+                        'code' => $entry['code'], 'message' => $entry['message'],
+                        'request_id' => $request->attributes->get('request_id'),
+                        'retryable' => $entry['retryable'],
+                    ],
+                    ...($exception instanceof ValidationException ? ['errors' => $exception->errors()] : []),
+                ], $entry['status']);
             }
         });
         $exceptions->shouldRenderJsonWhen(

@@ -523,8 +523,9 @@ class CareerCoreRemediationTest extends TestCase
             ->assertStatus(500)
             ->assertJsonPath('error.code', 'CAREER_OPERATION_FAILED');
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldHaveReceived('error')->once()->withArgs(function (string $message, array $context) use ($private): bool {
-            return $message === 'career.operation_failed'
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'CAREER_OPERATION_FAILED'
                 && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
         });
     }
@@ -546,7 +547,11 @@ class CareerCoreRemediationTest extends TestCase
             $this->addToAssertionCount(1);
         }
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldNotHaveReceived('error');
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'LLM_PROVIDER_UNAVAILABLE'
+                && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
+        });
     }
 
     public function test_career_http_500_message_is_redacted_from_response_and_logs(): void
