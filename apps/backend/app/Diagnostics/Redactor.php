@@ -35,4 +35,12 @@ final class Redactor
 
         return is_string($value) ? self::text($value) : (is_scalar($value) || $value === null ? $value : '[OMITTED]');
     }
+
+    public static function stack(Throwable $exception): string
+    {
+        $frames = array_slice($exception->getTrace(), 0, 12);
+
+        return implode("\n", array_map(static fn (array $frame): string => basename((string) ($frame['file'] ?? 'runtime')).':'.(int) ($frame['line'] ?? 0).' '.
+            self::text((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']), $frames));
+    }
 }

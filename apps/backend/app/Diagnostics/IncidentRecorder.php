@@ -6,9 +6,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
+use WeakMap;
 
 final class IncidentRecorder
 {
+    /** @var WeakMap<Throwable, bool>|null */
+    private static ?WeakMap $recordedExceptions = null;
+
+    public static function wasRecorded(Throwable $exception): bool
+    {
+        return isset((self::$recordedExceptions ??= new WeakMap)[$exception]);
+    }
+
     /** @param array<string, mixed> $context */
     public function record(string $code, string $safeMessage, string $component, string $severity = 'ERROR', ?Throwable $exception = null, array $context = []): void
     {
@@ -18,18 +27,23 @@ final class IncidentRecorder
             $shared = [];
         }
         $safeContext = Redactor::context([...($shared ?: []), ...$context]);
+        $safeStack = $exception === null ? null : Redactor::stack($exception);
         $fingerprint = hash('sha256', implode('|', [$code, $component, $exception ? $exception::class : '', $safeContext['operation'] ?? '']));
         try {
-            Log::log(strtolower($severity), 'diagnostics.incident', [
+            $logContext = [
                 'event_name' => 'diagnostics.incident', 'error_code' => $code, 'component' => $component,
                 'exception_class' => $exception ? $exception::class : null, ...$safeContext,
-            ]);
+            ];
+            if ($safeStack !== null) {
+                $logContext['safe_stack'] = $safeStack;
+            }
+            Log::log(strtolower($severity), 'diagnostics.incident', $logContext);
         } catch (Throwable) {
             // Preserve the original operation when the raw log sink fails.
         }
 
         try {
-            DB::transaction(function () use ($fingerprint, $code, $safeMessage, $component, $severity, $exception, $safeContext): void {
+            $stored = DB::transaction(function () use ($fingerprint, $code, $safeMessage, $component, $severity, $exception, $safeContext, $safeStack): bool {
                 $now = now();
                 DB::table('diagnostic_incidents')->insertOrIgnore([
                     'id' => (string) Str::ulid(), 'fingerprint' => $fingerprint, 'status' => 'OPEN',
@@ -41,7 +55,7 @@ final class IncidentRecorder
                 ]);
                 $incident = DB::table('diagnostic_incidents')->where('fingerprint', $fingerprint)->lockForUpdate()->first();
                 if ($incident === null) {
-                    return;
+                    return false;
                 }
                 DB::table('diagnostic_incidents')->where('id', $incident->id)->update([
                     'occurrence_count' => DB::raw('occurrence_count + 1'), 'last_seen_at' => $now, 'updated_at' => $now,
@@ -53,7 +67,7 @@ final class IncidentRecorder
                     'llm_run_id' => $safeContext['llm_run_id'] ?? null, 'application_id' => $safeContext['application_id'] ?? null,
                     'user_id' => $safeContext['user_id'] ?? null, 'route' => $safeContext['route'] ?? null,
                     'operation' => $safeContext['operation'] ?? null, 'provider' => $safeContext['provider'] ?? null,
-                    'attempt' => $safeContext['attempt'] ?? null, 'safe_stack' => self::safeStack($exception),
+                    'attempt' => $safeContext['attempt'] ?? null, 'safe_stack' => $safeStack,
                     'created_at' => $now,
                 ]);
                 // Preserve recent reference IDs while bounding a noisy fingerprint.
@@ -62,20 +76,15 @@ final class IncidentRecorder
                         ->orderByDesc('created_at')->orderByDesc('id')->skip(1000)->limit(100)->pluck('id');
                     DB::table('diagnostic_occurrences')->whereIn('id', $stale)->delete();
                 }
+
+                return true;
             });
+            if ($stored && $exception !== null) {
+                self::$recordedExceptions ??= new WeakMap;
+                self::$recordedExceptions[$exception] = true;
+            }
         } catch (Throwable) {
             // PostgreSQL can be the failed dependency. Raw stderr remains independent.
         }
-    }
-
-    private static function safeStack(?Throwable $exception): ?string
-    {
-        if ($exception === null) {
-            return null;
-        }
-        $frames = array_slice($exception->getTrace(), 0, 12);
-
-        return implode("\n", array_map(static fn (array $frame): string => basename((string) ($frame['file'] ?? 'runtime')).':'.(int) ($frame['line'] ?? 0).' '.
-            Redactor::text((string) ($frame['class'] ?? '').$frame['function']), $frames));
     }
 }

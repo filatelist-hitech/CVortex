@@ -14,10 +14,14 @@ final class StructuredLogs
     {
         $logger->pushProcessor(function (LogRecord $record): LogRecord {
             $exception = $record->context['exception'] ?? null;
+            $context = (array) Redactor::context($record->context);
+            if ($exception instanceof Throwable) {
+                $context['safe_stack'] = Redactor::stack($exception);
+            }
 
             return $record->with(
                 message: $exception instanceof Throwable ? $exception::class : Redactor::text($record->message),
-                context: ['service' => 'backend', 'environment' => app()->environment(), ...Redactor::context($record->context)],
+                context: ['service' => 'backend', 'environment' => app()->environment(), ...$context],
             );
         });
         foreach ($logger->getHandlers() as $handler) {

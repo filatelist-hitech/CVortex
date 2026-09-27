@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->reportable(function (Throwable $exception): bool {
+            if (IncidentRecorder::wasRecorded($exception)) {
+                return false;
+            }
+
             if (request()->is('mcp/v1') && $exception instanceof OAuthServerException) {
                 Log::notice('mcp.oauth_authentication_rejected', [
                     'request_id' => request()->attributes->get('request_id'),

@@ -17,7 +17,7 @@ CVortex already emits backend logs to container stderr, supplies HTTP request ID
 
 ## Decision
 
-Keep bounded structured raw logs in container stdout/stderr, independently of PostgreSQL. Persist only grouped operational errors and recent occurrences in PostgreSQL. Fingerprints use stable code, component, exception class and operation; they exclude raw exception messages. Increment the count for every error and retain approximately the latest thousand occurrences per fingerprint. Scheduled cleanup removes expired occurrences and old closed incidents; open incidents survive cleanup. Administrative API and UI expose sanitized metadata only. A failed log sink or incident store cannot replace the primary application failure. Horizon remains the queue execution view; it is not exposed publicly.
+Keep bounded structured raw logs in container stdout/stderr, independently of PostgreSQL. Persist only grouped operational errors and recent occurrences in PostgreSQL. Fingerprints use stable code, component, exception class and operation; they exclude raw exception messages. Increment the count for every error and retain approximately the latest thousand occurrences per fingerprint. Scheduled cleanup removes expired occurrences and old closed incidents; open incidents survive cleanup. Administrative API and UI expose sanitized metadata only. Raw logs may retain up to twelve sanitized exception frames (basename, line and function only; no arguments, absolute paths or exception messages). A failed log sink or incident store cannot replace the primary application failure. Horizon remains the queue execution view; it is not exposed publicly.
 
 ```mermaid
 flowchart LR

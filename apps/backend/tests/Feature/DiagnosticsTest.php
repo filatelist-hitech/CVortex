@@ -7,10 +7,15 @@ use App\Diagnostics\IncidentRecorder;
 use App\Diagnostics\Redactor;
 use App\Diagnostics\StructuredLogs;
 use App\Models\User;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Logger;
 use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +41,10 @@ class DiagnosticsTest extends TestCase
         Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE));
         Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
         Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
+        Route::get('/api/v1/_diagnostics-test/sync-fail', function (): never {
+            DiagnosticsSyncFailJob::dispatch();
+            throw new \LogicException('The sync test job did not fail as expected.');
+        });
     }
 
     public function test_internal_error_is_safe_correlated_and_grouped(): void
@@ -82,21 +91,45 @@ class DiagnosticsTest extends TestCase
         $this->assertStringNotContainsString('SECRET_CANARY', Redactor::text('{"nested":{"api_key":"SECRET_CANARY"}}'));
     }
 
-    public function test_structured_logger_drops_exception_message_and_nested_secret_values(): void
+    public function test_structured_logger_keeps_safe_exception_frames_without_message_or_secrets(): void
     {
         $handler = new TestHandler;
         $monolog = new MonologLogger('test');
         $monolog->pushHandler($handler);
         $logger = new Logger($monolog);
         (new StructuredLogs)($logger);
-        $logger->error('password=SECRET_CANARY', [
-            'Authorization' => 'Bearer SECRET_CANARY',
-            'nested' => ['API_KEY' => 'SECRET_CANARY'],
-            'exception' => new \RuntimeException('SECRET_CANARY'),
-        ]);
+        try {
+            throw new \RuntimeException('SECRET_CANARY');
+        } catch (\RuntimeException $exception) {
+            $logger->error('password=SECRET_CANARY', [
+                'Authorization' => 'Bearer SECRET_CANARY',
+                'nested' => ['API_KEY' => 'SECRET_CANARY'],
+                'exception' => $exception,
+            ]);
+        }
         $record = $handler->getRecords()[0];
         $this->assertSame(\RuntimeException::class, $record->message);
+        $this->assertStringContainsString('TestCase.php', $record->context['safe_stack']);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $record->context['safe_stack']);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($record->context));
+    }
+
+    public function test_incident_stderr_keeps_only_sanitized_exception_frames(): void
+    {
+        Log::spy();
+        try {
+            throw new \RuntimeException('password=SECRET_CANARY');
+        } catch (\RuntimeException $exception) {
+            app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'safe_stack', exception: $exception);
+        }
+
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context): bool {
+            return $message === 'diagnostics.incident'
+                && isset($context['safe_stack'])
+                && str_contains($context['safe_stack'], 'TestCase.php')
+                && ! str_contains($context['safe_stack'], dirname(__DIR__, 2))
+                && ! str_contains(json_encode($context), 'SECRET_CANARY');
+        });
     }
 
     public function test_controlled_error_does_not_infer_retryability_from_http_status(): void
@@ -197,6 +230,19 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('diagnostic_occurrences', ['request_id' => 'req_queue', 'job_id' => 'job_test', 'attempt' => 3]);
     }
 
+    public function test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request(): void
+    {
+        config(['queue.default' => 'sync']);
+        $this->withHeader('X-Request-ID', 'req_sync_job')->getJson('/api/v1/_diagnostics-test/sync-fail')
+            ->assertStatus(500)->assertJsonPath('error.code', 'INTERNAL_ERROR');
+
+        $this->assertDatabaseCount('diagnostic_incidents', 1);
+        $this->assertDatabaseCount('diagnostic_occurrences', 1);
+        $occurrence = DB::table('diagnostic_occurrences')->sole();
+        $this->assertSame('req_sync_job', $occurrence->request_id);
+        $this->assertSame(DiagnosticsSyncFailJob::class, $occurrence->operation);
+    }
+
     public function test_retention_prunes_old_detail_and_closed_incidents_but_keeps_open_group(): void
     {
         $recorder = app(IncidentRecorder::class);
@@ -225,5 +271,15 @@ class DiagnosticsTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         return $this->actingAs($user, 'web')->withSession(['auth_generation' => $user->fresh()->auth_generation]);
+    }
+}
+
+final class DiagnosticsSyncFailJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function handle(): void
+    {
+        throw new \RuntimeException('sync job failed');
     }
 }
