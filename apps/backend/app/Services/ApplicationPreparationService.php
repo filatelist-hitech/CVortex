@@ -178,6 +178,21 @@ class ApplicationPreparationService
             if ($run->status === 'RUNNING') {
                 $run->forceFill(['status' => 'FAILED', 'validation_result' => 'BLOCK', 'error_category' => $exception instanceof LlmProviderException ? $exception->category : 'OUTPUT_REJECTED'])->save();
             }
+            if ($exception instanceof ValidationException && array_key_exists('generation', $exception->errors())) {
+                app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', 'Application draft output failed server validation.', 'application', 'ERROR', $exception, [
+                    'llm_run_id' => $run->id,
+                    'application_id' => $preparation->id,
+                    'user_id' => $user->id,
+                    'operation' => 'application_draft_generation',
+                ]);
+                $normalized = new LlmProviderException(
+                    LlmProviderException::MALFORMED_OUTPUT,
+                    'Application draft output could not be validated.',
+                    previous: $exception,
+                );
+                $normalized->markDiagnosticRecorded();
+                throw $normalized;
+            }
             if (! $exception instanceof ValidationException
                 && ! ($exception instanceof LlmProviderException && $exception->diagnosticRecorded())) {
                 if ($exception instanceof LlmProviderException) {

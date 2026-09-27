@@ -38,9 +38,10 @@ final class Redactor
 
     public static function stack(Throwable $exception): string
     {
-        $frames = array_slice($exception->getTrace(), 0, 12);
+        $origin = basename($exception->getFile() ?: 'runtime').':'.$exception->getLine().' '.$exception::class.' (throw site)';
+        $frames = array_slice($exception->getTrace(), 0, 11);
 
-        return implode("\n", array_map(static fn (array $frame): string => basename((string) ($frame['file'] ?? 'runtime')).':'.(int) ($frame['line'] ?? 0).' '.
-            self::text((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']), $frames));
+        return implode("\n", [$origin, ...array_map(static fn (array $frame): string => basename((string) ($frame['file'] ?? 'runtime')).':'.(int) ($frame['line'] ?? 0).' '.
+            self::text((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']), $frames)]);
     }
 }

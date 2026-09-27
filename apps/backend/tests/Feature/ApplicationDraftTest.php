@@ -103,9 +103,18 @@ class ApplicationDraftTest extends TestCase
         app(VacancyAnalysisService::class)->analyze($owner, $queued['snapshot']);
         $this->actingAs($owner);
         $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
-        $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')->assertUnprocessable();
+        $error = $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false)
+            ->assertJsonMissingPath('errors')->json();
+        $this->assertStringNotContainsString('Led a team of 100 engineers.', json_encode($error, JSON_THROW_ON_ERROR));
         $this->assertDatabaseCount('application_draft_items', 0);
         $this->assertDatabaseHas('claims', ['id' => $foreignClaimId, 'owner_id' => $other->id]);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'application_id' => $preparation['id'],
+            'user_id' => $owner->id,
+            'operation' => 'application_draft_generation',
+        ]);
+        $this->assertStringNotContainsString($foreignClaimId, json_encode(\DB::table('diagnostic_occurrences')->get(), JSON_THROW_ON_ERROR));
     }
 
     public function test_rejected_recommendation_remains_saved_and_cannot_be_approved(): void
@@ -453,21 +462,43 @@ class ApplicationDraftTest extends TestCase
         }
     }
 
-    public function test_generation_rejects_output_over_application_content_limit(): void
+    public function test_invalid_generated_output_is_recorded_with_application_run_correlation(): void
     {
         Queue::fake();
         $user = $this->user('draft-oversized@example.test');
         app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
         $provider = new ApplicationDraftFakeProvider;
-        $provider->generationMutation = 'oversized_cover';
         $this->app->instance(LlmProvider::class, $provider);
         $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
         app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
         $this->actingAs($user);
         $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
 
-        $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')->assertUnprocessable();
+        foreach (['oversized_cover', 'invalid_usages'] as $mutation) {
+            $provider->generationMutation = $mutation;
+            $error = $this->withHeader('X-Request-ID', 'req_output_'.$mutation)
+                ->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+                ->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')
+                ->assertJsonPath('error.retryable', false)->assertJsonMissingPath('errors')->json();
+            $this->assertStringNotContainsString('submitted information', strtolower($error['error']['message']));
+        }
+
         $this->assertDatabaseCount('application_draft_items', 0);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_OUTPUT_INVALID', 'occurrence_count' => 2]);
+        $this->assertDatabaseCount('diagnostic_occurrences', 2);
+        $runs = \DB::table('application_llm_runs')->where('owner_id', $user->id)->where('preparation_id', $preparation['id'])
+            ->where('workflow', 'application_draft_generation')->orderBy('created_at')->get();
+        $this->assertCount(2, $runs);
+        foreach ($runs as $run) {
+            $this->assertSame('FAILED', $run->status);
+            $this->assertSame('OUTPUT_REJECTED', $run->error_category);
+            $this->assertDatabaseHas('diagnostic_occurrences', [
+                'llm_run_id' => $run->id,
+                'application_id' => $preparation['id'],
+                'user_id' => $user->id,
+                'operation' => 'application_draft_generation',
+            ]);
+        }
     }
 
     public function test_generation_does_not_expose_untrusted_model_reason_or_risk_as_recommendation_facts(): void
@@ -682,6 +713,9 @@ class ApplicationDraftFakeProvider implements LlmProvider
             ];
             if ($this->generationMutation === 'oversized_cover') {
                 $output['short_cover']['content'] = str_repeat('x', 6001);
+            }
+            if ($this->generationMutation === 'invalid_usages') {
+                $output['recommendations'][0]['claim_usages'][0]['claim_ids'] = ['untrusted-claim'];
             }
             if ($this->generationMutation === 'fabricated_rationale') {
                 $output['recommendations'][0]['reason'] = 'Led a 100-person engineering team for seven years.';

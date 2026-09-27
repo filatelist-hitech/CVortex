@@ -29,6 +29,9 @@ final class ErrorCatalog
         if ($exception instanceof ModelNotFoundException) {
             return self::entry('RESOURCE_NOT_FOUND', 'The request could not be completed.', 404, false, 'INFO');
         }
+        if ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() === 429) {
+            return self::entry('RATE_LIMITED', 'Too many requests. Please wait and try again.', 429, true, 'WARNING');
+        }
         if ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() < 500) {
             $status = $exception->getStatusCode();
 
@@ -36,6 +39,9 @@ final class ErrorCatalog
                 $status === 403 ? 'You do not have access to this action.' : 'The request could not be completed.', $status, false, 'INFO');
         }
         if ($exception instanceof LlmProviderException) {
+            if ($exception->category === LlmProviderException::MALFORMED_OUTPUT) {
+                return self::entry('LLM_OUTPUT_INVALID', 'The generated content could not be validated. Contact your administrator.', 503, false, 'ERROR');
+            }
             $message = match (true) {
                 $exception->isRetryable() => 'The analysis service is temporarily unavailable. Please retry later.',
                 $exception->requiresConfiguration() => 'The analysis provider needs configuration. Contact your administrator.',

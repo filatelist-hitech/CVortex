@@ -41,6 +41,8 @@ class DiagnosticsTest extends TestCase
         Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE));
         Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
         Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
+        Route::get('/api/v1/_diagnostics-test/provider-malformed-output', fn () => throw new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT));
+        Route::middleware('throttle:1,1')->get('/api/v1/_diagnostics-test/throttled', fn () => response()->json(['data' => 'ok']));
         Route::get('/api/v1/_diagnostics-test/sync-fail', function (): never {
             DiagnosticsSyncFailJob::dispatch();
             throw new \LogicException('The sync test job did not fail as expected.');
@@ -101,6 +103,7 @@ class DiagnosticsTest extends TestCase
         try {
             throw new \RuntimeException('SECRET_CANARY');
         } catch (\RuntimeException $exception) {
+            $throwSite = basename($exception->getFile()).':'.$exception->getLine();
             $logger->error('password=SECRET_CANARY', [
                 'Authorization' => 'Bearer SECRET_CANARY',
                 'nested' => ['API_KEY' => 'SECRET_CANARY'],
@@ -109,9 +112,11 @@ class DiagnosticsTest extends TestCase
         }
         $record = $handler->getRecords()[0];
         $this->assertSame(\RuntimeException::class, $record->message);
+        $this->assertStringContainsString($throwSite, $record->context['safe_stack']);
         $this->assertStringContainsString('TestCase.php', $record->context['safe_stack']);
         $this->assertStringNotContainsString(dirname(__DIR__, 2), $record->context['safe_stack']);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($record->context));
+        $this->assertLessThanOrEqual(12, count(explode("\n", $record->context['safe_stack'])));
     }
 
     public function test_incident_stderr_keeps_only_sanitized_exception_frames(): void
@@ -120,12 +125,14 @@ class DiagnosticsTest extends TestCase
         try {
             throw new \RuntimeException('password=SECRET_CANARY');
         } catch (\RuntimeException $exception) {
+            $throwSite = basename($exception->getFile()).':'.$exception->getLine();
             app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'safe_stack', exception: $exception);
         }
 
-        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context): bool {
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context) use ($throwSite): bool {
             return $message === 'diagnostics.incident'
                 && isset($context['safe_stack'])
+                && str_contains($context['safe_stack'], $throwSite)
                 && str_contains($context['safe_stack'], 'TestCase.php')
                 && ! str_contains($context['safe_stack'], dirname(__DIR__, 2))
                 && ! str_contains(json_encode($context), 'SECRET_CANARY');
@@ -152,6 +159,16 @@ class DiagnosticsTest extends TestCase
         $this->assertStringNotContainsString('retry', strtolower($configured['error']['message']));
         $this->getJson('/api/v1/_diagnostics-test/provider-invalid-config')->assertStatus(503)
             ->assertJsonPath('error.retryable', false);
+        $this->getJson('/api/v1/_diagnostics-test/provider-malformed-output')->assertStatus(503)
+            ->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false);
+    }
+
+    public function test_throttled_api_responses_use_the_retryable_rate_limit_contract(): void
+    {
+        $this->getJson('/api/v1/_diagnostics-test/throttled')->assertOk();
+        $this->getJson('/api/v1/_diagnostics-test/throttled')->assertStatus(429)
+            ->assertJsonPath('error.code', 'RATE_LIMITED')->assertJsonPath('error.retryable', true)
+            ->assertJsonPath('error.message', 'Too many requests. Please wait and try again.');
     }
 
     public function test_admin_only_diagnostics_and_lifecycle(): void

@@ -41,7 +41,7 @@ paths:
                       request_id: { type: string }
         '401': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
-        '429': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /diagnostics/incidents:
     get:
       summary: List grouped incidents
@@ -123,12 +123,14 @@ components:
           type: object
           required: [code, message, request_id, retryable]
           properties:
-            code: { type: string }
+            code:
+              type: string
+              description: Stable API code, including RATE_LIMITED for throttling and LLM_OUTPUT_INVALID for rejected generated content.
             message: { type: string }
             request_id: { type: string }
             retryable:
               type: boolean
-              description: True only for failure categories that may succeed on retry; HTTP status alone does not determine this value.
+              description: True only for retryable failure categories. Explicit 429 rate-limit responses are retryable; other HTTP status codes alone do not imply retryability.
         errors: { type: object, additionalProperties: true }
     Incident:
       type: object
@@ -164,6 +166,11 @@ components:
   responses:
     Error:
       description: Safe API error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Request limit exceeded; returns RATE_LIMITED with retryable true.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }

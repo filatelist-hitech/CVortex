@@ -67,7 +67,11 @@ class ApplicationPreparationController extends Controller
 
     private function providerFailure(LlmProviderException $exception, string $code, string $operation): JsonResponse
     {
+        if ($exception->category === LlmProviderException::MALFORMED_OUTPUT) {
+            $code = 'LLM_OUTPUT_INVALID';
+        }
         $message = match (true) {
+            $exception->category === LlmProviderException::MALFORMED_OUTPUT => 'The generated draft could not be validated. Contact your administrator.',
             $exception->isRetryable() => $operation.' is temporarily unavailable.',
             $exception->requiresConfiguration() => $operation.' needs configuration. Contact your administrator.',
             default => $operation.' could not be completed. Contact your administrator.',
