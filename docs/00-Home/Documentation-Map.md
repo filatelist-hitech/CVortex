@@ -15,6 +15,7 @@ related:
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
   - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
   - "[[../10-Operations/Local-Development|Local Development]]"
+  - "[[Error-Center-User-Guide|Error Center user guide]]"
   - "[[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]]"
 ---
 
@@ -39,6 +40,7 @@ related:
 - [[../04-Data/M1-3-Vacancy-Core|M1.3 Vacancy Core Implementation]] — pasted-text snapshots, requirement extraction, explainable matching, recommendation and API boundary.
 - [[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]] — saved Preview 0.1 preparation, recommendation/draft provenance, Truth Guard review, explicit approval and API boundary.
 - [[../04-Data/Diagnostics|Diagnostics data model]] — grouped incidents, occurrences, correlation and retention.
+- [[Error-Center-User-Guide|Error Center user guide]] — what users should do after an error and how administrators investigate incidents.
 - [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
 - [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
 - [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.
@@ -55,9 +57,9 @@ related:
 | `00-Home/` | Home pages and maps | Active |
 | `01-Product/` | Vision, principles, scope, PRD, roadmap | Active |
 | `02-Architecture/` | Architecture views and diagrams | Active; baseline accepted |
-| `03-ADR/` | Architecture decisions | Active; ADR-0001..0018 accepted |
+| `03-ADR/` | Architecture decisions | Active; see the ADR index for current decisions |
 | `04-Data/` | Conceptual data/provenance/ownership | Active; Phase 06 accepted |
-| `05-API/` | API conventions/contracts | Reserved; M0 `/api/v1` boundary is documented in M0 Runtime |
+| `05-API/` | API conventions/contracts | Active; diagnostics OpenAPI contract |
 | `06-AI/` | Provider/model-policy/skills/workflows/evals | Active; Phase 06 accepted |
 | `07-Design/` | Design system/tokens/Figma | Active; Phase 07 completed |
 | `08-Security/` | Threat model/security controls | Active; Phase 06 accepted |
