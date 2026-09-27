@@ -3,7 +3,7 @@ title: M1.4 Application Draft
 status: implemented
 owner: project
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-27
 tags: [application, draft, provenance, truth-guard, m1]
 related:
   - "[[M1-2-Career-Core|M1.2 Career Core]]"
@@ -38,7 +38,7 @@ Review state is `DRAFT`, `ACCEPTED`, `REJECTED`, `APPROVED` or `BLOCKED`. A fact
 
 ## API
 
-The optional [MCP Gateway](../02-Architecture/MCP-Gateway.md) can create a validated cover draft through the same preparation and Truth Guard service. Its `PENDING_REVIEW` response maps to the existing persisted `DRAFT` status; review and approval remain exclusive to the CVortex user workflow. This foundation does not change M1.4 Preview acceptance or introduce an `APPLIED` state.
+Draft preparation, generation, editing, validation and approval remain in the authenticated CVortex-owned web/API workflow described below. The inbound [MCP Gateway](../02-Architecture/MCP-Gateway.md) is read-only and cannot create or change an Application Draft. This does not change the M1.4 Preview acceptance criteria or introduce an `APPLIED` state.
 
 All endpoints are under authenticated, active-user `/api/v1` routes. The JSON resource returns preparation status/staleness and items with current content, complete revision history, recommendation details, Claim/Career provenance and revision-linked approval history.
 

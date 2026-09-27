@@ -2,9 +2,9 @@
 
 namespace App\Mcp\Tools;
 
-use App\AI\Exceptions\LlmProviderException;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -22,6 +22,12 @@ abstract class BoundedTool extends Tool
         if (isset($tool['outputSchema'])) {
             $tool['outputSchema']['additionalProperties'] = false;
         }
+        $tool['annotations'] = array_merge((array) $tool['annotations'], [
+            'readOnlyHint' => true,
+            'destructiveHint' => false,
+            'idempotentHint' => true,
+            'openWorldHint' => false,
+        ]);
         $tool['securitySchemes'] = [['type' => 'oauth2', 'scopes' => ['mcp:use']]];
 
         return $tool;
@@ -39,10 +45,18 @@ abstract class BoundedTool extends Tool
 
     protected function safeError(Throwable $exception): Response
     {
+        if (! $exception instanceof ModelNotFoundException
+            && ! $exception instanceof ValidationException
+            && ! ($exception instanceof HttpExceptionInterface && in_array($exception->getStatusCode(), [401, 403, 404], true))) {
+            Log::error('mcp.tool_failed', [
+                'request_id' => request()->attributes->get('request_id'),
+                'tool' => $this->name(),
+                'exception_type' => $exception::class,
+            ]);
+        }
+
         return match (true) {
             $exception instanceof ModelNotFoundException => $this->error('NOT_FOUND'),
-            $exception instanceof LlmProviderException => $this->error('VALIDATION_UNAVAILABLE'),
-            $exception instanceof ValidationException && in_array('TRUTH_GUARD_BLOCKED', $exception->errors()['draft'] ?? [], true) => $this->error('TRUTH_GUARD_BLOCKED'),
             $exception instanceof ValidationException => $this->error('VALIDATION_FAILED'),
             $exception instanceof HttpExceptionInterface && $exception->getStatusCode() === 404 => $this->error('NOT_FOUND'),
             $exception instanceof HttpExceptionInterface && $exception->getStatusCode() === 403 => $this->error('FORBIDDEN'),

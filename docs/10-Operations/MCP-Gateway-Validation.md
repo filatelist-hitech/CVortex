@@ -1,87 +1,83 @@
 ---
-title: MCP Gateway Foundation validation
-status: verified-local
+title: MCP Gateway read-only validation
+status: verified-local-external-blocked
 owner: project
 created: 2026-09-25
 updated: 2026-09-27
-tags: [operations, mcp, validation]
-related: [../02-Architecture/MCP-Gateway.md]
+tags: [operations, mcp, validation, read-only]
+related: [../02-Architecture/MCP-Gateway.md, ../03-ADR/ADR-0021-inbound-mcp-read-only.md]
 ---
 
-# MCP Gateway Foundation validation — 2026-09-25
+# MCP Gateway read-only validation
 
-Environment: isolated `feature/mcp-gateway-foundation` worktree; host PHP 8.5.3 for test/protocol smoke; disposable PostgreSQL 18.6 container with separate administrative and `cvortex_mcp_app` runtime credentials. `MCP_ENABLED=true` was set only in test processes. Temporary local Passport tokens and signing keys were not committed. The Inspector smoke router bound the existing `McpGatewayFakeProvider` **in the temporary test process only** so a passing Truth Guard response could be tested without a live API charge. Production `LlmProvider` binding was unchanged.
+## Contract
 
-| Check | Actual result |
+Inbound MCP is disabled by default and, when enabled, exposes exactly two read-only tools:
+
+1. `vacancy_get`
+2. `application_context_get`
+
+Reads derive the user from a validated OAuth bearer, enforce ownership and PostgreSQL RLS, bound returned context and do not call the outbound `LlmProvider`. Application Draft, Truth Guard and Human Approval remain first-party CVortex workflows.
+
+## Local validation — 2026-09-27
+
+| Check | Result |
 |---|---|
-| `APP_ENV=local MCP_ENABLED=true APP_KEY=<test key> php artisan test --compact` | PASS: 206 tests, 1274 assertions, six PostgreSQL-only skips in SQLite run |
-| `vendor/bin/pint --test --dirty` | PASS |
-| `vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=table` | PASS: zero errors |
-| `docker compose --env-file .env.example config --quiet` | PASS |
-| Fresh PostgreSQL admin migration | PASS: five Passport tables created after existing Application tables |
-| `ApplicationPostgresSecurityTest` as `cvortex_mcp_app` | PASS: two tests, 45 assertions; runtime role `rolsuper=0`, `rolbypassrls=0` |
-| PostgreSQL rollback/re-up of six latest migrations | PASS: five OAuth and six Application tables removed, preexisting User retained (`1:0`); re-up restored `1:5:6` |
-| MCP Inspector CLI over local Streamable HTTP, valid Passport bearer | PASS: three tools discovered; `vacancy_get` and `application_context_get` returned bounded owned context; `application_draft_submit` returned `PASS`, `PENDING_REVIEW`, `requires_cvortex_approval=true` |
-| Same Inspector against PostgreSQL runtime role | PASS: context and write; persisted state `DRAFT:PASS:DRAFT:0` (item validation, preparation status, approval count) |
-| Inspector with foreign Vacancy ID | PASS: read and write returned `isError=true`, `NOT_FOUND` |
-| Inspector with invalid bearer | Auth required (exit 3); client attempted interactive OAuth, unavailable in noninteractive CLI |
-| Legacy `initialize` request | PASS: negotiated `2025-11-25`, server `CVortex` |
-| Modern `server/discover` request | PASS: advertised `2026-07-28` |
-| `AI_PROVIDER=none` draft call | Controlled `VALIDATION_UNAVAILABLE`, no draft saved in that attempt |
+| `make test` | PASS: backend 215 tests / 1419 assertions / 7 PostgreSQL-only skips; frontend 16/16. Includes the 0/20 disabled/enabled route-toggle check. |
+| `make lint` | PASS: Pint 162 files; PHPStan 102 files / 0 errors; ESLint; TypeScript. |
+| `bash scripts/test-application-postgres-boundary.sh` | PASS: PostgreSQL owner/RLS checks, including MCP before/after snapshots; 3 tests / 55 assertions. Disposable test database only; the root Compose database and volumes were not reset or removed. |
+| `bash scripts/test-mcp-gateway-toggle.sh` | PASS: `MCP_ENABLED=false` registers 0 MCP/OAuth routes; `true` registers and verifies the expected endpoints across 20 MCP/OAuth routes. |
+| Current local discovery metadata | PASS: root, `/mcp`, and canonical `/mcp/v1` protected-resource metadata plus authorization-server metadata return HTTP 200 while enabled. |
+| Unauthenticated `POST /mcp/v1` | PASS: HTTP 401 with a safe JSON error; no stack trace returned to the client. |
+| MCP Inspector CLI, modern protocol era, stored OAuth session | PASS: live Streamable HTTP `tools/list` returned exactly the two tools above. Both advertise read-only, non-destructive and idempotent hints. |
+| Inspector `vacancy_get` for the Preview UI record | PASS: same persisted owner-scoped vacancy ID; analysis status `FAILED`; bounded metadata returned and source text omitted. |
+| Inspector `application_context_get` for that vacancy | PASS: safe incomplete-analysis result, no derived requirements/claims, no source excerpt, no error. |
+| PostgreSQL product-state snapshot before/after both reads | PASS: serialized state hash was identical (`6714368272c9171dfe18ab171cfb1049b3a9bb75722b215b2d4e5426da98f271`). Automated coverage also snapshots product tables and verifies owner isolation. |
+| `docker compose --env-file .env.example config --quiet` | PASS. |
+| `git diff --check` | PASS at final pre-commit review. |
 
-Automated MCP tests separately cover missing/invalid/revoked/expired bearer, missing scope, disabled user token revocation, cross-owner read/write, unknown argument, rate limit, bounded context, current confirmed provenance, Truth Guard block, changed evidence, DCR callback allowlist and lack of approval. The full existing backend suite passes with MCP enabled, so its existing Responses API workflow remains exercised by regressions.
+The live Inspector calls used the actual Preview-created vacancy `01m3fvhmxhp83kcz80ecrd0jwg`. Private vacancy title/company and OAuth credentials are intentionally omitted from this report. Its existing stored OAuth authorization was used for discovery and tool calls. A fresh DCR → login → consent → token run was not completed in this validation pass because the local CVortex browser session showed the sign-in page and no user credentials were available; do not treat stored-auth Inspector calls as proof of a fresh authorization flow.
 
-`MCP SERVER: PASS` for local protocol and PostgreSQL runtime. `WRITE CAPABILITY: PASS` with a test provider; real provider availability remains a runtime dependency. `CHATGPT CONNECTION: NOT_VALIDATED`: no ChatGPT session, reachable HTTPS/tunnel endpoint, complete authorization-code flow or verified OAuth resource/audience flow was tested; current account entitlement was not inspected. Inspector is not a ChatGPT E2E test.
+Sanitized live Inspector response summary:
 
-The first `npx @modelcontextprotocol/inspector` invocation emitted a non-failing npm deprecation warning for `@modelcontextprotocol/server-legacy`. It did not affect the transport results above.
+```json
+{
+  "tools": ["vacancy_get", "application_context_get"],
+  "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true},
+  "vacancy_get": {
+    "isError": false,
+    "id": "01m3fvhmxhp83kcz80ecrd0jwg",
+    "analysis_status": "FAILED",
+    "untrusted_data": true
+  },
+  "application_context_get": {
+    "isError": false,
+    "analysis_status": "FAILED",
+    "requirements_count": 0,
+    "confirmed_claims_count": 0,
+    "untrusted_vacancy_data": true,
+    "context_truncated": false
+  }
+}
+```
 
-## Finalization check — 2026-09-26
+The full PostgreSQL security test compares product rows before and after both MCP reads for the owner and a second user. It covers application preparations/drafts, approvals, applications, Career Facts, Claims, vacancy status/source snapshots and employer memory. Cross-owner vacancy/context lookups return not-found. Read-only state assertions are also part of the SQLite-backed MCP feature suite.
 
-The OAuth consent view was explicitly registered with Passport, and DCR was limited to the callback-ID-specific ChatGPT URI supported by the current allowlist. The authorization-code flow itself was not run. After these changes, `McpGatewayTest` passed (7 tests / 65 assertions), `AccessCoreTest` passed (35 tests / 167 assertions), Pint on the changed backend files and Larastan passed (zero errors), Compose config passed, disabled/enabled route-list checks passed, and `git diff --check` passed. The earlier full backend and PostgreSQL results above were not rerun because the final code changes affected only OAuth consent/registration, covered by the focused tests.
+Redirect URI regression tests exercise the actual registration route. They accept the approved ChatGPT callback shapes and dynamic native loopback ports, and reject host confusion, userinfo, path traversal (including encoded traversal), query/fragment delimiters and malformed URIs. Resource/audience tests bind authorization and access tokens to the configured MCP resource and issuer, require `mcp:use`, and deny expired/revoked tokens and inactive users.
 
-## PR test bootstrap check — 2026-09-26
+The OAuth regression also verifies that `WWW-Authenticate` derives the protected-resource metadata URL from a configured remote resource authority/path rather than the inbound Host header.
 
-The first PR #33 `m0-quality` run failed in `McpGatewayTest` because Compose supplied `MCP_ENABLED=false` while the test suite expected the gateway routes and Passport consent binding. `phpunit.xml` now forces `MCP_ENABLED=true` in PHPUnit's environment and server variables. This applies only to tests; normal Compose still defaults to disabled. With an external `MCP_ENABLED=false`, the focused MCP suite passed (7 tests / 65 assertions), and the full backend suite passed with `APP_ENV=local` and a temporary test `APP_KEY` (207 tests / 1278 assertions, six PostgreSQL-only skips). Pint and Larastan passed, and normal Artisan route listing showed zero MCP/OAuth routes when disabled and 18 when enabled. The local `make test` attempt could not exercise the changed suite because this worktree's Docker vendor volume lacks `laravel/mcp`; the clean GitHub runner installs locked dependencies before testing.
+`MCP_ENABLED=false` is the safe default. Local reads need no `OPENAI_API_KEY`; local OAuth requires the existing Passport signing keys. See [Local Development](Local-Development.md) for the exact configuration contract.
 
-## OAuth loopback redirect bugfix — 2026-09-27
+## External E2E status
 
-The DCR route now applies the structured CVortex validator directly. It accepts the exact approved HTTPS ChatGPT callback shape and native HTTP callbacks on `127.0.0.0/8`, `[::1]`, or exact `localhost`, with an explicit valid port and exactly `/oauth/callback`. It rejects userinfo, query/fragment delimiters, encoded paths, malformed URIs, host confusion, dot-segment traversal, and descendants. The regression matrix exercises the actual `/oauth/register` route.
+- **Local MCP Inspector discovery and read calls: PASS.**
+- **Fresh Inspector login/consent/token flow: NOT COMPLETED in this pass.** The current browser had no authenticated CVortex session. The prior stored OAuth authorization enabled real authenticated tool calls but does not replace this flow.
+- **ChatGPT Developer Mode and tool calls: BLOCKED on interactive account/workspace access.** The signed-in ChatGPT sidebar displayed Plus, but the Developer Mode setting and app-creation flow were not reached, so entitlement is not classified as denied or allowed. Official plan documentation is ambiguous for Plus; see the dated [OpenAI/MCP research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md).
+- **Secure MCP Tunnel: NOT VALIDATED.** The latest official macOS arm64 client release was downloaded to a temporary directory, SHA-256-verified against the release manifest, and its `help quickstart` command ran. It is not installed on PATH; no profile/daemon was started because Platform was at sign-in and no tunnel ID, Tunnels Read + Use permission or runtime key was available. No inbound port or public proxy was opened.
 
-| Check | Actual result |
-|---|---|
-| `./vendor/bin/phpunit tests/Feature/McpGatewayTest.php` | PASS: 7 tests / 152 assertions |
-| `APP_ENV=local APP_KEY=<temporary test key> ./vendor/bin/phpunit tests/Feature/AccessCoreTest.php` | PASS: 35 tests / 167 assertions |
-| `./vendor/bin/pint --test app/Mcp/Http/Controllers/RegisterOAuthClientController.php app/Mcp/OAuth/RedirectUriValidator.php config/mcp.php routes/ai.php tests/Feature/McpGatewayTest.php` | PASS |
-| `./vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=table` | PASS: zero errors |
-| `MCP_ENABLED=false/true php artisan route:list --json` | PASS: 47 disabled / 65 enabled; all 18 added routes are MCP/OAuth and unrelated routes are identical |
-| `git diff --check` | PASS |
+ChatGPT OAuth discovery, resource propagation through the remote connection, tool selection, unsupported mutation prompts, and cross-user behavior in ChatGPT remain unverified. Inspector results must not be presented as ChatGPT E2E. Do not call ChatGPT compatibility PASS until that real connection and both read calls succeed.
 
-Real MCP Inspector Web v2.8.0 reached `POST /oauth/register` and received `201 Created` for its built-in `http://localhost:6274/oauth/callback`; this callback is accepted by the intentional exact-localhost policy. The automated route matrix separately passed `http://127.0.0.1:6274/oauth/callback` and another dynamic port. The initial live DCR attempt returned 500 only because this Compose database had the five Passport migrations pending. `make migrate` stopped at its runtime-role safety check because configured admin/runtime database passwords are equal; the migration service then applied only those five pending Passport table migrations, without resetting the database or deleting volumes.
+## Secret and logging boundary
 
-The first failing OAuth boundary after successful registration was `GET /oauth/authorize` → `401`. The isolated Inspector browser had no authenticated CVortex session; no authorization code or access/refresh token was issued, and Inspector displayed `invalid_client` on its callback. Consent, token exchange, MCP initialize and `tools/list` were therefore not validated in this live OAuth run. This does not change `CHATGPT CONNECTION: NOT_VALIDATED`.
-
-## Preview persistence and authenticated Inspector retest — 2026-09-27
-
-The actual UI path is API-backed: `Preserve and analyze` sends `POST /api/v1/vacancies`, while `Saved vacancies` reloads from `GET /api/v1/vacancies`. The root Compose project `cvortex` routes `http://localhost:8080` through Nginx to this worktree's frontend/backend; backend uses PostgreSQL database `cvortex1`, schema `public`, runtime user `cvortex_app`. No Preview local/session storage is used as product-data authority.
-
-The apparent empty-database diagnosis came from querying through `cvortex_app` without setting the PostgreSQL owner context required by forced RLS. Such an unscoped query correctly sees zero owner rows. The authenticated UI path and a query inside `DatabaseOwnerContext` see the persisted records; read-only administrator inspection found the same Vacancy and snapshot. RLS was not weakened.
-
-| Manual check | Result |
-|---|---|
-| UI save and `Saved vacancies` refresh | PASS: persisted Vacancy ULID `01m3fvhmxhp83kcz80ecrd0jwg`, snapshot ULID `01m3fvhmxm4s0qc0z5q767tvdt`, version 1 |
-| Provider unavailable | PASS: Vacancy remains `FAILED / PROVIDER_ERROR`; the raw snapshot remains readable in the UI after browser reload |
-| Untrusted source preservation | PASS: synthetic prompt-injection strings remained raw vacancy content and did not affect the tool behavior |
-| Authenticated local Inspector OAuth and tool discovery | PASS: discovery, DCR, authorization, token exchange, initialize and `tools/list`; exactly `vacancy_get`, `application_context_get`, `application_draft_submit` |
-| `vacancy_get` for the UI-created ID | PASS: same persisted ID and `FAILED` status; source body is not returned |
-| `application_context_get` for the UI-created ID | PASS: same ID/status, empty requirements/confirmed claims, `untrusted_vacancy_data=true` |
-| `application_draft_submit` for the provider-failed vacancy | Controlled `VALIDATION_UNAVAILABLE`; PostgreSQL confirms 0 preparations, drafts and approvals for this vacancy |
-
-Automated validation for this integration slice: `VacancyCoreTest`, `McpGatewayTest` and `AccessCoreTest` passed together (978 assertions; 152 non-failing warnings/log entries); the frontend suite passed (16/16). PostgreSQL vacancy RLS revalidation passed twice (44 assertions each; three existing non-failing missing-`.env` warnings per run), preserving first-run rows across migration rollback/re-up; the independent import/reanalysis concurrency harness passed. The root `cvortex` Compose environment has equal admin/runtime passwords, so these boundary checks ran in a separate Compose project with distinct ephemeral credentials and PostgreSQL tmpfs; the product database and volumes were not reset or removed. Pint passed on seven changed backend PHP files and Larastan reported zero errors. Route registration checks returned 0 MCP/OAuth routes with `MCP_ENABLED=false` and 18 with it enabled. The full backend suite was also run and found one separate reproducible failure in unchanged `CareerCoreRemediationTest::test_api_review_flow_records_human_actions_and_keeps_one_candidate_pending` (`Confirmed source wording.` absent from that test's collection); the bounded Vacancy/MCP/Access suites pass.
-
-The local Inspector result supersedes the earlier isolated-profile `401` attempt above. It remains a local MCP result: `CHATGPT CONNECTION = NOT_VALIDATED`; no ChatGPT account, public HTTPS endpoint, tunnel or external OAuth resource/audience flow was exercised.
-
-## Career review regression isolation — 2026-09-27
-
-The review-flow test noted above read extraction candidates immediately after the API returned `202`. That API queues extraction; it does not promise synchronous completion. `QUEUE_CONNECTION=null` reproduced the reported missing `Confirmed source wording.` key in the unchanged test, while the sync driver produced one `COMPLETED` source, four `PENDING` candidates and a `PASS` LLM run. The original failing run's queue configuration was not captured. The test now fakes the queue and explicitly executes extraction before review. Its human-action and provenance assertions are unchanged.
-
-After the test-only fix, the exact method passed under both null and sync queues. Career Core, Vacancy Core, MCP Gateway and Access Core passed together (184 tests / 1242 assertions, 1 skip). The full backend suite passed (210 tests / 1419 assertions, 6 PostgreSQL-only skips). Pint, Larastan and `git diff --check` passed. No MCP, Vacancy, OAuth or Career production code changed in this fix.
+Tunnel process credentials do not belong in the repository `.env`; supply them through the operator's secret manager/process environment according to OpenAI's current tunnel instructions. Never print a token or secret into test output. MCP auth failures return safe structured client errors. Expected Passport bearer failures log only safe request metadata; production must use `APP_DEBUG=false`, and server log detail must not be described as metadata-only beyond the verified handler behavior.

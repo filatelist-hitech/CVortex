@@ -1,65 +1,63 @@
 ---
-title: MCP Gateway v1
+title: CVortex MCP Gateway
 status: active
 owner: project
 created: 2026-09-25
 updated: 2026-09-27
 tags: [architecture, mcp, ai, security]
-related: [../03-ADR/ADR-0020-inbound-mcp-gateway.md, ../08-Security/Threat-Model.md]
+related: [../03-ADR/ADR-0021-inbound-mcp-read-only.md, ../08-Security/Threat-Model.md]
 ---
 
-# MCP Gateway v1
+# CVortex MCP Gateway
 
-## Boundary
+## Product boundary
+
+The inbound MCP gateway is **read-only**. Its surface contains exactly two tools:
+
+1. `vacancy_get`
+2. `application_context_get`
+
+An external MCP client can read bounded context for the authenticated CVortex user. It cannot create or change product data. Draft preparation, Truth Guard, Human Approval, Career Fact review and application workflows remain available through CVortex-owned web/API paths.
 
 ```mermaid
 flowchart LR
-    Client[External MCP client] --> HTTP[Streamable HTTP /mcp/v1]
-    HTTP --> Auth[Passport bearer, mcp:use, ACTIVE]
-    Auth --> Tools[Explicit tool allowlist]
-    Tools --> Adapter[McpApplicationAdapter]
-    Adapter --> Services[Vacancy / Application services]
-    Services --> TG[Truth Guard and Human Approval]
-    Services --> PG[(Owner-scoped PostgreSQL)]
-    CV[CVortex internal AI workflow] --> LLM[LlmProvider / Responses API]
-    TG --> LLM
+    Client[ChatGPT / MCP client] --> OAuth[OAuth 2.1 + PKCE]
+    OAuth --> Gateway[CVortex MCP Gateway]
+    Gateway --> Auth[Authenticated active user]
+    Auth --> Tools[vacancy_get / application_context_get]
+    Tools --> Adapter[Owner-scoped application services]
+    Adapter --> RLS[(PostgreSQL / RLS)]
+    CV[CVortex-owned web/API workflows] --> Draft[Application Draft + Human Approval]
+    CV --> LLM[LlmProvider / Responses API]
 ```
 
-The MCP adapter is an additional inbound access channel. It never serves arbitrary REST routes. The outbound `OpenAiResponsesProvider`, ModelPolicy, runtime Skills and `OPENAI_API_KEY` remain unchanged. The existing application Truth Guard still uses `LlmProvider` for semantic review; with `AI_PROVIDER=none` or an unavailable API it fails closed with `VALIDATION_UNAVAILABLE`. The deterministic provenance/claim checks remain inside CVortex services. No Employer Memory or EmployerConsistencyCheck exists in the current M1.4 domain, so no employer memory is returned and no employer conflict check is claimed. This does not start M2 or M4.
+Inbound MCP and outbound model execution remain separate. The existing `LlmProvider`, `OpenAiResponsesProvider`, ModelPolicy, runtime Skills and `OPENAI_API_KEY` path are unchanged. Neither MCP initialization nor either read tool calls an LLM provider.
 
 ## Authentication and deployment
 
-`MCP_ENABLED=false` is the default. When enabled, `/mcp/v1` and OAuth discovery/registration routes become available through the existing loopback-bound Nginx. `/mcp/v1` requires a Bearer token with `mcp:use`; browser cookies cannot authenticate to it. Passport authorization uses the existing CVortex web login/session and a local explicit consent form. DCR uses a parsed, component-based redirect policy: the approved external callback is HTTPS on the exact `chatgpt.com` host, default/443 port, and exactly one URL-safe callback-ID segment at `/connector/oauth/`; native callbacks use HTTP on `localhost`, an actual IPv4 loopback address, or `[::1]`, any valid port, and exactly `/oauth/callback`. Query, fragment, userinfo, percent-encoded paths and path descendants are rejected. Passport stores the accepted complete URI for the subsequent OAuth flow. Registration/discovery has an IP rate limit, while authenticated reads and writes have separate per-user limits. Disabling a user revokes their OAuth access and refresh tokens. Passport keys must be generated once in ignored private storage and kept out of Git/logs.
+`MCP_ENABLED=false` is the default. When enabled, `/mcp/v1` uses Streamable HTTP and Passport OAuth bearer tokens with `mcp:use`. The server derives the owner from the validated active user; caller-supplied identity never authorizes access. PostgreSQL owner context and owner-scoped queries both apply. Browser cookies do not authenticate MCP requests.
 
-The local Inspector path is validated. ChatGPT E2E is **not** validated: account/workspace entitlement, external reachability and OAuth `resource` audience propagation/verification remain open. A tunnel does not itself expose the OAuth authorization server. A public connection needs HTTPS, secure cookies, a reachable authorization endpoint, audience binding and renewed security review. Do not infer API-credit or tunnel pricing from a Plus subscription.
+The authorization server requires the exact canonical OAuth `resource` on authorization and token requests, places that resource in the issued access token and checks it again on MCP requests. The access token issuer must match the configured authorization-server issuer. OAuth metadata advertises issuer response support; successful and error authorization redirects include the issuer when the callback passes the same strict URI policy. DCR accepts the documented ChatGPT stable and callback-ID redirect forms plus exact native loopback callbacks with dynamic ports. It rejects host confusion, userinfo, path traversal, encoded paths, query/fragment and malformed URIs.
 
-## Tool allowlist and contract
+The protected-resource challenge URL is derived from the canonical `MCP_RESOURCE_URL`, not the inbound Host or forwarded-proto headers. For a private-server tunnel, configure that URL to the externally advertised MCP resource; configure `MCP_AUTHORIZATION_SERVER_URL` to the reachable OAuth issuer separately.
 
-All tools require the same authenticated principal and `mcp:use`; `user_id` is never an argument. All IDs are ULIDs. Tool descriptions and vacancy fields label external content as untrusted. Top-level input and output JSON schemas reject additional properties; nested context objects and claim usages are likewise bounded. Contract-breaking changes require a new tool name or MCP endpoint version.
+The local stack binds Nginx to loopback. Public exposure is not enabled by this feature. A Secure MCP Tunnel remains the preferred remote path when account/workspace permissions and the OAuth metadata/resource mapping are verified. OpenAI documents MCP traffic and OAuth discovery through the tunnel; the tunnel does not provision or automatically tunnel the authorization server, whose issuer, authorization and token endpoints must remain reachable for the OAuth flow. See [current product research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md) and [validation evidence](../10-Operations/MCP-Gateway-Validation.md).
 
-| Tool | Class / side effect | Input | Output | Errors / approval |
+## Tool contract
+
+Every tool requires the same authenticated principal and `mcp:use`; both accept only one ULID vacancy ID. Schemas reject additional properties. Vacancy text is untrusted data, never server instructions.
+
+| Tool | Effect | Input | Bounded output | Access and errors |
 |---|---|---|---|---|
-| `vacancy_get` | read; one owned vacancy | `vacancy_id` | ID, title, company, analysis status, untrusted flag | `NOT_FOUND`, `VALIDATION_FAILED`; no approval |
-| `application_context_get` | read; one owned vacancy | `vacancy_id` | vacancy metadata/status; for a current completed analysis, normalized requirements plus only relevant PASS claims backed by CONFIRMED Career Facts; no source excerpts | `NOT_FOUND`, `VALIDATION_FAILED`; no approval |
-| `application_draft_submit` | one reversible cover draft; no send | `vacancy_id`, `SHORT`/`STANDARD`, content ≤6000 chars, ≤30 assertion-to-Claim mappings | draft/preparation IDs, `PASS`, `PENDING_REVIEW`, approval required | `TRUTH_GUARD_BLOCKED`, `VALIDATION_UNAVAILABLE`, `VALIDATION_FAILED`, `NOT_FOUND`; explicit CVortex approval remains necessary |
+| `vacancy_get` | Read only | `vacancy_id` | ID, title, company, persisted analysis status, untrusted-data marker | One owned vacancy; `NOT_FOUND` for missing or foreign IDs |
+| `application_context_get` | Read only | `vacancy_id` | Vacancy metadata/status; at most 50 requirements, 25 relevant confirmed claims, and 20 confirmed facts per claim; `context_truncated` indicates clipping | Same owner checks; no raw vacancy body, source excerpt, secrets or unrelated career records |
 
-`PENDING_REVIEW` is an MCP response label for the existing persisted `application_draft_items.status = DRAFT`; it does not introduce a database state. The write route rejects duplicate variants and a stale or already approved preparation. A passing draft receives a revision and owner-scoped provenance. The tool set has no accept/approve/fact-confirm/apply/email/recruiter-message operation. Client UI confirmation is supplementary and cannot replace CVortex approval.
+If analysis is pending, failed or otherwise not completed, the context tool returns bounded vacancy metadata, empty derived requirements/claims, and `untrusted_vacancy_data=true`. A completed analysis is selected for the current career signature; only relevant passing claims backed by confirmed Career Facts are returned. Missing/stale derived analysis fails safely rather than broadening access.
 
-When an owned vacancy has no `COMPLETED` analysis, `application_context_get` still returns its bounded metadata and current status with empty `requirements` and `confirmed_claims`; `untrusted_vacancy_data` remains true. This lets a persisted vacancy remain readable after provider failure without presenting unavailable derived data as successful analysis. Raw source text remains excluded.
+No MCP capability can create or modify drafts, approve content, confirm/reject/update Career Facts, change application state, send an application or recruiter message, update vacancies, fetch arbitrary URLs, access files, invoke SQL/shell, read environment/secrets or act as a generic service proxy. MCP requests do not enqueue product jobs or write product rows.
 
-The HTTP layer returns 401 for missing/invalid bearer tokens, 403 for missing scope or disabled user, and 429 when rate limited. Tool-level errors use `isError=true` and a stable code; internal exception text, SQL and stack traces are suppressed. Logs keep request ID, user ID, known method/tool name, safe result code, HTTP status and latency only; they omit arguments, content, tokens and private career data. A forged `user_id` argument fails schema validation and never changes the authenticated principal.
+## Errors, logs and limits
 
-## Data exposure
+Missing/invalid bearer tokens receive a safe 401 response and protected-resource challenge. Missing scope or inactive accounts are denied. Cross-owner resources are non-enumerating `NOT_FOUND`. Tool errors use stable codes; unexpected failures return a request ID and generic error without exception text, SQL or stack trace. Safe auth/error log entries exclude bearer/refresh tokens, secrets, prompt content and private career data. `APP_DEBUG=false` is required in production; local framework logs can include additional exception detail outside the MCP response boundary.
 
-| Class | Examples | MCP policy |
-|---|---|---|
-| SAFE_METADATA | tool names and descriptions | exposed on authenticated discovery |
-| USER_PRIVATE | one owned vacancy title/company, normalized requirements | exposed only for selected ID |
-| SENSITIVE_PRIVATE | relevant confirmed Career assertions and Claim IDs | exposed only by context tool after current analysis and owner checks |
-| SECRET | API keys, OAuth/session tokens, password hashes, internal credentials | never exposed |
-
-No raw vacancy body, source excerpt, unrelated career history, all vacancies, recruiter conversations, documents, arbitrary SQL, URL fetch, shell, filesystem or generic service proxy is exposed. Nginx remains loopback-bound by default. PostgreSQL owner context and owner filters both apply; HTTP auth is evaluated before domain access.
-
-## Verification boundary
-
-See [research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md) for plan/billing gates, [local operations](../10-Operations/Local-Development.md) for activation and [validation evidence](../10-Operations/MCP-Gateway-Validation.md) for exact local results. Inspector success proves protocol and local bearer auth only; it is not a ChatGPT connection pass. Tests exercise own/foreign resources, invalid credentials, scope, Truth Guard block, approval absence and revocation. External account/tunnel/OAuth flow must be tested separately before claiming ChatGPT readiness.
+Discovery and authenticated reads are rate-limited. The MCP request path has no write rate bucket because there are no MCP write operations. See [local operations](../10-Operations/Local-Development.md) and [MCP validation](../10-Operations/MCP-Gateway-Validation.md) for tested results and the exact local environment contract.

@@ -1,12 +1,12 @@
 ---
 title: ADR-0020 — Inbound MCP Gateway as a bounded access channel
-status: accepted
+status: superseded
 decision_nature: DERIVED_ARCHITECTURAL_DECISION
 owner: project
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-09-27
 tags: [architecture, mcp, authentication, ai]
-related: [ADR-0007, ADR-0009, ADR-0010, ADR-0019]
+related: [ADR-0007, ADR-0009, ADR-0010, ADR-0019, ADR-0021]
 ---
 
 # ADR-0020 — Inbound MCP Gateway as a bounded access channel
@@ -17,15 +17,16 @@ CVortex has a provider-independent outbound `LlmProvider` and an existing Respon
 
 ## Decision
 
+> **Superseded on 2026-09-27 by [ADR-0021](ADR-0021-inbound-mcp-read-only.md).** The following records the original foundation decision; it no longer defines the active MCP surface.
+
 - Add a separate inbound MCP adapter in Laravel, disabled by default (`MCP_ENABLED=false`), registered through an explicit tool allowlist. Keep the outbound Responses API path intact.
 - Use `laravel/mcp` for Streamable HTTP protocol and Passport for OAuth bearer credentials. Derive the owner from the validated token, require `mcp:use`, active account state, per-owner queries and PostgreSQL owner context. Continue Sanctum sessions for the first-party web UI.
-- Initially expose `vacancy_get`, `application_context_get` and `application_draft_submit`. Return only bounded normalized vacancy and relevant confirmed Career evidence; do not expose raw source excerpts, other users, secrets, generic query/proxy/shell tools or approval/send/fact-confirmation tools.
-- Route draft submission through `ApplicationPreparationService` and its current Truth Guard. Persist a passing draft as internal `DRAFT`; expose `PENDING_REVIEW` as the MCP-facing review state. Only CVortex's existing authenticated human workflow can accept/approve it. A blocked or unavailable review cannot save an approved draft.
+- The original decision also contemplated an MCP draft-write path. ADR-0021 removes all MCP mutation capabilities while preserving first-party Application Draft workflows.
 - Choose local Inspector/loopback validation now (deployment option C). Public HTTPS or Secure MCP Tunnel requires a separate connection gate: reachability, OAuth resource/audience compliance, current account entitlement, security review and operational/billing verification. Tunnel is infrastructure, never a domain component.
 
 ## Consequences and limits
 
-The gateway is multi-user compatible without selecting a permanent LLM provider. It adds Passport tables, local signing keys, a new authorization boundary and a small amount of operational work. Existing `LlmProvider` remains required by current application semantic Truth Guard, so MCP draft validation is not presently independent of outbound API availability. `EmployerConsistencyCheck`/Employer Memory is deferred because the M4 domain service is absent; it cannot be represented as a passing validation. ChatGPT OAuth E2E is unverified, particularly `resource` audience binding, and no claim is made about this account's Plus entitlement or tunnel charges.
+The gateway is multi-user compatible without selecting a permanent LLM provider. It adds Passport tables, local signing keys and a new authorization boundary. The original draft-validation consequence no longer applies to inbound MCP reads. `EmployerConsistencyCheck`/Employer Memory is deferred because the M4 domain service is absent. ChatGPT OAuth E2E and account-specific entitlement require current validation; this ADR makes no claim about them.
 
 ## Alternatives considered
 

@@ -1,73 +1,65 @@
 ---
-title: MCP Gateway Foundation research
-status: EVIDENCE_COLLECTED
+title: MCP Gateway — current product and protocol research
+status: verified-current-docs
 owner: project
 created: 2026-09-25
 updated: 2026-09-27
-tags: [research, mcp, openai, authentication]
-related: [../../docs/03-ADR/ADR-0020-inbound-mcp-gateway.md]
+tags: [mcp, oauth, chatgpt, tunnel, security]
+related: [../../docs/03-ADR/ADR-0021-inbound-mcp-read-only.md, ../../docs/02-Architecture/MCP-Gateway.md]
 ---
 
-# MCP Gateway Foundation — current evidence
+# MCP Gateway — current product and protocol research
 
-Research date: 2026-09-25 (Europe/Moscow), OAuth redirect standards rechecked 2026-09-27. Question: how can CVortex expose bounded user-specific read and reversible draft tools to external MCP clients without replacing the existing Responses API or weakening owner isolation and human approval? Recheck by 2026-10-25 or before any ChatGPT/tunnel deployment, whichever comes first. Product availability and pricing can change sooner.
+Research verified: 2026-09-27. Recheck before external deployment or by 2026-10-27 because ChatGPT features, account controls and tunnel requirements can change. Evidence below is product documentation, not proof of the current user's plan or workspace permissions.
 
-## OpenAI capability and billing
+## ChatGPT capability and entitlement
 
-| Question | Finding as of research date | Confidence |
+| Question | Current official documentation | CVortex conclusion |
 |---|---|---|
-| Developer Mode plans | OpenAI documents Pro, Plus, Business, Enterprise and Education eligibility **on the web**. Workspace permissions and the individual account setting still matter. Current CVortex owner's account entitlement was not inspected. | High for documented plans; UNKNOWN for this account |
-| Custom MCP read/write | Developer Mode documents full MCP tool access, read and write; remote server connection supports streaming HTTP/SSE and OAuth/no auth/mixed auth. Search/fetch are tool conventions, not a separately proven plan entitlement. Write actions can require ChatGPT confirmation. Apps SDK availability alone is not evidence of connection availability. | High for documented feature; UNKNOWN for this account |
-| Mobile/desktop | The cited Developer Mode instructions state web eligibility. They do not establish this workflow on mobile or desktop, so those surfaces are UNKNOWN. | High |
-| ChatGPT subscription vs API | The existing CVortex `OPENAI_API_KEY` outbound Responses path consumes Platform API resources; a ChatGPT subscription does not by itself fund that API path. No official source inspected gives a general zero-API-cost guarantee for ChatGPT → private MCP. | High for separation; UNKNOWN for MCP token allocation |
-| Secure MCP Tunnel | Requires Platform `tunnel_id`, runtime API key, Tunnel Read/Use (and Manage for creation), association with the ChatGPT workspace/Platform organization, outbound HTTPS, and local server reachability. The tunnel is transport; it does not automatically publish CVortex OAuth authorization endpoints. | High |
-| Tunnel charges, funded account, credit balance | Official tunnel guide specifies key and permissions but does not establish the price, whether a funded Platform account or positive credit balance is required, or whether a ChatGPT-origin tool call is charged for model tokens via Platform. **UNKNOWN**. Responses API calls through the tunnel use the Platform API path. | Unknown |
+| Developer Mode eligibility | The Developer Mode guide lists Pro, Plus, Business, Enterprise and Education on ChatGPT web. It places the personal toggle at **Settings → Security and login → Developer mode**. | Documentation lists Plus, but does not prove entitlement on a particular account or workspace. |
+| Read-only custom MCP | The Help Center says Pro users can connect MCP with read/fetch permissions. | Pro is documented for read/fetch. Account UI still needs inspection. |
+| Full MCP / writes | The Help Center says full MCP, including write actions, is rolling out to Business, Enterprise and Edu; workspace admins/owners enable apps, and Enterprise/Edu can gate access with RBAC. | Those plan/workspace details concern broader capabilities; CVortex intentionally exposes only reads. |
+| Plus plan detail | The Developer Mode guide lists Plus as eligible, while the newer plan-specific Help Center FAQ omits Plus and only answers Pro and Business/Enterprise/Edu. | **Official-source ambiguity:** Plus read-only custom MCP entitlement is not conclusively described by the plan-specific article. Verify the actual UI; do not infer it from subscription name. |
+| App creation and protocols | On web, enable Developer Mode, open ChatGPT Plugins, press `+`, create an app for the remote MCP server, configure the endpoint/authentication, then inspect/refresh tool metadata. The guide lists SSE and streaming HTTP with OAuth, no-auth or mixed authentication. | Use ChatGPT web and the custom MCP app path. CVortex uses Streamable HTTP. |
+| Mobile | Help Center says custom MCP apps are web-only. | The real ChatGPT validation path must use web. |
 
-Sources: [ChatGPT Developer Mode](https://developers.openai.com/api/docs/guides/developer-mode), [OpenAI ChatGPT developer overview](https://developers.openai.com/chatgpt), [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), [ChatGPT/API billing separation](https://help.openai.com/en/articles/9039756-managing-billing-for-chatgpt-and-the-api-platform), [OpenAI API pricing](https://developers.openai.com/api/docs/pricing).
+Official sources (retrieved 2026-09-27): [Developer Mode guide](https://developers.openai.com/api/docs/guides/developer-mode), [Developer Mode and MCP apps in ChatGPT](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt), [Connect and test a plugin](https://developers.openai.com/plugins/deploy/connect-chatgpt).
 
-## MCP and authentication
+## OAuth, resource and transport
 
-The current stable [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28) has a stateless `server/discover` path; older clients use `initialize`. HTTP clients send JSON-RPC over Streamable HTTP, discover explicit tools and schemas, and receive bounded tool errors. Tool annotations inform clients but cannot enforce CVortex approval. Laravel MCP 1.0.1 supports the current revision and legacy initialization. CVortex retains both protocol paths; future contract changes should version names or endpoint when incompatible.
+OpenAI's current MCP authentication guide requires protected-resource metadata and authorization-server metadata, expects `resource` on both authorization and token requests, and requires the authorization server to echo the resource into the access token (commonly as `aud`) so the resource server can check it. It describes CIMD, DCR and predefined OAuth clients. The callback is `https://chatgpt.com/connector/oauth/{callback_id}` when the authorization server does not meet the issuer-identification requirements; servers that advertise issuer support and return `iss` use `https://chatgpt.com/connector_platform_oauth_redirect`. The same issuer response rule applies to successful and error redirects.
 
-For user-specific ChatGPT data, [OpenAI's OAuth guidance](https://developers.openai.com/plugins/build/auth) calls for OAuth 2.1 style authorization code + PKCE S256, protected-resource and authorization-server metadata, scope and per-tool security schemes, and token issuer/audience/expiry checks. ChatGPT supports CIMD, DCR and predefined clients; the current Laravel MCP + Passport route uses DCR, not CIMD. The Laravel package exposes metadata and S256 but Passport's standard token path has **not** been verified to echo OAuth `resource` into a CVortex MCP audience claim and enforce that audience. This is an explicit ChatGPT connection gate, not a passing E2E claim. The local Inspector bearer-token proof does not exercise ChatGPT OAuth.
+The current [MCP authorization specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization) requires clients to include the canonical MCP resource URI in authorization and token requests, and specifies exact issuer comparison when RFC 9207 `iss` is supported. It defines path-aware protected-resource metadata lookup and root fallback. The [MCP transport specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports) defines Streamable HTTP. CVortex serves the same protected-resource document at the root, `/mcp` (used by the current official tunnel-client discovery contract), and the canonical `/mcp/v1` path; all return the canonical `/mcp/v1` resource URI. CVortex issues an `mcp:use` token with issuer and resource claims, requires the exact resource at the OAuth endpoints, and checks issuer/resource after Passport token validation at `/mcp/v1`.
 
-Source spot-check on 2026-09-26 confirms the documented Developer Mode plan/read/write capability, OAuth `resource` requirement and tunnel prerequisites above. This is documentation evidence, not validation of the current account. The configured DCR allowlist accepts ChatGPT's callback-ID-specific URI; the stable redirect URI and complete authorization-code flow remain unvalidated.
+Official sources (retrieved 2026-09-27): [OpenAI MCP authentication](https://developers.openai.com/plugins/build/auth), [MCP authorization 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization), [MCP transports 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports), [RFC 8252 native app redirects](https://www.rfc-editor.org/rfc/rfc8252.html), [RFC 9700 OAuth security BCP](https://www.rfc-editor.org/rfc/rfc9700.html).
 
-### Redirect URI validation — 2026-09-27
+CVortex's redirect policy accepts exact ChatGPT stable/callback-ID HTTPS callback forms and native loopback callbacks at `/oauth/callback` with a valid explicit dynamic port. It rejects userinfo, host confusion, descendants/traversal, encoded paths, query/fragment and malformed URIs. It parses URI components; it does not use string-prefix trust.
 
-Standards evidence: [RFC 8252 §7.3](https://www.rfc-editor.org/rfc/rfc8252.html#section-7.3) specifies HTTP loopback IP-literal redirects and requires authorization servers to allow any port so native clients can bind an ephemeral port. [RFC 8252 §8.3](https://www.rfc-editor.org/rfc/rfc8252.html#section-8.3) says `localhost` works similarly but is not recommended because IP literals avoid hostname-resolution ambiguity. [RFC 8252 §8.4](https://www.rfc-editor.org/rfc/rfc8252.html#section-8.4) requires registration of the complete redirect URI and exact matching, with only the loopback port exception. The current OAuth security BCP, [RFC 9700 §4.1.3](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.1.3), likewise recommends exact redirect matching except for native localhost ports.
+## Secure MCP Tunnel
 
-Decision/implementation: accept the exact native path `/oauth/callback` on `127.0.0.0/8`, `[::1]`, or exact `localhost`, over HTTP and with a valid explicit port; accept the existing ChatGPT callback shape only on exact `https://chatgpt.com/connector/oauth/{callback-id}` with no non-default port, query, fragment or userinfo. The callback ID is one URL-safe path segment, not a descendant path. Reject encoded paths outright so URI decoding cannot change path structure. `localhost` remains a compatibility option; native clients should prefer loopback IP literals. The app DCR route applies this parsed policy directly rather than relying on the package's redirect-domain prefix matcher.
+The current official `tunnel-client` v0.0.15 doctor contract checks `/.well-known/oauth-protected-resource/mcp`; its exact release source was inspected on 2026-09-27: [OAuth discovery probe](https://github.com/openai/tunnel-client/blob/v0.0.15/cmd/client/doctor_command.go) and [v0.0.15 release](https://github.com/openai/tunnel-client/releases/tag/v0.0.15). MCP's current [Protected Resource Metadata discovery rules](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/authorization-server-discovery), also checked on 2026-09-27, require path-specific and root-fallback discovery. CVortex serves all three paths while each document names the canonical `/mcp/v1` resource.
 
-Validation evidence is recorded in [MCP Gateway validation](../../docs/10-Operations/MCP-Gateway-Validation.md); this standards review does not establish ChatGPT account E2E or OAuth resource/audience compliance.
+OpenAI describes Secure MCP Tunnel as an **outbound-only** connection from a private host to an OpenAI-hosted MCP endpoint. `tunnel-client` needs outbound HTTPS and local reachability to the private MCP server; it does not require inbound Internet access. The local server is not thereby made public. The tunnel carries MCP transport, while OAuth issuer discovery and authorization must still resolve to reachable, correctly configured endpoints; tunnel setup alone does not make a local OAuth server reachable from ChatGPT.
 
-Sources: [MCP transport](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports), [MCP authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization), [OpenAI OAuth requirements](https://developers.openai.com/plugins/build/auth), [Laravel MCP](https://laravel.com/docs/13.x/mcp), [Laravel Passport](https://laravel.com/docs/13.x/passport).
+OpenAI's current guide says MCP traffic and OAuth discovery can travel through the tunnel path; the upstream authorization-server metadata is preserved. The tunnel does not provision or automatically tunnel the authorization server itself, so its issuer, authorization and token endpoints must remain reachable for the browser-based OAuth flow. The official v0.0.15 macOS arm64 release was downloaded from `openai/tunnel-client`; its ZIP SHA-256 matched the release `SHA256SUMS.txt`, and `tunnel-client help quickstart` ran successfully. Its OAuth doctor contract checks `/.well-known/oauth-protected-resource/mcp` and follows `authorization_servers[0]` to `/.well-known/oauth-authorization-server`; CVortex additionally implements the spec's root fallback and its exact `/mcp/v1` path. No profile was initialized and no daemon was started. The CLI identifies `CONTROL_PLANE_TUNNEL_ID` as the selected tunnel and `CONTROL_PLANE_API_KEY` as the runtime key used by `doctor`/`run`. The runtime key must live in the user's secret manager/process environment and must never be committed in `.env`, logged or pasted into a repository. `OPENAI_ADMIN_KEY` is separate and only needed for tunnel CRUD; do not give it to the daemon. Runtime use requires Tunnels Read + Use; tunnel CRUD requires Read + Manage. The ChatGPT app still needs separate Developer Mode/workspace permission.
 
-## Library options
+Current source: [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), retrieved 2026-09-27. The documentation inspected here does not establish billing, a required credit balance or API token charges for ChatGPT tool calls; those remain **UNKNOWN** until Platform account facts are checked.
 
-| Option | Evidence and trade-off | Decision |
-|---|---|---|
-| `laravel/mcp` 1.0.1 + Passport 13.8 | Official Laravel package, MIT, Streamable HTTP, modern/legacy protocol, tool schema/annotations, Laravel middleware/testing, OAuth registration support. Passport adds migrations/keys and needs explicit audience review before ChatGPT. | Selected for bounded adapter |
-| Official MCP PHP SDK | [Official SDK](https://github.com/modelcontextprotocol/php-sdk) supports HTTP/stdio but remains experimental/pre-major and needs Laravel auth/routing integration. | Deferred |
-| Handwritten JSON-RPC | Small initial surface, but transport/version/OAuth correctness is costly to maintain. | Rejected |
+## CVortex architecture and validation gates
 
-## Deployment options
+The accepted [ADR-0021](../../docs/03-ADR/ADR-0021-inbound-mcp-read-only.md) defines exactly two inbound MCP tools: `vacancy_get` and `application_context_get`. MCP reads are independent of outbound `LlmProvider` and `OPENAI_API_KEY`. Draft creation, Truth Guard and Human Approval remain first-party CVortex workflows. Do not merge inbound MCP into the outbound Responses API path.
 
-| Path | Security and local-first fit | Infrastructure, cost, reversibility |
-|---|---|---|
-| A — public HTTPS | Enables external clients after OAuth compliance and ingress hardening; expands exposure of user-private tools. | TLS/domain/WAF/monitoring and operational cost; reversible by disabling MCP and ingress. Not selected now. |
-| B — Secure MCP Tunnel | Keeps Laravel private and uses outbound HTTPS; attractive for local-first. OAuth authorization endpoints and `resource` audience still need a reachable, compliant design. | Platform tunnel/key/permissions, workspace association and unknown billing; tunnel runtime outside Laravel. Deferred. |
-| C — local protocol client | Loopback server + Inspector with local OAuth bearer token; no public ingress or ChatGPT entitlement needed. | Minimal infrastructure/cost, easy rollback by `MCP_ENABLED=false`. Selected for foundation validation. |
+| Gate | Evidence/status on 2026-09-27 |
+|---|---|
+| Official product/protocol contract | Rechecked above from official OpenAI and MCP docs |
+| Account entitlement and workspace role | **Not established:** ChatGPT sidebar displayed Plus, but Developer Mode settings/app creation were not reached. The official guide lists Plus while the newer plan-specific Help Center article omits it from read/fetch eligibility; do not infer access from the plan label. |
+| Secure MCP Tunnel ID, runtime credential and permissions | **Blocked on Platform access:** Platform UI was at sign-in; no tunnel ID or runtime secret was available. The official CLI was checksum-verified and help-tested from a temporary download, but no profile or daemon was configured. |
+| Local automated MCP/OAuth checks | See [validation evidence](../../docs/10-Operations/MCP-Gateway-Validation.md) |
+| Full Inspector login/consent/token/discovery against the current running local stack | **Not repeated in this pass:** an existing stored OAuth session completed live Streamable HTTP discovery and both read calls. A fresh DCR/login/consent/token exchange needs an authenticated local CVortex browser session; the current local page showed sign-in. |
+| Real ChatGPT discovery and tool calls | **Blocked externally:** Developer Mode/app setup was not reached, and no authenticated Platform session or Secure MCP Tunnel profile/ID/process credential was available. No ChatGPT read or negative-mutation prompt was executed. |
 
-## Decision gate
+This is not a public deployment authorization. Do not open router/firewall ports or add a public reverse proxy as a tunnel substitute. If Secure MCP Tunnel is unavailable, stop before external publication and obtain an explicit security/deployment decision.
 
-| Gate | State | Reason |
-|---|---|---|
-| MCP protocol implementation | SUPPORTED | Laravel MCP implements current/legacy protocol; Inspector proof required separately. |
-| ChatGPT read integration | PARTIALLY_SUPPORTED | Documented platform capability; account connection, public/tunnel reachability and audience flow unverified. |
-| ChatGPT write integration | PARTIALLY_SUPPORTED | Documented Developer Mode capability; CVortex draft tool exists, account/E2E and OAuth audience unverified. |
-| Current account/plan | UNKNOWN | No account entitlement or workspace setting inspected. Plus eligibility is documented, not proof of this account. |
-| Secure MCP Tunnel | PARTIALLY_SUPPORTED | Product capability documented; this workspace's Platform permissions, funded-account/credit requirements and OAuth reachability unknown. |
-| Billing independence from Responses API | NOT_SUPPORTED_CURRENTLY | CVortex draft Truth Guard still invokes the configured `LlmProvider`; unconfigured/unfunded outbound validation fails closed. ChatGPT inference billing via MCP remains UNKNOWN. |
+## Implementation library
 
-Architecture impact: keep inbound MCP as a separate, explicitly enabled adapter over existing services. Keep `OpenAiResponsesProvider` and `OPENAI_API_KEY`. Do not deploy a ChatGPT connection until OAuth resource/audience compliance and account/tunnel facts are tested with the target account. Employer Memory/Consistency does not exist before M4, so the foundation neither exposes nor invents it.
+`laravel/mcp` provides Laravel Streamable HTTP routes, tool schemas/annotations and protocol testing. Passport provides OAuth routes and token validation; CVortex adds resource/issuer enforcement, strict redirect validation and bounded owner-scoped tools. Keep protocol/auth integration code separate from outbound provider abstractions and domain services.

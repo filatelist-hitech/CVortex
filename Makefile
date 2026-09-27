@@ -37,6 +37,7 @@ restart:
 	docker compose up -d
 
 test:
+	bash scripts/test-mcp-gateway-toggle.sh
 	docker compose run --rm --no-deps \
 		-e DB_CONNECTION=sqlite \
 		-e DB_DATABASE=:memory: \

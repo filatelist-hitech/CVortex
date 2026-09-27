@@ -3,7 +3,7 @@ title: Phase 06 Security Threat Model
 status: awaiting-independent-review
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-27
 tags: [security, threat-model, phase-06]
 related: ["[[../02-Architecture/Phase-06-System-Design|System Design]]", "[[../04-Data/Phase-06-Data-Design|Data Design]]", "[[../03-ADR/ADR-0017-untrusted-external-content|ADR-0017]]"]
 ---
@@ -28,8 +28,8 @@ External vacancies, recruiter messages, uploads, HTML/web/API responses and tool
 
 Security validation is required before each future ingestion, fetcher, parser, credential or context implementation; human approval does not mitigate a failed technical control.
 
-## MCP Gateway extension (2026-09-25)
+## MCP Gateway extension (2026-09-27)
 
-The disabled-by-default [MCP Gateway](../02-Architecture/MCP-Gateway.md) adds an external tool-call boundary. Authenticated Passport bearer scope, ACTIVE status, owner-scoped queries/RLS, strict tool allowlist/schema, bounded context, per-user rate limits and safe metadata-only logging address token misuse, IDOR, prompt/tool injection, excessive disclosure and log leakage. No MCP tool can approve, send, confirm a Career Fact, fetch arbitrary URLs, read files or invoke SQL/shell. Duplicate/replayed draft submissions are rejected for an existing variant. The OAuth consent page uses Laravel CSRF protection and Passport authorization state/PKCE; MCP POSTs use bearer auth, not browser cookies.
+The disabled-by-default [MCP Gateway](../02-Architecture/MCP-Gateway.md) is an external **read-only** boundary with exactly `vacancy_get` and `application_context_get`. OAuth bearer scope, active-user enforcement, owner-scoped queries/RLS, strict schemas, bounded output and rate limiting address token misuse, IDOR and excessive disclosure. Vacancy-derived text stays untrusted data. MCP exposes no mutation, approval, fact-review, application-state, message-send, arbitrary URL, filesystem, SQL, shell or secret access. OAuth uses authorization code + PKCE, strict parsed redirect validation, issuer/resource-bound access tokens and bearer-only MCP POSTs; browser cookies do not authenticate MCP.
 
-Residual risk: account/tunnel reachability and Passport `resource` audience binding against ChatGPT's current OAuth contract remain unverified. The current semantic Truth Guard depends on `LlmProvider` availability; it fails closed when unavailable. Public HTTPS or Secure MCP Tunnel requires a separate OAuth/security validation before enablement. Test coverage includes owner/foreign read and write, invalid/revoked bearer, missing scope, blocked draft and absence of approval; local Inspector proves only protocol transport, not ChatGPT E2E.
+Read calls are covered by before/after product-state assertions for application preparations/drafts, approvals, applications, Career Facts, Claims, vacancy status/snapshots, employer memory and LLM runs. Tests also cover active/invalid/revoked/expired credentials, missing scope, owner/foreign IDs, incomplete and failed analysis, bounds and untrusted vacancy instructions. Account entitlement and Secure MCP Tunnel access remain unverified until tested in the target OpenAI account. `APP_DEBUG=false` is required in production; safe client responses do not establish that local framework logs contain no additional exception detail.

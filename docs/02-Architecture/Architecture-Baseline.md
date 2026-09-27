@@ -21,7 +21,7 @@ If this summary conflicts with an accepted ADR, the ADR wins. If evidence later 
 
 ## System baseline
 
-The bounded inbound MCP Gateway is documented in [MCP Gateway v1](MCP-Gateway.md) and [ADR-0020](../03-ADR/ADR-0020-inbound-mcp-gateway.md). It is disabled by default and preserves the outbound LLM/provider boundary below.
+The bounded, read-only inbound MCP Gateway is documented in [MCP Gateway v1](MCP-Gateway.md) and [ADR-0021](../03-ADR/ADR-0021-inbound-mcp-read-only.md). It is disabled by default and preserves the outbound LLM/provider boundary below.
 
 ```mermaid
 flowchart TD

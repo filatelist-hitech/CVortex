@@ -1,5 +1,13 @@
 # CVortex — Feature: MCP Gateway Foundation
 
+## Binding product amendment — 2026-09-27
+
+This amendment is authoritative for this task and supersedes every older section below that describes MCP mutation, draft/proposal submission, write tools, or read/write workflows. Those sections are retained as task history only.
+
+The completed inbound MCP surface is **READ-ONLY** and contains exactly `vacancy_get` and `application_context_get`. External clients may read bounded, owner-scoped context; they cannot mutate CVortex through MCP. Application Draft functionality, `ApplicationPreparationService`, ordinary web/API workflows, Truth Guard and Human Approval remain in CVortex. Keep inbound MCP separate from outbound `LlmProvider`/Responses API execution. See the accepted [ADR-0021](../../docs/03-ADR/ADR-0021-inbound-mcp-read-only.md) and current [MCP Gateway contract](../../docs/02-Architecture/MCP-Gateway.md).
+
+The current task's completion, external-account, validation, documentation, state and Git requirements are the user's 2026-09-27 request in the active conversation; the original task body below does not authorize an MCP write capability.
+
 Перед началом работы:
 
 1. Прочитай `/AGENTS.md`.

@@ -47,6 +47,10 @@ final class RedirectUriValidator
 
     private function isApprovedChatGptCallbackPath(string $path): bool
     {
+        if ($path === '/connector_platform_oauth_redirect') {
+            return true;
+        }
+
         $segments = explode('/', $path);
 
         if (count($segments) !== 4

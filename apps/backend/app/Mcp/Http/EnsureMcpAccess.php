@@ -21,10 +21,9 @@ class EnsureMcpAccess
 
         $method = $request->input('method');
         $name = $method === 'tools/call' ? $request->input('params.name') : null;
-        $write = $name === 'application_draft_submit';
-        $bucket = $write ? 'write' : 'read';
-        $key = 'mcp:'.$bucket.':'.$user->id;
-        $limit = $write ? 10 : 120;
+        $bucket = 'read';
+        $key = 'mcp:read:'.$user->id;
+        $limit = 120;
         if (RateLimiter::tooManyAttempts($key, $limit)) {
             Log::warning('mcp.rate_limited', [
                 'request_id' => $request->attributes->get('request_id'),
@@ -47,7 +46,7 @@ class EnsureMcpAccess
                 'request_id' => $request->attributes->get('request_id'),
                 'user_id' => (string) $user->id,
                 'method' => is_string($method) && in_array($method, ['server/discover', 'initialize', 'tools/list', 'tools/call'], true) ? $method : 'other',
-                'tool' => is_string($name) && in_array($name, ['vacancy_get', 'application_context_get', 'application_draft_submit'], true) ? $name : null,
+                'tool' => is_string($name) && in_array($name, ['vacancy_get', 'application_context_get'], true) ? $name : null,
                 'status' => $status,
                 'outcome' => $request->attributes->get('mcp_outcome', 'PROTOCOL'),
                 'latency_ms' => (int) round((microtime(true) - $started) * 1000),

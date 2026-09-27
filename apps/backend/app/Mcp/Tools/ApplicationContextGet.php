@@ -7,11 +7,15 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
+use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 use Laravel\Mcp\Server\Tools\Annotations\IsOpenWorld;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 use Throwable;
 
 #[IsReadOnly]
+#[IsDestructive(false)]
+#[IsIdempotent]
 #[IsOpenWorld(false)]
 class ApplicationContextGet extends BoundedTool
 {
@@ -43,6 +47,7 @@ class ApplicationContextGet extends BoundedTool
                 ])->withoutAdditionalProperties())->required(),
             ])->withoutAdditionalProperties())->required(),
             'untrusted_vacancy_data' => $schema->boolean()->required(),
+            'context_truncated' => $schema->boolean()->required(),
         ];
     }
 
