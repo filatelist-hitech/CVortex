@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
+docker compose run --rm --no-deps backend php artisan package:discover --quiet --no-ansi
+
 for enabled in false true; do
   route_json="$(docker compose run --rm --no-deps -e MCP_ENABLED="$enabled" backend php artisan route:list --json)"
   printf '%s' "$route_json" | php -r '
