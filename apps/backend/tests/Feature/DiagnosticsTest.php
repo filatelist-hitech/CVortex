@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\AI\Exceptions\LlmProviderException;
+use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Diagnostics\Redactor;
 use App\Diagnostics\StructuredLogs;
@@ -25,6 +26,7 @@ use Illuminate\Support\Str;
 use Mockery;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger as MonologLogger;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class DiagnosticsTest extends TestCase
@@ -42,6 +44,13 @@ class DiagnosticsTest extends TestCase
         Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
         Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
         Route::get('/api/v1/_diagnostics-test/provider-malformed-output', fn () => throw new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT));
+        Route::get('/api/v1/_diagnostics-test/http-exception-headers', fn () => throw new HttpException(429, 'Too many requests.', headers: [
+            'Retry-After' => '30', 'X-RateLimit-Limit' => '60', 'X-RateLimit-Remaining' => '0',
+            'X-RateLimit-Reset' => '1234567890', 'RateLimit-Policy' => '60;w=60',
+            'Set-Cookie' => 'session=SECRET_CANARY', 'Location' => 'https://private.example.test/path',
+            'X-RateLimit-Limit-Invalid' => '60', 'RateLimit-Remaining' => "0\r\nSet-Cookie: SECRET_CANARY",
+        ]));
+        Route::post('/api/v1/_diagnostics-test/method-only', fn () => response()->json(['data' => 'ok']));
         Route::middleware('throttle:1,1')->get('/api/v1/_diagnostics-test/throttled', fn () => response()->json(['data' => 'ok']));
         Route::get('/api/v1/_diagnostics-test/sync-fail', function (): never {
             DiagnosticsSyncFailJob::dispatch();
@@ -91,6 +100,63 @@ class DiagnosticsTest extends TestCase
         ]]);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($safe));
         $this->assertStringNotContainsString('SECRET_CANARY', Redactor::text('{"nested":{"api_key":"SECRET_CANARY"}}'));
+    }
+
+    public function test_structured_logger_redacts_escaped_json_secret_values(): void
+    {
+        $handler = new TestHandler;
+        $logger = new MonologLogger('test');
+        $logger->pushHandler($handler);
+        $structured = new Logger($logger);
+        (new StructuredLogs)($structured);
+        $message = json_encode(['password' => 'abc"SECRET_CANARY'], JSON_THROW_ON_ERROR);
+
+        $structured->error($message);
+
+        $record = $handler->getRecords()[0];
+        $this->assertStringNotContainsString('SECRET_CANARY', $record->message);
+        $this->assertStringContainsString('[REDACTED]', $record->message);
+    }
+
+    public function test_global_reporter_preserves_non_http_and_original_failures(): void
+    {
+        $requestAbstract = $this->app->isAlias('request') ? $this->app->getAlias('request') : 'request';
+        $originalRequest = $this->app->resolved('request') ? $this->app->make('request') : null;
+        $this->app->offsetUnset('request');
+        $this->app->offsetUnset($requestAbstract);
+        $this->assertFalse($this->app->resolved('request'));
+        Log::spy();
+        $original = new \RuntimeException('original CLI failure');
+        try {
+            report($original);
+        } finally {
+            if ($originalRequest !== null) {
+                $this->app->instance($requestAbstract, $originalRequest);
+            }
+        }
+
+        Log::shouldHaveReceived('error')->once()->withArgs(fn ($message, $context): bool => ($context['exception'] ?? null) === $original);
+    }
+
+    public function test_reporter_falls_back_to_laravel_logging_when_incident_reporting_fails(): void
+    {
+        $original = new \RuntimeException('original HTTP failure');
+        Route::get('/api/v1/_diagnostics-test/reporter-failure', function () use ($original): never {
+            throw $original;
+        });
+        $this->app->instance(IncidentRecorder::class, new class
+        {
+            public function record(...$arguments): bool
+            {
+                throw new \RuntimeException('diagnostics sink failure');
+            }
+        });
+        Log::spy();
+
+        $this->getJson('/api/v1/_diagnostics-test/reporter-failure')->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR');
+
+        Log::shouldHaveReceived('error')->once()->withArgs(fn ($message, $context): bool => ($context['exception'] ?? null) === $original);
     }
 
     public function test_structured_logger_keeps_safe_exception_frames_without_message_or_secrets(): void
@@ -159,8 +225,38 @@ class DiagnosticsTest extends TestCase
         $this->assertStringNotContainsString('retry', strtolower($configured['error']['message']));
         $this->getJson('/api/v1/_diagnostics-test/provider-invalid-config')->assertStatus(503)
             ->assertJsonPath('error.retryable', false);
-        $this->getJson('/api/v1/_diagnostics-test/provider-malformed-output')->assertStatus(503)
+        $malformedResponse = $this->withHeader('X-Request-ID', 'req_malformed_output')->getJson('/api/v1/_diagnostics-test/provider-malformed-output')->assertStatus(503)
             ->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false);
+        $this->assertSame('req_malformed_output', $malformedResponse->json('error.request_id'));
+        $this->assertSame(1, DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->where('occurrence.request_id', 'req_malformed_output')->where('incident.error_code', 'LLM_OUTPUT_INVALID')->count());
+        $this->assertSame(0, DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->where('occurrence.request_id', 'req_malformed_output')->where('incident.error_code', 'LLM_PROVIDER_UNAVAILABLE')->count());
+        $this->assertSame('LLM_OUTPUT_INVALID', ErrorCatalog::providerFailureCode(
+            new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT),
+        ));
+    }
+
+    public function test_http_exception_response_preserves_only_safe_headers(): void
+    {
+        $response = $this->getJson('/api/v1/_diagnostics-test/http-exception-headers')->assertStatus(429)
+            ->assertJsonPath('error.code', 'RATE_LIMITED');
+
+        $this->assertSame('30', $response->headers->get('Retry-After'));
+        $this->assertSame('60', $response->headers->get('X-RateLimit-Limit'));
+        $this->assertSame('0', $response->headers->get('X-RateLimit-Remaining'));
+        $this->assertSame('1234567890', $response->headers->get('X-RateLimit-Reset'));
+        $this->assertSame('60;w=60', $response->headers->get('RateLimit-Policy'));
+        $this->assertNull($response->headers->get('Set-Cookie'));
+        $this->assertNull($response->headers->get('Location'));
+        $this->assertNull($response->headers->get('RateLimit-Remaining'));
+        $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
+
+        $methodError = $this->getJson('/api/v1/_diagnostics-test/method-only')->assertStatus(405)
+            ->assertJsonPath('error.code', 'REQUEST_REJECTED');
+        $this->assertStringContainsString('POST', (string) $methodError->headers->get('Allow'));
     }
 
     public function test_throttled_api_responses_use_the_retryable_rate_limit_contract(): void
@@ -168,7 +264,9 @@ class DiagnosticsTest extends TestCase
         $this->getJson('/api/v1/_diagnostics-test/throttled')->assertOk();
         $this->getJson('/api/v1/_diagnostics-test/throttled')->assertStatus(429)
             ->assertJsonPath('error.code', 'RATE_LIMITED')->assertJsonPath('error.retryable', true)
-            ->assertJsonPath('error.message', 'Too many requests. Please wait and try again.');
+            ->assertJsonPath('error.message', 'Too many requests. Please wait and try again.')
+            ->assertHeader('Retry-After')->assertHeader('X-RateLimit-Limit', '1')
+            ->assertHeader('X-RateLimit-Remaining', '0')->assertHeader('X-RateLimit-Reset');
     }
 
     public function test_admin_only_diagnostics_and_lifecycle(): void
@@ -240,11 +338,17 @@ class DiagnosticsTest extends TestCase
         $job = Mockery::mock(Job::class);
         $job->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_queue']]);
         $job->shouldReceive('getJobId')->andReturn('job_test');
+        $job->shouldReceive('getQueue')->andReturn('analysis-high');
         $job->shouldReceive('resolveName')->andReturn('TestJob');
         $job->shouldReceive('attempts')->andReturn(3);
+        Log::spy();
         Event::dispatch(new JobFailed('sync', $job, new \RuntimeException('failed')));
         $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'QUEUE_JOB_FAILED', 'occurrence_count' => 1]);
-        $this->assertDatabaseHas('diagnostic_occurrences', ['request_id' => 'req_queue', 'job_id' => 'job_test', 'attempt' => 3]);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_queue', 'job_id' => 'job_test', 'attempt' => 3,
+            'queue' => 'analysis-high', 'connection' => 'sync',
+        ]);
+        Log::shouldHaveReceived('log')->once()->withArgs(fn ($level, $message, $context): bool => $message === 'diagnostics.incident' && $context['queue'] === 'analysis-high' && $context['connection'] === 'sync');
     }
 
     public function test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request(): void

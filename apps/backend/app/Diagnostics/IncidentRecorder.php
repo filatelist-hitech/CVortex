@@ -19,8 +19,10 @@ final class IncidentRecorder
     }
 
     /** @param array<string, mixed> $context */
-    public function record(string $code, string $safeMessage, string $component, string $severity = 'ERROR', ?Throwable $exception = null, array $context = []): void
+    public function record(string $code, string $safeMessage, string $component, string $severity = 'ERROR', ?Throwable $exception = null, array $context = []): bool
     {
+        $logged = false;
+        $stored = false;
         try {
             $shared = Log::sharedContext();
         } catch (Throwable) {
@@ -38,6 +40,7 @@ final class IncidentRecorder
                 $logContext['safe_stack'] = $safeStack;
             }
             Log::log(strtolower($severity), 'diagnostics.incident', $logContext);
+            $logged = true;
         } catch (Throwable) {
             // Preserve the original operation when the raw log sink fails.
         }
@@ -67,6 +70,7 @@ final class IncidentRecorder
                     'llm_run_id' => $safeContext['llm_run_id'] ?? null, 'application_id' => $safeContext['application_id'] ?? null,
                     'user_id' => $safeContext['user_id'] ?? null, 'route' => $safeContext['route'] ?? null,
                     'operation' => $safeContext['operation'] ?? null, 'provider' => $safeContext['provider'] ?? null,
+                    'queue' => $safeContext['queue'] ?? null, 'connection' => $safeContext['connection'] ?? null,
                     'attempt' => $safeContext['attempt'] ?? null, 'safe_stack' => $safeStack,
                     'created_at' => $now,
                 ]);
@@ -85,6 +89,9 @@ final class IncidentRecorder
             }
         } catch (Throwable) {
             // PostgreSQL can be the failed dependency. Raw stderr remains independent.
+            $stored = false;
         }
+
+        return $logged || $stored;
     }
 }

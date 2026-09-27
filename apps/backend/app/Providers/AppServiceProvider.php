@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\AI\Contracts\LlmProvider;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\Providers\ConfiguredLlmProvider;
+use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Jobs\AnalyzeVacancy;
 use App\Jobs\ExtractCareerSource;
@@ -80,16 +81,19 @@ class AppServiceProvider extends ServiceProvider
                 $shared = [];
             }
             $jobClass = $event->job->resolveName();
-            $providerFailure = $event->exception instanceof LlmProviderException
+            $providerException = $event->exception instanceof LlmProviderException ? $event->exception : null;
+            $providerFailure = $providerException !== null
                 && in_array($jobClass, [AnalyzeVacancy::class, ExtractCareerSource::class], true);
-            app(IncidentRecorder::class)->record($providerFailure ? 'LLM_PROVIDER_UNAVAILABLE' : 'QUEUE_JOB_FAILED',
-                $providerFailure ? 'The analysis provider failed.' : 'A background operation failed.',
+            $providerCode = $providerFailure ? ErrorCatalog::providerFailureCode($providerException) : null;
+            app(IncidentRecorder::class)->record($providerCode ?? 'QUEUE_JOB_FAILED',
+                $providerCode === 'LLM_OUTPUT_INVALID' ? 'The analysis returned malformed content.' : ($providerFailure ? 'The analysis provider failed.' : 'A background operation failed.'),
                 $providerFailure ? ($jobClass === AnalyzeVacancy::class ? 'vacancy' : 'career') : 'queue',
                 'ERROR', $event->exception, [
                     'request_id' => $payload['request_id'] ?? null, 'user_id' => $payload['user_id'] ?? null,
                     'job_id' => $event->job->getJobId(), 'llm_run_id' => $shared['llm_run_id'] ?? null,
                     'operation' => $jobClass,
-                    'provider' => $providerFailure ? $event->exception->providerName : null,
+                    'queue' => $event->job->getQueue(), 'connection' => $event->connectionName,
+                    'provider' => $providerException?->providerName,
                     'attempt' => $event->job->attempts(),
                 ]);
             Log::flushSharedContext();

@@ -8,6 +8,7 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\VacancyOutputException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Exceptions\SafeVacancyException;
 use App\Models\User;
@@ -203,7 +204,7 @@ class VacancyAnalysisService
                     // Keep the provider failure as the primary error.
                 }
             } else {
-                app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Vacancy analysis provider failed.', 'vacancy', 'ERROR', $exception, [
+                app(IncidentRecorder::class)->record(ErrorCatalog::providerFailureCode($exception), 'Vacancy analysis provider failed.', 'vacancy', 'ERROR', $exception, [
                     'llm_run_id' => $run->id, 'user_id' => $user->id, 'provider' => $exception->providerName,
                     'operation' => 'vacancy_requirement_extraction',
                 ]);

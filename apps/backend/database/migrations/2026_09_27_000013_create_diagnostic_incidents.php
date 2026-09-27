@@ -38,6 +38,8 @@ return new class extends Migration
             $table->string('route', 128)->nullable();
             $table->string('operation', 128)->nullable();
             $table->string('provider', 64)->nullable();
+            $table->string('queue', 128)->nullable();
+            $table->string('connection', 64)->nullable();
             $table->unsignedSmallInteger('attempt')->nullable();
             $table->text('safe_stack')->nullable();
             $table->timestampTz('created_at')->useCurrent();

@@ -39,8 +39,9 @@ final class ErrorCatalog
                 $status === 403 ? 'You do not have access to this action.' : 'The request could not be completed.', $status, false, 'INFO');
         }
         if ($exception instanceof LlmProviderException) {
-            if ($exception->category === LlmProviderException::MALFORMED_OUTPUT) {
-                return self::entry('LLM_OUTPUT_INVALID', 'The generated content could not be validated. Contact your administrator.', 503, false, 'ERROR');
+            $code = self::providerFailureCode($exception);
+            if ($code === 'LLM_OUTPUT_INVALID') {
+                return self::entry($code, 'The generated content could not be validated. Contact your administrator.', 503, false, 'ERROR');
             }
             $message = match (true) {
                 $exception->isRetryable() => 'The analysis service is temporarily unavailable. Please retry later.',
@@ -48,7 +49,7 @@ final class ErrorCatalog
                 default => 'The analysis could not be completed. Contact your administrator.',
             };
 
-            return self::entry('LLM_PROVIDER_UNAVAILABLE', $message, 503, $exception->isRetryable(), 'ERROR');
+            return self::entry($code, $message, 503, $exception->isRetryable(), 'ERROR');
         }
         if ($exception instanceof SafeCareerException || $exception instanceof SafeVacancyException) {
             return self::entry($exception instanceof SafeCareerException ? 'CAREER_OPERATION_FAILED' : 'VACANCY_OPERATION_FAILED',
@@ -62,6 +63,13 @@ final class ErrorCatalog
         }
 
         return self::entry('INTERNAL_ERROR', 'The operation could not be completed. Please try later.', 500, false, 'ERROR');
+    }
+
+    public static function providerFailureCode(LlmProviderException $exception): string
+    {
+        return $exception->category === LlmProviderException::MALFORMED_OUTPUT
+            ? 'LLM_OUTPUT_INVALID'
+            : 'LLM_PROVIDER_UNAVAILABLE';
     }
 
     /** @return array{code:string,message:string,status:int,retryable:bool,severity:string} */

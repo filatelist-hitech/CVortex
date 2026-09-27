@@ -9,7 +9,7 @@ final class Redactor
     public static function text(string $value): string
     {
         $value = preg_replace('/\bBearer\s+\S+/i', 'Bearer [REDACTED]', $value) ?? '[REDACTED]';
-        $value = preg_replace('/"(password(?:_confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api_?key|client_secret|secret)"\s*:\s*"[^"]*"/i', '"$1":"[REDACTED]"', $value) ?? '[REDACTED]';
+        $value = preg_replace('/"(password(?:_confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api_?key|client_secret|secret)"\s*:\s*"(?:\\\\.|[^"\\\\])*"/i', '"$1":"[REDACTED]"', $value) ?? '[REDACTED]';
         $value = preg_replace('/\b(password(?:_confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api_?key|client_secret|secret)\s*[:=]\s*[^\s,;&]+/i', '$1=[REDACTED]', $value) ?? '[REDACTED]';
 
         return mb_substr($value, 0, 500);

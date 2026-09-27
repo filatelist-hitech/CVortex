@@ -38,7 +38,7 @@ describe("diagnostic UI", () => {
       const path = String(input);
       if (path.startsWith("/api/v1/diagnostics/incidents?")) return Response.json({ data: { data: [incident] } });
       if (path.endsWith("/incident-1") && options?.method === "PATCH") return Response.json({ data: { incident: { ...incident, status: "RESOLVED" }, occurrences: [] } });
-      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [{ id: "event-1", request_id: "req_test", created_at: "2026-09-27" }] } });
+      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [{ id: "event-1", request_id: "req_test", queue: "analysis-high", connection: "redis", created_at: "2026-09-27" }] } });
       throw new Error(path);
     });
     render(<Diagnostics />);
@@ -48,6 +48,7 @@ describe("diagnostic UI", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("search=req_test"), expect.anything()));
     fireEvent.click(screen.getByRole("button", { name: /INTERNAL_ERROR/ }));
     expect(await screen.findByText(/Request req_test/)).toBeInTheDocument();
+    expect(screen.getByText(/Queue analysis-high · Connection redis/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "RESOLVED" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/incident-1"), expect.objectContaining({ method: "PATCH" })));
   });

@@ -8,6 +8,7 @@ use App\AI\Data\LlmResponse;
 use App\AI\Data\ModelPolicy;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Models\ApplicationLlmRun;
 use App\Models\ApplicationPreparation;
@@ -366,9 +367,10 @@ class ApplicationTruthGuard
             $context['provider'] = $exception->providerName;
         }
 
+        $code = ErrorCatalog::providerFailureCode($exception);
         $this->incidents->record(
-            'LLM_PROVIDER_UNAVAILABLE',
-            'Application Truth Guard provider failed.',
+            $code,
+            $code === 'LLM_OUTPUT_INVALID' ? 'Application Truth Guard returned malformed content.' : 'Application Truth Guard provider failed.',
             'application',
             'ERROR',
             $exception,

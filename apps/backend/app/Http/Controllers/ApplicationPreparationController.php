@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\AI\Exceptions\LlmProviderException;
+use App\Diagnostics\ErrorCatalog;
 use App\Models\ApplicationDraftItem;
 use App\Models\ApplicationPreparation;
 use App\Services\ApplicationPreparationService;
@@ -68,7 +69,7 @@ class ApplicationPreparationController extends Controller
     private function providerFailure(LlmProviderException $exception, string $code, string $operation): JsonResponse
     {
         if ($exception->category === LlmProviderException::MALFORMED_OUTPUT) {
-            $code = 'LLM_OUTPUT_INVALID';
+            $code = ErrorCatalog::providerFailureCode($exception);
         }
         $message = match (true) {
             $exception->category === LlmProviderException::MALFORMED_OUTPUT => 'The generated draft could not be validated. Contact your administrator.',

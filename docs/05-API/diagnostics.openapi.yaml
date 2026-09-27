@@ -160,17 +160,35 @@ components:
         route: { type: [string, 'null'] }
         operation: { type: [string, 'null'] }
         provider: { type: [string, 'null'] }
+        queue: { type: [string, 'null'] }
+        connection: { type: [string, 'null'] }
         attempt: { type: [integer, 'null'] }
         safe_stack: { type: [string, 'null'] }
         created_at: { type: string, format: date-time }
   responses:
     Error:
       description: Safe API error
+      headers:
+        Allow:
+          description: Allowed methods for a method-related error.
+          schema: { type: string }
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
     RateLimited:
       description: Request limit exceeded; returns RATE_LIMITED with retryable true.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema: { type: string }
+        X-RateLimit-Limit:
+          schema: { type: string }
+        X-RateLimit-Remaining:
+          schema: { type: string }
+        X-RateLimit-Reset:
+          schema: { type: string }
+        RateLimit-Policy:
+          schema: { type: string }
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }

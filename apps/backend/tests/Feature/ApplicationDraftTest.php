@@ -306,6 +306,8 @@ class ApplicationDraftTest extends TestCase
     {
         Queue::fake();
         $user = $this->user('draft-review-failure@example.test');
+        $admin = $this->user('draft-review-admin@example.test');
+        $admin->forceFill(['role' => User::ROLE_ADMIN])->save();
         app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
         $provider = new ApplicationDraftFakeProvider;
         $this->app->instance(LlmProvider::class, $provider);
@@ -317,12 +319,14 @@ class ApplicationDraftTest extends TestCase
         $cover = collect($generated['items'])->firstWhere('variant', 'SHORT');
 
         $provider->failNextReview = true;
+        $provider->nextReviewFailureCategory = LlmProviderException::MALFORMED_OUTPUT;
         $editFailure = $this->withHeader('X-Request-ID', 'req_truth_edit')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
             'action' => 'edit', 'content' => 'I built and maintained Laravel APIs.',
-        ])->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
+        ])->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($editFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'content' => $cover['content'], 'status' => 'DRAFT']);
 
+        $provider->nextReviewFailureCategory = LlmProviderException::TRANSPORT;
         $provider->failNextReview = true;
         $acceptFailure = $this->withHeader('X-Request-ID', 'req_truth_accept')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
             'action' => 'accept',
@@ -347,8 +351,20 @@ class ApplicationDraftTest extends TestCase
             ]);
         }
         $this->assertSame(3, \DB::table('diagnostic_occurrences')->where('application_id', $preparation['id'])->whereNotNull('llm_run_id')->count());
-        $this->assertDatabaseCount('diagnostic_incidents', 1);
-        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_UNAVAILABLE', 'occurrence_count' => 3]);
+        $this->assertDatabaseCount('diagnostic_incidents', 2);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_OUTPUT_INVALID', 'occurrence_count' => 1]);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_UNAVAILABLE', 'occurrence_count' => 2]);
+        $this->assertDatabaseHas('application_llm_runs', [
+            'preparation_id' => $preparation['id'], 'workflow' => 'application_truth_review',
+            'error_category' => LlmProviderException::MALFORMED_OUTPUT,
+        ]);
+        $malformedIncidentId = \DB::table('diagnostic_incidents')->where('error_code', 'LLM_OUTPUT_INVALID')->value('id');
+        $this->actingAs($admin)->getJson('/api/v1/diagnostics/incidents?error_code=LLM_OUTPUT_INVALID')
+            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $malformedIncidentId);
+        $this->getJson('/api/v1/diagnostics/incidents?search=LLM_OUTPUT_INVALID')
+            ->assertOk()->assertJsonPath('data.total', 1);
+        $this->getJson('/api/v1/diagnostics/incidents/'.$malformedIncidentId)
+            ->assertOk()->assertJsonPath('data.occurrences.0.application_id', $preparation['id']);
     }
 
     public function test_generation_truth_guard_failure_is_recorded_only_once_with_application_correlation(): void
@@ -483,15 +499,24 @@ class ApplicationDraftTest extends TestCase
             $this->assertStringNotContainsString('submitted information', strtolower($error['error']['message']));
         }
 
+        $provider->failNextGeneration = true;
+        $provider->nextGenerationFailureCategory = LlmProviderException::MALFORMED_OUTPUT;
+        $this->withHeader('X-Request-ID', 'req_provider_malformed')->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false);
+
         $this->assertDatabaseCount('application_draft_items', 0);
-        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_OUTPUT_INVALID', 'occurrence_count' => 2]);
-        $this->assertDatabaseCount('diagnostic_occurrences', 2);
+        $this->assertSame([1, 2], \DB::table('diagnostic_incidents')->where('error_code', 'LLM_OUTPUT_INVALID')->orderBy('occurrence_count')->pluck('occurrence_count')->all());
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_UNAVAILABLE']);
+        $this->assertDatabaseCount('diagnostic_occurrences', 3);
+        $this->assertSame(3, \DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->where('incident.error_code', 'LLM_OUTPUT_INVALID')->count());
         $runs = \DB::table('application_llm_runs')->where('owner_id', $user->id)->where('preparation_id', $preparation['id'])
             ->where('workflow', 'application_draft_generation')->orderBy('created_at')->get();
-        $this->assertCount(2, $runs);
-        foreach ($runs as $run) {
+        $this->assertCount(3, $runs);
+        foreach ($runs as $index => $run) {
             $this->assertSame('FAILED', $run->status);
-            $this->assertSame('OUTPUT_REJECTED', $run->error_category);
+            $this->assertSame($index < 2 ? 'OUTPUT_REJECTED' : LlmProviderException::MALFORMED_OUTPUT, $run->error_category);
             $this->assertDatabaseHas('diagnostic_occurrences', [
                 'llm_run_id' => $run->id,
                 'application_id' => $preparation['id'],
@@ -673,6 +698,8 @@ class ApplicationDraftFakeProvider implements LlmProvider
 
     public bool $failNextGeneration = false;
 
+    public string $nextGenerationFailureCategory = LlmProviderException::TRANSPORT;
+
     public bool $failNextReview = false;
 
     public string $nextReviewFailureCategory = LlmProviderException::TRANSPORT;
@@ -686,7 +713,8 @@ class ApplicationDraftFakeProvider implements LlmProvider
     {
         $this->requests[] = $request;
         if ($request->schemaName === 'application_drafts' && $this->failNextGeneration) {
-            throw new LlmProviderException(LlmProviderException::TRANSPORT, 'private provider detail');
+            $this->failNextGeneration = false;
+            throw new LlmProviderException($this->nextGenerationFailureCategory, 'private provider detail');
         }
         if ($request->schemaName === 'application_truth_review' && $this->failNextReview) {
             $this->failNextReview = false;

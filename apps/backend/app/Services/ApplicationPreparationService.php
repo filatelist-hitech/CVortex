@@ -9,6 +9,7 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Data\RuntimeSkillDefinition;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Models\ApplicationApprovalEvent;
 use App\Models\ApplicationClaimUsage;
@@ -242,9 +243,10 @@ class ApplicationPreparationService
             $context['provider'] = $exception->providerName;
         }
 
+        $code = ErrorCatalog::providerFailureCode($exception);
         app(IncidentRecorder::class)->record(
-            'LLM_PROVIDER_UNAVAILABLE',
-            'Application draft generation failed.',
+            $code,
+            $code === 'LLM_OUTPUT_INVALID' ? 'Application draft generation returned malformed content.' : 'Application draft generation failed.',
             'application',
             'ERROR',
             $exception,

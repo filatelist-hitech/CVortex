@@ -8,6 +8,7 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Exceptions\CareerOutputException;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Exceptions\SafeCareerException;
 use App\Jobs\ExtractCareerSource;
@@ -202,7 +203,7 @@ class CareerExtractionService
                     // Keep the provider failure as the primary error.
                 }
             } else {
-                app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Career extraction provider failed.', 'career', 'ERROR', $exception, [
+                app(IncidentRecorder::class)->record(ErrorCatalog::providerFailureCode($exception), 'Career extraction provider failed.', 'career', 'ERROR', $exception, [
                     'llm_run_id' => $run->id, 'user_id' => $user->id, 'provider' => $exception->providerName,
                     'operation' => 'career_text_extraction',
                 ]);
