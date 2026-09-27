@@ -44,7 +44,7 @@ Then run `make up` and open the configured port.
 | `make up` | Start the stack in the background |
 | `make down` | Stop/remove containers and networks; preserve named volumes |
 | `make restart` | Recreate the stack in dependency-safe order; preserve named volumes |
-| `make test` | Run backend and frontend tests |
+| `make test` | Refresh Laravel package discovery, verify MCP route toggling, and run backend and frontend tests |
 | `make lint` | Run Pint, PHPStan/Larastan, ESLint and TypeScript checks |
 | `make logs SERVICE=backend` | Show the selected service's latest 200 log lines |
 | `make shell SERVICE=backend` | Open a shell in a running service |
