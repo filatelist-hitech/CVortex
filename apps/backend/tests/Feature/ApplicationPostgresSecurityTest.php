@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\AI\Contracts\LlmProvider;
 use App\AI\Data\LlmRequest;
 use App\AI\Data\LlmResponse;
+use App\Mcp\McpApplicationAdapter;
 use App\Models\ApplicationDraftItem;
 use App\Models\ApplicationPreparation;
 use App\Models\User;
@@ -14,9 +15,11 @@ use App\Services\CareerFactService;
 use App\Services\DatabaseOwnerContext;
 use App\Services\VacancyAnalysisService;
 use App\Services\VacancyIngestionService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -175,6 +178,43 @@ class ApplicationPostgresSecurityTest extends TestCase
         $this->assertSame(0, $approvedEventCount);
     }
 
+    public function test_mcp_reads_obey_postgres_owner_scope_without_changing_product_rows(): void
+    {
+        Queue::fake();
+        $owner = $this->user('mcp-owner@example.test');
+        $other = $this->user('mcp-other@example.test');
+        $ownerVacancy = app(VacancyIngestionService::class)->queue($owner, "Owner vacancy {$this->runId}", null);
+        $otherVacancy = app(VacancyIngestionService::class)->queue($other, "Other vacancy {$this->runId}", null);
+        $adapter = app(McpApplicationAdapter::class);
+        $ownerBefore = $this->productState($owner);
+        $otherBefore = $this->productState($other);
+
+        $vacancy = $adapter->vacancy($owner, (string) $ownerVacancy['vacancy']->id);
+        $context = $adapter->context($owner, (string) $ownerVacancy['vacancy']->id);
+
+        $this->assertSame((string) $ownerVacancy['vacancy']->id, $vacancy['id']);
+        $this->assertSame((string) $ownerVacancy['vacancy']->id, $context['vacancy']['id']);
+        $this->assertSame('PENDING', $context['vacancy']['analysis_status']);
+        $this->assertSame([], $context['requirements']);
+        $this->assertSame([], $context['confirmed_claims']);
+        $this->assertTrue($context['untrusted_vacancy_data']);
+
+        foreach ([
+            fn () => $adapter->vacancy($owner, (string) $otherVacancy['vacancy']->id),
+            fn () => $adapter->context($owner, (string) $otherVacancy['vacancy']->id),
+        ] as $foreignRead) {
+            try {
+                $foreignRead();
+                $this->fail('A read exposed another owner\'s vacancy.');
+            } catch (ModelNotFoundException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+
+        $this->assertSame($ownerBefore, $this->productState($owner));
+        $this->assertSame($otherBefore, $this->productState($other));
+    }
+
     private function user(string $email): User
     {
         [$localPart, $domain] = explode('@', $email, 2);
@@ -183,6 +223,36 @@ class ApplicationPostgresSecurityTest extends TestCase
             'email' => $localPart.'+'.$this->runId.'@'.$domain,
             'password' => 'a very long safe passphrase',
         ])->fresh();
+    }
+
+    /** @return array<string, list<string>> */
+    private function productState(User $user): array
+    {
+        $tables = [
+            'vacancies', 'vacancy_snapshots', 'vacancy_requirements', 'vacancy_analyses',
+            'vacancy_match_dimensions', 'vacancy_match_evidence', 'career_profiles', 'career_sources',
+            'career_facts', 'claims', 'claim_evidence', 'application_preparations', 'application_draft_items',
+            'application_claim_usages', 'application_approval_events', 'application_draft_revisions',
+            'applications', 'employer_memory', 'employer_memories', 'llm_runs',
+        ];
+
+        return app(DatabaseOwnerContext::class)->run((string) $user->id, static function () use ($tables, $user): array {
+            $state = [];
+            foreach ($tables as $table) {
+                if (! Schema::hasTable($table)) {
+                    continue;
+                }
+                $query = DB::table($table);
+                if (Schema::hasColumn($table, 'owner_id')) {
+                    $query->where('owner_id', $user->id);
+                }
+                $rows = $query->get()->map(static fn (object $row): string => json_encode((array) $row, JSON_THROW_ON_ERROR))->all();
+                sort($rows, SORT_STRING);
+                $state[$table] = $rows;
+            }
+
+            return $state;
+        });
     }
 
     private function ensureMatchedClaim(DatabaseOwnerContext $context, User $user, VacancyAnalysis $analysis): void

@@ -20,8 +20,9 @@ architecture_decision: none
 8. [Testing stack](08-TESTING-STACK.md)
 9. [Document pipeline](09-DOCUMENT-PIPELINE.md)
 10. [Design tokens, Figma MCP and Code Connect](10-DESIGN-TOKENS-FIGMA.md)
-11. [Decision candidates](DECISION-CANDIDATES.md)
-12. [Source register](SOURCES.md)
+11. [MCP Gateway Foundation: ChatGPT capabilities, OAuth and deployment](11-MCP-GATEWAY-FOUNDATION.md)
+12. [Decision candidates](DECISION-CANDIDATES.md)
+13. [Source register](SOURCES.md)
 
 ## Research rules used
 

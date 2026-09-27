@@ -31,6 +31,11 @@ class UserStatusService
                 'auth_generation' => $user->auth_generation + 1,
             ])->save();
             DB::table(config('session.table'))->where('user_id', $user->id)->delete();
+            $tokenIds = DB::table('oauth_access_tokens')->where('user_id', $user->id)->pluck('id');
+            DB::table('oauth_access_tokens')->where('user_id', $user->id)->update(['revoked' => true]);
+            if ($tokenIds->isNotEmpty()) {
+                DB::table('oauth_refresh_tokens')->whereIn('access_token_id', $tokenIds)->update(['revoked' => true]);
+            }
             $this->audit->record('user.disabled', AuditEvent::ACTOR_OPERATOR, null, User::class, $user->id);
         });
     }

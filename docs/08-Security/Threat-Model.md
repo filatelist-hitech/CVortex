@@ -3,7 +3,7 @@ title: Phase 06 Security Threat Model
 status: awaiting-independent-review
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-27
 tags: [security, threat-model, phase-06]
 related: ["[[../02-Architecture/Phase-06-System-Design|System Design]]", "[[../04-Data/Phase-06-Data-Design|Data Design]]", "[[../03-ADR/ADR-0017-untrusted-external-content|ADR-0017]]"]
 ---
@@ -24,5 +24,12 @@ External vacancies, recruiter messages, uploads, HTML/web/API responses and tool
 | Secret leakage | provider keys, BYOK credentials, system secrets | developer/operator mistake, log/export consumer, malicious input | Secret appears in logs, prompt, export, audit or document | account takeover, spend and data exposure | encrypted storage; redaction; masked display; no post-store client return; least privilege | secret-scanning/redaction alerts; credential lifecycle audit | operational error | log/prompt/export/audit redaction tests |
 | PII leakage | career/application data, backup/export and provider context | over-broad workflow, provider, backup or unauthorized operator | Excessive context transfer, insecure export or restore exposes private data | privacy breach and loss of trust | context minimization; owner scope; retention/deletion/export policy; encrypted access-controlled backups; provider review | context-size/access logs; restore/export audit | provider or backup compromise | context minimization and restore/export access tests |
 | LLM credentials | system and BYOK credential material, provider budget | attacker with stolen key or cross-user credential path | Credential resolution, rotation or provider request uses wrong owner/key | provider misuse, spend and user data exposure | encrypted-at-rest owner-scoped resolution; no prompt/log/client round trip; rotate/delete; least privilege | usage anomaly monitoring; resolution failures; add/rotate/delete audit | valid-key abuse | tenant resolution, rotation, revocation and no-secret-in-run tests |
+| OAuth redirect URI | authorization codes and tokens returned to external/native clients | malicious DCR client or crafted URI | Host confusion, userinfo, scheme confusion, malformed authority or dot-segment/encoded-path traversal changes the callback destination | authorization-code or token disclosure | DCR parses URI components; exact external host/scheme/port and fixed callback path shape; loopback-only HTTP with exact callback path and dynamic port; reject userinfo, query, fragment, percent-encoded path, malformed URI and descendants | DCR regression matrix through the registered `/oauth/register` route | client-controlled local listener and future callback-policy drift | exact approved external callback; IPv4/IPv6/localhost loopback; host, scheme, port, traversal, encoding and URI-structure attacks |
 
 Security validation is required before each future ingestion, fetcher, parser, credential or context implementation; human approval does not mitigate a failed technical control.
+
+## MCP Gateway extension (2026-09-27)
+
+The disabled-by-default [MCP Gateway](../02-Architecture/MCP-Gateway.md) is an external **read-only** boundary with exactly `vacancy_get` and `application_context_get`. OAuth bearer scope, active-user enforcement, owner-scoped queries/RLS, strict schemas, bounded output and rate limiting address token misuse, IDOR and excessive disclosure. Vacancy-derived text stays untrusted data. MCP exposes no mutation, approval, fact-review, application-state, message-send, arbitrary URL, filesystem, SQL, shell or secret access. OAuth uses authorization code + PKCE, strict parsed redirect validation, issuer/resource-bound access tokens and bearer-only MCP POSTs; browser cookies do not authenticate MCP.
+
+Read calls are covered by before/after product-state assertions for application preparations/drafts, approvals, applications, Career Facts, Claims, vacancy status/snapshots, employer memory and LLM runs. Tests also cover active/invalid/revoked/expired credentials, missing scope, owner/foreign IDs, incomplete and failed analysis, bounds and untrusted vacancy instructions. Account entitlement and Secure MCP Tunnel access remain unverified until tested in the target OpenAI account. `APP_DEBUG=false` is required in production; safe client responses do not establish that local framework logs contain no additional exception detail.

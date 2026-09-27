@@ -53,11 +53,14 @@ test "$baseline_user" = 1
 test "$baseline_fact" = 1
 test "$baseline_vacancy" = 1
 
-echo 'application-postgres-boundary: rollback application preparation migration'
-"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate:rollback --step=1 --force
+echo 'application-postgres-boundary: rollback OAuth and application preparation migrations'
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate:rollback --step=6 --force
 application_tables=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc \
   "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE 'application_%'")
 test "$application_tables" = 0
+oauth_tables=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc \
+  "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE 'oauth_%'")
+test "$oauth_tables" = 0
 
 after_users=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM users')
 after_facts=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc 'SELECT count(*) FROM career_facts')

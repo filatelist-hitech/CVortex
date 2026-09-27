@@ -319,3 +319,19 @@ recorded in the repository, so Preview 0.1 and the full M1.4 acceptance remain
 unvalidated, not PASS. The M2 planning task has not started and remains blocked
 until that evidence is available. The known development-mode frontend build
 issue remains tracked separately.
+
+### MCP Gateway Foundation — read-only implementation, 2026-09-27
+
+**MCP READ-ONLY LOCAL E2E = PASS.** Final `make test`: backend 215 tests / 1419 assertions / 7 PostgreSQL-only skips; frontend 16/16. `make lint`: Pint 162 files, PHPStan 102 files / zero errors, ESLint and TypeScript. PostgreSQL owner/RLS validation: 3 tests / 55 assertions including MCP no-mutation checks.
+
+**MCP CHATGPT E2E = BLOCKED_EXTERNAL (interactive access; entitlement unverified).** The current browser did not reach Developer Mode/app setup or Platform tunnel management; this is not classified as an entitlement denial.
+
+The explicitly authorized `feature-mcp-gateway-foundation` branch now exposes exactly `vacancy_get` and `application_context_get` over Streamable HTTP, disabled by default. The MCP draft writer and MCP-only service method were removed; Application Draft, Truth Guard, Human Approval and normal first-party workflows remain. OAuth resource/issuer checks, strict redirect parsing, active-user and `mcp:use` enforcement, owner context/RLS, bounded context, safe client errors and read-only rate limiting protect the boundary. Inbound MCP does not call or require the outbound `LlmProvider`/`OPENAI_API_KEY` path. ADR-0021 records the decision; ADR-0020 is superseded. M2 has not started; `NEXT.md` now points to Preview 0.1 real-user end-to-end validation, which remains incomplete under its existing acceptance criteria.
+
+Local validation is recorded in `docs/10-Operations/MCP-Gateway-Validation.md`: the current MCP Inspector CLI discovered exactly two read-only tools and successfully read a persisted owner vacancy whose analysis was `FAILED`, plus bounded incomplete context. PostgreSQL owner/RLS validation and before/after product-state checks passed; disabled/enabled route registration, OAuth resource/audience and redirect regression tests, and safe unauthenticated response checks passed. The live product-state hash was identical before and after both read calls. The stored OAuth session supported the live calls; fresh Inspector DCR/login/consent/token issuance was not repeated in this pass.
+
+ChatGPT MCP E2E and Secure MCP Tunnel remain **BLOCKED_EXTERNAL**. The ChatGPT sidebar showed Plus, but Developer Mode settings/app creation were not reached and the official plan-specific documentation is ambiguous for Plus; entitlement is therefore unknown, not denied. Platform was at sign-in, so tunnel permission, tunnel ID and process credential were unavailable. No public inbound access was opened. Exact user action is recorded in `BLOCKERS.md`. No MCP write action is exposed; unsupported mutations have no corresponding MCP capability.
+
+### Career review test isolation — 2026-09-27
+
+The review-flow test assumed that an accepted asynchronous extraction request had already run its queued job. With `QUEUE_CONNECTION=null`, the unchanged test reproduced the reported missing `Confirmed source wording.` key; with the configured sync driver, the source completed and all four candidates persisted. The original failing run's queue configuration was not captured. The test now fakes the queue and explicitly runs extraction before human review. Its confirmation, edit, rejection, pending and provenance assertions remain unchanged. The exact method passed with both queue drivers; Career/Vacancy/MCP/Access tests passed (184 tests, 1 skip), and the full backend suite passed (210 tests, 6 PostgreSQL-only skips). Pint, Larastan and `git diff --check` passed. No Career production behavior changed; the former backend-suite blocker is resolved.

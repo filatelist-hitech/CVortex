@@ -3,7 +3,7 @@ title: M1.4 Application Draft
 status: implemented
 owner: project
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-27
 tags: [application, draft, provenance, truth-guard, m1]
 related:
   - "[[M1-2-Career-Core|M1.2 Career Core]]"
@@ -37,6 +37,8 @@ All six tables have owner-composite relationships and forced PostgreSQL RLS. API
 Review state is `DRAFT`, `ACCEPTED`, `REJECTED`, `APPROVED` or `BLOCKED`. A factual edit invalidates the previous content hash and is revalidated. Accept and edit do not approve. Approval locks the item and current Claim/Career evidence, checks the current context and validated hash, then stores an approval event. There is no `APPLIED` state or employer-facing action.
 
 ## API
+
+Draft preparation, generation, editing, validation and approval remain in the authenticated CVortex-owned web/API workflow described below. The inbound [MCP Gateway](../02-Architecture/MCP-Gateway.md) is read-only and cannot create or change an Application Draft. This does not change the M1.4 Preview acceptance criteria or introduce an `APPLIED` state.
 
 All endpoints are under authenticated, active-user `/api/v1` routes. The JSON resource returns preparation status/staleness and items with current content, complete revision history, recommendation details, Claim/Career provenance and revision-linked approval history.
 

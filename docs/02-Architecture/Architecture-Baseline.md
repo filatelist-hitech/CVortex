@@ -21,6 +21,8 @@ If this summary conflicts with an accepted ADR, the ADR wins. If evidence later 
 
 ## System baseline
 
+The bounded, read-only inbound MCP Gateway is documented in [MCP Gateway v1](MCP-Gateway.md) and [ADR-0021](../03-ADR/ADR-0021-inbound-mcp-read-only.md). It is disabled by default and preserves the outbound LLM/provider boundary below.
+
 ```mermaid
 flowchart TD
     C[Frontend / PWA / future clients] --> API[Shared API contract]

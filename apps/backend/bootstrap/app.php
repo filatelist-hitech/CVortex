@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -28,6 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->reportable(function (Throwable $exception): bool {
+            if (request()->is('mcp/v1') && $exception instanceof OAuthServerException) {
+                Log::notice('mcp.oauth_authentication_rejected', [
+                    'request_id' => request()->attributes->get('request_id'),
+                    'exception_type' => $exception::class,
+                ]);
+
+                return false;
+            }
+
             if ((request()->is('api/v1/career*') || request()->is('api/v1/vacancies*'))
                 && ! $exception instanceof ValidationException
                 && ! $exception instanceof AuthenticationException

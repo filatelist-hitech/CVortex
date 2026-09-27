@@ -46,6 +46,7 @@ Research result `REVIEWED` не означает автоматически `acc
 | Files/documents | R07-* | `technical/09-DOCUMENT-PIPELINE.md` | REVIEWED |
 | Figma/MCP/design tokens | R11-*, R17-* | `technical/10-DESIGN-TOKENS-FIGMA.md` | REVIEWED |
 | Decision synthesis | R01-*..R17-* | `technical/DECISION-CANDIDATES.md` | REVIEWED |
+| MCP Gateway Foundation (2026-09-25) | bounded feature research | `technical/11-MCP-GATEWAY-FOUNDATION.md` | EVIDENCE_COLLECTED |
 | Source register | R01-*..R17-* | `technical/SOURCES.md` | REVIEWED |
 
 Expected synthesis:
