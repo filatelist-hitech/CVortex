@@ -32,7 +32,7 @@ Horizon remains the queue execution/failure view. `make failed-jobs` lists sanit
 | Scenario | Check | Expected boundary |
 |---|---|---|
 | API reports a safe 500 or provider 503 | Search its `Reference`; inspect `error_code`, `last_seen_at`, provider and related run | Response has no raw exception/stack; incident groups repeated failures |
-| Career extraction or vacancy analysis fails in Horizon | Search request or job ID; compare `llm_run_id` and final `attempt` | Final queue failure creates one diagnostic occurrence after retries; product run remains separately `FAILED` |
+| Career extraction or vacancy analysis fails in Horizon | Search request or job ID; compare `llm_run_id` and final `attempt` | Transient provider retries keep the product operation `PENDING` while queued; it becomes `FAILED` only when retries stop, and final queue failure creates one diagnostic occurrence |
 | Browser fallback appears | Search returned Reference and `FRONTEND_RUNTIME_ERROR` around the time | Telemetry needs an authenticated session and available API/database; an unsent event may have no incident |
 | Validation, authentication or authorization is rejected | Correct input/session/access; use request ID in short-lived logs if needed | Ordinary 4xx responses are not stored as incidents |
 | Same error repeats | Compare `occurrence_count`, first/last seen and recent occurrences | One fingerprint stays one incident; older per-event IDs eventually expire |

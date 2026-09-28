@@ -56,18 +56,30 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
             } catch (VacancyOutputException) {
                 // Invalid semantic output is terminal until an explicit user retry.
             } catch (LlmProviderException $exception) {
-                $this->retryOrFail($exception);
+                $this->retryOrFail($exception, $snapshot);
             }
         });
     }
 
-    private function retryOrFail(LlmProviderException $exception): void
+    private function retryOrFail(LlmProviderException $exception, VacancySnapshot $snapshot): void
     {
         if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
             $this->fail($exception);
 
             return;
         }
+
+        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+            ->where('analysis_status', Vacancy::STATUS_FAILED)
+            ->whereRaw(
+                'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
+                [$snapshot->version],
+            )
+            ->update([
+                'analysis_status' => Vacancy::STATUS_PENDING,
+                'error_code' => null,
+                'updated_at' => now(),
+            ]);
 
         $delay = $exception->retryAfterSeconds;
         if ($delay === null || $delay < 0 || $delay > 86400) {

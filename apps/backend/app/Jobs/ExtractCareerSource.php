@@ -49,17 +49,25 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
             // Invalid model output is terminal for this source; the service has
             // already persisted a retryable FAILED state for an explicit retry.
         } catch (LlmProviderException $exception) {
-            $this->retryOrFail($exception);
+            $this->retryOrFail($exception, $source);
         }
     }
 
-    private function retryOrFail(LlmProviderException $exception): void
+    private function retryOrFail(LlmProviderException $exception, CareerSource $source): void
     {
         if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
             $this->fail($exception);
 
             return;
         }
+
+        CareerSource::query()->where('owner_id', $this->ownerId)->whereKey($source->id)
+            ->where('extraction_status', CareerSource::STATUS_FAILED)
+            ->update([
+                'extraction_status' => CareerSource::STATUS_PENDING,
+                'error_code' => null,
+                'updated_at' => now(),
+            ]);
 
         $delay = $exception->retryAfterSeconds;
         if ($delay === null || $delay < 0 || $delay > 86400) {
