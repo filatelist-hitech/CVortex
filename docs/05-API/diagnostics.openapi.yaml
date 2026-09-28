@@ -11,7 +11,7 @@ paths:
   /diagnostics/report:
     post:
       summary: Report a sanitized browser failure
-      description: Authenticated active user. Rate limited to ten reports per minute per user. Supplied identity, message and stack are ignored.
+      description: Authenticated active user. Rate limited to ten reports per minute per user. Supplied identity, message and stack are ignored. An optional opaque SHA-256 error reference is stored only on the bounded occurrence; a route is accepted only from the finite route allowlist.
       requestBody:
         required: true
         content:
@@ -27,6 +27,14 @@ paths:
                 kind:
                   type: string
                   enum: [runtime, rejection, render]
+                error_ref:
+                  type: string
+                  pattern: '^[a-f0-9]{64}$'
+                  description: Optional opaque occurrence metadata. It is not trusted as identity or used in incident fingerprints.
+                route:
+                  type: string
+                  enum: ['/', '/register', other]
+                  description: Allowlisted route reference; query strings and arbitrary paths are rejected.
       responses:
         '202':
           description: Accepted
@@ -44,6 +52,7 @@ paths:
                     properties:
                       request_id: { type: string }
         '401': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503':
@@ -96,6 +105,7 @@ paths:
               schema: { type: string }
         '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
   /diagnostics/incidents/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -104,6 +114,7 @@ paths:
       description: Admin only.
       responses:
         '200': { $ref: '#/components/responses/Detail' }
+        '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
     patch:
@@ -120,6 +131,7 @@ paths:
                 status: { type: string, enum: [OPEN, RESOLVED, IGNORED] }
       responses:
         '200': { $ref: '#/components/responses/Detail' }
+        '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
@@ -183,6 +195,7 @@ components:
         queue: { type: [string, 'null'] }
         connection: { type: [string, 'null'] }
         attempt: { type: [integer, 'null'] }
+        error_ref: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
         safe_stack: { type: [string, 'null'] }
         created_at: { type: string, format: date-time }
   responses:
@@ -196,7 +209,7 @@ components:
           description: Allowed methods for a method-related error.
           schema: { type: string }
         Retry-After:
-          description: Provider retry delay for explicitly retryable provider throttling responses.
+          description: Bounded provider retry delay in seconds for an explicitly retryable provider failure.
           schema: { type: string }
       content:
         application/json:

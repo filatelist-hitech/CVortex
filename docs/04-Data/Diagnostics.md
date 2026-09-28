@@ -3,7 +3,7 @@ title: Diagnostics data model
 status: implemented
 owner: project
 created: 2026-09-27
-updated: 2026-09-28
+updated: 2026-09-29
 tags: [data, diagnostics, erd]
 related: ["[[../03-ADR/ADR-0022-local-diagnostics|ADR-0022]]", "[[../10-Operations/Logging-and-Diagnostics|Logging and Diagnostics]]"]
 ---
@@ -41,6 +41,7 @@ erDiagram
     ulid application_id
     ulid user_id FK
     string route
+    string error_ref
     string operation
     string provider
     string queue

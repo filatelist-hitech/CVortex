@@ -15,6 +15,8 @@ final class DiagnosticsController extends Controller
 {
     private const BROWSER_COMPONENTS = ['browser', 'app-root', 'global-root'];
 
+    private const BROWSER_ROUTES = ['/', '/register', 'other'];
+
     public function index(Request $request): JsonResponse
     {
         $this->requireAdmin($request);
@@ -92,10 +94,13 @@ final class DiagnosticsController extends Controller
         $data = $request->validate([
             'component' => ['required', Rule::in(self::BROWSER_COMPONENTS)],
             'kind' => ['required', Rule::in(['runtime', 'rejection', 'render'])],
+            'error_ref' => ['sometimes', 'string', 'regex:/\\A[a-f0-9]{64}\\z/'],
+            'route' => ['sometimes', 'string', Rule::in(self::BROWSER_ROUTES)],
         ]);
         $recorded = $recorder->record('FRONTEND_RUNTIME_ERROR', 'A browser operation failed.', $data['component'], 'ERROR', null, [
             'service' => 'frontend', 'request_id' => $request->attributes->get('request_id'),
             'user_id' => $request->user()?->id, 'operation' => $data['kind'],
+            'route' => $data['route'] ?? null, 'error_ref' => $data['error_ref'] ?? null,
         ]);
         if (! $recorded) {
             return response()->json([

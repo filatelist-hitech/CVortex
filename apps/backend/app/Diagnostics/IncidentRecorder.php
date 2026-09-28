@@ -21,6 +21,10 @@ final class IncidentRecorder
     /** @param array<string, mixed> $context */
     public function record(string $code, string $safeMessage, string $component, string $severity = 'ERROR', ?Throwable $exception = null, array $context = []): bool
     {
+        if ($exception !== null && self::wasRecorded($exception)) {
+            return true;
+        }
+
         try {
             return $this->recordSafely($code, $safeMessage, $component, $severity, $exception, $context);
         } catch (Throwable) {
@@ -53,6 +57,9 @@ final class IncidentRecorder
             }
             Log::log(strtolower($severity), 'diagnostics.incident', $logContext);
             $logged = true;
+            if ($exception !== null) {
+                self::markRecorded($exception);
+            }
         } catch (Throwable) {
             // Preserve the original operation when the raw log sink fails.
         }
@@ -85,6 +92,7 @@ final class IncidentRecorder
                     'operation' => $safeContext['operation'] ?? null, 'provider' => $safeContext['provider'] ?? null,
                     'queue' => $safeContext['queue'] ?? null, 'connection' => $safeContext['connection'] ?? null,
                     'attempt' => $safeContext['attempt'] ?? null, 'safe_stack' => $safeStack,
+                    'error_ref' => $safeContext['error_ref'] ?? null,
                     'created_at' => $now,
                 ]);
                 // Preserve recent reference IDs while bounding a noisy fingerprint.
@@ -96,9 +104,8 @@ final class IncidentRecorder
 
                 return true;
             });
-            if (($logged || $stored) && $exception !== null) {
-                self::$recordedExceptions ??= new WeakMap;
-                self::$recordedExceptions[$exception] = true;
+            if ($stored && $exception !== null) {
+                self::markRecorded($exception);
             }
         } catch (Throwable) {
             // PostgreSQL can be the failed dependency. Raw stderr remains independent.
@@ -106,5 +113,11 @@ final class IncidentRecorder
         }
 
         return $logged || $stored;
+    }
+
+    private static function markRecorded(Throwable $exception): void
+    {
+        self::$recordedExceptions ??= new WeakMap;
+        self::$recordedExceptions[$exception] = true;
     }
 }

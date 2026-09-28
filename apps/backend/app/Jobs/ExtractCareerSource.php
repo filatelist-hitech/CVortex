@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\AI\Exceptions\CareerOutputException;
 use App\AI\Exceptions\LlmProviderException;
+use App\AI\ProviderRetryAfter;
+use App\Diagnostics\ProviderRetryWarning;
 use App\Models\CareerSource;
 use App\Models\User;
 use App\Services\CareerExtractionService;
@@ -69,12 +71,13 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
                 'updated_at' => now(),
             ]);
 
-        $delay = $exception->retryAfterSeconds;
-        if ($delay === null || $delay < 0 || $delay > 86400) {
+        $delay = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
+        if ($delay === null) {
             $delays = $this->backoff();
             $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
         }
 
+        ProviderRetryWarning::scheduled('career_text_extraction', $exception, $this->attempts(), $delay);
         $this->release($delay);
     }
 }

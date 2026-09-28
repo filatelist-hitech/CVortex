@@ -14,7 +14,7 @@ type Occurrence = {
   llm_run_id: string | null; application_id: string | null; user_id: string | null;
   route: string | null; operation: string | null; provider: string | null;
   queue: string | null; connection: string | null;
-  attempt: number | null; safe_stack: string | null;
+  attempt: number | null; safe_stack: string | null; error_ref: string | null;
 };
 type Detail = { incident: Incident; occurrences: Occurrence[] };
 
@@ -95,6 +95,28 @@ export default function Diagnostics() {
     {!busy && items.length === 0 && <p className="empty">{Object.values(filters).some(Boolean) ? "No incidents for the selected filters and time range." : "No incidents recorded."}</p>}
     <ul className="diagnostics-list">{items.map((item) => <li key={item.id}><button type="button" className="secondary" onClick={() => void open(item.id)}><span className={`badge ${item.severity === "ERROR" || item.severity === "CRITICAL" ? "blocked-badge" : "pending-badge"}`}>{item.severity}</span><strong>{item.error_code}</strong><span>{item.message}</span><small>{item.service}/{item.component} · {item.environment} · {item.status} · {item.occurrence_count} occurrences · {item.first_seen_at} → {item.last_seen_at}</small></button></li>)}</ul>
     {total > 0 && <nav className="actions" aria-label="Incident pages"><button type="button" className="secondary" disabled={busy || page <= 1} onClick={() => { setDetail(null); void load(filters, page - 1); }}>Previous</button><span>Page {page} of {lastPage} · {total} incidents</span><button type="button" className="secondary" disabled={busy || page >= lastPage} onClick={() => { setDetail(null); void load(filters, page + 1); }}>Next</button></nav>}
-    {detail && <section className="panel diagnostics-detail" aria-labelledby="incident-title"><h3 id="incident-title">{detail.incident.error_code}</h3><p>{detail.incident.message}</p><p><strong>Impact:</strong> {detail.incident.impact}</p><p><strong>Retry:</strong> {detail.incident.retryable ? "Safe to retry" : "Not automatically retryable"}</p><p><strong>Next action:</strong> {detail.incident.recovery_action}</p><p>{detail.incident.severity} · {detail.incident.status} · {detail.incident.service}/{detail.incident.component} · {detail.incident.exception_class ?? "Browser event"}</p><p>{detail.incident.occurrence_count} occurrences · first {detail.incident.first_seen_at} · last {detail.incident.last_seen_at}</p><div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={status === detail.incident.status} onClick={() => void setStatus(status)}>{status}</button>)}</div><h4>Recent occurrences</h4><ul>{detail.occurrences.map((event) => <li key={event.id}><time>{event.created_at}</time><p>Request {event.request_id ?? "—"} · Job {event.job_id ?? "—"} · LLM {event.llm_run_id ?? "—"} · Application {event.application_id ?? "—"}</p><p>User {event.user_id ?? "—"} · Route {event.route ?? "—"} · Operation {event.operation ?? "—"} · Provider {event.provider ?? "—"} · Attempt {event.attempt ?? "—"}</p><p>Queue {event.queue ?? "—"} · Connection {event.connection ?? "—"}</p>{event.safe_stack && <div className="source-copy"><p><strong>Throw site and application frames</strong></p><pre>{event.safe_stack.split("\n").filter((line, index) => index === 0 || line.startsWith("[app]")).slice(0, 4).join("\n")}</pre><details><summary>Show complete bounded trace</summary><pre>{event.safe_stack}</pre></details></div>}</li>)}</ul></section>}
+    {detail && (
+      <section className="panel diagnostics-detail" aria-labelledby="incident-title">
+        <h3 id="incident-title">{detail.incident.error_code}</h3>
+        <p>{detail.incident.message}</p>
+        <p><strong>Impact:</strong> {detail.incident.impact}</p>
+        <p><strong>Retry:</strong> {detail.incident.retryable ? "Safe to retry" : "Not automatically retryable"}</p>
+        <p><strong>Next action:</strong> {detail.incident.recovery_action}</p>
+        <p>{detail.incident.severity} · {detail.incident.status} · {detail.incident.service}/{detail.incident.component} · {detail.incident.exception_class ?? "Browser event"}</p>
+        <p>{detail.incident.occurrence_count} occurrences · first {detail.incident.first_seen_at} · last {detail.incident.last_seen_at}</p>
+        <div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={status === detail.incident.status} onClick={() => void setStatus(status)}>{status}</button>)}</div>
+        <h4>Recent occurrences</h4>
+        <ul>{detail.occurrences.map((event) => (
+          <li key={event.id}>
+            <time>{event.created_at}</time>
+            <p>Request {event.request_id ?? "—"} · Job {event.job_id ?? "—"} · LLM {event.llm_run_id ?? "—"} · Application {event.application_id ?? "—"}</p>
+            <p>User {event.user_id ?? "—"} · Route {event.route ?? "—"} · Operation {event.operation ?? "—"} · Provider {event.provider ?? "—"} · Attempt {event.attempt ?? "—"}</p>
+            <p>Queue {event.queue ?? "—"} · Connection {event.connection ?? "—"}</p>
+            {event.error_ref && <p>Browser error reference {event.error_ref}</p>}
+            {event.safe_stack && <div className="source-copy"><p><strong>Throw site and application frames</strong></p><pre>{event.safe_stack.split("\n").filter((line, index) => index === 0 || line.startsWith("[app]")).slice(0, 4).join("\n")}</pre><details><summary>Show complete bounded trace</summary><pre>{event.safe_stack}</pre></details></div>}
+          </li>
+        ))}</ul>
+      </section>
+    )}
   </section>;
 }

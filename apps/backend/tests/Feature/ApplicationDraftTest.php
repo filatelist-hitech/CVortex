@@ -526,6 +526,40 @@ class ApplicationDraftTest extends TestCase
         }
     }
 
+    public function test_unexpected_generation_failure_uses_one_safe_internal_error_classification(): void
+    {
+        Queue::fake();
+        $user = $this->user('draft-internal-failure@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $provider = new ApplicationDraftFakeProvider;
+        $this->app->instance(LlmProvider::class, $provider);
+        $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
+        $this->actingAs($user);
+        $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
+        $provider->throwUnexpectedGenerationFailure = true;
+
+        $response = $this->withHeader('X-Request-ID', 'req_application_internal')
+            ->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR')
+            ->assertJsonPath('error.retryable', false);
+        $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
+
+        $incident = \DB::table('diagnostic_incidents')->where('error_code', 'INTERNAL_ERROR')->sole();
+        $this->assertSame('ERROR', $incident->severity);
+        $this->assertFalse((bool) $incident->retryable);
+        $this->assertSame(1, $incident->occurrence_count);
+        $this->assertSame('The operation could not be completed. Please review the incident and retry after diagnosis.', $incident->message);
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_FAILED']);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_application_internal',
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+            'operation' => 'application_draft_generation',
+        ]);
+    }
+
     public function test_generation_does_not_expose_untrusted_model_reason_or_risk_as_recommendation_facts(): void
     {
         Queue::fake();
@@ -698,6 +732,8 @@ class ApplicationDraftFakeProvider implements LlmProvider
 
     public bool $failNextGeneration = false;
 
+    public bool $throwUnexpectedGenerationFailure = false;
+
     public string $nextGenerationFailureCategory = LlmProviderException::TRANSPORT;
 
     public bool $failNextReview = false;
@@ -712,6 +748,10 @@ class ApplicationDraftFakeProvider implements LlmProvider
     public function generateStructured(LlmRequest $request): LlmResponse
     {
         $this->requests[] = $request;
+        if ($request->schemaName === 'application_drafts' && $this->throwUnexpectedGenerationFailure) {
+            $this->throwUnexpectedGenerationFailure = false;
+            throw new \RuntimeException('Internal dependency failed: SECRET_CANARY');
+        }
         if ($request->schemaName === 'application_drafts' && $this->failNextGeneration) {
             $this->failNextGeneration = false;
             throw new LlmProviderException($this->nextGenerationFailureCategory, 'private provider detail');

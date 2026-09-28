@@ -3,7 +3,7 @@ SHELL := /bin/sh
 SERVICE ?= backend
 COMMAND ?=
 
-.PHONY: init up down restart test lint logs logs-pretty failed-jobs diagnostics-prune shell migrate
+.PHONY: init up down restart test lint logs logs-pretty failed-jobs diagnostics-prune test-nginx-access-log-safety shell migrate
 
 init:
 	@if [ ! -f .env ]; then \
@@ -66,6 +66,9 @@ failed-jobs:
 
 diagnostics-prune:
 	docker compose exec -T backend php artisan diagnostics:prune
+
+test-nginx-access-log-safety:
+	bash scripts/test-nginx-access-log-safety.sh
 
 shell:
 	@if [ -n "$(COMMAND)" ]; then docker compose exec $(SERVICE) sh -lc '$(COMMAND)'; else docker compose exec $(SERVICE) sh; fi

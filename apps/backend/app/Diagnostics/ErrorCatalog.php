@@ -3,6 +3,7 @@
 namespace App\Diagnostics;
 
 use App\AI\Exceptions\LlmProviderException;
+use App\AI\ProviderRetryAfter;
 use App\Exceptions\SafeCareerException;
 use App\Exceptions\SafeVacancyException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -77,12 +78,11 @@ final class ErrorCatalog
     /** @return array<string, string> */
     public static function responseHeaders(Throwable $exception): array
     {
-        if ($exception instanceof LlmProviderException
-            && $exception->category === LlmProviderException::RATE_LIMITED
-            && is_int($exception->retryAfterSeconds)
-            && $exception->retryAfterSeconds >= 0
-            && $exception->retryAfterSeconds <= 86400) {
-            return ['Retry-After' => (string) $exception->retryAfterSeconds];
+        if ($exception instanceof LlmProviderException && $exception->isRetryable()) {
+            $retryAfterSeconds = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
+            if ($retryAfterSeconds !== null) {
+                return ['Retry-After' => (string) $retryAfterSeconds];
+            }
         }
 
         return [];

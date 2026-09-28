@@ -74,7 +74,7 @@ final class Redactor
         foreach (array_slice($exception->getTrace(), 0, 50) as $frame) {
             $file = str_replace('\\', '/', (string) ($frame['file'] ?? ''));
             $rendered = basename($file !== '' ? $file : 'runtime').':'.(int) ($frame['line'] ?? 0).' '.
-                self::text((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']);
+                self::frameFunction((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']);
             if (str_contains($file, '/app/') || str_contains($file, '/routes/')) {
                 $applicationFrames[] = '[app] '.$rendered;
             } else {
@@ -87,5 +87,16 @@ final class Redactor
         }
 
         return implode("\n", [$origin, ...$frames]);
+    }
+
+    public static function frameFunction(string $value): string
+    {
+        $value = preg_replace_callback(
+            '~(?<![A-Za-z0-9])(?<path>(?:[A-Za-z]:[\\\\/]|/)(?:[^\\\\/:{}()]+[\\\\/])*[^\\\\/:{}()]+)(?<line>:\\d+)?~',
+            static fn (array $match): string => basename(str_replace(chr(92), '/', $match['path'])).($match['line'] ?? ''),
+            $value,
+        ) ?? '[REDACTED]';
+
+        return self::text($value);
     }
 }

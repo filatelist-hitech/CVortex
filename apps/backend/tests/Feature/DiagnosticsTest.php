@@ -54,7 +54,15 @@ class DiagnosticsTest extends TestCase
             retryAfterSeconds: 45,
         ));
         Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE));
+        Route::get('/api/v1/_diagnostics-test/provider-temporary-retry', fn () => throw new LlmProviderException(
+            LlmProviderException::TEMPORARY_UNAVAILABLE,
+            retryAfterSeconds: 22,
+        ));
         Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
+        Route::get('/api/v1/_diagnostics-test/provider-config-retry-header', fn () => throw new LlmProviderException(
+            LlmProviderException::NOT_CONFIGURED,
+            retryAfterSeconds: 45,
+        ));
         Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
         Route::get('/api/v1/_diagnostics-test/provider-malformed-output', fn () => throw new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT));
         Route::get('/api/v1/_diagnostics-test/http-service-unavailable', fn () => throw new HttpException(503, 'Dependency failed.', headers: [
@@ -143,6 +151,31 @@ class DiagnosticsTest extends TestCase
         $this->assertSame('req_without_log_context', $response->headers->get('X-Request-ID'));
     }
 
+    public function test_raw_log_success_marks_the_exception_before_a_postgres_failure(): void
+    {
+        $original = new \RuntimeException('password=SECRET_CANARY');
+        Route::get('/api/v1/_diagnostics-test/log-only', static function () use ($original): never {
+            throw $original;
+        });
+        Log::spy();
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('database unavailable'));
+
+        $response = $this->withHeader('X-Request-ID', 'req_log_only')
+            ->getJson('/api/v1/_diagnostics-test/log-only')
+            ->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR')
+            ->assertJsonPath('error.retryable', false);
+
+        $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
+        $this->assertTrue(IncidentRecorder::wasRecorded($original));
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context): bool {
+            return $level === 'error'
+                && $message === 'diagnostics.incident'
+                && ($context['exception_class'] ?? null) === \RuntimeException::class
+                && ! str_contains(json_encode($context), 'SECRET_CANARY');
+        });
+    }
+
     public function test_nested_secrets_are_redacted(): void
     {
         $safe = Redactor::context(['Authorization' => 'Bearer SECRET_CANARY', 'nested' => [
@@ -159,6 +192,87 @@ class DiagnosticsTest extends TestCase
         $this->assertStringNotContainsString('ENCODED_SECRET_CANARY', $encodedQuery);
         $nestedJson = Redactor::text('{"request":{"api_key":{"value":"SECRET_CANARY"},"prompt":"private prompt SECRET_CANARY"}}');
         $this->assertStringNotContainsString('SECRET_CANARY', $nestedJson);
+    }
+
+    public function test_closure_frame_names_keep_basename_and_line_without_absolute_paths(): void
+    {
+        $safe = Redactor::frameFunction('{closure:/var/www/html/SECRET_PATH_CANARY/routes/api.php:27}');
+
+        $this->assertSame('{closure:api.php:27}', $safe);
+        $this->assertStringNotContainsString('/var/www/html', $safe);
+        $this->assertStringNotContainsString('SECRET_PATH_CANARY', $safe);
+    }
+
+    public function test_all_supported_application_log_channels_use_structured_redaction(): void
+    {
+        $channels = ['stack', 'single', 'daily', 'monthly', 'stderr'];
+        $configuredChannels = array_diff(array_keys(config('logging.channels')), ['emergency']);
+        foreach ($configuredChannels as $channel) {
+            $this->assertContains(StructuredLogs::class, config('logging.channels.'.$channel.'.tap', []), $channel.' must use StructuredLogs.');
+        }
+
+        $original = [
+            'default' => config('logging.default'),
+            'single_path' => config('logging.channels.single.path'),
+            'daily_path' => config('logging.channels.daily.path'),
+            'monthly_path' => config('logging.channels.monthly.path'),
+            'stderr_stream' => config('logging.channels.stderr.handler_with.stream'),
+            'stack_channels' => config('logging.channels.stack.channels'),
+        ];
+        $directory = storage_path('framework/testing/log-channel-'.Str::random(12));
+        @mkdir($directory, 0777, true);
+        $paths = [];
+
+        try {
+            foreach ($channels as $channel) {
+                $path = $directory.'/'.$channel.'.log';
+                $paths[] = $directory.'/'.$channel;
+                config([
+                    'logging.default' => $channel,
+                    'logging.channels.single.path' => $path,
+                    'logging.channels.daily.path' => $path,
+                    'logging.channels.monthly.path' => $path,
+                    'logging.channels.stderr.handler_with.stream' => $path,
+                    'logging.channels.stack.channels' => ['single'],
+                ]);
+                foreach (['stack', 'single', 'daily', 'monthly', 'stderr'] as $cached) {
+                    Log::forgetChannel($cached);
+                }
+                $canary = 'LOG_CHANNEL_SECRET_'.$channel;
+                Log::shareContext(['request_id' => 'req_'.$channel]);
+                Log::channel()->info('password='.$canary);
+                Log::flushSharedContext();
+
+                $files = glob($directory.'/'.$channel.'*.log') ?: [];
+                $this->assertCount(1, $files, $channel.' must write one rotated log file at '.$path.'; directory contains '.json_encode(scandir($directory)));
+                $record = file_get_contents($files[0]);
+                $this->assertIsString($record);
+                json_decode(trim($record), true, flags: JSON_THROW_ON_ERROR);
+                $this->assertStringNotContainsString($canary, $record);
+                $this->assertStringContainsString('password=[REDACTED]', $record);
+                $this->assertStringContainsString('"request_id":"req_'.$channel.'"', $record);
+                $this->assertStringContainsString('"message"', $record);
+            }
+        } finally {
+            Log::flushSharedContext();
+            foreach (['stack', 'single', 'daily', 'monthly', 'stderr'] as $channel) {
+                Log::forgetChannel($channel);
+            }
+            foreach ($paths as $path) {
+                foreach (glob($path.'*') ?: [] as $file) {
+                    @unlink($file);
+                }
+            }
+            @rmdir($directory);
+            config([
+                'logging.default' => $original['default'],
+                'logging.channels.single.path' => $original['single_path'],
+                'logging.channels.daily.path' => $original['daily_path'],
+                'logging.channels.monthly.path' => $original['monthly_path'],
+                'logging.channels.stderr.handler_with.stream' => $original['stderr_stream'],
+                'logging.channels.stack.channels' => $original['stack_channels'],
+            ]);
+        }
     }
 
     public function test_structured_logger_redacts_escaped_json_secret_values(): void
@@ -284,11 +398,19 @@ class DiagnosticsTest extends TestCase
         $this->assertSame('45', $rateLimited->headers->get('Retry-After'));
         $this->assertSame('LLM_PROVIDER_RATE_LIMITED', $rateLimited->json('error.code'));
         $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_RATE_LIMITED', 'retryable' => true]);
-        $this->withHeader('X-Request-ID', 'req_provider_temporary')->getJson('/api/v1/_diagnostics-test/provider-temporary')->assertStatus(503)
-            ->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+        $temporary = $this->withHeader('X-Request-ID', 'req_provider_temporary')->getJson('/api/v1/_diagnostics-test/provider-temporary')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+        $this->assertNull($temporary->headers->get('Retry-After'));
+        $temporaryRetry = $this->withHeader('X-Request-ID', 'req_provider_temporary_retry')
+            ->getJson('/api/v1/_diagnostics-test/provider-temporary-retry')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+        $this->assertSame('22', $temporaryRetry->headers->get('Retry-After'));
         $configured = $this->getJson('/api/v1/_diagnostics-test/provider-config')->assertStatus(503)
             ->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('retry', strtolower($configured['error']['message']));
+        $notRetryable = $this->getJson('/api/v1/_diagnostics-test/provider-config-retry-header')->assertStatus(503)
+            ->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')->assertJsonPath('error.retryable', false);
+        $this->assertNull($notRetryable->headers->get('Retry-After'));
         $this->getJson('/api/v1/_diagnostics-test/provider-invalid-config')->assertStatus(503)
             ->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')->assertJsonPath('error.retryable', false);
         $malformedResponse = $this->withHeader('X-Request-ID', 'req_malformed_output')->getJson('/api/v1/_diagnostics-test/provider-malformed-output')->assertStatus(503)
@@ -388,6 +510,36 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('audit_events', ['event_type' => 'diagnostics.incident.status_changed']);
     }
 
+    public function test_diagnostics_error_responses_match_the_openapi_error_shape(): void
+    {
+        $admin = $this->user('admin');
+        $oversized = $this->as($admin)->postJson('/api/v1/diagnostics/report', [
+            'component' => 'browser',
+            'kind' => 'runtime',
+            'unused' => str_repeat('A', 2100),
+        ])->assertStatus(413)->assertJsonStructure([
+            'message',
+            'error' => ['code', 'message', 'request_id', 'retryable'],
+        ]);
+        $this->assertSame($oversized->json('error.request_id'), $oversized->headers->get('X-Request-ID'));
+
+        $invalidFilter = $this->as($admin)->getJson('/api/v1/diagnostics/incidents?severity=DEBUG')
+            ->assertStatus(422)->assertJsonStructure([
+                'message',
+                'error' => ['code', 'message', 'request_id', 'retryable'],
+                'errors' => ['severity'],
+            ]);
+        $this->assertSame($invalidFilter->json('error.request_id'), $invalidFilter->headers->get('X-Request-ID'));
+    }
+
+    public function test_diagnostics_incident_detail_and_update_require_authentication(): void
+    {
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'openapi-auth');
+        $incidentId = DB::table('diagnostic_incidents')->where('component', 'openapi-auth')->value('id');
+        $this->getJson('/api/v1/diagnostics/incidents/'.$incidentId)->assertUnauthorized();
+        $this->patchJson('/api/v1/diagnostics/incidents/'.$incidentId, ['status' => 'RESOLVED'])->assertUnauthorized();
+    }
+
     public function test_application_id_filter_search_and_detail_use_occurrence_correlation(): void
     {
         $user = $this->user('user');
@@ -412,18 +564,36 @@ class DiagnosticsTest extends TestCase
     {
         $this->postJson('/api/v1/diagnostics/report', ['component' => 'app'])->assertUnauthorized();
         $user = $this->user('user');
+        $firstErrorRef = str_repeat('a', 64);
+        $secondErrorRef = str_repeat('b', 64);
         $this->as($user)->postJson('/api/v1/diagnostics/report', [
             'component' => 'app-root', 'kind' => 'runtime', 'user_id' => 'other',
             'stack' => 'Authorization: Bearer SECRET_CANARY', 'message' => 'api_key=SECRET_CANARY',
+            'route' => '/', 'error_ref' => $firstErrorRef,
         ])->assertStatus(202);
         $event = DB::table('diagnostic_occurrences')->first();
         $this->assertSame($user->id, $event->user_id);
+        $this->assertSame('/', $event->route);
+        $this->assertSame($firstErrorRef, $event->error_ref);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($event));
+        $this->as($user)->postJson('/api/v1/diagnostics/report', [
+            'component' => 'app-root', 'kind' => 'runtime', 'route' => '/', 'error_ref' => $secondErrorRef,
+            'message' => 'email=pii@example.test password=SECRET_CANARY',
+        ])->assertStatus(202);
         $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => 'browser', 'kind' => 'rejection'])->assertStatus(202);
         $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => 'global-root', 'kind' => 'render'])->assertStatus(202);
         $this->assertDatabaseCount('diagnostic_incidents', 3);
-        $this->assertDatabaseCount('diagnostic_occurrences', 3);
+        $this->assertDatabaseCount('diagnostic_occurrences', 4);
+        $this->assertSame([$firstErrorRef, $secondErrorRef], DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->where('incident.component', 'app-root')->orderBy('occurrence.error_ref')->pluck('occurrence.error_ref')->all());
         $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => '../../bad', 'kind' => 'runtime'])->assertUnprocessable();
+        $this->as($user)->postJson('/api/v1/diagnostics/report', [
+            'component' => 'browser',
+            'kind' => 'runtime',
+            'route' => '/?api_key=SECRET_CANARY',
+            'error_ref' => 'not-a-digest',
+        ])->assertUnprocessable();
         foreach (range(1, 4) as $index) {
             $this->as($user)->postJson('/api/v1/diagnostics/report', [
                 'component' => 'client-component-'.$index,
@@ -431,7 +601,8 @@ class DiagnosticsTest extends TestCase
             ])->assertUnprocessable();
         }
         $this->assertDatabaseCount('diagnostic_incidents', 3);
-        $this->assertDatabaseCount('diagnostic_occurrences', 3);
+        $this->assertDatabaseCount('diagnostic_occurrences', 4);
+        $this->assertStringNotContainsString('SECRET_CANARY', json_encode(DB::table('diagnostic_occurrences')->get()));
     }
 
     public function test_browser_report_returns_a_safe_failure_when_no_diagnostic_sink_accepts_it(): void
@@ -534,6 +705,63 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('vacancies', [
             'id' => $vacancy->id, 'analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR',
         ]);
+    }
+
+    public function test_transient_queue_attempt_logs_warning_then_succeeds_without_error_incident(): void
+    {
+        $user = $this->user('user');
+        $profile = CareerProfile::query()->create(['owner_id' => $user->id]);
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id, 'career_profile_id' => $profile->id, 'kind' => 'PASTED_TEXT',
+            'source_text' => 'Career retry fixture.', 'content_hash' => hash('sha256', 'Career retry fixture.'),
+            'extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR',
+        ]);
+        $llmRunId = (string) Str::ulid();
+        Log::spy();
+        Log::shouldReceive('sharedContext')->once()->andReturn([
+            'request_id' => 'req_retry_warning',
+            'job_id' => 'job_retry_warning',
+            'llm_run_id' => $llmRunId,
+        ]);
+        Log::shouldReceive('warning')->once()->withArgs(function (string $message, array $context) use ($llmRunId): bool {
+            return $message === 'diagnostics.provider_retry_scheduled'
+                && $context['event_name'] === 'llm.provider_retry_scheduled'
+                && $context['request_id'] === 'req_retry_warning'
+                && $context['job_id'] === 'job_retry_warning'
+                && $context['llm_run_id'] === $llmRunId
+                && $context['operation'] === 'career_text_extraction'
+                && $context['provider'] === 'openai'
+                && $context['attempt'] === 1
+                && $context['retry_delay_seconds'] === 37;
+        });
+
+        $retry = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $failedAttempt = Mockery::mock(CareerExtractionService::class);
+        $failedAttempt->shouldReceive('extract')->once()->andThrow(new LlmProviderException(
+            LlmProviderException::TRANSPORT,
+            providerName: 'openai',
+            retryAfterSeconds: 37,
+        ));
+        $retry->handle($failedAttempt);
+        $retry->assertReleased(37)->assertNotFailed();
+        $this->assertDatabaseHas('career_sources', [
+            'id' => $source->id, 'extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null,
+        ]);
+
+        $success = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $successfulAttempt = Mockery::mock(CareerExtractionService::class);
+        $successfulAttempt->shouldReceive('extract')->once()->andReturnUsing(function () use ($source): CareerSource {
+            CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_COMPLETED]);
+
+            return $source->fresh();
+        });
+        $success->handle($successfulAttempt);
+
+        $this->assertDatabaseHas('career_sources', [
+            'id' => $source->id, 'extraction_status' => CareerSource::STATUS_COMPLETED, 'error_code' => null,
+        ]);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+        $this->assertDatabaseCount('diagnostic_occurrences', 0);
     }
 
     public function test_expected_missing_console_record_has_a_safe_operator_message(): void
