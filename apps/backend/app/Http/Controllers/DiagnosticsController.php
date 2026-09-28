@@ -29,8 +29,16 @@ final class DiagnosticsController extends Controller
             'search' => ['string', 'max:128'],
             'request_id' => ['string', 'max:128'], 'job_id' => ['string', 'max:128'],
             'llm_run_id' => ['string', 'max:26'], 'application_id' => ['string', 'max:26'],
+            'sort' => [Rule::in(['priority', 'last_seen', 'first_seen', 'occurrences', 'severity'])],
+            'hours' => [Rule::in(['24', '168', '720'])],
         ]);
-        $query = DB::table('diagnostic_incidents');
+        $query = DB::table('diagnostic_incidents')->select('diagnostic_incidents.*')
+            ->selectSub(DB::table('diagnostic_occurrences')->select('operation')
+                ->whereColumn('incident_id', 'diagnostic_incidents.id')
+                ->orderByDesc('created_at')->orderByDesc('id')->limit(1), 'latest_operation')
+            ->selectSub(DB::table('diagnostic_occurrences')->select('provider')
+                ->whereColumn('incident_id', 'diagnostic_incidents.id')
+                ->orderByDesc('created_at')->orderByDesc('id')->limit(1), 'latest_provider');
         foreach (['severity', 'status', 'service', 'component', 'environment', 'error_code'] as $key) {
             if (isset($filters[$key])) {
                 $query->where($key, $filters[$key]);
@@ -41,6 +49,9 @@ final class DiagnosticsController extends Controller
         }
         if (isset($filters['to'])) {
             $query->where('last_seen_at', '<=', Carbon::parse($filters['to'])->endOfDay());
+        }
+        if (isset($filters['hours'])) {
+            $query->where('last_seen_at', '>=', now()->subHours((int) $filters['hours']));
         }
         foreach (['request_id', 'job_id', 'llm_run_id', 'application_id'] as $key) {
             if (isset($filters[$key])) {
@@ -56,7 +67,21 @@ final class DiagnosticsController extends Controller
             });
         }
 
-        $incidents = $query->orderByDesc('last_seen_at')->paginate(25)->through(function (object $incident): object {
+        $sort = $filters['sort'] ?? 'priority';
+        if ($sort === 'priority') {
+            $query->orderByRaw("CASE status WHEN 'OPEN' THEN 0 WHEN 'RESOLVED' THEN 1 ELSE 2 END")
+                ->orderByRaw("CASE severity WHEN 'CRITICAL' THEN 0 WHEN 'ERROR' THEN 1 ELSE 2 END");
+        } elseif ($sort === 'severity') {
+            $query->orderByRaw("CASE severity WHEN 'CRITICAL' THEN 0 WHEN 'ERROR' THEN 1 ELSE 2 END");
+        } elseif ($sort === 'first_seen') {
+            $query->orderByDesc('first_seen_at');
+        } elseif ($sort === 'occurrences') {
+            $query->orderByDesc('occurrence_count');
+        }
+        if ($sort === 'priority' || $sort === 'severity' || $sort === 'last_seen') {
+            $query->orderByDesc('last_seen_at');
+        }
+        $incidents = $query->orderBy('id')->paginate(25)->through(function (object $incident): object {
             $incident->retryable = (bool) $incident->retryable;
 
             return $incident;
