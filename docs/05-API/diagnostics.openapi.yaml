@@ -30,6 +30,10 @@ paths:
       responses:
         '202':
           description: Accepted
+          headers:
+            X-Request-ID:
+              description: Correlates this telemetry report with backend diagnostics.
+              schema: { type: string }
           content:
             application/json:
               schema:
@@ -42,6 +46,14 @@ paths:
         '401': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/RateLimited' }
+        '503':
+          description: The diagnostics sinks could not accept the report.
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
   /diagnostics/incidents:
     get:
       summary: List grouped incidents
@@ -76,7 +88,12 @@ paths:
                         type: array
                         items: { $ref: '#/components/schemas/Incident' }
                       current_page: { type: integer }
+                      last_page: { type: integer }
                       total: { type: integer }
+          headers:
+            X-Request-ID:
+              description: Correlates the response with backend diagnostics.
+              schema: { type: string }
         '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
   /diagnostics/incidents/{id}:
@@ -125,7 +142,7 @@ components:
           properties:
             code:
               type: string
-              description: Stable API code, including RATE_LIMITED for throttling and LLM_OUTPUT_INVALID for rejected generated content.
+              description: Stable API code, including LLM_PROVIDER_UNAVAILABLE, LLM_PROVIDER_RATE_LIMITED, LLM_PROVIDER_CONFIGURATION, LLM_PROVIDER_FAILED, LLM_OUTPUT_INVALID, LLM_REQUEST_REFUSED and LLM_RESPONSE_INCOMPLETE.
             message: { type: string }
             request_id: { type: string }
             retryable:
@@ -134,7 +151,7 @@ components:
         errors: { type: object, additionalProperties: true }
     Incident:
       type: object
-      required: [id, status, severity, error_code, service, component, environment, message, occurrence_count, first_seen_at, last_seen_at]
+      required: [id, status, severity, error_code, service, component, environment, message, retryable, impact, recovery_action, occurrence_count, first_seen_at, last_seen_at]
       properties:
         id: { type: string }
         status: { type: string, enum: [OPEN, RESOLVED, IGNORED] }
@@ -144,6 +161,9 @@ components:
         component: { type: string }
         environment: { type: string }
         message: { type: string }
+        retryable: { type: boolean, description: True only for explicitly retryable failure categories. }
+        impact: { type: string, maxLength: 255 }
+        recovery_action: { type: string, maxLength: 255 }
         exception_class: { type: [string, 'null'] }
         occurrence_count: { type: integer }
         first_seen_at: { type: string, format: date-time }
@@ -169,8 +189,14 @@ components:
     Error:
       description: Safe API error
       headers:
+        X-Request-ID:
+          description: Correlates the response with backend diagnostics.
+          schema: { type: string }
         Allow:
           description: Allowed methods for a method-related error.
+          schema: { type: string }
+        Retry-After:
+          description: Provider retry delay for explicitly retryable provider throttling responses.
           schema: { type: string }
       content:
         application/json:
@@ -178,6 +204,9 @@ components:
     RateLimited:
       description: Request limit exceeded; returns RATE_LIMITED with retryable true.
       headers:
+        X-Request-ID:
+          description: Correlates the response with backend diagnostics.
+          schema: { type: string }
         Retry-After:
           description: Seconds to wait before retrying.
           schema: { type: string }
@@ -194,6 +223,10 @@ components:
           schema: { $ref: '#/components/schemas/Error' }
     Detail:
       description: Incident and at most twenty recent persisted occurrences
+      headers:
+        X-Request-ID:
+          description: Correlates the response with backend diagnostics.
+          schema: { type: string }
       content:
         application/json:
           schema:

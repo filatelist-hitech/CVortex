@@ -23,7 +23,7 @@ class OpenAiResponsesProviderTest extends TestCase
         $model = new ResolvedModel('test', 'openai', 'test-model');
         $provider = app(OpenAiResponsesProvider::class);
         Http::fakeSequence('*/responses')
-            ->push(['error' => ['message' => 'private provider response']], 429)
+            ->push(['error' => ['message' => 'private provider response']], 429, ['Retry-After' => '37'])
             ->push(['error' => ['message' => 'private provider response']], 503)
             ->push(['error' => ['message' => 'private provider response']], 400);
 
@@ -39,6 +39,7 @@ class OpenAiResponsesProviderTest extends TestCase
                 $this->assertSame($category, $exception->category);
                 $this->assertSame($retryable, $exception->isRetryable());
                 $this->assertSame($category === LlmProviderException::INVALID_CONFIGURATION, $exception->requiresConfiguration());
+                $this->assertSame($status === 429 ? 37 : null, $exception->retryAfterSeconds);
             }
         }
     }

@@ -370,7 +370,7 @@ class ApplicationTruthGuard
         $code = ErrorCatalog::providerFailureCode($exception);
         $this->incidents->record(
             $code,
-            $code === 'LLM_OUTPUT_INVALID' ? 'Application Truth Guard returned malformed content.' : 'Application Truth Guard provider failed.',
+            ErrorCatalog::incidentDetails($code)['message'],
             'application',
             'ERROR',
             $exception,

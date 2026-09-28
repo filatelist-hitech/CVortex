@@ -62,6 +62,10 @@ class OpenAiResponsesProvider
         $estimatedCostMicros = $this->estimateCost($resolved, $inputTokens, $outputTokens);
         if (! $response->successful()) {
             $status = $response->status();
+            $retryAfter = $response->header('retry-after');
+            $retryAfterSeconds = $status === 429 && ctype_digit($retryAfter)
+                ? min(86400, (int) $retryAfter)
+                : null;
             $category = match (true) {
                 $status === 429 => LlmProviderException::RATE_LIMITED,
                 $status === 408 || $status === 425 || $status >= 500 => LlmProviderException::TEMPORARY_UNAVAILABLE,
@@ -77,6 +81,7 @@ class OpenAiResponsesProvider
                 outputTokens: $outputTokens,
                 latencyMs: $latencyMs,
                 estimatedCostMicros: $estimatedCostMicros,
+                retryAfterSeconds: $retryAfterSeconds,
             );
         }
 

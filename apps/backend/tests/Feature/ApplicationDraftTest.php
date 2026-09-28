@@ -330,14 +330,14 @@ class ApplicationDraftTest extends TestCase
         $provider->failNextReview = true;
         $acceptFailure = $this->withHeader('X-Request-ID', 'req_truth_accept')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
             'action' => 'accept',
-        ])->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
+        ])->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($acceptFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'status' => 'DRAFT']);
 
         $this->patchJson('/api/v1/applications/draft-items/'.$cover['id'], ['action' => 'accept'])->assertOk();
         $provider->failNextReview = true;
         $approvalFailure = $this->withHeader('X-Request-ID', 'req_truth_approve')->postJson('/api/v1/applications/draft-items/'.$cover['id'].'/approve')
-            ->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($approvalFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'status' => 'ACCEPTED']);
         $this->assertDatabaseMissing('application_approval_events', ['draft_item_id' => $cover['id'], 'action' => 'APPROVED']);
@@ -381,7 +381,7 @@ class ApplicationDraftTest extends TestCase
         $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
 
         $this->withHeader('X-Request-ID', 'req_truth_generate')->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
-            ->assertStatus(503)->assertJsonPath('error.code', 'GENERATION_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
 
         $this->assertDatabaseCount('diagnostic_incidents', 1);
         $this->assertDatabaseCount('diagnostic_occurrences', 1);
@@ -561,7 +561,7 @@ class ApplicationDraftTest extends TestCase
             ->shouldReceive('applicationDraftGeneration')->once()->andThrow(new \RuntimeException('private skill detail'))->getMock());
 
         $response = $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
-            ->assertStatus(503)->assertJsonPath('error.code', 'GENERATION_UNAVAILABLE')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')
             ->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('private skill detail', json_encode($response, JSON_THROW_ON_ERROR));
         $this->assertStringNotContainsString('retry', strtolower($response['message']));
@@ -660,7 +660,7 @@ class ApplicationDraftTest extends TestCase
         $newPreparation = $this->postJson('/api/v1/vacancies/'.$newQueued['vacancy']->id.'/preparation')->assertOk()->json('data');
         $provider->failNextGeneration = true;
         $failed = $this->postJson('/api/v1/applications/preparations/'.$newPreparation['id'].'/generate')->assertServiceUnavailable()->json();
-        $this->assertSame('GENERATION_UNAVAILABLE', $failed['error']['code']);
+        $this->assertSame('LLM_PROVIDER_UNAVAILABLE', $failed['error']['code']);
         $this->assertStringNotContainsString('private provider detail', json_encode($failed, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_llm_runs', ['preparation_id' => $newPreparation['id'], 'status' => 'FAILED']);
         $this->assertDatabaseCount('application_draft_items', 0);

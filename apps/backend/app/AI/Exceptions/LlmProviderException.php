@@ -35,6 +35,7 @@ class LlmProviderException extends \RuntimeException
         public readonly ?int $outputTokens = null,
         public readonly ?int $latencyMs = null,
         public readonly ?int $estimatedCostMicros = null,
+        public readonly ?int $retryAfterSeconds = null,
     ) {
         parent::__construct($message, previous: $previous);
     }

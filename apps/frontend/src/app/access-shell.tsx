@@ -15,6 +15,12 @@ const safeErrorMessages: Record<string, string> = {
   CAREER_OPERATION_FAILED: "The Career operation could not be completed.",
   VACANCY_OPERATION_FAILED: "The vacancy operation could not be completed.",
   LLM_OUTPUT_INVALID: "Analysis returned unsupported data. Nothing was trusted.",
+  LLM_REQUEST_REFUSED: "The provider could not process this request. Review the request before trying again.",
+  LLM_RESPONSE_INCOMPLETE: "The provider returned an incomplete result. Review the source size or operation limits.",
+  LLM_PROVIDER_FAILED: "The analysis could not be completed. Contact your administrator.",
+  LLM_PROVIDER_CONFIGURATION: "The analysis provider needs administrator configuration.",
+  LLM_PROVIDER_RATE_LIMITED: "The analysis provider is handling too many requests. Wait before retrying.",
+  LLM_PROVIDER_UNAVAILABLE: "The analysis service is temporarily unavailable.",
   INTERNAL_ERROR: "The operation could not be completed.",
   PERMISSION_DENIED: "You do not have access to this action.",
   AUTH_REQUIRED: "Please sign in and try again.",
@@ -29,14 +35,11 @@ export class ApiError extends Error {
 }
 
 function errorExplanation(code: string, retryable: boolean): string {
-  if (code === "GENERATION_UNAVAILABLE") {
-    return retryable ? "Draft generation is temporarily unavailable." : "Draft generation needs administrator configuration.";
-  }
-  if (code === "VALIDATION_UNAVAILABLE") {
-    return retryable ? "Draft truth validation is temporarily unavailable." : "Draft truth validation needs administrator configuration.";
-  }
   if (code === "LLM_PROVIDER_UNAVAILABLE") {
-    return retryable ? "The analysis service is temporarily unavailable." : "The analysis provider needs administrator configuration.";
+    return retryable ? safeErrorMessages[code] : "The analysis provider failed. Contact your administrator.";
+  }
+  if (code === "LLM_PROVIDER_RATE_LIMITED") {
+    return retryable ? safeErrorMessages[code] : "The provider rejected this request. Contact your administrator.";
   }
   if (code === "RATE_LIMITED") {
     return retryable ? "Too many requests. Wait before trying again." : "The request was rate limited.";

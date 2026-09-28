@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Diagnostics\ConsoleFailureReporter;
 use App\Services\InvitationService;
 use Illuminate\Console\Command;
 
@@ -11,12 +12,18 @@ class CreateInvitation extends Command
 
     protected $description = 'Create a one-time registration invitation and reveal its token once.';
 
-    public function handle(InvitationService $invitations): int
+    public function handle(InvitationService $invitations, ConsoleFailureReporter $failures): int
     {
         try {
             ['invitation' => $invitation, 'token' => $token] = $invitations->create($this->option('email'), (int) $this->option('expires'));
         } catch (\Throwable $exception) {
-            $this->error($exception->getMessage());
+            if (($message = $failures->expectedMessage($exception)) !== null) {
+                $this->error($message);
+
+                return self::FAILURE;
+            }
+            $reference = $failures->report($exception, (string) $this->getName());
+            $this->error('Command failed. Reference: '.$reference);
 
             return self::FAILURE;
         }

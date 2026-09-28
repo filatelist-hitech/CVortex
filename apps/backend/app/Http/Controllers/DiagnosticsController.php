@@ -54,7 +54,13 @@ final class DiagnosticsController extends Controller
             });
         }
 
-        return response()->json(['data' => $query->orderByDesc('last_seen_at')->paginate(25)]);
+        $incidents = $query->orderByDesc('last_seen_at')->paginate(25)->through(function (object $incident): object {
+            $incident->retryable = (bool) $incident->retryable;
+
+            return $incident;
+        });
+
+        return response()->json(['data' => $incidents]);
     }
 
     public function show(Request $request, string $id): JsonResponse
@@ -62,6 +68,7 @@ final class DiagnosticsController extends Controller
         $this->requireAdmin($request);
         $incident = DB::table('diagnostic_incidents')->where('id', $id)->first();
         abort_if($incident === null, 404);
+        $incident->retryable = (bool) $incident->retryable;
         $occurrences = DB::table('diagnostic_occurrences')->where('incident_id', $id)
             ->orderByDesc('created_at')->limit(20)->get();
 
@@ -86,10 +93,21 @@ final class DiagnosticsController extends Controller
             'component' => ['required', Rule::in(self::BROWSER_COMPONENTS)],
             'kind' => ['required', Rule::in(['runtime', 'rejection', 'render'])],
         ]);
-        $recorder->record('FRONTEND_RUNTIME_ERROR', 'A browser operation failed.', $data['component'], 'ERROR', null, [
+        $recorded = $recorder->record('FRONTEND_RUNTIME_ERROR', 'A browser operation failed.', $data['component'], 'ERROR', null, [
             'service' => 'frontend', 'request_id' => $request->attributes->get('request_id'),
             'user_id' => $request->user()?->id, 'operation' => $data['kind'],
         ]);
+        if (! $recorded) {
+            return response()->json([
+                'message' => 'The diagnostics report could not be stored.',
+                'error' => [
+                    'code' => 'DIAGNOSTICS_UNAVAILABLE',
+                    'message' => 'The diagnostics report could not be stored.',
+                    'request_id' => $request->attributes->get('request_id'),
+                    'retryable' => true,
+                ],
+            ], 503);
+        }
 
         return response()->json(['data' => ['request_id' => $request->attributes->get('request_id')]], 202);
     }

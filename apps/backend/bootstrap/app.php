@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -29,31 +30,66 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->reportable(function (Throwable $exception): bool {
+        $recordConsoleException = static function (Throwable $exception): void {
+            if (! app()->runningInConsole()) {
+                return;
+            }
+
+            try {
+                $shared = Log::sharedContext();
+            } catch (Throwable) {
+                $shared = [];
+            }
+            if (isset($shared['job_id'])) {
+                return; // Queue::failing records only the final failed attempt.
+            }
+
+            $entry = ErrorCatalog::classify($exception);
+            if ($entry['status'] < 500) {
+                return;
+            }
+            $argv = $_SERVER['argv'] ?? [];
+            $candidate = is_array($argv) && is_string($argv[1] ?? null) ? $argv[1] : '';
+            $operation = preg_match('/\A[a-z][a-z0-9:_-]{0,80}\z/iD', $candidate) === 1 ? $candidate : 'artisan';
+            app(IncidentRecorder::class)->record($entry['code'], $entry['message'], 'console', $entry['severity'], $exception, [
+                'request_id' => 'cli_'.Str::ulid(),
+                'operation' => $operation,
+            ]);
+        };
+
+        $exceptions->reportable(function (Throwable $exception) use ($recordConsoleException): bool {
             try {
                 if (IncidentRecorder::wasRecorded($exception)) {
                     return false;
                 }
 
                 if (! app()->bound('request') || ! app()->resolved('request')) {
+                    $recordConsoleException($exception);
+
                     return true;
                 }
                 $request = app('request');
                 if (! $request instanceof Request || ! $request->attributes->has('request_id')) {
+                    $recordConsoleException($exception);
+
                     return true;
                 }
 
                 if ($request->is('mcp/v1') && $exception instanceof OAuthServerException) {
-                    Log::notice('mcp.oauth_authentication_rejected', [
-                        'request_id' => $request->attributes->get('request_id'),
-                        'exception_type' => $exception::class,
-                    ]);
+                    try {
+                        Log::notice('mcp.oauth_authentication_rejected', [
+                            'request_id' => $request->attributes->get('request_id'),
+                            'exception_type' => $exception::class,
+                        ]);
+                    } catch (Throwable) {
+                        // Authentication errors remain safe when the log sink is down.
+                    }
 
                     return false;
                 }
 
                 if ($request->is('api/v1/*')) {
-                    $entry = ErrorCatalog::classify($exception, (string) $request->segment(3));
+                    $entry = ErrorCatalog::classify($exception);
                     if ($entry['status'] < 500) {
                         return true;
                     }
@@ -76,7 +112,20 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->render(function (Throwable $exception, Request $request) {
             if ($request->is('api/v1/*')) {
-                $entry = ErrorCatalog::classify($exception, (string) $request->segment(3));
+                $entry = ErrorCatalog::classify($exception);
+                if ($entry['status'] >= 500 && ! IncidentRecorder::wasRecorded($exception)) {
+                    try {
+                        app(IncidentRecorder::class)->record($entry['code'], $entry['message'],
+                            (string) ($request->segment(3) ?? 'api'), $entry['severity'], $exception, [
+                                'request_id' => $request->attributes->get('request_id'),
+                                'user_id' => $request->user()?->id,
+                                'route' => $request->route()?->getName(),
+                                'operation' => $request->route()?->getName(),
+                            ]);
+                    } catch (Throwable) {
+                        // Preserve the safe HTTP response when both diagnostic sinks fail.
+                    }
+                }
                 $headers = [];
                 if ($exception instanceof HttpExceptionInterface) {
                     $safeNames = [
@@ -104,6 +153,7 @@ return Application::configure(basePath: dirname(__DIR__))
                         }
                     }
                 }
+                $headers = array_merge($headers, ErrorCatalog::responseHeaders($exception));
 
                 return response()->json([
                     'message' => $entry['message'],

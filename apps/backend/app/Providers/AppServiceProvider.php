@@ -63,40 +63,59 @@ class AppServiceProvider extends ServiceProvider
             ]];
         });
         Queue::before(function (JobProcessing $event): void {
-            $payload = $event->job->payload()['cvortex'] ?? [];
-            Log::flushSharedContext();
-            Log::shareContext(array_filter([
-                'request_id' => $payload['request_id'] ?? null,
-                'job_id' => $event->job->getJobId(),
-                'user_id' => $payload['user_id'] ?? null,
-                'attempt' => $event->job->attempts(),
-            ]));
-        });
-        Queue::after(fn (JobProcessed $event) => Log::flushSharedContext());
-        Queue::failing(function (JobFailed $event): void {
-            $payload = $event->job->payload()['cvortex'] ?? [];
             try {
-                $shared = Log::sharedContext();
-            } catch (Throwable) {
-                $shared = [];
-            }
-            $jobClass = $event->job->resolveName();
-            $providerException = $event->exception instanceof LlmProviderException ? $event->exception : null;
-            $providerFailure = $providerException !== null
-                && in_array($jobClass, [AnalyzeVacancy::class, ExtractCareerSource::class], true);
-            $providerCode = $providerFailure ? ErrorCatalog::providerFailureCode($providerException) : null;
-            app(IncidentRecorder::class)->record($providerCode ?? 'QUEUE_JOB_FAILED',
-                $providerCode === 'LLM_OUTPUT_INVALID' ? 'The analysis returned malformed content.' : ($providerFailure ? 'The analysis provider failed.' : 'A background operation failed.'),
-                $providerFailure ? ($jobClass === AnalyzeVacancy::class ? 'vacancy' : 'career') : 'queue',
-                'ERROR', $event->exception, [
-                    'request_id' => $payload['request_id'] ?? null, 'user_id' => $payload['user_id'] ?? null,
-                    'job_id' => $event->job->getJobId(), 'llm_run_id' => $shared['llm_run_id'] ?? null,
-                    'operation' => $jobClass,
-                    'queue' => $event->job->getQueue(), 'connection' => $event->connectionName,
-                    'provider' => $providerException?->providerName,
+                $payload = $event->job->payload()['cvortex'] ?? [];
+                Log::flushSharedContext();
+                Log::shareContext(array_filter([
+                    'request_id' => $payload['request_id'] ?? null,
+                    'job_id' => $event->job->getJobId(),
+                    'user_id' => $payload['user_id'] ?? null,
                     'attempt' => $event->job->attempts(),
-                ]);
-            Log::flushSharedContext();
+                ]));
+            } catch (Throwable) {
+                // Queue processing must continue when log context setup fails.
+            }
+        });
+        Queue::after(function (JobProcessed $event): void {
+            try {
+                Log::flushSharedContext();
+            } catch (Throwable) {
+                // Queue processing must continue when log context cleanup fails.
+            }
+        });
+        Queue::failing(function (JobFailed $event): void {
+            try {
+                $payload = $event->job->payload()['cvortex'] ?? [];
+                try {
+                    $shared = Log::sharedContext();
+                } catch (Throwable) {
+                    $shared = [];
+                }
+                $jobClass = $event->job->resolveName();
+                $providerException = $event->exception instanceof LlmProviderException ? $event->exception : null;
+                $providerFailure = $providerException !== null
+                    && in_array($jobClass, [AnalyzeVacancy::class, ExtractCareerSource::class], true);
+                $providerCode = $providerFailure ? ErrorCatalog::providerFailureCode($providerException) : null;
+                app(IncidentRecorder::class)->record($providerCode ?? 'QUEUE_JOB_FAILED',
+                    $providerCode === null ? 'A background operation failed.' : ErrorCatalog::incidentDetails($providerCode)['message'],
+                    $providerFailure ? ($jobClass === AnalyzeVacancy::class ? 'vacancy' : 'career') : 'queue',
+                    'ERROR', $event->exception, [
+                        'request_id' => $payload['request_id'] ?? null, 'user_id' => $payload['user_id'] ?? null,
+                        'job_id' => $event->job->getJobId(), 'llm_run_id' => $shared['llm_run_id'] ?? null,
+                        'operation' => $jobClass,
+                        'queue' => $event->job->getQueue(), 'connection' => $event->connectionName,
+                        'provider' => $providerException?->providerName,
+                        'attempt' => $event->job->attempts(),
+                    ]);
+            } catch (Throwable) {
+                // Never let the failed-job observer replace the original queue exception.
+            } finally {
+                try {
+                    Log::flushSharedContext();
+                } catch (Throwable) {
+                    // Never let context cleanup replace the original queue exception.
+                }
+            }
         });
         $this->app->booted(function (): void {
             if (! config('mcp.enabled')) {

@@ -21,7 +21,11 @@ final class EnsureRequestId
             : (string) Str::uuid();
 
         $request->attributes->set('request_id', $requestId);
-        Log::shareContext(['request_id' => $requestId]);
+        try {
+            Log::shareContext(['request_id' => $requestId]);
+        } catch (\Throwable) {
+            // Request handling and response correlation remain available without the log sink.
+        }
 
         $response = $next($request);
         if ($response instanceof JsonResponse && $response->getStatusCode() >= 400

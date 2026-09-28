@@ -180,7 +180,7 @@ class ApplicationPreparationService
                 $run->forceFill(['status' => 'FAILED', 'validation_result' => 'BLOCK', 'error_category' => $exception instanceof LlmProviderException ? $exception->category : 'OUTPUT_REJECTED'])->save();
             }
             if ($exception instanceof ValidationException && array_key_exists('generation', $exception->errors())) {
-                app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', 'Application draft output failed server validation.', 'application', 'ERROR', $exception, [
+                app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', ErrorCatalog::incidentDetails('LLM_OUTPUT_INVALID')['message'], 'application', 'ERROR', $exception, [
                     'llm_run_id' => $run->id,
                     'application_id' => $preparation->id,
                     'user_id' => $user->id,
@@ -246,7 +246,7 @@ class ApplicationPreparationService
         $code = ErrorCatalog::providerFailureCode($exception);
         app(IncidentRecorder::class)->record(
             $code,
-            $code === 'LLM_OUTPUT_INVALID' ? 'Application draft generation returned malformed content.' : 'Application draft generation failed.',
+            ErrorCatalog::incidentDetails($code)['message'],
             'application',
             'ERROR',
             $exception,

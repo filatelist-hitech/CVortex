@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\VacancyOutputException;
 use App\Models\User;
 use App\Models\Vacancy;
@@ -30,6 +31,12 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
         return $this->ownerId.':'.$this->snapshotId;
     }
 
+    /** @return list<int> */
+    public function backoff(): array
+    {
+        return [5, 30];
+    }
+
     public function handle(VacancyAnalysisService $service, DatabaseOwnerContext $ownerContext): void
     {
         $ownerContext->run($this->ownerId, function () use ($service): void {
@@ -48,7 +55,26 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
                 $service->analyze($user, $snapshot);
             } catch (VacancyOutputException) {
                 // Invalid semantic output is terminal until an explicit user retry.
+            } catch (LlmProviderException $exception) {
+                $this->retryOrFail($exception);
             }
         });
+    }
+
+    private function retryOrFail(LlmProviderException $exception): void
+    {
+        if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
+            $this->fail($exception);
+
+            return;
+        }
+
+        $delay = $exception->retryAfterSeconds;
+        if ($delay === null || $delay < 0 || $delay > 86400) {
+            $delays = $this->backoff();
+            $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
+        }
+
+        $this->release($delay);
     }
 }

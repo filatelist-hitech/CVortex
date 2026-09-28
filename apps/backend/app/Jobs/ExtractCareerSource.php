@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\AI\Exceptions\CareerOutputException;
+use App\AI\Exceptions\LlmProviderException;
 use App\Models\CareerSource;
 use App\Models\User;
 use App\Services\CareerExtractionService;
@@ -28,6 +29,12 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
         return $this->ownerId.':'.$this->sourceId;
     }
 
+    /** @return list<int> */
+    public function backoff(): array
+    {
+        return [5, 30];
+    }
+
     public function handle(CareerExtractionService $service): void
     {
         $user = User::query()->find($this->ownerId);
@@ -41,6 +48,25 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
         } catch (CareerOutputException) {
             // Invalid model output is terminal for this source; the service has
             // already persisted a retryable FAILED state for an explicit retry.
+        } catch (LlmProviderException $exception) {
+            $this->retryOrFail($exception);
         }
+    }
+
+    private function retryOrFail(LlmProviderException $exception): void
+    {
+        if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
+            $this->fail($exception);
+
+            return;
+        }
+
+        $delay = $exception->retryAfterSeconds;
+        if ($delay === null || $delay < 0 || $delay > 86400) {
+            $delays = $this->backoff();
+            $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
+        }
+
+        $this->release($delay);
     }
 }

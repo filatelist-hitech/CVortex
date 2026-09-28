@@ -434,13 +434,15 @@ class McpGatewayTest extends TestCase
         $this->assertSame('INTERNAL_ERROR', $response->json('result.content.0.text'));
         $this->assertStringNotContainsString($secret, $response->getContent());
         $this->assertStringNotContainsString('Stack trace', $response->getContent());
-        Log::shouldHaveReceived('error')->withArgs(static function (string $message, array $context) use ($secret): bool {
-            return $message === 'mcp.tool_failed'
-                && ($context['tool'] ?? null) === 'vacancy_get'
-                && ($context['exception_type'] ?? null) === \RuntimeException::class
+        Log::shouldHaveReceived('log')->withArgs(static function (string $level, string $message, array $context) use ($secret): bool {
+            return $level === 'error'
+                && $message === 'diagnostics.incident'
+                && ($context['error_code'] ?? null) === 'MCP_TOOL_FAILED'
+                && ($context['exception_class'] ?? null) === \RuntimeException::class
                 && ! str_contains(json_encode($context), $secret)
                 && ! array_key_exists('exception', $context);
         });
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'MCP_TOOL_FAILED']);
     }
 
     /** @return array{0: User, 1: string} */

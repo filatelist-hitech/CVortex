@@ -547,9 +547,10 @@ class CareerCoreRemediationTest extends TestCase
             $this->addToAssertionCount(1);
         }
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_FAILED']);
+        Log::shouldHaveReceived('log')->withArgs(function (string $level, string $message, array $context) use ($private): bool {
             return $level === 'error' && $message === 'diagnostics.incident'
-                && $context['error_code'] === 'LLM_PROVIDER_UNAVAILABLE'
+                && $context['error_code'] === 'LLM_PROVIDER_FAILED'
                 && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
         });
     }
@@ -565,9 +566,15 @@ class CareerCoreRemediationTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/api/v1/career/extractions', ['source_text' => $private])
             ->assertStatus(500)
-            ->assertJsonPath('error.code', 'CAREER_OPERATION_FAILED');
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR')
+            ->assertJsonPath('error.retryable', false);
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldNotHaveReceived('error');
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'INTERNAL_ERROR']);
+        Log::shouldHaveReceived('log')->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'INTERNAL_ERROR'
+                && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
+        });
     }
 
     /** @return array{fact_type: string, assertion: string, source_excerpt: string, confidence: float} */

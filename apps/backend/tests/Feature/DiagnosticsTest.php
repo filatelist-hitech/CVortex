@@ -7,7 +7,17 @@ use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Diagnostics\Redactor;
 use App\Diagnostics\StructuredLogs;
+use App\Jobs\AnalyzeVacancy;
+use App\Jobs\ExtractCareerSource;
+use App\Models\CareerProfile;
+use App\Models\CareerSource;
 use App\Models\User;
+use App\Models\Vacancy;
+use App\Models\VacancySnapshot;
+use App\Services\CareerExtractionService;
+use App\Services\DatabaseOwnerContext;
+use App\Services\DependencyProbe;
+use App\Services\VacancyAnalysisService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -39,11 +49,18 @@ class DiagnosticsTest extends TestCase
         Route::get('/api/v1/_diagnostics-test/fail', fn () => throw new \RuntimeException('Authorization: Bearer SECRET_CANARY api_key=SECRET_CANARY password=SECRET_CANARY'));
         Route::get('/api/v1/_diagnostics-test/controlled', fn () => response()->json(['error' => ['code' => 'PROVIDER_ERROR']], 503));
         Route::get('/api/v1/_diagnostics-test/controlled-retryable', fn () => response()->json(['error' => ['code' => 'PROVIDER_ERROR', 'retryable' => true]], 503));
-        Route::get('/api/v1/_diagnostics-test/provider-rate-limited', fn () => throw new LlmProviderException(LlmProviderException::RATE_LIMITED));
+        Route::get('/api/v1/_diagnostics-test/provider-rate-limited', fn () => throw new LlmProviderException(
+            LlmProviderException::RATE_LIMITED,
+            retryAfterSeconds: 45,
+        ));
         Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE));
         Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
         Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
         Route::get('/api/v1/_diagnostics-test/provider-malformed-output', fn () => throw new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT));
+        Route::get('/api/v1/_diagnostics-test/http-service-unavailable', fn () => throw new HttpException(503, 'Dependency failed.', headers: [
+            'Retry-After' => '20', 'Set-Cookie' => 'session=SECRET_CANARY',
+        ]));
+        Route::get('/api/v1/career/_diagnostics-test/unclassified', fn () => throw new \RuntimeException('Unknown operation failure.'));
         Route::get('/api/v1/_diagnostics-test/http-exception-headers', fn () => throw new HttpException(429, 'Too many requests.', headers: [
             'Retry-After' => '30', 'X-RateLimit-Limit' => '60', 'X-RateLimit-Remaining' => '0',
             'X-RateLimit-Reset' => '1234567890', 'RateLimit-Policy' => '60;w=60',
@@ -93,13 +110,55 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('diagnostic_incidents', ['component' => 'sink', 'occurrence_count' => 1]);
     }
 
+    public function test_failure_of_both_diagnostic_sinks_returns_false_without_replacing_the_primary_exception(): void
+    {
+        Log::shouldReceive('sharedContext')->once()->andThrow(new \RuntimeException('log context unavailable'));
+        Log::shouldReceive('log')->once()->andThrow(new \RuntimeException('log sink unavailable'));
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('database unavailable'));
+        $original = new \RuntimeException('primary operation failure');
+
+        $stored = app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'failure_sinks', exception: $original);
+
+        $this->assertFalse($stored);
+        $this->assertSame('primary operation failure', $original->getMessage());
+    }
+
+    public function test_readiness_probe_preserves_dependency_failure_when_diagnostics_also_fail(): void
+    {
+        DB::shouldReceive('select')->once()->andThrow(new \RuntimeException('postgres unavailable'));
+        DB::shouldReceive('purge')->once()->andThrow(new \RuntimeException('purge unavailable'));
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('postgres unavailable'));
+        Log::shouldReceive('sharedContext')->once()->andThrow(new \RuntimeException('log context unavailable'));
+        Log::shouldReceive('log')->once()->andThrow(new \RuntimeException('log sink unavailable'));
+
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
+
+    public function test_request_id_middleware_keeps_http_response_working_when_log_context_fails(): void
+    {
+        Route::get('/api/v1/_diagnostics-test/log-context-failure', fn () => response()->json(['data' => 'ok']));
+        Log::shouldReceive('shareContext')->once()->andThrow(new \RuntimeException('log sink unavailable'));
+
+        $response = $this->withHeader('X-Request-ID', 'req_without_log_context')->getJson('/api/v1/_diagnostics-test/log-context-failure')->assertOk();
+        $this->assertSame('req_without_log_context', $response->headers->get('X-Request-ID'));
+    }
+
     public function test_nested_secrets_are_redacted(): void
     {
         $safe = Redactor::context(['Authorization' => 'Bearer SECRET_CANARY', 'nested' => [
             'API_KEY' => 'SECRET_CANARY', 'message' => 'password=SECRET_CANARY',
+            'headers' => ['X-API-Key' => 'SECRET_CANARY', 'Cookie' => 'session=SECRET_CANARY'],
+            'prompt' => 'Candidate experience SECRET_CANARY',
         ]]);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode($safe));
         $this->assertStringNotContainsString('SECRET_CANARY', Redactor::text('{"nested":{"api_key":"SECRET_CANARY"}}'));
+        $unstructured = Redactor::text("Authorization: Basic SECRET_CANARY extra words\npassword=\"two words SECRET_CANARY\"\nhttps://example.test/?access_token=SECRET_CANARY&next=ok\nCookie: a=ok; session=SECRET_CANARY");
+        $this->assertStringNotContainsString('SECRET_CANARY', $unstructured);
+        $this->assertStringContainsString('next=ok', $unstructured);
+        $encodedQuery = Redactor::text('https://example.test/?access%255Ftoken=ENCODED_SECRET_CANARY&next=ok');
+        $this->assertStringNotContainsString('ENCODED_SECRET_CANARY', $encodedQuery);
+        $nestedJson = Redactor::text('{"request":{"api_key":{"value":"SECRET_CANARY"},"prompt":"private prompt SECRET_CANARY"}}');
+        $this->assertStringNotContainsString('SECRET_CANARY', $nestedJson);
     }
 
     public function test_structured_logger_redacts_escaped_json_secret_values(): void
@@ -135,6 +194,9 @@ class DiagnosticsTest extends TestCase
             }
         }
 
+        $this->assertDatabaseHas('diagnostic_incidents', [
+            'error_code' => 'INTERNAL_ERROR', 'component' => 'console', 'exception_class' => \RuntimeException::class,
+        ]);
         Log::shouldHaveReceived('error')->once()->withArgs(fn ($message, $context): bool => ($context['exception'] ?? null) === $original);
     }
 
@@ -216,15 +278,19 @@ class DiagnosticsTest extends TestCase
 
     public function test_provider_error_contract_uses_failure_category_for_retryability(): void
     {
-        $this->getJson('/api/v1/_diagnostics-test/provider-rate-limited')->assertStatus(503)
-            ->assertJsonPath('error.retryable', true);
-        $this->getJson('/api/v1/_diagnostics-test/provider-temporary')->assertStatus(503)
-            ->assertJsonPath('error.retryable', true);
+        $rateLimited = $this->withHeader('X-Request-ID', 'req_provider_rate')->getJson('/api/v1/_diagnostics-test/provider-rate-limited')->assertStatus(503)
+            ->assertJsonPath('error.code', 'LLM_PROVIDER_RATE_LIMITED')->assertJsonPath('error.retryable', true);
+        $this->assertSame('req_provider_rate', $rateLimited->headers->get('X-Request-ID'));
+        $this->assertSame('45', $rateLimited->headers->get('Retry-After'));
+        $this->assertSame('LLM_PROVIDER_RATE_LIMITED', $rateLimited->json('error.code'));
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_RATE_LIMITED', 'retryable' => true]);
+        $this->withHeader('X-Request-ID', 'req_provider_temporary')->getJson('/api/v1/_diagnostics-test/provider-temporary')->assertStatus(503)
+            ->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
         $configured = $this->getJson('/api/v1/_diagnostics-test/provider-config')->assertStatus(503)
-            ->assertJsonPath('error.retryable', false)->json();
+            ->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('retry', strtolower($configured['error']['message']));
         $this->getJson('/api/v1/_diagnostics-test/provider-invalid-config')->assertStatus(503)
-            ->assertJsonPath('error.retryable', false);
+            ->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')->assertJsonPath('error.retryable', false);
         $malformedResponse = $this->withHeader('X-Request-ID', 'req_malformed_output')->getJson('/api/v1/_diagnostics-test/provider-malformed-output')->assertStatus(503)
             ->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false);
         $this->assertSame('req_malformed_output', $malformedResponse->json('error.request_id'));
@@ -237,6 +303,24 @@ class DiagnosticsTest extends TestCase
         $this->assertSame('LLM_OUTPUT_INVALID', ErrorCatalog::providerFailureCode(
             new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT),
         ));
+        $categories = [
+            LlmProviderException::TRANSPORT => ['LLM_PROVIDER_UNAVAILABLE', true],
+            LlmProviderException::RATE_LIMITED => ['LLM_PROVIDER_RATE_LIMITED', true],
+            LlmProviderException::TEMPORARY_UNAVAILABLE => ['LLM_PROVIDER_UNAVAILABLE', true],
+            LlmProviderException::NOT_CONFIGURED => ['LLM_PROVIDER_CONFIGURATION', false],
+            LlmProviderException::INVALID_CONFIGURATION => ['LLM_PROVIDER_CONFIGURATION', false],
+            LlmProviderException::MALFORMED_OUTPUT => ['LLM_OUTPUT_INVALID', false],
+            LlmProviderException::REFUSAL => ['LLM_REQUEST_REFUSED', false],
+            LlmProviderException::INCOMPLETE => ['LLM_RESPONSE_INCOMPLETE', false],
+            LlmProviderException::PROVIDER => ['LLM_PROVIDER_FAILED', false],
+        ];
+        foreach ($categories as $category => [$code, $retryable]) {
+            $entry = ErrorCatalog::classify(new LlmProviderException($category));
+            $this->assertSame($code, $entry['code']);
+            $this->assertSame($retryable, $entry['retryable']);
+            $this->assertSame('ERROR', $entry['severity']);
+            $this->assertSame($code, ErrorCatalog::providerFailureCode(new LlmProviderException($category)));
+        }
     }
 
     public function test_http_exception_response_preserves_only_safe_headers(): void
@@ -257,6 +341,18 @@ class DiagnosticsTest extends TestCase
         $methodError = $this->getJson('/api/v1/_diagnostics-test/method-only')->assertStatus(405)
             ->assertJsonPath('error.code', 'REQUEST_REJECTED');
         $this->assertStringContainsString('POST', (string) $methodError->headers->get('Allow'));
+
+        $serviceUnavailable = $this->withHeader('X-Request-ID', 'req_http_503')->getJson('/api/v1/_diagnostics-test/http-service-unavailable')
+            ->assertStatus(503)->assertJsonPath('error.code', 'INTERNAL_ERROR')->assertJsonPath('error.retryable', false);
+        $this->assertSame('req_http_503', $serviceUnavailable->json('error.request_id'));
+        $this->assertSame('req_http_503', $serviceUnavailable->headers->get('X-Request-ID'));
+        $this->assertSame('20', $serviceUnavailable->headers->get('Retry-After'));
+        $this->assertNull($serviceUnavailable->headers->get('Set-Cookie'));
+        $this->assertStringContainsString('application/json', (string) $serviceUnavailable->headers->get('Content-Type'));
+        $this->assertStringNotContainsString('SECRET_CANARY', $serviceUnavailable->getContent());
+
+        $this->getJson('/api/v1/career/_diagnostics-test/unclassified')->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR')->assertJsonPath('error.retryable', false);
     }
 
     public function test_throttled_api_responses_use_the_retryable_rate_limit_contract(): void
@@ -281,8 +377,13 @@ class DiagnosticsTest extends TestCase
         $this->as($user)->getJson('/api/v1/diagnostics/incidents')->assertStatus(403);
         $this->as($user)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertStatus(403);
         $this->as($user)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertStatus(403);
-        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?search=req_test')->assertOk()->assertJsonPath('data.total', 1);
-        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()->assertJsonPath('data.occurrences.0.request_id', 'req_test');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?search=req_test')->assertOk()
+            ->assertJsonPath('data.total', 1)->assertJsonPath('data.last_page', 1);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.request_id', 'req_test')
+            ->assertJsonPath('data.incident.retryable', false)
+            ->assertJsonPath('data.incident.impact', 'The affected operation did not complete.')
+            ->assertJsonPath('data.incident.recovery_action', 'Inspect the sanitized incident details and dependency health.');
         $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk()->assertJsonPath('data.incident.status', 'RESOLVED');
         $this->assertDatabaseHas('audit_events', ['event_type' => 'diagnostics.incident.status_changed']);
     }
@@ -331,6 +432,74 @@ class DiagnosticsTest extends TestCase
         }
         $this->assertDatabaseCount('diagnostic_incidents', 3);
         $this->assertDatabaseCount('diagnostic_occurrences', 3);
+    }
+
+    public function test_browser_report_returns_a_safe_failure_when_no_diagnostic_sink_accepts_it(): void
+    {
+        $user = $this->user('user');
+        Log::shouldReceive('sharedContext')->once()->andReturn([]);
+        Log::shouldReceive('log')->once()->andThrow(new \RuntimeException('log sink unavailable'));
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('database unavailable'));
+
+        $response = $this->as($user)->postJson('/api/v1/diagnostics/report', ['component' => 'browser', 'kind' => 'runtime'])
+            ->assertStatus(503)->assertJsonPath('error.code', 'DIAGNOSTICS_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+        $this->assertSame($response->json('error.request_id'), $response->headers->get('X-Request-ID'));
+    }
+
+    public function test_terminal_llm_failures_stop_queue_jobs_and_transient_failures_use_bounded_retry_delays(): void
+    {
+        $user = $this->user('user');
+        $vacancy = Vacancy::query()->create(['owner_id' => $user->id, 'title' => 'Engineer', 'company' => 'Example']);
+        $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, 'Source text.', null, hash('sha256', 'Source text.'), now());
+        $analysisFailure = new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION);
+        $analysis = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+        $analysisService = Mockery::mock(VacancyAnalysisService::class);
+        $analysisService->shouldReceive('analyze')->once()->andThrow($analysisFailure);
+        $analysis->handle($analysisService, app(DatabaseOwnerContext::class));
+        $analysis->assertFailedWith(LlmProviderException::class);
+        $this->assertSame([5, 30], $analysis->backoff());
+
+        $analysisRateLimit = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 37);
+        $analysisRetry = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+        $analysisRetryService = Mockery::mock(VacancyAnalysisService::class);
+        $analysisRetryService->shouldReceive('analyze')->once()->andThrow($analysisRateLimit);
+        $analysisRetry->handle($analysisRetryService, app(DatabaseOwnerContext::class));
+        $analysisRetry->assertReleased(37)->assertNotFailed();
+
+        $profile = CareerProfile::query()->create(['owner_id' => $user->id]);
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id, 'career_profile_id' => $profile->id, 'kind' => 'PASTED_TEXT',
+            'source_text' => 'Career source.', 'content_hash' => hash('sha256', 'Career source.'),
+        ]);
+        $careerFailure = new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
+        $career = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $careerService = Mockery::mock(CareerExtractionService::class);
+        $careerService->shouldReceive('extract')->once()->andThrow($careerFailure);
+        $career->handle($careerService);
+        $career->assertFailedWith(LlmProviderException::class);
+        $this->assertSame([5, 30], $career->backoff());
+
+        $retryableFailure = new LlmProviderException(LlmProviderException::TRANSPORT);
+        $retryableJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $retryableService = Mockery::mock(CareerExtractionService::class);
+        $retryableService->shouldReceive('extract')->once()->andThrow($retryableFailure);
+        $retryableJob->handle($retryableService);
+        $retryableJob->assertReleased(5)->assertNotFailed();
+
+        $careerRateLimit = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 37);
+        $careerRateLimitJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $careerRateLimitService = Mockery::mock(CareerExtractionService::class);
+        $careerRateLimitService->shouldReceive('extract')->once()->andThrow($careerRateLimit);
+        $careerRateLimitJob->handle($careerRateLimitService);
+        $careerRateLimitJob->assertReleased(37)->assertNotFailed();
+    }
+
+    public function test_expected_missing_console_record_has_a_safe_operator_message(): void
+    {
+        $this->artisan('user:enable', ['id' => (string) Str::ulid()])
+            ->assertExitCode(1)
+            ->expectsOutput('The requested record was not found.');
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'CLI_COMMAND_FAILED']);
     }
 
     public function test_final_queue_failure_is_correlated(): void

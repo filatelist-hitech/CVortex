@@ -21,6 +21,17 @@ final class IncidentRecorder
     /** @param array<string, mixed> $context */
     public function record(string $code, string $safeMessage, string $component, string $severity = 'ERROR', ?Throwable $exception = null, array $context = []): bool
     {
+        try {
+            return $this->recordSafely($code, $safeMessage, $component, $severity, $exception, $context);
+        } catch (Throwable) {
+            // Classification and sanitization are part of reporting too: they must not replace the primary failure.
+            return false;
+        }
+    }
+
+    /** @param array<string, mixed> $context */
+    private function recordSafely(string $code, string $safeMessage, string $component, string $severity, ?Throwable $exception, array $context): bool
+    {
         $logged = false;
         $stored = false;
         try {
@@ -31,6 +42,7 @@ final class IncidentRecorder
         $safeContext = Redactor::context([...($shared ?: []), ...$context]);
         $safeStack = $exception === null ? null : Redactor::stack($exception);
         $fingerprint = hash('sha256', implode('|', [$code, $component, $exception ? $exception::class : '', $safeContext['operation'] ?? '']));
+        $details = ErrorCatalog::incidentDetails($code);
         try {
             $logContext = [
                 'event_name' => 'diagnostics.incident', 'error_code' => $code, 'component' => $component,
@@ -46,13 +58,14 @@ final class IncidentRecorder
         }
 
         try {
-            $stored = DB::transaction(function () use ($fingerprint, $code, $safeMessage, $component, $severity, $exception, $safeContext, $safeStack): bool {
+            $stored = DB::transaction(function () use ($fingerprint, $code, $safeMessage, $component, $severity, $exception, $safeContext, $safeStack, $details): bool {
                 $now = now();
                 DB::table('diagnostic_incidents')->insertOrIgnore([
                     'id' => (string) Str::ulid(), 'fingerprint' => $fingerprint, 'status' => 'OPEN',
                     'severity' => $severity, 'error_code' => $code, 'service' => $safeContext['service'] ?? 'backend',
                     'component' => $component, 'environment' => app()->environment(),
                     'message' => Redactor::text($safeMessage), 'exception_class' => $exception ? $exception::class : null,
+                    'retryable' => $details['retryable'], 'impact' => $details['impact'], 'recovery_action' => $details['recovery_action'],
                     'occurrence_count' => 0, 'first_seen_at' => $now, 'last_seen_at' => $now,
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
@@ -83,7 +96,7 @@ final class IncidentRecorder
 
                 return true;
             });
-            if ($stored && $exception !== null) {
+            if (($logged || $stored) && $exception !== null) {
                 self::$recordedExceptions ??= new WeakMap;
                 self::$recordedExceptions[$exception] = true;
             }

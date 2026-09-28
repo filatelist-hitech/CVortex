@@ -175,7 +175,7 @@ class VacancyAnalysisService
                 'validation_result' => $exception->category,
                 'error_category' => $exception->category,
             ])->save();
-            app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', 'Vacancy analysis returned unsupported data.', 'vacancy', 'ERROR', $exception, [
+            app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', ErrorCatalog::incidentDetails('LLM_OUTPUT_INVALID')['message'], 'vacancy', 'ERROR', $exception, [
                 'llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'vacancy_requirement_extraction',
             ]);
             throw $exception;
@@ -204,7 +204,8 @@ class VacancyAnalysisService
                     // Keep the provider failure as the primary error.
                 }
             } else {
-                app(IncidentRecorder::class)->record(ErrorCatalog::providerFailureCode($exception), 'Vacancy analysis provider failed.', 'vacancy', 'ERROR', $exception, [
+                $code = ErrorCatalog::providerFailureCode($exception);
+                app(IncidentRecorder::class)->record($code, ErrorCatalog::incidentDetails($code)['message'], 'vacancy', 'ERROR', $exception, [
                     'llm_run_id' => $run->id, 'user_id' => $user->id, 'provider' => $exception->providerName,
                     'operation' => 'vacancy_requirement_extraction',
                 ]);

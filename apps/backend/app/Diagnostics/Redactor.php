@@ -8,9 +8,34 @@ final class Redactor
 {
     public static function text(string $value): string
     {
-        $value = preg_replace('/\bBearer\s+\S+/i', 'Bearer [REDACTED]', $value) ?? '[REDACTED]';
-        $value = preg_replace('/"(password(?:_confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api_?key|client_secret|secret)"\s*:\s*"(?:\\\\.|[^"\\\\])*"/i', '"$1":"[REDACTED]"', $value) ?? '[REDACTED]';
-        $value = preg_replace('/\b(password(?:_confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api_?key|client_secret|secret)\s*[:=]\s*[^\s,;&]+/i', '$1=[REDACTED]', $value) ?? '[REDACTED]';
+        $trimmed = trim($value);
+        if (str_starts_with($trimmed, '{') || str_starts_with($trimmed, '[')) {
+            try {
+                $decoded = json_decode($trimmed, true, 8, JSON_THROW_ON_ERROR);
+                if (is_array($decoded)) {
+                    $encoded = json_encode(self::context($decoded), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+                    $value = $encoded;
+                }
+            } catch (\JsonException) {
+                // Freeform text still passes through the token and key-value redactors below.
+            }
+        }
+        $value = preg_replace('/\bBearer\s+[^\s,;&]+/i', 'Bearer [REDACTED]', $value) ?? '[REDACTED]';
+        $value = preg_replace('/\b(?:Cookie|Set-Cookie)\s*:\s*[^\r\n]*/i', 'Cookie: [REDACTED]', $value) ?? '[REDACTED]';
+        $sensitive = 'password(?:[_ -]confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api[-_ ]?key|client[-_ ]?secret|secret|credential|prompt|source_text|raw_text|resume|candidate_data|recruiter_message|email|phone';
+        $value = preg_replace_callback('/([?&])([^=&#]+)=([^&#]*)/', static function (array $match) use ($sensitive): string {
+            $key = $match[2];
+            for ($decode = 0; $decode < 3; $decode++) {
+                $key = urldecode($key);
+                if (preg_match('/'.$sensitive.'/i', $key) === 1) {
+                    return $match[1].$match[2].'=[REDACTED]';
+                }
+            }
+
+            return $match[0];
+        }, $value) ?? '[REDACTED]';
+        $value = preg_replace('/"('.$sensitive.')"\s*:\s*"(?:\\\\.|[^"\\\\])*"/i', '"$1":"[REDACTED]"', $value) ?? '[REDACTED]';
+        $value = preg_replace('/\b('.$sensitive.')\s*[:=]\s*(?:"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|[^,\r\n;&]*)/i', '$1=[REDACTED]', $value) ?? '[REDACTED]';
 
         return mb_substr($value, 0, 500);
     }
@@ -26,8 +51,13 @@ final class Redactor
         if (is_array($value)) {
             $safe = [];
             foreach (array_slice($value, 0, 40, true) as $key => $item) {
-                $safe[$key] = preg_match('/password|token|authorization|cookie|secret|api.?key|session|prompt|response|source_text|raw_text|resume|email|phone/i', (string) $key)
-                    ? '[REDACTED]' : self::context($item, $depth + 1);
+                if (preg_match('/password|token|authorization|cookie|secret|credential|api.?key|session|prompt|response|source_text|raw_text|resume|\bcv\b|candidate|recruiter|email|phone|request_body|response_body/i', (string) $key)) {
+                    $safe[$key] = '[REDACTED]';
+                } elseif (strtolower((string) $key) === 'safe_stack' && is_string($item)) {
+                    $safe[$key] = implode("\n", array_map(static fn (string $line): string => mb_substr($line, 0, 500), array_slice(explode("\n", $item), 0, 12)));
+                } else {
+                    $safe[$key] = self::context($item, $depth + 1);
+                }
             }
 
             return $safe;
@@ -39,9 +69,23 @@ final class Redactor
     public static function stack(Throwable $exception): string
     {
         $origin = basename($exception->getFile() ?: 'runtime').':'.$exception->getLine().' '.$exception::class.' (throw site)';
-        $frames = array_slice($exception->getTrace(), 0, 11);
+        $applicationFrames = [];
+        $frameworkFrames = [];
+        foreach (array_slice($exception->getTrace(), 0, 50) as $frame) {
+            $file = str_replace('\\', '/', (string) ($frame['file'] ?? ''));
+            $rendered = basename($file !== '' ? $file : 'runtime').':'.(int) ($frame['line'] ?? 0).' '.
+                self::text((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']);
+            if (str_contains($file, '/app/') || str_contains($file, '/routes/')) {
+                $applicationFrames[] = '[app] '.$rendered;
+            } else {
+                $frameworkFrames[] = '[framework] '.$rendered;
+            }
+        }
+        $frames = [...array_slice($applicationFrames, 0, 11)];
+        if (count($frames) < 11) {
+            $frames = [...$frames, ...array_slice($frameworkFrames, 0, 11 - count($frames))];
+        }
 
-        return implode("\n", [$origin, ...array_map(static fn (array $frame): string => basename((string) ($frame['file'] ?? 'runtime')).':'.(int) ($frame['line'] ?? 0).' '.
-            self::text((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']), $frames)]);
+        return implode("\n", [$origin, ...$frames]);
     }
 }

@@ -32,7 +32,7 @@ class ApplicationPreparationController extends Controller
         try {
             return response()->json(['data' => $service->generate($request->user(), $preparation)]);
         } catch (LlmProviderException $exception) {
-            return $this->providerFailure($exception, 'GENERATION_UNAVAILABLE', 'Draft generation');
+            return $this->providerFailure($exception, $request);
         }
     }
 
@@ -49,7 +49,7 @@ class ApplicationPreparationController extends Controller
                 ? $service->edit($request->user(), $item, trim((string) $data['content']))
                 : $service->decide($request->user(), $item, $data['action']);
         } catch (LlmProviderException $exception) {
-            return $this->providerFailure($exception, 'VALIDATION_UNAVAILABLE', 'Draft truth validation');
+            return $this->providerFailure($exception, $request);
         }
 
         return response()->json(['data' => $resource]);
@@ -62,29 +62,23 @@ class ApplicationPreparationController extends Controller
         try {
             return response()->json(['data' => $service->approve($request->user(), $item)]);
         } catch (LlmProviderException $exception) {
-            return $this->providerFailure($exception, 'VALIDATION_UNAVAILABLE', 'Draft truth validation');
+            return $this->providerFailure($exception, $request);
         }
     }
 
-    private function providerFailure(LlmProviderException $exception, string $code, string $operation): JsonResponse
+    private function providerFailure(LlmProviderException $exception, Request $request): JsonResponse
     {
-        if ($exception->category === LlmProviderException::MALFORMED_OUTPUT) {
-            $code = ErrorCatalog::providerFailureCode($exception);
-        }
-        $message = match (true) {
-            $exception->category === LlmProviderException::MALFORMED_OUTPUT => 'The generated draft could not be validated. Contact your administrator.',
-            $exception->isRetryable() => $operation.' is temporarily unavailable.',
-            $exception->requiresConfiguration() => $operation.' needs configuration. Contact your administrator.',
-            default => $operation.' could not be completed. Contact your administrator.',
-        };
+        $entry = ErrorCatalog::classify($exception);
+        $requestId = $request->attributes->get('request_id');
 
         return response()->json([
-            'message' => $message,
+            'message' => $entry['message'],
             'error' => [
-                'code' => $code,
-                'message' => $message,
-                'retryable' => $exception->isRetryable(),
+                'code' => $entry['code'],
+                'message' => $entry['message'],
+                'request_id' => $requestId,
+                'retryable' => $entry['retryable'],
             ],
-        ], 503);
+        ], 503, ErrorCatalog::responseHeaders($exception));
     }
 }

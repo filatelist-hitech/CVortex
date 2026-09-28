@@ -4,7 +4,7 @@ status: accepted
 decision_nature: DERIVED_ARCHITECTURAL_DECISION
 owner: project
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-09-28
 tags: [architecture, operations, security, diagnostics]
 related: [ADR-0002, ADR-0003, ADR-0004, ADR-0005, ADR-0007]
 ---
@@ -33,7 +33,7 @@ The backend keeps accepted `/api/v1` and owner-derived identity boundaries. This
 
 ## Consequences
 
-The Error Center can search recent request, job, LLM and application IDs and show counts, but the bounded occurrences are not an exhaustive event archive. If PostgreSQL is unavailable, stderr is the incident source until recovery. Docker log rotation bounds local raw logs; operators must export logs separately if longer retention is required. Browser telemetry accepts only a fixed event kind and a finite server-validated component allowlist (`browser`, `app-root`, `global-root`), and derives user identity from the session. This bounds browser-created fingerprint combinations while preserving open incidents under the lifecycle retention rule. Provider retryability is classified by failure category; an HTTP 503 alone does not make an operation retryable. Explicit throttling responses use the `RATE_LIMITED` retry contract, and invalid generated application output is reported as an incident correlated to its preparation and LLM run.
+The Error Center can search recent request, job, LLM and application IDs and show counts, but the bounded occurrences are not an exhaustive event archive. Incident metadata includes category-derived retryability, impact and a recovery action. If PostgreSQL is unavailable, stderr is the incident source until recovery. Docker log rotation bounds local raw logs; operators must export logs separately if longer retention is required. Browser telemetry accepts only a fixed event kind and a finite server-validated component allowlist (`browser`, `app-root`, `global-root`), and derives user identity from the session. This bounds browser-created fingerprint combinations while preserving open incidents under the lifecycle retention rule. Provider retryability is classified by failure category; an HTTP 503 alone does not make an operation retryable. Queue jobs stop immediately for terminal provider categories and back off only for explicitly retryable categories, honoring a bounded provider `Retry-After` when supplied. First-party throttling responses use the `RATE_LIMITED` code; provider HTTP 429 failures use `LLM_PROVIDER_RATE_LIMITED` with the same explicit retryability and `Retry-After` behavior. Invalid generated application output is reported as an incident correlated to its preparation and LLM run. Uncaught CLI and scheduled-command failures, caught operator-command failures, and unexpected MCP tool failures are captured without replacing their primary outcome. In the Error Center, throw sites and application frames appear first; framework frames remain behind an explicit expansion.
 
 ## Alternatives
 

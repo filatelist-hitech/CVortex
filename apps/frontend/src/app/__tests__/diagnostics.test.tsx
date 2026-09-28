@@ -22,10 +22,10 @@ describe("diagnostic UI", () => {
 
   it("does not describe a non-retryable provider configuration error as retryable", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-      error: { code: "GENERATION_UNAVAILABLE", request_id: "req_config", retryable: false },
+      error: { code: "LLM_PROVIDER_CONFIGURATION", request_id: "req_config", retryable: false },
     }, { status: 503 }));
     const failure = await api("/api/v1/applications/generate").catch((error) => error);
-    expect(failure).toMatchObject({ code: "GENERATION_UNAVAILABLE", retryable: false });
+    expect(failure).toMatchObject({ code: "LLM_PROVIDER_CONFIGURATION", retryable: false });
     expect(failure.message).toContain("needs administrator configuration");
     expect(failure.message).not.toContain("retry");
   });
@@ -33,12 +33,13 @@ describe("diagnostic UI", () => {
   it("lists and filters incidents, then resolves detail", async () => {
     const incident = { id: "incident-1", error_code: "INTERNAL_ERROR", severity: "ERROR", status: "OPEN",
       message: "A safe failure.", service: "backend", component: "api", environment: "testing",
-      occurrence_count: 2, first_seen_at: "2026-09-27", last_seen_at: "2026-09-27", exception_class: "RuntimeException" };
+      occurrence_count: 2, first_seen_at: "2026-09-27", last_seen_at: "2026-09-27", exception_class: "RuntimeException",
+      retryable: false, impact: "The affected operation did not complete.", recovery_action: "Inspect the sanitized incident details and dependency health." };
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
       const path = String(input);
       if (path.startsWith("/api/v1/diagnostics/incidents?")) return Response.json({ data: { data: [incident] } });
       if (path.endsWith("/incident-1") && options?.method === "PATCH") return Response.json({ data: { incident: { ...incident, status: "RESOLVED" }, occurrences: [] } });
-      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [{ id: "event-1", request_id: "req_test", queue: "analysis-high", connection: "redis", created_at: "2026-09-27" }] } });
+      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [{ id: "event-1", request_id: "req_test", queue: "analysis-high", connection: "redis", created_at: "2026-09-27", safe_stack: "RuntimeException.php:7 RuntimeException (throw site)\n[app] ApplicationPreparationService.php:42 generate\n[framework] ControllerDispatcher.php:91 dispatch" }] } });
       throw new Error(path);
     });
     render(<Diagnostics />);
@@ -49,6 +50,13 @@ describe("diagnostic UI", () => {
     fireEvent.click(screen.getByRole("button", { name: /INTERNAL_ERROR/ }));
     expect(await screen.findByText(/Request req_test/)).toBeInTheDocument();
     expect(screen.getByText(/Queue analysis-high · Connection redis/)).toBeInTheDocument();
+    expect(screen.getByText("Next action:")).toBeInTheDocument();
+    expect(screen.getByText("Inspect the sanitized incident details and dependency health.")).toBeInTheDocument();
+    expect(screen.getAllByText(/ApplicationPreparationService.php/)).toHaveLength(2);
+    const traceDetails = screen.getByText("Show complete bounded trace").closest("details");
+    expect(traceDetails).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByText("Show complete bounded trace"));
+    expect(traceDetails).toHaveAttribute("open");
     fireEvent.click(screen.getByRole("button", { name: "RESOLVED" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/incident-1"), expect.objectContaining({ method: "PATCH" })));
   });
