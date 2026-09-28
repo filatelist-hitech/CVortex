@@ -1,118 +1,177 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api } from "../access-shell";
+import AccessShell from "../access-shell";
 import Diagnostics from "../diagnostics";
 import ErrorPage from "../error";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
-describe("diagnostic UI", () => {
-  it("shows a safe API error with code, reference and retry hint", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-      message: "SQLSTATE private secret", error: {
-        code: "INTERNAL_ERROR", request_id: "req_test", retryable: true,
-      },
-    }, { status: 500 }));
-    const failure = await api("/api/v1/fail").catch((error) => error);
-    expect(failure).toBeInstanceOf(ApiError);
-    expect(failure).toMatchObject({ code: "INTERNAL_ERROR", retryable: true });
-    expect(failure.message).toContain("[INTERNAL_ERROR] Reference: req_test You can retry.");
-    expect(failure.message).not.toContain("SQLSTATE");
+const incident = {
+  id: "incident-1", severity: "ERROR", status: "OPEN", error_code: "LLM_PROVIDER_UNAVAILABLE",
+  message: "The analysis service is temporarily unavailable.", service: "backend", component: "vacancy", environment: "testing",
+  occurrence_count: 23, first_seen_at: "2026-09-27T19:00:00Z", last_seen_at: "2026-09-28T19:00:00Z",
+  exception_class: "App\\AI\\Exceptions\\LlmProviderException", retryable: true,
+  impact: "The LLM-backed operation did not complete.", recovery_action: "Retry after the provider recovers; check provider status if the failure continues.",
+  latest_operation: "vacancy_requirement_extraction", latest_provider: "OpenAI",
+};
+const occurrence = {
+  id: "event-1", created_at: "2026-09-28T19:00:00Z", request_id: "req_123456789abcdefgh", job_id: "job_123456789abcdefgh",
+  llm_run_id: "run_123456789abcdefgh", application_id: "app_123456789abcdefgh", user_id: "user-1",
+  route: "/api/v1/vacancies", operation: "vacancy_requirement_extraction", provider: "OpenAI", queue: "analysis-high", connection: "redis", attempt: 3,
+  safe_stack: "ConfiguredLlmProvider.php:23 throw site\n[app] VacancyAnalysisService.php:135 analyze\n[framework] ControllerDispatcher.php:91 dispatch",
+};
+function mockData(items = [incident], detailIncident = incident) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+    const path = String(input);
+    if (path.includes("/diagnostics/incidents?")) return Response.json({ data: { data: items, current_page: 1, last_page: 1, total: items.length } });
+    if (path.endsWith("/incident-1") && options?.method === "PATCH") return Response.json({ data: { incident: { ...detailIncident, status: JSON.parse(String(options.body)).status }, occurrences: [occurrence] } });
+    if (path.endsWith("/incident-1")) return Response.json({ data: { incident: detailIncident, occurrences: [occurrence] } });
+    throw new Error(path);
   });
+}
+async function openDetail() {
+  render(<Diagnostics />);
+  fireEvent.click(await screen.findByRole("button", { name: /Vacancy analysis failed/ }));
+  await screen.findByRole("heading", { name: "Vacancy analysis failed" });
+}
 
-  it("does not describe a non-retryable provider configuration error as retryable", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-      error: { code: "LLM_PROVIDER_CONFIGURATION", request_id: "req_config", retryable: false },
-    }, { status: 503 }));
+describe("Error Center", () => {
+  it("keeps safe API recovery copy and retry flags", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ message: "SECRET", error: { code: "LLM_PROVIDER_CONFIGURATION", request_id: "req_config", retryable: false } }, { status: 503 }));
     const failure = await api("/api/v1/applications/generate").catch((error) => error);
+    expect(failure).toBeInstanceOf(ApiError);
     expect(failure).toMatchObject({ code: "LLM_PROVIDER_CONFIGURATION", retryable: false });
     expect(failure.message).toContain("needs administrator configuration");
-    expect(failure.message).not.toContain("retry");
+    expect(failure.message).not.toContain("SECRET");
   });
 
-  it("lists and filters incidents, then resolves detail", async () => {
-    const incident = { id: "incident-1", error_code: "INTERNAL_ERROR", severity: "ERROR", status: "OPEN",
-      message: "A safe failure.", service: "backend", component: "api", environment: "testing",
-      occurrence_count: 2, first_seen_at: "2026-09-27", last_seen_at: "2026-09-27", exception_class: "RuntimeException",
-      retryable: false, impact: "The affected operation did not complete.", recovery_action: "Inspect the sanitized incident details and dependency health." };
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
-      const path = String(input);
-      if (path.startsWith("/api/v1/diagnostics/incidents?")) return Response.json({ data: { data: [incident] } });
-      if (path.endsWith("/incident-1") && options?.method === "PATCH") return Response.json({ data: { incident: { ...incident, status: "RESOLVED" }, occurrences: [] } });
-      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [{ id: "event-1", request_id: "req_test", queue: "analysis-high", connection: "redis", created_at: "2026-09-27", safe_stack: "RuntimeException.php:7 RuntimeException (throw site)\n[app] ApplicationPreparationService.php:42 generate\n[framework] ControllerDispatcher.php:91 dispatch" }] } });
-      throw new Error(path);
-    });
+  it("shows scan-first rows, count, readable time, and compact filters", async () => {
+    const fetchMock = mockData();
     render(<Diagnostics />);
-    expect(await screen.findByText("INTERNAL_ERROR")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("search"), { target: { value: "req_test" } });
+    expect(screen.getByRole("status", { name: "Loading incidents" })).toBeInTheDocument();
+    const row = await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    expect(row).toHaveTextContent("Provider temporarily unavailable");
+    expect(row).toHaveTextContent("23 occurrences");
+    expect(row).toHaveTextContent("OpenAI");
+    expect(row).not.toHaveTextContent("LlmProviderException");
+    expect(row).not.toHaveTextContent("incident-1");
+    expect(within(row).getByText(/Last seen/).querySelector("time")).toHaveAttribute("title", expect.stringContaining("2026"));
+    expect(screen.getByLabelText("Sort")).toHaveValue("priority");
+    expect(screen.getByRole("button", { name: "More filters" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText("application id")).not.toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "More filters" }));
+    expect(screen.getByLabelText("application id")).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "OPEN" } });
+    fireEvent.change(screen.getByLabelText("Time"), { target: { value: "24" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("search=req_test"), expect.anything()));
-    fireEvent.click(screen.getByRole("button", { name: /INTERNAL_ERROR/ }));
-    expect(await screen.findByText(/Request req_test/)).toBeInTheDocument();
-    expect(screen.getByText(/Queue analysis-high · Connection redis/)).toBeInTheDocument();
-    expect(screen.getByText("Next action:")).toBeInTheDocument();
-    expect(screen.getByText("Inspect the sanitized incident details and dependency health.")).toBeInTheDocument();
-    expect(screen.getAllByText(/ApplicationPreparationService.php/)).toHaveLength(2);
-    const traceDetails = screen.getByText("Show complete bounded trace").closest("details");
-    expect(traceDetails).not.toHaveAttribute("open");
-    fireEvent.click(screen.getByText("Show complete bounded trace"));
-    expect(traceDetails).toHaveAttribute("open");
-    fireEvent.click(screen.getByRole("button", { name: "RESOLVED" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/incident-1"), expect.objectContaining({ method: "PATCH" })));
-  });
-
-  it("loads the next incident page and resets it when filters change", async () => {
-    const incident = { id: "incident-2", error_code: "QUEUE_JOB_FAILED", severity: "ERROR", status: "OPEN",
-      message: "A background operation failed.", service: "backend", component: "queue", environment: "testing",
-      occurrence_count: 1, first_seen_at: "2026-09-27", last_seen_at: "2026-09-27", exception_class: "RuntimeException" };
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-      const page = new URL(String(input), "http://localhost").searchParams.get("page");
-      return Response.json({ data: { data: page === "2" ? [incident] : [], current_page: Number(page), last_page: 2, total: 26 } });
-    });
-    render(<Diagnostics />);
-    expect(await screen.findByText("Page 1 of 2 · 26 incidents")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(await screen.findByText("QUEUE_JOB_FAILED")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("search"), { target: { value: "req_test" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining("search=req_test&page=1"), expect.anything()));
-  });
-
-  it("shows every incident category by default and clears filters with Show all incidents", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-      data: { data: [], current_page: 1, last_page: 1, total: 0 },
-    }));
-    render(<Diagnostics />);
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/diagnostics/incidents?page=1", expect.anything()));
-    expect(screen.getByLabelText("severity")).toHaveValue("");
-    expect(screen.getByLabelText("status")).toHaveValue("");
-    expect(screen.getByText(/All incident severities and statuses are shown by default/)).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("severity"), { target: { value: "ERROR" } });
-    fireEvent.change(screen.getByLabelText("application id"), { target: { value: "app_test" } });
-    fireEvent.click(screen.getByRole("button", { name: "Show all incidents" }));
-
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("status=OPEN&hours=24"), expect.anything()));
+    expect(screen.getByRole("button", { name: "Remove status filter" })).toBeInTheDocument();
+    expect(screen.getByText("Last 24h ×")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/diagnostics/incidents?page=1", expect.anything()));
-    expect(screen.getByLabelText("severity")).toHaveValue("");
-    expect(screen.getByLabelText("application id")).toHaveValue("");
   });
 
-  it("offers a Retry action only when the API marks the failure retryable", async () => {
-    let retryable = false;
-    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({
-      error: { code: "INTERNAL_ERROR", request_id: "req_list", retryable },
-    }, { status: 503 }));
+  it("distinguishes no incidents, filtered empty and missing references", async () => {
+    const fetchMock = mockData([]);
     render(<Diagnostics />);
-    expect(await screen.findByRole("alert")).toHaveTextContent("The operation could not be completed.");
-    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No incidents recorded" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Severity"), { target: { value: "ERROR" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+    expect(await screen.findByRole("heading", { name: "No incidents match these filters" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Search incidents"), { target: { value: "req_missing" } });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(await screen.findByRole("heading", { name: "No incident found for this reference" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("search=req_missing"), expect.anything());
+  });
 
+  it("puts cause, impact, action and retry decision ahead of technical context", async () => {
+    mockData();
+    await openDetail();
+    const decision = screen.getByRole("region", { name: "Diagnosis and next action" });
+    expect(decision).toHaveTextContent("Provider temporarily unavailable");
+    expect(decision).toHaveTextContent("The LLM-backed operation did not complete.");
+    expect(decision).toHaveTextContent("Diagnostics do not confirm whether data changed.");
+    expect(decision).toHaveTextContent("Retry after the provider recovers");
+    expect(decision).toHaveTextContent("RetryableYes");
+    expect(screen.getByText("OpenAI", { selector: "dd" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Technical details/ })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(/ConfiguredLlmProvider.php/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Status: OPEN/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reopen" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Resolve" })).toBeInTheDocument();
+  });
+
+  it("expands one occurrence and keeps framework frames behind technical disclosure", async () => {
+    mockData();
+    await openDetail();
+    const occurrenceButton = screen.getByRole("button", { name: /Attempt 3/ });
+    expect(occurrenceButton).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("analysis-high")).not.toBeInTheDocument();
+    fireEvent.click(occurrenceButton);
+    expect(occurrenceButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("analysis-high")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Technical details/ }));
+    expect(screen.getByText(/ConfiguredLlmProvider.php/)).toBeInTheDocument();
+    expect(screen.getByText(/VacancyAnalysisService.php/)).toBeInTheDocument();
+    const framework = screen.getByText("Show framework frames (1)").closest("details");
+    expect(framework).not.toHaveAttribute("open");
+    expect(screen.getByText(/ControllerDispatcher.php/)).not.toBeVisible();
+  });
+
+  it("copies safe IDs and updates only available status actions", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    const fetchMock = mockData();
+    await openDetail();
+    fireEvent.click(screen.getByRole("button", { name: "Copy request ID" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(occurrence.request_id));
+    expect(screen.getByRole("status")).toHaveTextContent("Request copied");
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic summary" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Error: LLM_PROVIDER_UNAVAILABLE")));
+    expect(String(writeText.mock.lastCall?.[0])).not.toContain("LlmProviderException");
+    fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/incident-1"), expect.objectContaining({ method: "PATCH" })));
+    expect(await screen.findByText(/Status: RESOLVED/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reopen" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resolve" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["LLM_PROVIDER_CONFIGURATION", false, "Provider configuration required", "No"],
+    ["LLM_PROVIDER_RATE_LIMITED", true, "Provider rate limited", "Yes"],
+    ["LLM_OUTPUT_INVALID", false, "Generated output could not be validated", "No"],
+  ])("shows deterministic %s diagnosis", async (code, retryable, cause, answer) => {
+    const variant = { ...incident, error_code: code, retryable };
+    mockData([variant], variant);
+    await openDetail();
+    expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent(cause);
+    expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent(`Retryable${answer}`);
+  });
+
+  it("offers retry only for retryable diagnostics load errors", async () => {
+    let retryable = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ error: { code: "INTERNAL_ERROR", request_id: "req_list", retryable } }, { status: 503 }));
+    render(<Diagnostics />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Diagnostics unavailable");
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     retryable = true;
     fireEvent.click(screen.getByRole("button", { name: "Reload" }));
     expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
-  it("renders a recovery action without an exception message", () => {
+  it("hides admin diagnostics from a normal user at the dedicated route", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (String(input) === "/api/v1/me") return Response.json({ data: { id: "user-1", email: "user@example.test", role: "user", status: "ACTIVE" } });
+      throw new Error(String(input));
+    });
+    render(<AccessShell destination="diagnostics" />);
+    expect(await screen.findByRole("heading", { name: "Access denied" })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("/diagnostics/incidents"), expect.anything());
+  });
+
+  it("keeps page error copy safe", () => {
     const reset = vi.fn();
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 401 }));
     render(<ErrorPage error={new Error("SECRET_CANARY")} reset={reset} />);

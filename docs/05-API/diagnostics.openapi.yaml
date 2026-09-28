@@ -57,7 +57,7 @@ paths:
   /diagnostics/incidents:
     get:
       summary: List grouped incidents
-      description: Admin only; newest last_seen_at first, 25 per page.
+      description: Admin only; open/highest severity, then newest last_seen_at by default; 25 per page.
       parameters:
         - { name: severity, in: query, schema: { type: string, enum: [WARNING, ERROR, CRITICAL] } }
         - { name: status, in: query, schema: { type: string, enum: [OPEN, RESOLVED, IGNORED] } }
@@ -73,6 +73,8 @@ paths:
         - { name: llm_run_id, in: query, schema: { type: string, maxLength: 26 } }
         - { name: application_id, in: query, schema: { type: string, maxLength: 26 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: sort, in: query, schema: { type: string, enum: [priority, last_seen, first_seen, occurrences, severity], default: priority } }
+        - { name: hours, in: query, schema: { type: string, enum: ['24', '168', '720'] }, description: Relative last-seen window in hours. }
       responses:
         '200':
           description: Laravel paginator in data
@@ -164,6 +166,8 @@ components:
         retryable: { type: boolean, description: True only for explicitly retryable failure categories. }
         impact: { type: string, maxLength: 255 }
         recovery_action: { type: string, maxLength: 255 }
+        latest_operation: { type: [string, 'null'], description: Safe operation from the latest retained occurrence; list response only. }
+        latest_provider: { type: [string, 'null'], description: Safe provider from the latest retained occurrence; list response only. }
         exception_class: { type: [string, 'null'] }
         occurrence_count: { type: integer }
         first_seen_at: { type: string, format: date-time }

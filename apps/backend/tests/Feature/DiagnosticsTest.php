@@ -397,15 +397,39 @@ class DiagnosticsTest extends TestCase
             'application_id' => $applicationId,
             'user_id' => $user->id,
             'llm_run_id' => (string) Str::ulid(),
+            'operation' => 'application_draft_generation', 'provider' => 'openai',
         ]);
         $incidentId = DB::table('diagnostic_incidents')->value('id');
 
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?application_id='.$applicationId)
-            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId);
+            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId)
+            ->assertJsonPath('data.data.0.latest_operation', 'application_draft_generation')
+            ->assertJsonPath('data.data.0.latest_provider', 'openai');
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?search='.$applicationId)
             ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId);
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$incidentId)
             ->assertOk()->assertJsonPath('data.occurrences.0.application_id', $applicationId);
+    }
+
+    public function test_incident_list_prioritizes_active_severity_and_supports_relative_time_filter(): void
+    {
+        $admin = $this->user('admin');
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('INTERNAL_ERROR', 'Old resolved.', 'old');
+        $recorder->record('INTERNAL_ERROR', 'Open warning.', 'warning', 'WARNING');
+        $recorder->record('INTERNAL_ERROR', 'Open critical.', 'critical', 'CRITICAL');
+        DB::table('diagnostic_incidents')->where('component', 'old')->update([
+            'status' => 'RESOLVED', 'severity' => 'CRITICAL', 'last_seen_at' => now()->subHours(25),
+        ]);
+        DB::table('diagnostic_incidents')->where('component', 'warning')->update(['last_seen_at' => now()->subMinute()]);
+
+        $response = $this->as($admin)->getJson('/api/v1/diagnostics/incidents')->assertOk();
+        $this->assertSame(['critical', 'warning', 'old'], array_column($response->json('data.data'), 'component'));
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?hours=24')->assertOk()
+            ->assertJsonPath('data.total', 2);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?sort=last_seen')->assertOk()
+            ->assertJsonPath('data.data.0.component', 'critical');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?sort=invalid')->assertUnprocessable();
     }
 
     public function test_browser_report_ignores_untrusted_details_and_requires_auth(): void

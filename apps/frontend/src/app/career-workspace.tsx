@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "./access-shell";
 import VacancyWorkspace from "./vacancy-workspace";
-import Diagnostics from "./diagnostics";
 
 type Fact = {
   id: string;
@@ -23,7 +23,6 @@ export default function CareerWorkspace({ email, role = "user", onSignOut }: { e
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [edits, setEdits] = useState<Record<string, string>>({});
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -83,8 +82,7 @@ export default function CareerWorkspace({ email, role = "user", onSignOut }: { e
   const confirmed = overview?.facts.filter((fact) => fact.status === "CONFIRMED") ?? [];
 
   return <main className="career-shell">
-    <header className="career-header"><div><p className="eyebrow">Career core</p><h1>Your confirmed career</h1><p className="tagline">Evidence first. Psychedelic confidence later.</p></div><div className="account"><span>{email}</span>{role === "admin" && <button type="button" className="secondary" onClick={() => setShowDiagnostics((value) => !value)} aria-expanded={showDiagnostics}>Diagnostics</button>}<button type="button" className="secondary" onClick={() => void onSignOut()}>Sign out</button></div></header>
-    {role === "admin" && showDiagnostics && <Diagnostics />}
+    <header className="career-header"><div><p className="eyebrow">Career core</p><h1>Your confirmed career</h1><p className="tagline">Evidence first. Psychedelic confidence later.</p></div><div className="account"><span>{email}</span>{role === "admin" && <Link className="workspace-link" href="/diagnostics">Diagnostics</Link>}<button type="button" className="secondary" onClick={() => void onSignOut()}>Sign out</button></div></header>
     {error && <div className="alert error" role="alert"><strong>Action failed</strong><span>{error}</span><button type="button" className="secondary" onClick={() => void refresh()}>Retry</button></div>}
     <section className="career-grid" aria-busy={!overview}>
       <div className="panel"><h2>Extract from pasted text</h2><p className="muted">Pasted text is untrusted data. Extraction can only create pending candidates.</p><form onSubmit={(event) => void submit(event, "/api/v1/career/extractions", "extract")}><label>Career or resume text<textarea name="source_text" required maxLength={30000} rows={9} /></label><button disabled={busy !== ""}>{busy === "extract" ? "Extracting…" : "Extract pending facts"}</button></form>{overview?.sources[0] && <p className={`source-status ${overview.sources[0].extraction_status.toLowerCase()}`} role="status">Latest extraction: {overview.sources[0].extraction_status}{overview.sources[0].error_code ? ` — ${overview.sources[0].error_code}` : ""}</p>}</div>

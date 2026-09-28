@@ -3,7 +3,7 @@ title: Logging and Diagnostics
 status: implemented
 owner: project
 created: 2026-09-27
-updated: 2026-09-28
+updated: 2026-09-29
 tags: [operations, logging, diagnostics]
 related: ["[[../03-ADR/ADR-0022-local-diagnostics|ADR-0022]]", "[[../00-Home/Error-Center-User-Guide|Error Center user guide]]", "[[M0-Runbook|M0 Runbook]]"]
 ---
@@ -25,8 +25,8 @@ Horizon remains the queue execution/failure view. `make failed-jobs` lists sanit
 ## Operator workflow
 
 1. Ask for the safe error code, Reference ID, approximate time and action. Do not request the user's password, full CV, prompt or provider credential.
-2. An active admin signs in to the local CVortex UI, opens `Diagnostics` and searches the exact ID. Search accepts a request, job, LLM run or application ID, or an error code. Other filters combine with search; clear them if an expected result disappears. The date range tests `last_seen_at`, and the API returns 25 groups per page.
-3. Open the incident and read its impact, retry status and recovery action first. Then compare the occurrence's request/job/LLM/application IDs, attempt and provider with the product operation. Application frames appear in the initial bounded stack summary; expand the trace only when framework frames are needed. Detail returns the latest 20 retained occurrences; `occurrence_count` is the lifetime count for the group, even after old detail is pruned. A browser `digest` shown when telemetry fails is not necessarily a searchable request ID.
+2. An active admin signs in and opens `/diagnostics` from the workspace link. Paste the exact request, job, LLM run or application ID, or error code in the primary search. Other filters combine with search; clear their chips if an expected result disappears. `hours` filters `last_seen_at` to the last 24, 168 or 720 hours; the advanced dates also test `last_seen_at`. Default ordering is `OPEN` first, then CRITICAL/ERROR/WARNING, then newest; selectable sorts include last/first seen and occurrence count. The API returns 25 groups per page. Its list projection of the latest retained occurrence supplies operation/provider labels without exposing stack or identity data.
+3. Read Cause, Impact, Recommended action and Retryable before technical context. The impact statement is category-level and does not prove data was unchanged; verify product state separately. Compare request/job/LLM/application IDs, attempt and provider with the product operation. Open one occurrence for its metadata. Technical details are closed initially; when needed, the throw site and application frames precede a separate framework disclosure. Detail returns the latest 20 retained occurrences; `occurrence_count` is the lifetime count for the group, even after old detail is pruned. A browser `digest` shown when telemetry fails is not necessarily a searchable request ID.
 4. After confirming the actual operation recovered, set `RESOLVED`. A new matching failure reopens it. Use `IGNORED` only for a consciously accepted event; recurrence does not reopen that status. Status changes are audited. Neither state repairs the underlying operation.
 
 | Scenario | Check | Expected boundary |
