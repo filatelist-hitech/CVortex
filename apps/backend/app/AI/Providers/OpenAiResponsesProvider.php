@@ -70,6 +70,7 @@ class OpenAiResponsesProvider
             };
             $retryAfterSeconds = in_array($category, [LlmProviderException::RATE_LIMITED, LlmProviderException::TEMPORARY_UNAVAILABLE], true)
                 ? ProviderRetryAfter::parse($response->header('retry-after'))
+                ? ProviderRetryAfter::parse($response->header('retry-after'))
                 : null;
             throw new LlmProviderException(
                 $category,

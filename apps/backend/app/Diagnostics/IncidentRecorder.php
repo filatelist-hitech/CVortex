@@ -46,7 +46,7 @@ final class IncidentRecorder
         }
         $safeContext = Redactor::context([...($shared ?: []), ...$context]);
         $retryAfterSeconds = $exception instanceof LlmProviderException
-            && $exception->category === LlmProviderException::RATE_LIMITED
+            && $exception->isRetryable()
             && is_int($exception->retryAfterSeconds)
             && $exception->retryAfterSeconds >= 0
             && $exception->retryAfterSeconds <= 86400
