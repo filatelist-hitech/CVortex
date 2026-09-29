@@ -45,4 +45,21 @@ describe("browser diagnostics reporting", () => {
       expect(payload).not.toHaveProperty("stack");
     }
   });
+
+  it("keeps non-Error rejection reasons distinct without sending their values", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      const requestId = "req_reason_" + fetchMock.mock.calls.length;
+      return Response.json({ data: { request_id: requestId } });
+    });
+
+    await reportBrowserError("rejection", "browser", "token=SECRET_CANARY");
+    await reportBrowserError("rejection", "browser", { email: "person@example.test" });
+
+    const payloads = fetchMock.mock.calls.map((call) => JSON.parse(String(call[1]?.body)) as Record<string, unknown>);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(payloads[0].error_ref).toMatch(/^[a-f0-9]{64}$/);
+    expect(payloads[1].error_ref).toMatch(/^[a-f0-9]{64}$/);
+    expect(payloads[0].error_ref).not.toBe(payloads[1].error_ref);
+    expect(JSON.stringify(payloads)).not.toMatch(/SECRET_CANARY|person@example\.test|email|token=/i);
+  });
 });

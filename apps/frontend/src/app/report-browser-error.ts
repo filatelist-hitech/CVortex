@@ -3,15 +3,23 @@ const MAX_RECENT_REPORTS = 32;
 const recentReports = new Map<string, number>();
 const SAFE_ERROR_NAMES = new Set(["Error", "EvalError", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError", "AggregateError"]);
 
+function randomOpaqueReference(): string | undefined {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.getRandomValues) return undefined;
+
+  return Array.from(cryptoApi.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function opaqueErrorReference(error: unknown): Promise<string | undefined> {
-  if (!(error instanceof Error) || !globalThis.crypto?.subtle) return undefined;
+  const cryptoApi = globalThis.crypto;
+  if (!(error instanceof Error) || !cryptoApi?.subtle) return randomOpaqueReference();
 
   const name = SAFE_ERROR_NAMES.has(error.name) ? error.name : "Error";
   const locations = (error.stack ?? "").split("\n").slice(1, 9).flatMap((frame) => {
     const match = /:(\d{1,8}):(\d{1,8})\)?$/.exec(frame);
     return match ? [match[1] + ":" + match[2]] : [];
   }).slice(0, 4);
-  const bytes = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([name, locations])));
+  const bytes = await cryptoApi.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([name, locations])));
   return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
