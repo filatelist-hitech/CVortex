@@ -7,6 +7,11 @@ import ErrorPage from "../error";
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("diagnostic UI", () => {
+  const incident = { id: "incident-1", error_code: "INTERNAL_ERROR", severity: "ERROR", status: "OPEN",
+    message: "A safe failure.", service: "backend", component: "api", environment: "testing",
+    occurrence_count: 1, first_seen_at: "2026-09-27", last_seen_at: "2026-09-27",
+    retryable: true, impact: "The affected operation did not complete.", recovery_action: "Inspect incident details." };
+
   it("shows a safe API error with code, reference and retry hint", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
       message: "SQLSTATE private secret", error: {
@@ -110,6 +115,88 @@ describe("diagnostic UI", () => {
     retryable = true;
     fireEvent.click(screen.getByRole("button", { name: "Reload" }));
     expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  it("retries the failed list with its original filters and page", async () => {
+    let fail = false;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const path = String(input);
+      if (fail) {
+        fail = false;
+        throw new Error("network down");
+      }
+      const page = Number(new URL(path, "http://localhost").searchParams.get("page"));
+      return Response.json({ data: { data: page === 2 ? [incident] : [], current_page: page, last_page: 2, total: 26 } });
+    });
+    render(<Diagnostics />);
+    expect(await screen.findByText("Page 1 of 2 · 26 incidents")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("search"), { target: { value: "req_original" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/diagnostics/incidents?search=req_original&page=1", expect.anything()));
+    fail = true;
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Incident list could not be loaded.");
+    fireEvent.change(screen.getByLabelText("search"), { target: { value: "req_changed" } });
+    const callsBeforeRetry = fetchMock.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(callsBeforeRetry + 1));
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/diagnostics/incidents?search=req_original&page=2", expect.anything());
+    expect(await screen.findByText("Page 2 of 2 · 26 incidents")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("retries only the failed incident detail GET, including a second network failure", async () => {
+    let detailCalls = 0;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const path = String(input);
+      if (path.endsWith("/incident-1")) {
+        detailCalls++;
+        if (detailCalls < 3) throw new Error("network down");
+        return Response.json({ data: { incident, occurrences: [] } });
+      }
+      return Response.json({ data: { data: [incident], current_page: 1, last_page: 1, total: 1 } });
+    });
+    render(<Diagnostics />);
+    fireEvent.click(await screen.findByRole("button", { name: /INTERNAL_ERROR/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Incident details could not be loaded.");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(detailCalls).toBe(2));
+    expect(screen.getByRole("alert")).toHaveTextContent("Incident details could not be loaded.");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("Inspect incident details.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([path]) => String(path).includes("incidents?"))).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter(([, options]) => options?.method === "PATCH")).toHaveLength(0);
+    expect(detailCalls).toBe(3);
+  });
+
+  it("retries only the failed status PATCH and keeps detail visible after success", async () => {
+    let patchCalls = 0;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (options?.method === "PATCH") {
+        patchCalls++;
+        if (patchCalls === 1) throw new Error("network down");
+        if (patchCalls === 2) return Response.json({ error: { code: "INTERNAL_ERROR", retryable: true } }, { status: 503 });
+        return Response.json({ data: { incident: { ...incident, status: "RESOLVED" }, occurrences: [] } });
+      }
+      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [] } });
+      return Response.json({ data: { data: [incident], current_page: 1, last_page: 1, total: 1 } });
+    });
+    render(<Diagnostics />);
+    fireEvent.click(await screen.findByRole("button", { name: /INTERNAL_ERROR/ }));
+    expect(await screen.findByText("Inspect incident details.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "RESOLVED" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Status change to RESOLVED failed.");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(patchCalls).toBe(2));
+    expect(screen.getByRole("alert")).toHaveTextContent("Status change to RESOLVED failed.");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Incident status changed to RESOLVED.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "RESOLVED" })).toBeDisabled();
+    expect(fetchMock.mock.calls.filter(([, options]) => options?.method === "PATCH")).toHaveLength(3);
+    expect(fetchMock.mock.calls.filter(([path, options]) => String(path).endsWith("/incident-1") && options?.method !== "PATCH")).toHaveLength(1);
   });
 
   it("renders a recovery action without an exception message", () => {

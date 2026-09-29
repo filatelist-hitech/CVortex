@@ -23,8 +23,12 @@ use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Log\Logger;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
@@ -803,6 +807,87 @@ class DiagnosticsTest extends TestCase
         $this->assertSame(DiagnosticsSyncFailJob::class, $occurrence->operation);
     }
 
+    public function test_sync_job_restores_request_log_context_after_success_and_exception(): void
+    {
+        config(['queue.default' => 'sync']);
+        $messages = [];
+        Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$messages): void {
+            if (in_array($event->message, ['diagnostics.inline_job', 'diagnostics.controller_after_job'], true)) {
+                $messages[$event->message] = $event->context;
+            }
+        });
+        Route::get('/api/v1/_diagnostics-test/sync-context/{outcome}', function (string $outcome) {
+            Log::shareContext(['request_scope' => 'controller']);
+            DiagnosticsContextJob::$during = [];
+            try {
+                DiagnosticsContextJob::dispatch($outcome === 'fail');
+            } catch (\RuntimeException) {
+                // The controller continues after the inline job failure.
+            }
+            Log::info('diagnostics.controller_after_job');
+
+            return response()->json(['during' => DiagnosticsContextJob::$during, 'after' => Log::sharedContext()]);
+        });
+
+        foreach (['success', 'fail'] as $outcome) {
+            $requestId = 'req_sync_'.$outcome;
+            $response = $this->withHeader('X-Request-ID', $requestId)
+                ->getJson('/api/v1/_diagnostics-test/sync-context/'.$outcome)->assertOk();
+            $this->assertSame($requestId, $response->json('during.request_id'));
+            $this->assertSame('controller', $response->json('during.request_scope'));
+            $this->assertSame(1, $response->json('during.attempt'));
+            $this->assertSame($requestId, $response->json('after.request_id'));
+            $this->assertSame('controller', $response->json('after.request_scope'));
+            $this->assertArrayNotHasKey('attempt', $response->json('after'));
+            $this->assertArrayNotHasKey('job_id', $response->json('after'));
+            $this->assertSame($requestId, $messages['diagnostics.inline_job']['request_id']);
+            $this->assertSame(1, $messages['diagnostics.inline_job']['attempt']);
+            $this->assertSame($requestId, $messages['diagnostics.controller_after_job']['request_id']);
+            $this->assertArrayNotHasKey('attempt', $messages['diagnostics.controller_after_job']);
+        }
+    }
+
+    public function test_worker_jobs_clear_prior_context_after_success_and_exception(): void
+    {
+        $messages = [];
+        Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$messages): void {
+            if (in_array($event->message, ['diagnostics.worker_a', 'diagnostics.worker_b'], true)) {
+                $messages[$event->message] = $event->context;
+            }
+        });
+        foreach (['processed', 'exception'] as $outcome) {
+            $first = Mockery::mock(Job::class);
+            $first->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_worker_a']]);
+            $first->shouldReceive('getJobId')->andReturn('job_a');
+            $first->shouldReceive('attempts')->andReturn(1);
+            Log::shareContext(['request_id' => 'stale_request', 'job_id' => 'stale_job']);
+            Event::dispatch(new JobProcessing('redis', $first));
+            $this->assertSame('req_worker_a', Log::sharedContext()['request_id']);
+            $this->assertSame('job_a', Log::sharedContext()['job_id']);
+            Log::shareContext(['llm_run_id' => 'run_a']);
+            Log::info('diagnostics.worker_a');
+            Event::dispatch($outcome === 'processed'
+                ? new JobProcessed('redis', $first)
+                : new JobExceptionOccurred('redis', $first, new \RuntimeException('retryable')));
+            $this->assertSame([], Log::sharedContext());
+
+            $second = Mockery::mock(Job::class);
+            $second->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_worker_b']]);
+            $second->shouldReceive('getJobId')->andReturn('job_b');
+            $second->shouldReceive('attempts')->andReturn(1);
+            Event::dispatch(new JobProcessing('redis', $second));
+            $this->assertSame('req_worker_b', Log::sharedContext()['request_id']);
+            $this->assertSame('job_b', Log::sharedContext()['job_id']);
+            $this->assertArrayNotHasKey('llm_run_id', Log::sharedContext());
+            Log::info('diagnostics.worker_b');
+            $this->assertSame('req_worker_b', $messages['diagnostics.worker_b']['request_id']);
+            $this->assertSame('job_b', $messages['diagnostics.worker_b']['job_id']);
+            $this->assertArrayNotHasKey('llm_run_id', $messages['diagnostics.worker_b']);
+            Event::dispatch(new JobProcessed('redis', $second));
+            $this->assertSame([], Log::sharedContext());
+        }
+    }
+
     public function test_retention_prunes_old_detail_and_closed_incidents_but_keeps_open_group(): void
     {
         $recorder = app(IncidentRecorder::class);
@@ -841,5 +926,23 @@ final class DiagnosticsSyncFailJob implements ShouldQueue
     public function handle(): void
     {
         throw new \RuntimeException('sync job failed');
+    }
+}
+
+final class DiagnosticsContextJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public static array $during = [];
+
+    public function __construct(private readonly bool $fail) {}
+
+    public function handle(): void
+    {
+        self::$during = Log::sharedContext();
+        Log::info('diagnostics.inline_job');
+        if ($this->fail) {
+            throw new \RuntimeException('sync context test failure');
+        }
     }
 }

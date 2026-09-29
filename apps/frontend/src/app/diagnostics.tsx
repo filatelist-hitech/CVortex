@@ -17,18 +17,24 @@ type Occurrence = {
   attempt: number | null; safe_stack: string | null; error_ref: string | null;
 };
 type Detail = { incident: Incident; occurrences: Occurrence[] };
+type FailedAction =
+  | { type: "LIST_LOAD"; filters: Record<string, string>; page: number }
+  | { type: "DETAIL_LOAD"; id: string }
+  | { type: "STATUS_CHANGE"; id: string; status: string };
+type DiagnosticsError = { message: string; retryable: boolean; action: FailedAction };
 
 export default function Diagnostics() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [items, setItems] = useState<Incident[]>([]);
   const [detail, setDetail] = useState<Detail | null>(null);
-  const [error, setError] = useState("");
-  const [retryableError, setRetryableError] = useState(false);
+  const [error, setError] = useState<DiagnosticsError | null>(null);
+  const [announcement, setAnnouncement] = useState("");
   const [busy, setBusy] = useState(false);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const load = useCallback(async (current: Record<string, string>, nextPage = 1) => {
+    setAnnouncement("");
     setBusy(true);
     try {
       const params = new URLSearchParams(Object.entries(current).filter(([, value]) => value.trim()));
@@ -38,11 +44,11 @@ export default function Diagnostics() {
       setPage(result.data.current_page ?? nextPage);
       setLastPage(result.data.last_page ?? 1);
       setTotal(result.data.total ?? result.data.data.length);
-      setError("");
-      setRetryableError(false);
+      setError(null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Diagnostics could not be loaded.");
-      setRetryableError(caught instanceof ApiError && caught.retryable);
+      setError({ message: `Incident list could not be loaded. ${caught instanceof Error ? caught.message : "Please try again."}`,
+        retryable: caught instanceof ApiError && caught.retryable,
+        action: { type: "LIST_LOAD", filters: { ...current }, page: nextPage } });
     } finally { setBusy(false); }
   }, []);
 
@@ -52,28 +58,37 @@ export default function Diagnostics() {
   }, [load]);
 
   async function open(id: string) {
+    setAnnouncement("");
     try {
       const result = await api(`/api/v1/diagnostics/incidents/${id}`);
       setDetail(result.data);
-      setError("");
-      setRetryableError(false);
+      setError(null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Incident could not be loaded.");
-      setRetryableError(caught instanceof ApiError && caught.retryable);
+      setError({ message: `Incident details could not be loaded. ${caught instanceof Error ? caught.message : "Please try again."}`,
+        retryable: caught instanceof ApiError && caught.retryable, action: { type: "DETAIL_LOAD", id } });
     }
   }
 
-  async function setStatus(status: string) {
-    if (!detail) return;
+  async function setStatus(id: string, status: string) {
+    setAnnouncement("");
     try {
-      const result = await api(`/api/v1/diagnostics/incidents/${detail.incident.id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+      const result = await api(`/api/v1/diagnostics/incidents/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
       setDetail(result.data);
+      setError(null);
       await load(filters, page);
-      setRetryableError(false);
+      setAnnouncement(`Incident status changed to ${status}.`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Status could not be updated.");
-      setRetryableError(caught instanceof ApiError && caught.retryable);
+      setError({ message: `Status change to ${status} failed. ${caught instanceof Error ? caught.message : "Please try again."}`,
+        retryable: caught instanceof ApiError && caught.retryable, action: { type: "STATUS_CHANGE", id, status } });
     }
+  }
+
+  function retryFailedAction() {
+    if (!error?.retryable) return;
+    const action = error.action;
+    if (action.type === "LIST_LOAD") void load(action.filters, action.page);
+    if (action.type === "DETAIL_LOAD") void open(action.id);
+    if (action.type === "STATUS_CHANGE") void setStatus(action.id, action.status);
   }
 
   function showAllIncidents() {
@@ -90,7 +105,8 @@ export default function Diagnostics() {
       {fields.map((field) => <label key={field}>{field.replaceAll("_", " ")}{field === "severity" || field === "status" ? <select value={filters[field] ?? ""} onChange={(event) => setFilters({ ...filters, [field]: event.target.value })}><option value="">All</option>{(field === "severity" ? ["WARNING", "ERROR", "CRITICAL"] : ["OPEN", "RESOLVED", "IGNORED"]).map((value) => <option key={value}>{value}</option>)}</select> : <input type={field === "from" || field === "to" ? "date" : "text"} maxLength={128} value={filters[field] ?? ""} onChange={(event) => setFilters({ ...filters, [field]: event.target.value })} placeholder={field === "search" ? "Request, job, LLM, application ID or code" : undefined} />}</label>)}
       <div className="actions"><button type="submit" disabled={busy}>Apply filters</button><button type="button" className="secondary" disabled={busy} onClick={showAllIncidents}>Show all incidents</button></div>
     </form>
-    {error && <div className="alert error" role="alert">{error}{retryableError && <button type="button" className="secondary" onClick={() => void load(filters, page)}>Retry</button>}</div>}
+    {error && <div className="alert error" role="alert">{error.message}{error.retryable && <button type="button" className="secondary" onClick={retryFailedAction}>Retry</button>}</div>}
+    {announcement && <p role="status">{announcement}</p>}
     {busy && <p role="status">Loading incidents…</p>}
     {!busy && items.length === 0 && <p className="empty">{Object.values(filters).some(Boolean) ? "No incidents for the selected filters and time range." : "No incidents recorded."}</p>}
     <ul className="diagnostics-list">{items.map((item) => <li key={item.id}><button type="button" className="secondary" onClick={() => void open(item.id)}><span className={`badge ${item.severity === "ERROR" || item.severity === "CRITICAL" ? "blocked-badge" : "pending-badge"}`}>{item.severity}</span><strong>{item.error_code}</strong><span>{item.message}</span><small>{item.service}/{item.component} · {item.environment} · {item.status} · {item.occurrence_count} occurrences · {item.first_seen_at} → {item.last_seen_at}</small></button></li>)}</ul>
@@ -104,7 +120,7 @@ export default function Diagnostics() {
         <p><strong>Next action:</strong> {detail.incident.recovery_action}</p>
         <p>{detail.incident.severity} · {detail.incident.status} · {detail.incident.service}/{detail.incident.component} · {detail.incident.exception_class ?? "Browser event"}</p>
         <p>{detail.incident.occurrence_count} occurrences · first {detail.incident.first_seen_at} · last {detail.incident.last_seen_at}</p>
-        <div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={status === detail.incident.status} onClick={() => void setStatus(status)}>{status}</button>)}</div>
+        <div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={status === detail.incident.status} onClick={() => void setStatus(detail.incident.id, status)}>{status}</button>)}</div>
         <h4>Recent occurrences</h4>
         <ul>{detail.occurrences.map((event) => (
           <li key={event.id}>
