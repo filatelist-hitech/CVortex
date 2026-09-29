@@ -230,19 +230,24 @@ blockquote { padding: 12px 16px; border-left: 2px solid var(--accent-secondary);
 .diagnostics { margin: 0; }
 .diagnostics-header, .diagnostics-list-heading, .diagnostics-detail-head, .diagnostics-section-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
 .diagnostics-header { margin-bottom: 32px; }
-.diagnostics-header h1 { font-size: clamp(2rem, 5vw, 3rem); }
+.diagnostics-header h1 { font-size: 2rem; }
 .diagnostics-header p, .diagnostics-refresh small { color: var(--text-muted); }
 .diagnostics-refresh { display: grid; justify-items: end; gap: 8px; }
 .diagnostics-search { display: grid; gap: 8px; margin: 0; }
 .diagnostics-search > label { font-size: .875rem; font-weight: 600; }
 .diagnostics-search > div { display: flex; gap: 8px; }
 .diagnostics-search input { flex: 1; min-width: 0; border-color: var(--accent-secondary); font-size: 1rem; }
-.diagnostics-toolbar { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 16px; margin-top: 20px; }
+.diagnostics-toolbar { display: grid; gap: 12px; margin-top: 20px; }
+.diagnostics-filter-toggle { justify-self: start; }
+.diagnostics-filter-panel { display: grid; gap: 12px; }
 .diagnostics-quick { display: flex; flex-wrap: wrap; gap: 12px; }
+.diagnostics-quick h3 { display: none; }
 .diagnostics-quick label, .diagnostics-list-heading label { font-size: .875rem; }
 .diagnostics-quick input, .diagnostics-quick select { min-width: 140px; }
 .diagnostics-advanced { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-top: 16px; padding: 20px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-default); }
+.diagnostics-advanced h3 { grid-column: 1 / -1; font-size: 1rem; }
 .diagnostics-advanced[hidden] { display: none; }
+.diagnostics-filter-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .diagnostics-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
 .diagnostics-chips button { min-height: 44px; overflow-wrap: anywhere; }
 .diagnostics-link { min-height: 44px; padding: 0 8px; border: 0; color: var(--accent-primary); background: transparent; text-decoration: underline; text-underline-offset: 3px; }
@@ -328,10 +333,13 @@ blockquote { padding: 12px 16px; border-left: 2px solid var(--accent-secondary);
   .diagnostics-context dl > div, .diagnostics-technical dl > div, .diagnostics-occurrence-detail dl > div { grid-template-columns: 1fr; gap: 2px; }
 }
 @media (max-width: 479px) {
-  .diagnostics-quick { display: none; }
-  .diagnostics-toolbar.is-open .diagnostics-quick { display: flex; }
-  .diagnostics-toolbar .actions { width: 100%; }
-  .diagnostics-toolbar .actions button { flex: 1; }
+  .diagnostics-filter-panel { display: none; }
+  .diagnostics-toolbar.is-open .diagnostics-filter-panel { display: grid; max-height: 75vh; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-default); }
+  .diagnostics-quick { display: grid; padding: 16px; }
+  .diagnostics-quick h3 { display: block; font-size: 1rem; }
+  .diagnostics-advanced { margin: 0 16px; padding: 16px 0; border: 0; border-top: 1px solid var(--border-subtle); border-radius: 0; }
+  .diagnostics-filter-actions { position: sticky; bottom: 0; z-index: 1; padding: 12px 16px; background: var(--surface-elevated); }
+  .diagnostics-filter-actions button { flex: 1; }
   .diagnostics-list-heading { align-items: flex-start; }
   .diagnostics-list-heading label { max-width: 160px; }
   .diagnostics-pages { flex-wrap: wrap; }
