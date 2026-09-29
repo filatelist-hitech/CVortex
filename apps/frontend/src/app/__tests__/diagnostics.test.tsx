@@ -103,6 +103,21 @@ describe("diagnostic UI", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("keeps pagination on the filters that produced the displayed list", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const page = new URL(String(input), "http://localhost").searchParams.get("page");
+      return Response.json({ data: { data: [], current_page: Number(page), last_page: 2, total: 26 } });
+    });
+    render(<Diagnostics />);
+
+    expect(await screen.findByText("Page 1 of 2 · 26 incidents")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("severity"), { target: { value: "ERROR" } });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/diagnostics/incidents?page=2", expect.anything()));
+    expect(await screen.findByText("Page 2 of 2 · 26 incidents")).toBeInTheDocument();
+  });
+
   it("does not let an older successful list response replace the latest results", async () => {
     const staleIncident = { ...incident, id: "stale", error_code: "STALE_INCIDENT" };
     const latestIncident = { ...incident, id: "latest", error_code: "LATEST_INCIDENT" };
@@ -121,6 +136,31 @@ describe("diagnostic UI", () => {
     await waitFor(() => expect(screen.getByText("Page 2 of 2 · 26 incidents")).toBeInTheDocument());
     expect(screen.queryByText("STALE_INCIDENT")).not.toBeInTheDocument();
     expect(screen.getByText("LATEST_INCIDENT")).toBeInTheDocument();
+  });
+
+  it("ignores stale incident-detail responses after a newer incident is opened", async () => {
+    const firstIncident = { ...incident, id: "first", error_code: "FIRST_DETAIL" };
+    const secondIncident = { ...incident, id: "second", error_code: "SECOND_DETAIL" };
+    const pending: Array<(response: Response) => void> = [];
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const path = String(input);
+      if (path.includes("incidents?")) {
+        return Promise.resolve(Response.json({ data: { data: [firstIncident, secondIncident], current_page: 1, last_page: 1, total: 2 } }));
+      }
+      return new Promise((resolve) => pending.push(resolve));
+    });
+    render(<Diagnostics />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /FIRST_DETAIL/ }));
+    fireEvent.click(screen.getByRole("button", { name: /SECOND_DETAIL/ }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+
+    pending[1](Response.json({ data: { incident: secondIncident, occurrences: [] } }));
+    expect(await screen.findByRole("region", { name: "SECOND_DETAIL" })).toBeInTheDocument();
+    pending[0](Response.json({ data: { incident: firstIncident, occurrences: [] } }));
+
+    await waitFor(() => expect(screen.getByRole("region", { name: "SECOND_DETAIL" })).toBeInTheDocument());
+    expect(screen.queryByRole("region", { name: "FIRST_DETAIL" })).not.toBeInTheDocument();
   });
 
   it("shows every incident category by default and clears filters with Show all incidents", async () => {

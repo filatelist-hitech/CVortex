@@ -25,6 +25,7 @@ type DiagnosticsError = { message: string; retryable: boolean; action: FailedAct
 
 export default function Diagnostics() {
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
   const [items, setItems] = useState<Incident[]>([]);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState<DiagnosticsError | null>(null);
@@ -34,6 +35,7 @@ export default function Diagnostics() {
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const listRequestGeneration = useRef(0);
+  const detailRequestGeneration = useRef(0);
   const load = useCallback(async (current: Record<string, string>, nextPage = 1) => {
     const requestGeneration = ++listRequestGeneration.current;
     setAnnouncement("");
@@ -44,6 +46,7 @@ export default function Diagnostics() {
       const result = await api(`/api/v1/diagnostics/incidents?${params}`);
       if (requestGeneration !== listRequestGeneration.current) return;
       setItems(result.data.data);
+      setAppliedFilters({ ...current });
       setPage(result.data.current_page ?? nextPage);
       setLastPage(result.data.last_page ?? 1);
       setTotal(result.data.total ?? result.data.data.length);
@@ -64,24 +67,31 @@ export default function Diagnostics() {
   }, [load]);
 
   async function open(id: string) {
+    const requestGeneration = ++detailRequestGeneration.current;
     setAnnouncement("");
     try {
       const result = await api(`/api/v1/diagnostics/incidents/${id}`);
+      if (requestGeneration !== detailRequestGeneration.current) return;
       setDetail(result.data);
       setError(null);
     } catch (caught) {
+      if (requestGeneration !== detailRequestGeneration.current) return;
       setError({ message: `Incident details could not be loaded. ${caught instanceof Error ? caught.message : "Please try again."}`,
         retryable: caught instanceof ApiError && caught.retryable, action: { type: "DETAIL_LOAD", id } });
     }
   }
 
   async function setStatus(id: string, status: string) {
+    const requestGeneration = detailRequestGeneration.current;
     setAnnouncement("");
     try {
       const result = await api(`/api/v1/diagnostics/incidents/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
-      setDetail(result.data);
+      if (requestGeneration === detailRequestGeneration.current) {
+        detailRequestGeneration.current++;
+        setDetail(result.data);
+      }
       setError(null);
-      await load(filters, page);
+      await load(appliedFilters, page);
       setAnnouncement(`Incident status changed to ${status}.`);
     } catch (caught) {
       setError({ message: `Status change to ${status} failed. ${caught instanceof Error ? caught.message : "Please try again."}`,
@@ -105,7 +115,7 @@ export default function Diagnostics() {
 
   const fields = ["search", "severity", "status", "service", "component", "environment", "error_code", "from", "to", "request_id", "job_id", "llm_run_id", "application_id"];
   return <section className="review-section diagnostics" aria-labelledby="diagnostics-title">
-    <div className="section-title"><div><p className="eyebrow">Admin only</p><h2 id="diagnostics-title">Error Center</h2></div><button type="button" className="secondary" onClick={() => void load(filters, page)}>Reload</button></div>
+    <div className="section-title"><div><p className="eyebrow">Admin only</p><h2 id="diagnostics-title">Error Center</h2></div><button type="button" className="secondary" onClick={() => void load(appliedFilters, page)}>Reload</button></div>
     <p>All incident severities and statuses are shown by default. Use filters only to narrow the list.</p>
     <form className="diagnostics-filters" onSubmit={(event: FormEvent) => { event.preventDefault(); setDetail(null); void load(filters); }}>
       {fields.map((field) => <label key={field}>{field.replaceAll("_", " ")}{field === "severity" || field === "status" ? <select value={filters[field] ?? ""} onChange={(event) => setFilters({ ...filters, [field]: event.target.value })}><option value="">All</option>{(field === "severity" ? ["WARNING", "ERROR", "CRITICAL"] : ["OPEN", "RESOLVED", "IGNORED"]).map((value) => <option key={value}>{value}</option>)}</select> : <input type={field === "from" || field === "to" ? "date" : "text"} maxLength={128} value={filters[field] ?? ""} onChange={(event) => setFilters({ ...filters, [field]: event.target.value })} placeholder={field === "search" ? "Request, job, LLM, application ID or code" : undefined} />}</label>)}
@@ -116,7 +126,7 @@ export default function Diagnostics() {
     {busy && <p role="status">Loading incidents…</p>}
     {!busy && items.length === 0 && <p className="empty">{Object.values(filters).some(Boolean) ? "No incidents for the selected filters and time range." : "No incidents recorded."}</p>}
     <ul className="diagnostics-list">{items.map((item) => <li key={item.id}><button type="button" className="secondary" onClick={() => void open(item.id)}><span className={`badge ${item.severity === "ERROR" || item.severity === "CRITICAL" ? "blocked-badge" : "pending-badge"}`}>{item.severity}</span><strong>{item.error_code}</strong><span>{item.message}</span><small>{item.service}/{item.component} · {item.environment} · {item.status} · {item.occurrence_count} occurrences · {item.first_seen_at} → {item.last_seen_at}</small></button></li>)}</ul>
-    {total > 0 && <nav className="actions" aria-label="Incident pages"><button type="button" className="secondary" disabled={busy || page <= 1} onClick={() => { setDetail(null); void load(filters, page - 1); }}>Previous</button><span>Page {page} of {lastPage} · {total} incidents</span><button type="button" className="secondary" disabled={busy || page >= lastPage} onClick={() => { setDetail(null); void load(filters, page + 1); }}>Next</button></nav>}
+    {total > 0 && <nav className="actions" aria-label="Incident pages"><button type="button" className="secondary" disabled={busy || page <= 1} onClick={() => { setDetail(null); void load(appliedFilters, page - 1); }}>Previous</button><span>Page {page} of {lastPage} · {total} incidents</span><button type="button" className="secondary" disabled={busy || page >= lastPage} onClick={() => { setDetail(null); void load(appliedFilters, page + 1); }}>Next</button></nav>}
     {detail && (
       <section className="panel diagnostics-detail" aria-labelledby="incident-title">
         <h3 id="incident-title">{detail.incident.error_code}</h3>
