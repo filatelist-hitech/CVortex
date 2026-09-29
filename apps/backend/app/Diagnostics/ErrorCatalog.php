@@ -78,7 +78,8 @@ final class ErrorCatalog
     /** @return array<string, string> */
     public static function responseHeaders(Throwable $exception): array
     {
-        if ($exception instanceof LlmProviderException && $exception->isRetryable()) {
+        if ($exception instanceof LlmProviderException
+            && self::incidentDetails(self::providerFailureCode($exception))['retryable']) {
             $retryAfterSeconds = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
             if ($retryAfterSeconds !== null) {
                 return ['Retry-After' => (string) $retryAfterSeconds];

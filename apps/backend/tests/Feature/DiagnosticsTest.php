@@ -541,6 +541,10 @@ class DiagnosticsTest extends TestCase
             $this->assertSame($retryable, $entry['retryable']);
             $this->assertSame('ERROR', $entry['severity']);
             $this->assertSame($code, ErrorCatalog::providerFailureCode(new LlmProviderException($category)));
+            $this->assertSame(
+                $retryable ? ['Retry-After' => '42'] : [],
+                ErrorCatalog::responseHeaders(new LlmProviderException($category, retryAfterSeconds: 42)),
+            );
         }
     }
 
