@@ -81,9 +81,12 @@ final class DiagnosticsController extends Controller
     {
         $user = $this->requireAdmin($request);
         $data = $request->validate(['status' => ['required', Rule::in(['OPEN', 'RESOLVED', 'IGNORED'])]]);
-        abort_if(! DB::table('diagnostic_incidents')->where('id', $id)->exists(), 404);
-        DB::table('diagnostic_incidents')->where('id', $id)->update(['status' => $data['status'], 'updated_at' => now()]);
-        $audit->record('diagnostics.incident.status_changed', 'USER', $user, 'diagnostic_incident', $id, ['status' => $data['status']]);
+        DB::transaction(function () use ($id, $data, $audit, $user): void {
+            $incident = DB::table('diagnostic_incidents')->where('id', $id)->lockForUpdate()->first();
+            abort_if($incident === null, 404);
+            DB::table('diagnostic_incidents')->where('id', $id)->update(['status' => $data['status'], 'updated_at' => now()]);
+            $audit->record('diagnostics.incident.status_changed', 'USER', $user, 'diagnostic_incident', $id, ['status' => $data['status']]);
+        });
 
         return $this->show($request, $id);
     }

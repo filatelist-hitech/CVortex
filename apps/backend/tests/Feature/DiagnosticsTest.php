@@ -14,6 +14,7 @@ use App\Models\CareerSource;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use App\Services\AuditLogger;
 use App\Services\CareerExtractionService;
 use App\Services\DatabaseOwnerContext;
 use App\Services\DependencyProbe;
@@ -512,6 +513,29 @@ class DiagnosticsTest extends TestCase
             ->assertJsonPath('data.incident.recovery_action', 'Inspect the sanitized incident details and dependency health.');
         $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk()->assertJsonPath('data.incident.status', 'RESOLVED');
         $this->assertDatabaseHas('audit_events', ['event_type' => 'diagnostics.incident.status_changed']);
+    }
+
+    public function test_status_change_rolls_back_when_audit_recording_fails(): void
+    {
+        $admin = $this->user('admin');
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'A safe failure.', 'audit-rollback');
+        $id = DB::table('diagnostic_incidents')->where('component', 'audit-rollback')->value('id');
+        $audit = Mockery::mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('audit unavailable'));
+        $this->app->instance(AuditLogger::class, $audit);
+        $this->withoutExceptionHandling();
+
+        try {
+            $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED']);
+            $this->fail('Expected audit failure.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('audit unavailable', $exception->getMessage());
+        }
+
+        $this->assertDatabaseHas('diagnostic_incidents', ['id' => $id, 'status' => 'OPEN']);
+        $this->assertDatabaseMissing('audit_events', [
+            'event_type' => 'diagnostics.incident.status_changed', 'subject_id' => $id,
+        ]);
     }
 
     public function test_diagnostics_error_responses_match_the_openapi_error_shape(): void
