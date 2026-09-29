@@ -143,6 +143,7 @@ return [
         ],
 
         'emergency' => [
+            'tap' => [StructuredLogs::class],
             'path' => storage_path('logs/laravel.log'),
         ],
 

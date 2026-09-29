@@ -354,6 +354,26 @@ class DiagnosticsTest extends TestCase
         }
     }
 
+    public function test_every_selectable_non_null_log_channel_uses_the_redaction_tap(): void
+    {
+        $channels = config('logging.channels');
+        foreach ($channels as $name => $channel) {
+            if (in_array($name, ['stack', 'null'], true)) {
+                continue;
+            }
+
+            $this->assertContains(StructuredLogs::class, $channel['tap'] ?? [], "Log channel [{$name}] must redact its records.");
+        }
+
+        foreach ($channels['stack']['channels'] as $name) {
+            if ($name === 'null') {
+                continue;
+            }
+
+            $this->assertContains(StructuredLogs::class, $channels[$name]['tap'] ?? [], "Stack member [{$name}] must redact its records.");
+        }
+    }
+
     public function test_structured_logger_redacts_escaped_json_secret_values(): void
     {
         $handler = new TestHandler;
