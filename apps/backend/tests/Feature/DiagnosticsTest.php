@@ -55,7 +55,7 @@ class DiagnosticsTest extends TestCase
             LlmProviderException::RATE_LIMITED,
             retryAfterSeconds: 45,
         ));
-        Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE));
+        Route::get('/api/v1/_diagnostics-test/provider-temporary', fn () => throw new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 20));
         Route::get('/api/v1/_diagnostics-test/provider-config', fn () => throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED));
         Route::get('/api/v1/_diagnostics-test/provider-invalid-config', fn () => throw new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION));
         Route::get('/api/v1/_diagnostics-test/provider-malformed-output', fn () => throw new LlmProviderException(LlmProviderException::MALFORMED_OUTPUT));
@@ -344,8 +344,9 @@ class DiagnosticsTest extends TestCase
         $this->assertSame('45', $rateLimited->headers->get('Retry-After'));
         $this->assertSame('LLM_PROVIDER_RATE_LIMITED', $rateLimited->json('error.code'));
         $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_RATE_LIMITED', 'retryable' => true]);
-        $this->withHeader('X-Request-ID', 'req_provider_temporary')->getJson('/api/v1/_diagnostics-test/provider-temporary')->assertStatus(503)
+        $temporary = $this->withHeader('X-Request-ID', 'req_provider_temporary')->getJson('/api/v1/_diagnostics-test/provider-temporary')->assertStatus(503)
             ->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+        $this->assertSame('20', $temporary->headers->get('Retry-After'));
         $configured = $this->getJson('/api/v1/_diagnostics-test/provider-config')->assertStatus(503)
             ->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('retry', strtolower($configured['error']['message']));
@@ -380,6 +381,10 @@ class DiagnosticsTest extends TestCase
             $this->assertSame($retryable, $entry['retryable']);
             $this->assertSame('ERROR', $entry['severity']);
             $this->assertSame($code, ErrorCatalog::providerFailureCode(new LlmProviderException($category)));
+            $this->assertSame(
+                $retryable ? ['Retry-After' => '42'] : [],
+                ErrorCatalog::responseHeaders(new LlmProviderException($category, retryAfterSeconds: 42)),
+            );
         }
     }
 

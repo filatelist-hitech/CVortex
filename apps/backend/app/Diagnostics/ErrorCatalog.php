@@ -78,7 +78,7 @@ final class ErrorCatalog
     public static function responseHeaders(Throwable $exception): array
     {
         if ($exception instanceof LlmProviderException
-            && $exception->category === LlmProviderException::RATE_LIMITED
+            && self::incidentDetails(self::providerFailureCode($exception))['retryable']
             && is_int($exception->retryAfterSeconds)
             && $exception->retryAfterSeconds >= 0
             && $exception->retryAfterSeconds <= 86400) {
