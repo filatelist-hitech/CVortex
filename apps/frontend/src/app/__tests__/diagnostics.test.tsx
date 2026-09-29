@@ -189,6 +189,19 @@ describe("Error Center", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(expect.not.stringContaining("provider="), expect.anything()));
   });
 
+  it("matches advanced filter input limits to diagnostics API validation", async () => {
+    mockData();
+    render(<Diagnostics />);
+    await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    fireEvent.click(screen.getByRole("button", { name: "More filters" }));
+    for (const [field, limit] of Object.entries({
+      provider: 64, service: 32, environment: 32, error_code: 96,
+      request_id: 128, job_id: 128, llm_run_id: 26, application_id: 26,
+    })) {
+      expect(screen.getByLabelText(field.replaceAll("_", " "))).toHaveAttribute("maxLength", String(limit));
+    }
+  });
+
   it.each(["reload", "sort", "filter", "pagination"])("keeps the latest %s list request when an older response arrives later", async (action) => {
     const slow = deferred<Response>();
     const stale = { ...incident, id: "stale", latest_provider: "Stale" };
@@ -406,6 +419,13 @@ describe("Error Center", () => {
     const time = screen.getByRole("button", { name: /Request/ }).querySelector("time");
     expect(time).toHaveTextContent(/28 Sep/);
     expect(time).toHaveAttribute("aria-label", expect.stringContaining("2026"));
+  });
+
+  it("shows a recorded temporary provider retry delay", async () => {
+    mockData([incident], incident, { ...occurrence, retry_after_seconds: 41 });
+    await openDetail();
+    expect(screen.getByText("Retry after 41 seconds.")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent("Wait at least 41 seconds, then retry the operation.");
   });
 
   it("does not invent an unrecorded retry delay", async () => {

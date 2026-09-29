@@ -505,6 +505,10 @@ class DiagnosticsTest extends TestCase
             $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
                 ->assertJsonPath('data.occurrences.0.retry_after_seconds', $delay === 42 ? 42 : null);
         }
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Provider temporarily unavailable.', 'temporary-delay', exception: new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41));
+        $id = DB::table('diagnostic_incidents')->where('component', 'temporary-delay')->value('id');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 41);
     }
 
     public function test_repeated_status_transition_is_a_no_op_for_audit(): void
@@ -599,6 +603,14 @@ class DiagnosticsTest extends TestCase
             'id' => $vacancy->id, 'analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null,
         ]);
 
+        $analysisTemporary = new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41);
+        Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
+        $analysisTemporaryJob = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+        $analysisTemporaryService = Mockery::mock(VacancyAnalysisService::class);
+        $analysisTemporaryService->shouldReceive('analyze')->once()->andThrow($analysisTemporary);
+        $analysisTemporaryJob->handle($analysisTemporaryService, app(DatabaseOwnerContext::class));
+        $analysisTemporaryJob->assertReleased(41)->assertNotFailed();
+
         $profile = CareerProfile::query()->create(['owner_id' => $user->id]);
         $source = CareerSource::query()->create([
             'owner_id' => $user->id, 'career_profile_id' => $profile->id, 'kind' => 'PASTED_TEXT',
@@ -637,6 +649,14 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('career_sources', [
             'id' => $source->id, 'extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null,
         ]);
+
+        $careerTemporary = new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41);
+        CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
+        $careerTemporaryJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $careerTemporaryService = Mockery::mock(CareerExtractionService::class);
+        $careerTemporaryService->shouldReceive('extract')->once()->andThrow($careerTemporary);
+        $careerTemporaryJob->handle($careerTemporaryService);
+        $careerTemporaryJob->assertReleased(41)->assertNotFailed();
 
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $careerFinalJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();

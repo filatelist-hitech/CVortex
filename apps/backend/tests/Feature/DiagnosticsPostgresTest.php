@@ -53,6 +53,10 @@ class DiagnosticsPostgresTest extends TestCase
             ->assertOk()->assertJsonPath('data.total', 1);
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
             ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42);
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Temporarily unavailable.', 'temporary-delay', exception: new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41));
+        $temporaryId = DB::table('diagnostic_incidents')->where('component', 'temporary-delay')->value('id');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$temporaryId)->assertOk()
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 41);
         $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk();
         $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk();
         $this->assertSame(1, DB::table('audit_events')->where('subject_id', $id)->count());
