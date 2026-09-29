@@ -99,7 +99,7 @@ final class DiagnosticsController extends Controller
         abort_if($incident === null, 404);
         $incident->retryable = (bool) $incident->retryable;
         $occurrences = DB::table('diagnostic_occurrences')->where('incident_id', $id)
-            ->orderByDesc('created_at')->limit(20)->get();
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(20)->get();
 
         return response()->json(['data' => ['incident' => $incident, 'occurrences' => $occurrences]]);
     }

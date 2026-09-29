@@ -75,8 +75,16 @@ export default function Diagnostics() {
   const [announcement, setAnnouncement] = useState("");
   const statusLock = useRef(false);
   const detailHeading = useRef<HTMLHeadingElement>(null);
+  const listHeading = useRef<HTMLHeadingElement>(null);
+  const rowButtons = useRef(new Map<string, HTMLButtonElement>());
+  const returnFocusId = useRef<string | null>(null);
+  const pendingReturnFocus = useRef<string | null>(null);
   const focusOrigin = useRef<Element | null>(null);
   const filterToggle = useRef<HTMLButtonElement>(null);
+  const listGeneration = useRef(0);
+  const detailGeneration = useRef(0);
+  const selectedIdRef = useRef<string | null>(null);
+  const latestListQuery = useRef<{ filters: Filters; page: number }>({ filters: {}, page: 1 });
   const [busy, setBusy] = useState(true);
   const [detailBusy, setDetailBusy] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -89,50 +97,77 @@ export default function Diagnostics() {
   const [refreshedAt, setRefreshedAt] = useState<Date | null>(null);
 
   const load = useCallback(async (current: Filters, nextPage = 1) => {
+    const generation = ++listGeneration.current;
+    latestListQuery.current = { filters: current, page: nextPage };
     setBusy(true);
+    setFailed(null);
     try {
       const params = new URLSearchParams(Object.entries(current).filter(([, value]) => value.trim()));
       params.set("page", String(nextPage));
       const result = await api(`/api/v1/diagnostics/incidents?${params}`);
+      if (generation !== listGeneration.current) return;
       setItems(result.data.data); setApplied(current);
       setPage(result.data.current_page ?? nextPage); setLastPage(result.data.last_page ?? 1);
       setTotal(result.data.total ?? result.data.data.length); setRefreshedAt(new Date());
       setFailed(null);
     } catch (caught) {
+      if (generation !== listGeneration.current) return;
       setFailed({ kind: "list", filters: current, page: nextPage, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable });
-    } finally { setBusy(false); }
+    } finally { if (generation === listGeneration.current) setBusy(false); }
   }, []);
-  useEffect(() => { const timer = window.setTimeout(() => void load({}), 0); return () => window.clearTimeout(timer); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load({}), 0);
+    const listRequests = listGeneration;
+    const detailRequests = detailGeneration;
+    return () => { window.clearTimeout(timer); listRequests.current++; detailRequests.current++; };
+  }, [load]);
   useEffect(() => {
     if (detail && focusOrigin.current) {
       if (document.activeElement === focusOrigin.current || document.activeElement === document.body) detailHeading.current?.focus();
       focusOrigin.current = null;
     }
   }, [detail]);
-  function apply(next: Filters) { setFilters(next); setDetail(null); setSelectedId(null); setFailed(null); void load(next); }
+  useEffect(() => {
+    if (selectedId || busy || !pendingReturnFocus.current) return;
+    const target = rowButtons.current.get(pendingReturnFocus.current);
+    (target ?? listHeading.current)?.focus();
+    pendingReturnFocus.current = null;
+  }, [selectedId, busy, items, failed]);
+  function apply(next: Filters) { detailGeneration.current++; selectedIdRef.current = null; pendingReturnFocus.current = null; setFilters(next); setDetail(null); setSelectedId(null); setFailed(null); void load(next); }
   function setField(field: string, value: string) { setFilters((current) => ({ ...current, [field]: value })); }
   async function open(id: string, moveFocus = true) {
+    const generation = ++detailGeneration.current;
+    listGeneration.current++;
+    selectedIdRef.current = id;
     focusOrigin.current = moveFocus ? document.activeElement : null;
     setSelectedId(id); setDetail(null); setFailed(null); setDetailBusy(true); setExpanded(null); setTechnicalOpen(false);
     try {
       const result = await api(`/api/v1/diagnostics/incidents/${id}`);
+      if (generation !== detailGeneration.current || selectedIdRef.current !== id) return;
       setDetail(result.data); setFailed(null);
     }
-    catch (caught) { setFailed({ kind: "detail", id, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable }); }
-    finally { setDetailBusy(false); }
+    catch (caught) { if (generation === detailGeneration.current && selectedIdRef.current === id) setFailed({ kind: "detail", id, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable }); }
+    finally { if (generation === detailGeneration.current && selectedIdRef.current === id) setDetailBusy(false); }
   }
   async function setStatus(status: string, id = detail?.incident.id) {
     if (!id || statusLock.current) return;
+    const generation = detailGeneration.current;
     statusLock.current = true; setStatusPending(true); setFailed(null); setAnnouncement("");
     try {
       const result = await api(`/api/v1/diagnostics/incidents/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+      if (generation !== detailGeneration.current || selectedIdRef.current !== id) {
+        if (selectedIdRef.current === null) void load(latestListQuery.current.filters, latestListQuery.current.page);
+        return;
+      }
       setDetail(result.data);
       setItems((current) => current.flatMap((item) => item.id !== id ? [item] : applied.status && applied.status !== status ? [] : [result.data.incident]));
       if (applied.status && applied.status !== status) setTotal((current) => Math.max(0, current - 1));
       setAnnouncement(`Status changed to ${status}.`);
     } catch (caught) {
-      setFailed({ kind: "status", id, status, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable });
-      setAnnouncement(`Status change to ${status} failed.`);
+      if (generation === detailGeneration.current && selectedIdRef.current === id) {
+        setFailed({ kind: "status", id, status, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable });
+        setAnnouncement(`Status change to ${status} failed.`);
+      }
     } finally { statusLock.current = false; setStatusPending(false); }
   }
   function retry() {
@@ -172,18 +207,18 @@ export default function Diagnostics() {
       </div>
       {active.length > 0 && <div className="diagnostics-chips" aria-label="Active filters">{active.map(([key, value]) => <button key={key} type="button" className="secondary" aria-label={`Remove ${key.replaceAll("_", " ")} filter`} onClick={() => { const next = { ...applied }; delete next[key]; apply(next); }}>{key === "hours" ? ({ "24": "Last 24h", "168": "Last 7d", "720": "Last 30d" }[value] ?? value) : `${key.replaceAll("_", " ")}: ${value}`} ×</button>)}<button type="button" className="diagnostics-link" onClick={() => apply({})}>Clear all</button></div>}
       <div className="diagnostics-metrics" aria-label="Current page summary"><div><strong>{visibleOpen}</strong><span>Open on this page</span></div><div><strong>{visibleCritical}</strong><span>Critical on this page</span></div><div><strong>{visibleRecurring}</strong><span>Recurring on this page</span></div><div><strong>{total}</strong><span>Matching incidents</span></div></div><p className="sr-only" role="status" aria-live="polite">{busy ? "Loading results" : `${total} matching incidents`}</p>
-      <div className="diagnostics-list-heading"><h2>Incidents</h2><label>Sort<select value={filters.sort ?? "priority"} onChange={(event) => apply({ ...filters, sort: event.target.value })}><option value="priority">Priority</option><option value="last_seen">Last seen</option><option value="first_seen">First seen</option><option value="occurrences">Occurrence count</option><option value="severity">Severity</option></select></label></div>
+      <div className="diagnostics-list-heading"><h2 ref={listHeading} tabIndex={-1}>Incidents</h2><label>Sort<select value={filters.sort ?? "priority"} onChange={(event) => apply({ ...filters, sort: event.target.value })}><option value="priority">Priority</option><option value="last_seen">Last seen</option><option value="first_seen">First seen</option><option value="occurrences">Occurrence count</option><option value="severity">Severity</option></select></label></div>
     </>}
-    {selectedId && <button type="button" className="diagnostics-link" onClick={() => { setDetail(null); setSelectedId(null); setFailed(null); void load(applied, page); }}>← All incidents</button>}
+    {selectedId && <button type="button" className="diagnostics-link" onClick={(event) => { detailGeneration.current++; selectedIdRef.current = null; pendingReturnFocus.current = event.detail === 0 ? returnFocusId.current : null; focusOrigin.current = null; setDetail(null); setSelectedId(null); setFailed(null); void load(applied, page); }}>← All incidents</button>}
     {failed && <div className="alert error diagnostics-error" role="alert"><div><strong>{failed.kind === "list" ? "Incident list could not be loaded." : failed.kind === "detail" ? "Incident details could not be loaded." : `Status change to ${failed.status} failed.`}</strong><p>{failed.message}</p>{failed.kind === "list" && <p>If diagnostics remain unavailable, use local container logs.</p>}</div>{failed.retryable && <button type="button" className="secondary" onClick={retry}>Retry</button>}</div>}
     {announcement && <p className="diagnostics-feedback" role="status" aria-live="polite">{announcement}</p>}
     {copied && <p className="diagnostics-feedback" role="status" aria-live="polite">{copied}</p>}
     {selectedId && detailBusy && <section className="diagnostics-detail" aria-label="Incident details" aria-busy="true"><p role="status">Loading incident details for {selectedId}…</p><div className="diagnostics-skeleton" aria-hidden="true"><span /><span /><span /></div></section>}
     {!selectedId && busy && <div className="diagnostics-skeleton" role="status" aria-label="Loading incidents"><span /><span /><span /></div>}
     {!selectedId && !busy && !failed && items.length === 0 && <div className="diagnostics-empty"><h2>{applied.search && extraFilters ? "No incidents match this search with the current filters." : applied.search ? "No incident found for this reference" : extraFilters ? "No incidents match these filters" : "No incidents recorded"}</h2><p>{applied.search && extraFilters ? "One or more filters may exclude the matching incident." : applied.search ? "Check the reference. The event may have expired, failed before persistence, or exist only in local logs." : extraFilters ? "Clear filters or change the time range." : "The system has not recorded operational errors yet."}</p>{extraFilters && <button type="button" className="secondary" onClick={() => apply(applied.search ? { search: applied.search } : {})}>{applied.search ? "Clear filters and search again" : "Clear filters"}</button>}</div>}
-    {!selectedId && !busy && !failed && items.length > 0 && <ul className="diagnostics-list">{items.map((item) => <li key={item.id}><button type="button" onClick={() => void open(item.id)}><span className="diagnostics-item-top"><Severity value={item.severity} /><span className="diagnostics-status">{item.status}</span></span><strong>{titleFor(item)}</strong><span className="diagnostics-cause">{causeFor(item)}</span><span className="diagnostics-item-meta"><span>{operationName(item.latest_operation) ?? item.component}{item.latest_provider ? ` · ${item.latest_provider}` : ""}</span><span>{item.occurrence_count} {item.occurrence_count === 1 ? "occurrence" : "occurrences"}</span><span>Last seen <Timestamp value={item.last_seen_at} /></span></span></button></li>)}</ul>}
+    {!selectedId && !busy && !failed && items.length > 0 && <ul className="diagnostics-list">{items.map((item) => <li key={item.id}><button ref={(node) => { if (node) rowButtons.current.set(item.id, node); else rowButtons.current.delete(item.id); }} type="button" onClick={(event) => { returnFocusId.current = item.id; void open(item.id, event.detail === 0); }}><span className="diagnostics-item-top"><Severity value={item.severity} /><span className="diagnostics-status">{item.status}</span></span><strong>{titleFor(item)}</strong><span className="diagnostics-cause">{causeFor(item)}</span><span className="diagnostics-item-meta"><span>{operationName(item.latest_operation) ?? item.component}{item.latest_provider ? ` · ${item.latest_provider}` : ""}</span><span>{item.occurrence_count} {item.occurrence_count === 1 ? "occurrence" : "occurrences"}</span><span>Last seen <Timestamp value={item.last_seen_at} /></span></span></button></li>)}</ul>}
     {!selectedId && !busy && !failed && total > 0 && <nav className="diagnostics-pages" aria-label="Incident pages"><button type="button" className="secondary" disabled={page <= 1} onClick={() => void load(applied, page - 1)}>Previous</button><span>Page {page} of {lastPage} · {total} incidents</span><button type="button" className="secondary" disabled={page >= lastPage} onClick={() => void load(applied, page + 1)}>Next</button></nav>}
-    {selected && !detailBusy && <article className="diagnostics-detail" aria-labelledby="incident-title" aria-busy={statusPending}><div className="diagnostics-detail-head"><div><div className="diagnostics-item-top"><Severity value={selected.severity} /><span className="diagnostics-status">Status: {selected.status} · {selected.occurrence_count} occurrences</span></div><h2 id="incident-title" ref={detailHeading} tabIndex={-1}>{titleFor(selected, latest)}</h2><p className="diagnostics-code">{selected.error_code} <button type="button" className="diagnostics-link" onClick={() => void copy("Error code", selected.error_code)}>Copy code</button></p><p>{selected.message}</p></div><div className="actions">{["OPEN", "RESOLVED", "IGNORED"].filter((status) => status !== selected.status).map((status) => <button key={status} type="button" className="secondary" disabled={statusPending} onClick={() => void setStatus(status)}>{status === "OPEN" ? "Reopen" : status === "RESOLVED" ? "Resolve" : "Ignore"}</button>)}{statusPending && <span role="status">Saving…</span>}</div></div>
+    {selectedId && selected && !detailBusy && <article className="diagnostics-detail" aria-labelledby="incident-title" aria-busy={statusPending}><div className="diagnostics-detail-head"><div><div className="diagnostics-item-top"><Severity value={selected.severity} /><span className="diagnostics-status">Status: {selected.status} · {selected.occurrence_count} occurrences</span></div><h2 id="incident-title" ref={detailHeading} tabIndex={-1}>{titleFor(selected, latest)}</h2><p className="diagnostics-code">{selected.error_code} <button type="button" className="diagnostics-link" onClick={() => void copy("Error code", selected.error_code)}>Copy code</button></p><p>{selected.message}</p></div><div className="actions">{["OPEN", "RESOLVED", "IGNORED"].filter((status) => status !== selected.status).map((status) => <button key={status} type="button" className="secondary" disabled={statusPending} onClick={() => void setStatus(status)}>{status === "OPEN" ? "Reopen" : status === "RESOLVED" ? "Resolve" : "Ignore"}</button>)}{statusPending && <span role="status">Saving…</span>}</div></div>
       <section className="diagnostics-decision" aria-label="Diagnosis and next action"><div><h3>Cause</h3><p className="diagnostics-cause-head">{causes[selected.error_code] ? "Known cause: " : "Root cause unknown: "}{causeFor(selected)}</p></div><div><h3>Impact</h3><p>{selected.impact}</p><p className="muted">Diagnostics do not confirm whether data changed.</p></div><div><h3>Recommended action</h3><p>{recommendedAction(selected, latest)}</p></div><div className="diagnostics-retry"><h3>Retryable</h3><p><strong>{selected.retryable ? "Yes" : "No"}</strong> — {selected.retryable ? "Retry after the stated condition clears." : "Address the cause before running the operation again."}</p>{selected.error_code === "LLM_PROVIDER_RATE_LIMITED" && <p>{latest?.retry_after_seconds != null ? `Retry after ${latest.retry_after_seconds} seconds.` : "Retry delay was not recorded."}</p>}</div></section>
       <dl className="diagnostics-timing"><div><dt>First seen</dt><dd><Timestamp value={selected.first_seen_at} /></dd></div><div><dt>Last seen</dt><dd><Timestamp value={selected.last_seen_at} /></dd></div><div><dt>Occurrences</dt><dd>{selected.occurrence_count}</dd></div></dl>
       {(latest?.operation || latest?.provider || latest?.attempt != null) && <section className="diagnostics-context" aria-labelledby="context-title"><h3 id="context-title">Operational context</h3><dl>{latest.operation && <div><dt>Affected operation</dt><dd>{operationName(latest.operation)}</dd></div>}{latest.provider && <div><dt>Provider</dt><dd>{latest.provider}</dd></div>}{latest.attempt != null && <div><dt>Attempt</dt><dd>{latest.attempt}</dd></div>}</dl></section>}
