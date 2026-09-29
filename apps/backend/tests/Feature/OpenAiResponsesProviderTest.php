@@ -43,4 +43,31 @@ class OpenAiResponsesProviderTest extends TestCase
             }
         }
     }
+
+    public function test_retry_after_header_is_numeric_bounded_or_absent(): void
+    {
+        config([
+            'ai.providers.openai.api_key' => 'test-key',
+            'ai.providers.openai.base_url' => 'https://api.openai.com/v1',
+            'ai.providers.openai.timeout_seconds' => 2,
+        ]);
+        $request = new LlmRequest('trusted', 'untrusted', ['type' => 'object'], new ModelPolicy('test', true));
+        $model = new ResolvedModel('test', 'openai', 'test-model');
+        $provider = app(OpenAiResponsesProvider::class);
+        Http::fakeSequence('*/responses')
+            ->push([], 429, ['Retry-After' => '42'])
+            ->push([], 429, ['Retry-After' => '999999'])
+            ->push([], 429, ['Retry-After' => 'later'])
+            ->push([], 429);
+
+        foreach ([42, 86400, null, null] as $expected) {
+            try {
+                $provider->generateResolved($request, $model);
+                $this->fail('A rate-limited response must throw.');
+            } catch (LlmProviderException $exception) {
+                $this->assertSame(LlmProviderException::RATE_LIMITED, $exception->category);
+                $this->assertSame($expected, $exception->retryAfterSeconds);
+            }
+        }
+    }
 }

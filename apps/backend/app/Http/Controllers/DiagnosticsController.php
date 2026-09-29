@@ -25,6 +25,7 @@ final class DiagnosticsController extends Controller
             'status' => [Rule::in(['OPEN', 'RESOLVED', 'IGNORED'])],
             'service' => ['string', 'max:32'], 'component' => ['string', 'max:96'],
             'environment' => ['string', 'max:32'], 'error_code' => ['string', 'max:96'],
+            'provider' => ['string', 'max:64'],
             'from' => ['date'], 'to' => ['date'],
             'search' => ['string', 'max:128'],
             'request_id' => ['string', 'max:128'], 'job_id' => ['string', 'max:128'],
@@ -43,6 +44,9 @@ final class DiagnosticsController extends Controller
             if (isset($filters[$key])) {
                 $query->where($key, $filters[$key]);
             }
+        }
+        if (isset($filters['provider'])) {
+            $query->whereRaw('(SELECT provider FROM diagnostic_occurrences WHERE incident_id = diagnostic_incidents.id ORDER BY created_at DESC, id DESC LIMIT 1) = ?', [$filters['provider']]);
         }
         if (isset($filters['from'])) {
             $query->where('last_seen_at', '>=', Carbon::parse($filters['from'])->startOfDay());
@@ -109,6 +113,9 @@ final class DiagnosticsController extends Controller
         DB::transaction(function () use ($id, $data, $audit, $user): void {
             $incident = DB::table('diagnostic_incidents')->where('id', $id)->lockForUpdate()->first();
             abort_if($incident === null, 404);
+            if ($incident->status === $data['status']) {
+                return;
+            }
             DB::table('diagnostic_incidents')->where('id', $id)->update(['status' => $data['status'], 'updated_at' => now()]);
             $audit->record('diagnostics.incident.status_changed', 'USER', $user, 'diagnostic_incident', $id, ['status' => $data['status']]);
         });
@@ -125,7 +132,7 @@ final class DiagnosticsController extends Controller
             'error_ref' => ['sometimes', 'string', 'regex:/\\A[a-f0-9]{64}\\z/'],
             'route' => ['sometimes', 'string', Rule::in(self::BROWSER_ROUTES)],
         ]);
-        $recorded = $recorder->record('FRONTEND_RUNTIME_ERROR', 'A browser operation failed.', $data['component'], 'ERROR', null, [
+        $recorded = $recorder->record('FRONTEND_RUNTIME_ERROR', 'The browser reported a failure. Its root cause was not captured.', $data['component'], 'ERROR', null, [
             'service' => 'frontend', 'request_id' => $request->attributes->get('request_id'),
             'user_id' => $request->user()?->id, 'operation' => $data['kind'],
             'route' => $data['route'] ?? null, 'error_ref' => $data['error_ref'] ?? null,

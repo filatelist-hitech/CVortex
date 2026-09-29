@@ -650,6 +650,67 @@ class DiagnosticsTest extends TestCase
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?sort=invalid')->assertUnprocessable();
     }
 
+    public function test_provider_filter_matches_latest_provider_and_combines_with_other_filters(): void
+    {
+        $admin = $this->user('admin');
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('LLM_PROVIDER_UNAVAILABLE', 'Provider failed.', 'vacancy', 'ERROR', context: [
+            'provider' => 'old-provider', 'request_id' => 'req_provider_match',
+        ]);
+        $recorder->record('LLM_PROVIDER_UNAVAILABLE', 'Provider failed.', 'vacancy', 'ERROR', context: [
+            'provider' => 'openai', 'request_id' => 'req_provider_match',
+        ]);
+        $id = DB::table('diagnostic_incidents')->value('id');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai')->assertOk()
+            ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $id)
+            ->assertJsonPath('data.data.0.latest_provider', 'openai');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=missing')->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=old-provider')->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&severity=ERROR&status=OPEN&hours=24&search=req_provider_match')
+            ->assertOk()->assertJsonPath('data.total', 1);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&status=RESOLVED')->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&from='.now()->addDay()->toDateString())
+            ->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider='.str_repeat('a', 65))->assertUnprocessable();
+    }
+
+    public function test_provider_retry_delay_is_bounded_and_exposed_only_when_valid(): void
+    {
+        $admin = $this->user('admin');
+        foreach ([42, null, -1, 86401] as $delay) {
+            app(IncidentRecorder::class)->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'component_'.($delay ?? 'missing'), exception: new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: $delay));
+            $id = DB::table('diagnostic_incidents')->where('component', 'component_'.($delay ?? 'missing'))->value('id');
+            $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+                ->assertJsonPath('data.occurrences.0.retry_after_seconds', $delay === 42 ? 42 : null);
+        }
+    }
+
+    public function test_repeated_status_transition_is_a_no_op_for_audit(): void
+    {
+        $admin = $this->user('admin');
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'api');
+        $id = DB::table('diagnostic_incidents')->value('id');
+        foreach (['RESOLVED', 'RESOLVED', 'IGNORED', 'IGNORED', 'OPEN', 'OPEN'] as $status) {
+            $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => $status])
+                ->assertOk()->assertJsonPath('data.incident.status', $status);
+        }
+        $this->assertSame(3, DB::table('audit_events')->where('event_type', 'diagnostics.incident.status_changed')->count());
+    }
+
+    public function test_status_transition_rolls_back_when_audit_write_fails(): void
+    {
+        $admin = $this->user('admin');
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'api');
+        $id = DB::table('diagnostic_incidents')->value('id');
+        $audit = Mockery::mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('audit unavailable'));
+        $this->app->instance(AuditLogger::class, $audit);
+
+        $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertStatus(500);
+        $this->assertSame('OPEN', DB::table('diagnostic_incidents')->where('id', $id)->value('status'));
+        $this->assertSame(0, DB::table('audit_events')->where('subject_id', $id)->count());
+    }
+
     public function test_browser_report_ignores_untrusted_details_and_requires_auth(): void
     {
         $this->postJson('/api/v1/diagnostics/report', ['component' => 'app'])->assertUnauthorized();

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\AI\Exceptions\LlmProviderException;
 use App\Diagnostics\IncidentRecorder;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -62,6 +63,28 @@ class DiagnosticsPostgresTest extends TestCase
         $this->assertDatabaseMissing('audit_events', [
             'event_type' => 'diagnostics.incident.status_changed', 'subject_id' => $incidentId,
         ]);
+    }
+
+    public function test_runtime_provider_filter_retry_delay_and_noop_status_audit(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('PostgreSQL runtime-role boundary only.');
+        }
+        $admin = $this->user('admin');
+        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $reference = 'req_'.Str::ulid();
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'vacancy', exception: $exception, context: [
+            'provider' => 'openai', 'request_id' => $reference,
+        ]);
+        $id = DB::table('diagnostic_occurrences')->where('request_id', $reference)->value('incident_id');
+        $this->assertNotNull($id);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&search='.$reference)
+            ->assertOk()->assertJsonPath('data.total', 1);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42);
+        $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk();
+        $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk();
+        $this->assertSame(1, DB::table('audit_events')->where('subject_id', $id)->count());
     }
 
     private function user(string $role): User

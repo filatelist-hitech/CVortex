@@ -2,6 +2,7 @@
 
 namespace App\Diagnostics;
 
+use App\AI\Exceptions\LlmProviderException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -44,6 +45,12 @@ final class IncidentRecorder
             $shared = [];
         }
         $safeContext = Redactor::context([...($shared ?: []), ...$context]);
+        $retryAfterSeconds = $exception instanceof LlmProviderException
+            && $exception->category === LlmProviderException::RATE_LIMITED
+            && is_int($exception->retryAfterSeconds)
+            && $exception->retryAfterSeconds >= 0
+            && $exception->retryAfterSeconds <= 86400
+                ? $exception->retryAfterSeconds : null;
         $safeStack = $exception === null ? null : Redactor::stack($exception);
         $fingerprint = hash('sha256', implode('|', [$code, $component, $exception ? $exception::class : '', $safeContext['operation'] ?? '']));
         $details = ErrorCatalog::incidentDetails($code);
@@ -65,7 +72,7 @@ final class IncidentRecorder
         }
 
         try {
-            $stored = DB::transaction(function () use ($fingerprint, $code, $safeMessage, $component, $severity, $exception, $safeContext, $safeStack, $details): bool {
+            $stored = DB::transaction(function () use ($fingerprint, $code, $safeMessage, $component, $severity, $exception, $safeContext, $safeStack, $details, $retryAfterSeconds): bool {
                 $now = now();
                 DB::table('diagnostic_incidents')->insertOrIgnore([
                     'id' => (string) Str::ulid(), 'fingerprint' => $fingerprint, 'status' => 'OPEN',
@@ -93,6 +100,7 @@ final class IncidentRecorder
                     'queue' => $safeContext['queue'] ?? null, 'connection' => $safeContext['connection'] ?? null,
                     'attempt' => $safeContext['attempt'] ?? null, 'safe_stack' => $safeStack,
                     'error_ref' => $safeContext['error_ref'] ?? null,
+                    'retry_after_seconds' => $retryAfterSeconds,
                     'created_at' => $now,
                 ]);
                 // Preserve recent reference IDs while bounding a noisy fingerprint.

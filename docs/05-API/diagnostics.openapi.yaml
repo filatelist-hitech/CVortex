@@ -74,6 +74,7 @@ paths:
         - { name: component, in: query, schema: { type: string, maxLength: 96 } }
         - { name: environment, in: query, schema: { type: string, maxLength: 32 } }
         - { name: error_code, in: query, schema: { type: string, maxLength: 96 } }
+        - { name: provider, in: query, description: Exact provider of the latest retained occurrence, schema: { type: string, maxLength: 64 } }
         - { name: from, in: query, schema: { type: string, format: date } }
         - { name: to, in: query, schema: { type: string, format: date } }
         - { name: search, in: query, description: Exact request/job/LLM/application ID or error code, schema: { type: string, maxLength: 128 } }
@@ -121,7 +122,7 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
     patch:
       summary: Change incident lifecycle status
-      description: Admin only; action is audited.
+      description: Admin only; effective status changes are audited. Repeating the current status is a no-op and creates no audit event.
       requestBody:
         required: true
         content:
@@ -200,6 +201,7 @@ components:
         connection: { type: [string, 'null'] }
         attempt: { type: [integer, 'null'] }
         error_ref: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        retry_after_seconds: { type: [integer, 'null'], minimum: 0, maximum: 86400, description: Validated provider retry delay when known; null means no delay was recorded. }
         safe_stack: { type: [string, 'null'] }
         created_at: { type: string, format: date-time }
   responses:
