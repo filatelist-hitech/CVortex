@@ -83,6 +83,46 @@ describe("diagnostic UI", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining("search=req_test&page=1"), expect.anything()));
   });
 
+  it("ignores stale incident-list errors after a newer reload succeeds", async () => {
+    const latestIncident = { ...incident, id: "latest", error_code: "LATEST_INCIDENT" };
+    const pending: Array<{ resolve: (response: Response) => void; reject: (error: Error) => void }> = [];
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((resolve, reject) => {
+      pending.push({ resolve, reject });
+    }));
+    render(<Diagnostics />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    pending[1].resolve(Response.json({ data: { data: [latestIncident], current_page: 2, last_page: 2, total: 26 } }));
+    expect(await screen.findByText("LATEST_INCIDENT")).toBeInTheDocument();
+    pending[0].reject(new Error("stale network failure"));
+
+    await waitFor(() => expect(screen.getByText("Page 2 of 2 · 26 incidents")).toBeInTheDocument());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("does not let an older successful list response replace the latest results", async () => {
+    const staleIncident = { ...incident, id: "stale", error_code: "STALE_INCIDENT" };
+    const latestIncident = { ...incident, id: "latest", error_code: "LATEST_INCIDENT" };
+    const pending: Array<(response: Response) => void> = [];
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+    render(<Diagnostics />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    pending[1](Response.json({ data: { data: [latestIncident], current_page: 2, last_page: 2, total: 26 } }));
+    expect(await screen.findByText("LATEST_INCIDENT")).toBeInTheDocument();
+    pending[0](Response.json({ data: { data: [staleIncident], current_page: 1, last_page: 1, total: 1 } }));
+
+    await waitFor(() => expect(screen.getByText("Page 2 of 2 · 26 incidents")).toBeInTheDocument());
+    expect(screen.queryByText("STALE_INCIDENT")).not.toBeInTheDocument();
+    expect(screen.getByText("LATEST_INCIDENT")).toBeInTheDocument();
+  });
+
   it("shows every incident category by default and clears filters with Show all incidents", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
       data: { data: [], current_page: 1, last_page: 1, total: 0 },

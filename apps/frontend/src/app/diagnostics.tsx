@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "./access-shell";
 
 type Incident = {
@@ -33,23 +33,29 @@ export default function Diagnostics() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const listRequestGeneration = useRef(0);
   const load = useCallback(async (current: Record<string, string>, nextPage = 1) => {
+    const requestGeneration = ++listRequestGeneration.current;
     setAnnouncement("");
     setBusy(true);
     try {
       const params = new URLSearchParams(Object.entries(current).filter(([, value]) => value.trim()));
       params.set("page", String(nextPage));
       const result = await api(`/api/v1/diagnostics/incidents?${params}`);
+      if (requestGeneration !== listRequestGeneration.current) return;
       setItems(result.data.data);
       setPage(result.data.current_page ?? nextPage);
       setLastPage(result.data.last_page ?? 1);
       setTotal(result.data.total ?? result.data.data.length);
       setError(null);
     } catch (caught) {
+      if (requestGeneration !== listRequestGeneration.current) return;
       setError({ message: `Incident list could not be loaded. ${caught instanceof Error ? caught.message : "Please try again."}`,
         retryable: caught instanceof ApiError && caught.retryable,
         action: { type: "LIST_LOAD", filters: { ...current }, page: nextPage } });
-    } finally { setBusy(false); }
+    } finally {
+      if (requestGeneration === listRequestGeneration.current) setBusy(false);
+    }
   }, []);
 
   useEffect(() => {

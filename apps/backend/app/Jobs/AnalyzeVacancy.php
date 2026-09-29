@@ -24,7 +24,8 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
-    public int $uniqueFor = Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
+    // Keep the dispatch lock through both bounded provider retry delays.
+    public int $uniqueFor = ProviderRetryAfter::MAX_SECONDS * 2 + Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
 
     public function __construct(public readonly string $ownerId, public readonly string $snapshotId) {}
 

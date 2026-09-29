@@ -22,7 +22,8 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
-    public int $uniqueFor = 600;
+    // A job can spend up to 24 hours in each of its two provider retry delays.
+    public int $uniqueFor = ProviderRetryAfter::MAX_SECONDS * 2 + 600;
 
     public function __construct(public readonly string $ownerId, public readonly string $sourceId) {}
 

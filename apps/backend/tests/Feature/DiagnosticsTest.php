@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\AI\Exceptions\LlmProviderException;
+use App\AI\ProviderRetryAfter;
 use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Diagnostics\Redactor;
@@ -733,6 +734,16 @@ class DiagnosticsTest extends TestCase
         $this->assertDatabaseHas('vacancies', [
             'id' => $vacancy->id, 'analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR',
         ]);
+    }
+
+    public function test_unique_job_locks_cover_the_maximum_provider_retry_window(): void
+    {
+        $careerJob = new ExtractCareerSource('owner-id', 'source-id');
+        $vacancyJob = new AnalyzeVacancy('owner-id', 'snapshot-id');
+        $maximumRetryWindow = ProviderRetryAfter::MAX_SECONDS * ($careerJob->tries - 1);
+
+        $this->assertGreaterThanOrEqual($maximumRetryWindow, $careerJob->uniqueFor);
+        $this->assertGreaterThanOrEqual($maximumRetryWindow, $vacancyJob->uniqueFor);
     }
 
     public function test_transient_queue_attempt_logs_warning_then_succeeds_without_error_incident(): void
