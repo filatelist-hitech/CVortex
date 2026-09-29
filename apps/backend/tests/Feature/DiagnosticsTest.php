@@ -674,6 +674,45 @@ class DiagnosticsTest extends TestCase
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider='.str_repeat('a', 65))->assertUnprocessable();
     }
 
+    public function test_tied_occurrence_timestamps_use_descending_id_for_every_latest_view(): void
+    {
+        $admin = $this->user('admin');
+        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: $exception);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: $exception);
+        $id = DB::table('diagnostic_incidents')->where('component', 'tied-occurrences')->value('id');
+        $ids = DB::table('diagnostic_occurrences')->where('incident_id', $id)->orderBy('id')->pluck('id');
+        $this->assertCount(2, $ids);
+        $timestamp = now()->subMinute()->startOfSecond();
+        DB::table('diagnostic_occurrences')->where('id', $ids[0])->update([
+            'created_at' => $timestamp, 'provider' => 'older', 'request_id' => 'req_older',
+            'llm_run_id' => (string) Str::ulid(), 'application_id' => (string) Str::ulid(),
+            'attempt' => 1, 'retry_after_seconds' => 5,
+        ]);
+        $latestRun = (string) Str::ulid();
+        $latestApplication = (string) Str::ulid();
+        DB::table('diagnostic_occurrences')->where('id', $ids[1])->update([
+            'created_at' => $timestamp, 'provider' => 'newer', 'request_id' => 'req_newer',
+            'llm_run_id' => $latestRun, 'application_id' => $latestApplication,
+            'attempt' => 2, 'retry_after_seconds' => 42,
+        ]);
+
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=newer')->assertOk()
+            ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.latest_provider', 'newer');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=older')->assertOk()
+            ->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.id', $ids[1])
+            ->assertJsonPath('data.occurrences.0.provider', 'newer')
+            ->assertJsonPath('data.occurrences.0.request_id', 'req_newer')
+            ->assertJsonPath('data.occurrences.0.llm_run_id', $latestRun)
+            ->assertJsonPath('data.occurrences.0.application_id', $latestApplication)
+            ->assertJsonPath('data.occurrences.0.attempt', 2)
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42)
+            ->assertJsonPath('data.occurrences.1.id', $ids[0]);
+    }
+
     public function test_provider_retry_delay_is_bounded_and_exposed_only_when_valid(): void
     {
         $admin = $this->user('admin');

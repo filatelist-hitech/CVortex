@@ -259,6 +259,7 @@ blockquote { padding: 12px 16px; border-left: 2px solid var(--accent-secondary);
 .diagnostics-metrics span { color: var(--text-muted); font-size: .875rem; }
 .diagnostics-list-heading { align-items: end; margin-top: 32px; }
 .diagnostics-list-heading h2 { font-size: 1.5rem; }
+.diagnostics-list-heading h2:focus { outline: 3px solid var(--accent-tertiary); outline-offset: 2px; }
 .diagnostics-list { display: grid; gap: 0; margin-top: 12px; padding: 0; list-style: none; }
 .diagnostics-list li { border-bottom: 1px solid var(--border-subtle); }
 .diagnostics-list li:first-child { border-top: 1px solid var(--border-subtle); }

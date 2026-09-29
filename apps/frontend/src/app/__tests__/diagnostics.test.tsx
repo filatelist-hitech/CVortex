@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api } from "../access-shell";
 import AccessShell from "../access-shell";
@@ -22,6 +22,14 @@ const occurrence = {
   route: "/api/v1/vacancies", operation: "vacancy_requirement_extraction", provider: "OpenAI", queue: "analysis-high", connection: "redis", attempt: 3, retry_after_seconds: null,
   safe_stack: "ConfiguredLlmProvider.php:23 throw site\n[app] VacancyAnalysisService.php:135 analyze\n[framework] ControllerDispatcher.php:91 dispatch",
 };
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((finish) => { resolve = finish; });
+  return { promise, resolve };
+}
+function listResponse(items: (Omit<typeof incident, "latest_operation" | "latest_provider"> & { latest_operation?: string | null; latest_provider?: string | null })[], page = 1, lastPage = 1) {
+  return Response.json({ data: { data: items, current_page: page, last_page: lastPage, total: lastPage > 1 ? 26 : items.length } });
+}
 function mockData(items = [incident], detailIncident = incident, detailOccurrence: Omit<typeof occurrence, "retry_after_seconds"> & { retry_after_seconds: number | null } = occurrence) {
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
     const path = String(input);
@@ -179,6 +187,151 @@ describe("Error Center", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining("provider=OpenAI&status=OPEN&search=req_123"), expect.anything()));
     fireEvent.click(screen.getByRole("button", { name: "Remove provider filter" }));
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(expect.not.stringContaining("provider="), expect.anything()));
+  });
+
+  it.each(["reload", "sort", "filter", "pagination"])("keeps the latest %s list request when an older response arrives later", async (action) => {
+    const slow = deferred<Response>();
+    const stale = { ...incident, id: "stale", latest_provider: "Stale" };
+    const fresh = { ...incident, id: "fresh", latest_provider: "Fresh" };
+    let requests = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (!String(input).includes("incidents?")) throw new Error(String(input));
+      requests++;
+      if (requests === 1) return listResponse([incident], 1, action === "pagination" ? 2 : 1);
+      if (requests === 2) return slow.promise;
+      return listResponse([fresh], 1, action === "pagination" ? 2 : 1);
+    });
+    render(<Diagnostics />);
+    await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    if (action === "reload") {
+      fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+      fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    } else if (action === "sort") {
+      fireEvent.change(screen.getByLabelText("Sort"), { target: { value: "severity" } });
+      fireEvent.change(screen.getByLabelText("Sort"), { target: { value: "last_seen" } });
+    } else if (action === "filter") {
+      fireEvent.change(screen.getByLabelText("Status"), { target: { value: "OPEN" } });
+      fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+      fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+      fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    }
+    await waitFor(() => expect(requests).toBe(3));
+    const row = await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    expect(row).toHaveTextContent("Fresh");
+    await act(async () => { slow.resolve(listResponse([stale], action === "pagination" ? 2 : 1)); await slow.promise; });
+    expect(screen.getByRole("button", { name: /Vacancy analysis failed/ })).toHaveTextContent("Fresh");
+    expect(screen.queryByText("Stale")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    if (action === "sort") {
+      expect(screen.getByLabelText("Sort")).toHaveValue("last_seen");
+      expect(screen.getByRole("button", { name: "Remove sort filter" })).toHaveTextContent("last_seen");
+    }
+    if (action === "filter") expect(screen.queryByRole("button", { name: "Remove status filter" })).not.toBeInTheDocument();
+    if (action === "pagination") expect(screen.getByText(/Page 1 of 2/)).toBeInTheDocument();
+  });
+
+  it("does not show a superseded list failure", async () => {
+    const slow = deferred<Response>();
+    let requests = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      requests++;
+      if (requests === 1) return listResponse([incident]);
+      if (requests === 2) return slow.promise;
+      return listResponse([{ ...incident, latest_provider: "Fresh" }]);
+    });
+    render(<Diagnostics />);
+    await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Vacancy analysis failed/ })).toHaveTextContent("Fresh"));
+    await act(async () => { slow.resolve(Response.json({ error: { code: "INTERNAL_ERROR", retryable: true } }, { status: 503 })); await slow.promise; });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it.each([false, true])("keeps detail B when slow detail A finishes after a new selection (failure=%s)", async (failure) => {
+    const slow = deferred<Response>();
+    const other = { ...incident, id: "incident-2", error_code: "QUEUE_JOB_FAILED", latest_operation: null, latest_provider: null };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const path = String(input);
+      if (path.includes("incidents?")) return listResponse([incident, other]);
+      if (path.endsWith("/incident-1")) return slow.promise;
+      if (path.endsWith("/incident-2")) return Response.json({ data: { incident: other, occurrences: [{ ...occurrence, id: "event-2", operation: null }] } });
+      throw new Error(path);
+    });
+    render(<Diagnostics />);
+    fireEvent.click(await screen.findByRole("button", { name: /Vacancy analysis failed/ }));
+    expect(screen.getByText(/Loading incident details for incident-1/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /All incidents/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Background job failed/ }));
+    expect(await screen.findByRole("heading", { name: "Background job failed" })).toBeInTheDocument();
+    await act(async () => { slow.resolve(failure
+      ? Response.json({ error: { code: "INTERNAL_ERROR", retryable: true } }, { status: 503 })
+      : Response.json({ data: { incident, occurrences: [occurrence] } })); await slow.promise; });
+    expect(screen.getByRole("heading", { name: "Background job failed" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Vacancy analysis failed" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("does not reopen detail after returning to the list", async () => {
+    const slow = deferred<Response>();
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => String(input).includes("incidents?") ? listResponse([incident]) : slow.promise);
+    render(<Diagnostics />);
+    fireEvent.click(await screen.findByRole("button", { name: /Vacancy analysis failed/ }));
+    fireEvent.click(screen.getByRole("button", { name: /All incidents/ }));
+    await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    await act(async () => { slow.resolve(Response.json({ data: { incident, occurrences: [occurrence] } })); await slow.promise; });
+    expect(screen.queryByRole("heading", { name: "Vacancy analysis failed" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it.each([true, false])("returns keyboard focus to the row when present=%s", async (present) => {
+    let lists = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (String(input).includes("incidents?")) return listResponse(++lists === 1 || present ? [incident] : []);
+      return Response.json({ data: { incident, occurrences: [occurrence] } });
+    });
+    render(<Diagnostics />);
+    const row = await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    row.focus(); fireEvent.click(row, { detail: 0 });
+    await screen.findByRole("heading", { name: "Vacancy analysis failed" });
+    const back = screen.getByRole("button", { name: /All incidents/ });
+    back.focus(); fireEvent.click(back, { detail: 0 });
+    if (present) await waitFor(() => expect(screen.getByRole("button", { name: /Vacancy analysis failed/ })).toHaveFocus());
+    else await waitFor(() => expect(screen.getByRole("heading", { name: "Incidents" })).toHaveFocus());
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it("does not force return focus after a mouse click", async () => {
+    mockData();
+    await openDetail();
+    const back = screen.getByRole("button", { name: /All incidents/ });
+    back.focus(); fireEvent.click(back, { detail: 1 });
+    const row = await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    expect(row).not.toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Incidents" })).not.toHaveFocus();
+  });
+
+  it.each([false, true])("does not let a pending status mutation reopen detail after returning (failure=%s)", async (failure) => {
+    const patch = deferred<Response>();
+    let lists = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      if (options?.method === "PATCH") return patch.promise;
+      if (String(input).includes("incidents?")) { lists++; return listResponse([incident]); }
+      return Response.json({ data: { incident, occurrences: [occurrence] } });
+    });
+    await openDetail();
+    fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+    fireEvent.click(screen.getByRole("button", { name: /All incidents/ }));
+    await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    await act(async () => { patch.resolve(failure
+      ? Response.json({ error: { code: "INTERNAL_ERROR", retryable: true } }, { status: 503 })
+      : Response.json({ data: { incident: { ...incident, status: "RESOLVED" }, occurrences: [occurrence] } })); await patch.promise; });
+    if (failure) expect(lists).toBe(2);
+    else await waitFor(() => expect(lists).toBe(3));
+    expect(screen.queryByRole("heading", { name: "Vacancy analysis failed" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("retries a failed detail GET with the same ID and restores heading focus", async () => {
