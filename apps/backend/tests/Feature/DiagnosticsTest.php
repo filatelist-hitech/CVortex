@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Mockery;
@@ -133,6 +134,44 @@ class DiagnosticsTest extends TestCase
         Log::shouldReceive('log')->once()->andThrow(new \RuntimeException('log sink unavailable'));
 
         $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
+
+    public function test_readiness_database_outage_is_recorded_as_critical(): void
+    {
+        $exception = new \RuntimeException('postgres unavailable');
+        DB::shouldReceive('select')->once()->andThrow($exception);
+        DB::shouldReceive('purge')->once();
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('postgres remains unavailable'));
+        Log::shouldReceive('sharedContext')->once()->andReturn([]);
+        Log::shouldReceive('log')->once()->withArgs(fn ($level, $message, $context): bool => $level === 'critical'
+            && $message === 'diagnostics.incident'
+            && $context['component'] === 'postgresql'
+            && $context['operation'] === 'readiness_database'
+        );
+
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
+
+    public function test_readiness_redis_outage_is_recorded_as_critical(): void
+    {
+        $exception = new \RuntimeException('redis unavailable');
+        Redis::shouldReceive('connection')->once()->andThrow($exception);
+
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+        $this->assertDatabaseHas('diagnostic_incidents', [
+            'error_code' => 'DEPENDENCY_UNAVAILABLE', 'component' => 'redis', 'severity' => 'CRITICAL',
+        ]);
+    }
+
+    public function test_unique_job_locks_cover_all_bounded_provider_retry_delays(): void
+    {
+        $minimumLifetime = (LlmProviderException::MAX_RETRY_ATTEMPTS - 1)
+            * LlmProviderException::MAX_RETRY_AFTER_SECONDS
+            + LlmProviderException::UNIQUE_LOCK_BUFFER_SECONDS;
+
+        $this->assertGreaterThanOrEqual($minimumLifetime, (new ExtractCareerSource('owner', 'source'))->uniqueFor);
+        $this->assertGreaterThanOrEqual($minimumLifetime, (new AnalyzeVacancy('owner', 'snapshot'))->uniqueFor);
+        $this->assertSame((new AnalyzeVacancy('owner', 'snapshot'))->uniqueFor, Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS);
     }
 
     public function test_request_id_middleware_keeps_http_response_working_when_log_context_fails(): void

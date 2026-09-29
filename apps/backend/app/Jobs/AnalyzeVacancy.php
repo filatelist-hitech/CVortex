@@ -20,9 +20,9 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries = LlmProviderException::MAX_RETRY_ATTEMPTS;
 
-    public int $uniqueFor = Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
+    public int $uniqueFor = LlmProviderException::UNIQUE_LOCK_SECONDS;
 
     public function __construct(public readonly string $ownerId, public readonly string $snapshotId) {}
 
@@ -82,7 +82,7 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
             ]);
 
         $delay = $exception->retryAfterSeconds;
-        if ($delay === null || $delay < 0 || $delay > 86400) {
+        if ($delay === null || $delay < 0 || $delay > LlmProviderException::MAX_RETRY_AFTER_SECONDS) {
             $delays = $this->backoff();
             $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
         }

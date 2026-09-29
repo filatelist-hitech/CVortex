@@ -79,6 +79,7 @@ export default function Diagnostics() {
   const [announcement, setAnnouncement] = useState("");
   const statusLock = useRef(false);
   const detailHeading = useRef<HTMLHeadingElement>(null);
+  const failureAlert = useRef<HTMLDivElement>(null);
   const listHeading = useRef<HTMLHeadingElement>(null);
   const rowButtons = useRef(new Map<string, HTMLButtonElement>());
   const returnFocusId = useRef<string | null>(null);
@@ -131,6 +132,12 @@ export default function Diagnostics() {
       focusOrigin.current = null;
     }
   }, [detail]);
+  useEffect(() => {
+    if (failed?.kind === "detail" && failed.id === selectedId && focusOrigin.current) {
+      if (document.activeElement === focusOrigin.current || document.activeElement === document.body) failureAlert.current?.focus();
+      focusOrigin.current = null;
+    }
+  }, [failed, selectedId]);
   useEffect(() => {
     if (selectedId || busy || !pendingReturnFocus.current) return;
     const target = rowButtons.current.get(pendingReturnFocus.current);
@@ -214,7 +221,7 @@ export default function Diagnostics() {
       <div className="diagnostics-list-heading"><h2 ref={listHeading} tabIndex={-1}>Incidents</h2><label>Sort<select value={filters.sort ?? "priority"} onChange={(event) => apply({ ...filters, sort: event.target.value })}><option value="priority">Priority</option><option value="last_seen">Last seen</option><option value="first_seen">First seen</option><option value="occurrences">Occurrence count</option><option value="severity">Severity</option></select></label></div>
     </>}
     {selectedId && <button type="button" className="diagnostics-link" onClick={(event) => { detailGeneration.current++; selectedIdRef.current = null; pendingReturnFocus.current = event.detail === 0 ? returnFocusId.current : null; focusOrigin.current = null; setDetail(null); setSelectedId(null); setFailed(null); void load(applied, page); }}>← All incidents</button>}
-    {failed && <div className="alert error diagnostics-error" role="alert"><div><strong>{failed.kind === "list" ? "Incident list could not be loaded." : failed.kind === "detail" ? "Incident details could not be loaded." : `Status change to ${failed.status} failed.`}</strong><p>{failed.message}</p>{failed.kind === "list" && <p>If diagnostics remain unavailable, use local container logs.</p>}</div>{failed.retryable && <button type="button" className="secondary" onClick={retry}>Retry</button>}</div>}
+    {failed && <div ref={failureAlert} tabIndex={failed.kind === "detail" ? -1 : undefined} className="alert error diagnostics-error" role="alert"><div><strong>{failed.kind === "list" ? "Incident list could not be loaded." : failed.kind === "detail" ? "Incident details could not be loaded." : `Status change to ${failed.status} failed.`}</strong><p>{failed.message}</p>{failed.kind === "list" && <p>If diagnostics remain unavailable, use local container logs.</p>}</div>{failed.retryable && <button type="button" className="secondary" onClick={retry}>Retry</button>}</div>}
     {announcement && <p className="diagnostics-feedback" role="status" aria-live="polite">{announcement}</p>}
     {copied && <p className="diagnostics-feedback" role="status" aria-live="polite">{copied}</p>}
     {selectedId && detailBusy && <section className="diagnostics-detail" aria-label="Incident details" aria-busy="true"><p role="status">Loading incident details for {selectedId}…</p><div className="diagnostics-skeleton" aria-hidden="true"><span /><span /><span /></div></section>}
