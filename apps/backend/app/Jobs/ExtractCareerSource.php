@@ -20,10 +20,9 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries = LlmProviderException::MAX_RETRY_ATTEMPTS;
 
-    // A job can spend up to 24 hours in each of its two provider retry delays.
-    public int $uniqueFor = ProviderRetryAfter::MAX_SECONDS * 2 + 600;
+    public int $uniqueFor = LlmProviderException::UNIQUE_LOCK_SECONDS;
 
     public function __construct(public readonly string $ownerId, public readonly string $sourceId) {}
 

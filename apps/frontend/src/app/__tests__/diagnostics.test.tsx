@@ -361,6 +361,7 @@ describe("Error Center", () => {
     const row = await screen.findByRole("button", { name: /Vacancy analysis failed/ });
     row.focus(); fireEvent.click(row);
     expect(await screen.findByRole("alert")).toHaveTextContent("Incident details could not be loaded.");
+    expect(screen.getByRole("alert")).toHaveFocus();
     expect(screen.getByRole("button", { name: /All incidents/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     const heading = await screen.findByRole("heading", { name: "Vacancy analysis failed" });

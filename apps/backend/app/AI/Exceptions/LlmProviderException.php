@@ -4,6 +4,14 @@ namespace App\AI\Exceptions;
 
 class LlmProviderException extends \RuntimeException
 {
+    public const MAX_RETRY_ATTEMPTS = 3;
+
+    public const MAX_RETRY_AFTER_SECONDS = 86400;
+
+    public const UNIQUE_LOCK_BUFFER_SECONDS = 600;
+
+    public const UNIQUE_LOCK_SECONDS = (self::MAX_RETRY_ATTEMPTS - 1) * self::MAX_RETRY_AFTER_SECONDS + self::UNIQUE_LOCK_BUFFER_SECONDS;
+
     public const REFUSAL = 'REFUSAL';
 
     public const INCOMPLETE = 'INCOMPLETE';

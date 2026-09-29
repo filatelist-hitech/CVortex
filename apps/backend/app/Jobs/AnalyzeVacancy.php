@@ -22,10 +22,9 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries = LlmProviderException::MAX_RETRY_ATTEMPTS;
 
-    // Keep the dispatch lock through both bounded provider retry delays.
-    public int $uniqueFor = ProviderRetryAfter::MAX_SECONDS * 2 + Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
+    public int $uniqueFor = LlmProviderException::UNIQUE_LOCK_SECONDS;
 
     public function __construct(public readonly string $ownerId, public readonly string $snapshotId) {}
 
