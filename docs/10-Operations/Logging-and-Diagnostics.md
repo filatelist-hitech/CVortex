@@ -22,6 +22,8 @@ PostgreSQL `diagnostic_incidents` stores one row per fingerprint and lifecycle `
 
 Horizon remains the queue execution/failure view. `make failed-jobs` lists sanitized final queue incidents through `diagnostics:failed-jobs`. Compose disables Laravel's raw failed-job database payload store; the existing project has no `failed_jobs` migration. Error Center shows a grouped incident with origin IDs; it does not mirror Horizon. Sensitive text is omitted from diagnostic storage, and stack lines retain only basenames, line numbers, class/function names and the throw-site marker (no arguments or absolute paths).
 
+Unexpected 5xx failures reported on `/api/v1`, OAuth/MCP endpoints and OAuth discovery routes are persisted as incidents. Expected OAuth protocol/authentication rejections remain excluded. If `diagnostics:failed-jobs` cannot read PostgreSQL, it reports a safe CLI reference and exits nonzero; use the reference to search diagnostics when the database recovers. The command does not print SQL or driver exception details.
+
 ## Operator workflow
 
 1. Ask for the safe error code, Reference ID, approximate time and action. Do not request the user's password, full CV, prompt or provider credential.
