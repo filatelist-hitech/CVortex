@@ -9,6 +9,7 @@ use App\Diagnostics\Redactor;
 use App\Diagnostics\StructuredLogs;
 use App\Jobs\AnalyzeVacancy;
 use App\Jobs\ExtractCareerSource;
+use App\Logging\SanitizingLogManager;
 use App\Models\CareerProfile;
 use App\Models\CareerSource;
 use App\Models\User;
@@ -218,6 +219,29 @@ class DiagnosticsTest extends TestCase
             }
 
             $this->assertContains(StructuredLogs::class, $channels[$name]['tap'] ?? [], "Stack member [{$name}] must redact its records.");
+        }
+    }
+
+    public function test_emergency_fallback_sanitizes_messages_context_and_exceptions(): void
+    {
+        $path = storage_path('logs/emergency-fallback-test.log');
+        @unlink($path);
+        config(['logging.channels.emergency.path' => $path]);
+        config(['logging.channels.broken' => ['driver' => 'unsupported']]);
+
+        try {
+            $this->assertInstanceOf(SanitizingLogManager::class, app('log'));
+            Log::channel('broken')->error('Authorization: Bearer SECRET_CANARY', [
+                'password' => 'SECRET_CANARY',
+                'exception' => new \RuntimeException('Candidate text SECRET_CANARY'),
+            ]);
+
+            $record = file_get_contents($path);
+            $this->assertIsString($record);
+            $this->assertStringNotContainsString('SECRET_CANARY', $record);
+            $this->assertStringContainsString('[REDACTED]', $record);
+        } finally {
+            @unlink($path);
         }
     }
 
