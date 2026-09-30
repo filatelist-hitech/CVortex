@@ -9,6 +9,8 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Data\RuntimeSkillDefinition;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Diagnostics\ErrorCatalog;
+use App\Diagnostics\IncidentRecorder;
 use App\Models\ApplicationApprovalEvent;
 use App\Models\ApplicationClaimUsage;
 use App\Models\ApplicationDraftItem;
@@ -98,11 +100,13 @@ class ApplicationPreparationService
         try {
             $skill = $this->skills->applicationDraftGeneration();
         } catch (\Throwable $exception) {
-            throw new LlmProviderException(
+            $normalized = new LlmProviderException(
                 LlmProviderException::NOT_CONFIGURED,
                 'Application draft generation is unavailable.',
                 previous: $exception,
             );
+            $this->recordProviderFailure($normalized, $user, $preparation, 'application_draft_generation');
+            throw $normalized;
         }
         $run = $this->newRun($user, $preparation, 'application_draft_generation', $skill);
         try {
@@ -175,13 +179,77 @@ class ApplicationPreparationService
             if ($run->status === 'RUNNING') {
                 $run->forceFill(['status' => 'FAILED', 'validation_result' => 'BLOCK', 'error_category' => $exception instanceof LlmProviderException ? $exception->category : 'OUTPUT_REJECTED'])->save();
             }
-            if ($exception instanceof ValidationException || $exception instanceof LlmProviderException) {
-                throw $exception;
+            if ($exception instanceof ValidationException && array_key_exists('generation', $exception->errors())) {
+                app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', ErrorCatalog::incidentDetails('LLM_OUTPUT_INVALID')['message'], 'application', 'ERROR', $exception, [
+                    'llm_run_id' => $run->id,
+                    'application_id' => $preparation->id,
+                    'user_id' => $user->id,
+                    'operation' => 'application_draft_generation',
+                ]);
+                $normalized = new LlmProviderException(
+                    LlmProviderException::MALFORMED_OUTPUT,
+                    'Application draft output could not be validated.',
+                    previous: $exception,
+                );
+                $normalized->markDiagnosticRecorded();
+                throw $normalized;
             }
-            throw new LlmProviderException(LlmProviderException::PROVIDER, 'Application draft generation failed safely.');
+            if (! $exception instanceof ValidationException
+                && ! ($exception instanceof LlmProviderException && $exception->diagnosticRecorded())) {
+                if ($exception instanceof LlmProviderException) {
+                    $this->recordProviderFailure($exception, $user, $preparation, 'application_draft_generation', $run->id);
+                } else {
+                    app(IncidentRecorder::class)->record(
+                        'INTERNAL_ERROR',
+                        ErrorCatalog::incidentDetails('INTERNAL_ERROR')['message'],
+                        'application',
+                        'ERROR',
+                        $exception,
+                        [
+                            'llm_run_id' => $run->id,
+                            'application_id' => $preparation->id,
+                            'user_id' => $user->id,
+                            'operation' => 'application_draft_generation',
+                        ],
+                    );
+                }
+            }
+            throw $exception;
         }
 
         return $this->resource($user, $preparation);
+    }
+
+    private function recordProviderFailure(
+        LlmProviderException $exception,
+        User $user,
+        ApplicationPreparation $preparation,
+        string $operation,
+        ?string $llmRunId = null,
+    ): void {
+        $context = [
+            'application_id' => $preparation->id,
+            'user_id' => $user->id,
+            'operation' => $operation,
+            'retryable' => $exception->isRetryable(),
+        ];
+        if ($llmRunId !== null) {
+            $context['llm_run_id'] = $llmRunId;
+        }
+        if ($exception->providerName !== null) {
+            $context['provider'] = $exception->providerName;
+        }
+
+        $code = ErrorCatalog::providerFailureCode($exception);
+        app(IncidentRecorder::class)->record(
+            $code,
+            ErrorCatalog::incidentDetails($code)['message'],
+            'application',
+            'ERROR',
+            $exception,
+            $context,
+        );
+        $exception->markDiagnosticRecorded();
     }
 
     /** @return array<string, mixed> */

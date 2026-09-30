@@ -10,14 +10,48 @@ type Mode = "login" | "register";
 const csrf = () => decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
 
 const safeErrorMessages: Record<string, string> = {
-  PROVIDER_ERROR: "Career extraction is temporarily unavailable. Manual fact entry is still available.",
+  PROVIDER_ERROR: "Career extraction could not be completed. Manual fact entry is still available.",
   INVALID_EXTRACTION_RESULT: "Career extraction returned unsupported data. Nothing was trusted.",
-  CAREER_OPERATION_FAILED: "The Career operation could not be completed. Please try again.",
-  VACANCY_OPERATION_FAILED: "The vacancy operation could not be completed. Please try again.",
+  CAREER_OPERATION_FAILED: "The Career operation could not be completed.",
+  VACANCY_OPERATION_FAILED: "The vacancy operation could not be completed.",
+  LLM_OUTPUT_INVALID: "Analysis returned unsupported data. Nothing was trusted.",
+  LLM_REQUEST_REFUSED: "The provider could not process this request. Review the request before trying again.",
+  LLM_RESPONSE_INCOMPLETE: "The provider returned an incomplete result. Review the source size or operation limits.",
+  LLM_PROVIDER_FAILED: "The analysis could not be completed. Contact your administrator.",
+  LLM_PROVIDER_CONFIGURATION: "The analysis provider needs administrator configuration.",
+  LLM_PROVIDER_RATE_LIMITED: "The analysis provider is handling too many requests. Wait before retrying.",
+  LLM_PROVIDER_UNAVAILABLE: "The analysis service is temporarily unavailable.",
+  INTERNAL_ERROR: "The operation could not be completed.",
+  PERMISSION_DENIED: "You do not have access to this action.",
+  AUTH_REQUIRED: "Please sign in and try again.",
+  VALIDATION_FAILED: "Please check the submitted information.",
 };
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly retryable: boolean, public readonly code: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function errorExplanation(code: string, retryable: boolean): string {
+  if (code === "LLM_PROVIDER_UNAVAILABLE") {
+    return retryable ? safeErrorMessages[code] : "The analysis provider failed. Contact your administrator.";
+  }
+  if (code === "LLM_PROVIDER_RATE_LIMITED") {
+    return retryable ? safeErrorMessages[code] : "The provider rejected this request. Contact your administrator.";
+  }
+  if (code === "RATE_LIMITED") {
+    return retryable ? "Too many requests. Wait before trying again." : "The request was rate limited.";
+  }
+
+  return safeErrorMessages[code] ?? (retryable ? "The service is temporarily unavailable." : "The request could not be completed.");
+}
+
 export async function api(path: string, options: RequestInit = {}) {
-  const response = await fetch(path, {
+  let response: Response;
+  try {
+    response = await fetch(path, {
     credentials: "same-origin",
     headers: {
       Accept: "application/json",
@@ -25,11 +59,18 @@ export async function api(path: string, options: RequestInit = {}) {
       ...(options.method && options.method !== "GET" ? { "X-XSRF-TOKEN": csrf() } : {}),
     },
     ...options,
-  });
+    });
+  } catch {
+    throw new ApiError("The connection failed. Check your network. [NETWORK_ERROR] You can retry.", true, "NETWORK_ERROR");
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const code = typeof body?.error?.code === "string" ? body.error.code : "";
-    throw new Error(safeErrorMessages[code] ?? "Request failed. Please try again.");
+    const reference = typeof body?.error?.request_id === "string" ? body.error.request_id : response.headers.get("X-Request-ID");
+    const safeCode = /^[A-Z][A-Z0-9_]{2,95}$/.test(code) ? code : "REQUEST_FAILED";
+    const retryable = body?.error?.retryable === true;
+    const explanation = errorExplanation(safeCode, retryable);
+    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${retryable ? " You can retry." : ""}`, retryable, safeCode);
   }
   return response.status === 204 ? null : response.json();
 }
@@ -74,7 +115,7 @@ export default function AccessShell({ registrationRoute = false }: { registratio
   }
 
   if (user) {
-    return <CareerWorkspace email={user.email} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
+    return <CareerWorkspace email={user.email} role={user.role} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
   }
 
   const registrationUnavailable = mode === "register" && (!registrationRoute || !token);

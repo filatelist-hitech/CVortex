@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\AI\Exceptions\LlmProviderException;
+use App\Diagnostics\ErrorCatalog;
 use App\Models\ApplicationDraftItem;
 use App\Models\ApplicationPreparation;
 use App\Services\ApplicationPreparationService;
@@ -30,8 +31,8 @@ class ApplicationPreparationController extends Controller
         $preparation = ApplicationPreparation::query()->where('owner_id', $request->user()->id)->findOrFail($id);
         try {
             return response()->json(['data' => $service->generate($request->user(), $preparation)]);
-        } catch (LlmProviderException) {
-            return response()->json(['message' => 'Draft generation is temporarily unavailable.', 'error' => ['code' => 'GENERATION_UNAVAILABLE']], 503);
+        } catch (LlmProviderException $exception) {
+            return $this->providerFailure($exception, $request);
         }
     }
 
@@ -47,8 +48,8 @@ class ApplicationPreparationController extends Controller
             $resource = $data['action'] === 'edit'
                 ? $service->edit($request->user(), $item, trim((string) $data['content']))
                 : $service->decide($request->user(), $item, $data['action']);
-        } catch (LlmProviderException) {
-            return response()->json(['message' => 'Draft truth validation is temporarily unavailable.', 'error' => ['code' => 'VALIDATION_UNAVAILABLE']], 503);
+        } catch (LlmProviderException $exception) {
+            return $this->providerFailure($exception, $request);
         }
 
         return response()->json(['data' => $resource]);
@@ -60,8 +61,24 @@ class ApplicationPreparationController extends Controller
 
         try {
             return response()->json(['data' => $service->approve($request->user(), $item)]);
-        } catch (LlmProviderException) {
-            return response()->json(['message' => 'Draft truth validation is temporarily unavailable.', 'error' => ['code' => 'VALIDATION_UNAVAILABLE']], 503);
+        } catch (LlmProviderException $exception) {
+            return $this->providerFailure($exception, $request);
         }
+    }
+
+    private function providerFailure(LlmProviderException $exception, Request $request): JsonResponse
+    {
+        $entry = ErrorCatalog::classify($exception);
+        $requestId = $request->attributes->get('request_id');
+
+        return response()->json([
+            'message' => $entry['message'],
+            'error' => [
+                'code' => $entry['code'],
+                'message' => $entry['message'],
+                'request_id' => $requestId,
+                'retryable' => $entry['retryable'],
+            ],
+        ], 503, ErrorCatalog::responseHeaders($exception));
     }
 }

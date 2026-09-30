@@ -1,0 +1,162 @@
+"use client";
+
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ApiError, api } from "./access-shell";
+
+type Incident = {
+  id: string; severity: string; status: string; error_code: string; message: string;
+  service: string; component: string; environment: string; occurrence_count: number;
+  first_seen_at: string; last_seen_at: string; exception_class: string | null;
+  retryable: boolean; impact: string; recovery_action: string;
+};
+type Occurrence = {
+  id: string; created_at: string; request_id: string | null; job_id: string | null;
+  llm_run_id: string | null; application_id: string | null; user_id: string | null;
+  route: string | null; operation: string | null; provider: string | null;
+  queue: string | null; connection: string | null;
+  attempt: number | null; safe_stack: string | null; error_ref: string | null;
+};
+type Detail = { incident: Incident; occurrences: Occurrence[] };
+type FailedAction =
+  | { type: "LIST_LOAD"; filters: Record<string, string>; page: number }
+  | { type: "DETAIL_LOAD"; id: string }
+  | { type: "STATUS_CHANGE"; id: string; status: string };
+type DiagnosticsError = { message: string; retryable: boolean; action: FailedAction };
+
+export default function Diagnostics() {
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>({});
+  const [items, setItems] = useState<Incident[]>([]);
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [error, setError] = useState<DiagnosticsError | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [statusMutationPending, setStatusMutationPending] = useState(false);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const listRequestGeneration = useRef(0);
+  const detailRequestGeneration = useRef(0);
+  const statusMutationPendingRef = useRef(false);
+  const load = useCallback(async (current: Record<string, string>, nextPage = 1) => {
+    const requestGeneration = ++listRequestGeneration.current;
+    setAnnouncement("");
+    setBusy(true);
+    try {
+      const params = new URLSearchParams(Object.entries(current).filter(([, value]) => value.trim()));
+      params.set("page", String(nextPage));
+      const result = await api(`/api/v1/diagnostics/incidents?${params}`);
+      if (requestGeneration !== listRequestGeneration.current) return;
+      setItems(result.data.data);
+      setAppliedFilters({ ...current });
+      setPage(result.data.current_page ?? nextPage);
+      setLastPage(result.data.last_page ?? 1);
+      setTotal(result.data.total ?? result.data.data.length);
+      setError(null);
+    } catch (caught) {
+      if (requestGeneration !== listRequestGeneration.current) return;
+      setError({ message: `Incident list could not be loaded. ${caught instanceof Error ? caught.message : "Please try again."}`,
+        retryable: caught instanceof ApiError && caught.retryable,
+        action: { type: "LIST_LOAD", filters: { ...current }, page: nextPage } });
+    } finally {
+      if (requestGeneration === listRequestGeneration.current) setBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load({}), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  async function open(id: string) {
+    const requestGeneration = ++detailRequestGeneration.current;
+    setAnnouncement("");
+    try {
+      const result = await api(`/api/v1/diagnostics/incidents/${id}`);
+      if (requestGeneration !== detailRequestGeneration.current) return;
+      setDetail(result.data);
+      setError(null);
+    } catch (caught) {
+      if (requestGeneration !== detailRequestGeneration.current) return;
+      setError({ message: `Incident details could not be loaded. ${caught instanceof Error ? caught.message : "Please try again."}`,
+        retryable: caught instanceof ApiError && caught.retryable, action: { type: "DETAIL_LOAD", id } });
+    }
+  }
+
+  async function setStatus(id: string, status: string) {
+    if (statusMutationPendingRef.current) return;
+    statusMutationPendingRef.current = true;
+    setStatusMutationPending(true);
+    const requestGeneration = detailRequestGeneration.current;
+    setAnnouncement("");
+    try {
+      const result = await api(`/api/v1/diagnostics/incidents/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+      if (requestGeneration === detailRequestGeneration.current) {
+        detailRequestGeneration.current++;
+        setDetail(result.data);
+      }
+      setError(null);
+      await load(appliedFilters, page);
+      setAnnouncement(`Incident status changed to ${status}.`);
+    } catch (caught) {
+      setError({ message: `Status change to ${status} failed. ${caught instanceof Error ? caught.message : "Please try again."}`,
+        retryable: caught instanceof ApiError && caught.retryable, action: { type: "STATUS_CHANGE", id, status } });
+    } finally {
+      statusMutationPendingRef.current = false;
+      setStatusMutationPending(false);
+    }
+  }
+
+  function retryFailedAction() {
+    if (!error?.retryable) return;
+    const action = error.action;
+    if (action.type === "LIST_LOAD") void load(action.filters, action.page);
+    if (action.type === "DETAIL_LOAD") void open(action.id);
+    if (action.type === "STATUS_CHANGE") void setStatus(action.id, action.status);
+  }
+
+  function showAllIncidents() {
+    setFilters({});
+    setDetail(null);
+    void load({}, 1);
+  }
+
+  const fields = ["search", "severity", "status", "service", "component", "environment", "error_code", "from", "to", "request_id", "job_id", "llm_run_id", "application_id"];
+  return <section className="review-section diagnostics" aria-labelledby="diagnostics-title">
+    <div className="section-title"><div><p className="eyebrow">Admin only</p><h2 id="diagnostics-title">Error Center</h2></div><button type="button" className="secondary" onClick={() => void load(appliedFilters, page)}>Reload</button></div>
+    <p>All incident severities and statuses are shown by default. Use filters only to narrow the list.</p>
+    <form className="diagnostics-filters" onSubmit={(event: FormEvent) => { event.preventDefault(); setDetail(null); void load(filters); }}>
+      {fields.map((field) => <label key={field}>{field.replaceAll("_", " ")}{field === "severity" || field === "status" ? <select value={filters[field] ?? ""} onChange={(event) => setFilters({ ...filters, [field]: event.target.value })}><option value="">All</option>{(field === "severity" ? ["WARNING", "ERROR", "CRITICAL"] : ["OPEN", "RESOLVED", "IGNORED"]).map((value) => <option key={value}>{value}</option>)}</select> : <input type={field === "from" || field === "to" ? "date" : "text"} maxLength={128} value={filters[field] ?? ""} onChange={(event) => setFilters({ ...filters, [field]: event.target.value })} placeholder={field === "search" ? "Request, job, LLM, application ID or code" : undefined} />}</label>)}
+      <div className="actions"><button type="submit" disabled={busy}>Apply filters</button><button type="button" className="secondary" disabled={busy} onClick={showAllIncidents}>Show all incidents</button></div>
+    </form>
+    {error && <div className="alert error" role="alert">{error.message}{error.retryable && <button type="button" className="secondary" onClick={retryFailedAction}>Retry</button>}</div>}
+    {announcement && <p role="status">{announcement}</p>}
+    {busy && <p role="status">Loading incidents…</p>}
+    {!busy && items.length === 0 && <p className="empty">{Object.values(filters).some(Boolean) ? "No incidents for the selected filters and time range." : "No incidents recorded."}</p>}
+    <ul className="diagnostics-list">{items.map((item) => <li key={item.id}><button type="button" className="secondary" onClick={() => void open(item.id)}><span className={`badge ${item.severity === "ERROR" || item.severity === "CRITICAL" ? "blocked-badge" : "pending-badge"}`}>{item.severity}</span><strong>{item.error_code}</strong><span>{item.message}</span><small>{item.service}/{item.component} · {item.environment} · {item.status} · {item.occurrence_count} occurrences · {item.first_seen_at} → {item.last_seen_at}</small></button></li>)}</ul>
+    {total > 0 && <nav className="actions" aria-label="Incident pages"><button type="button" className="secondary" disabled={busy || page <= 1} onClick={() => { setDetail(null); void load(appliedFilters, page - 1); }}>Previous</button><span>Page {page} of {lastPage} · {total} incidents</span><button type="button" className="secondary" disabled={busy || page >= lastPage} onClick={() => { setDetail(null); void load(appliedFilters, page + 1); }}>Next</button></nav>}
+    {detail && (
+      <section className="panel diagnostics-detail" aria-labelledby="incident-title">
+        <h3 id="incident-title">{detail.incident.error_code}</h3>
+        <p>{detail.incident.message}</p>
+        <p><strong>Impact:</strong> {detail.incident.impact}</p>
+        <p><strong>Retry:</strong> {detail.incident.retryable ? "Safe to retry" : "Not automatically retryable"}</p>
+        <p><strong>Next action:</strong> {detail.incident.recovery_action}</p>
+        <p>{detail.incident.severity} · {detail.incident.status} · {detail.incident.service}/{detail.incident.component} · {detail.incident.exception_class ?? "Browser event"}</p>
+        <p>{detail.incident.occurrence_count} occurrences · first {detail.incident.first_seen_at} · last {detail.incident.last_seen_at}</p>
+        <div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={statusMutationPending || status === detail.incident.status} onClick={() => void setStatus(detail.incident.id, status)}>{status}</button>)}</div>
+        <h4>Recent occurrences</h4>
+        <ul>{detail.occurrences.map((event) => (
+          <li key={event.id}>
+            <time>{event.created_at}</time>
+            <p>Request {event.request_id ?? "—"} · Job {event.job_id ?? "—"} · LLM {event.llm_run_id ?? "—"} · Application {event.application_id ?? "—"}</p>
+            <p>User {event.user_id ?? "—"} · Route {event.route ?? "—"} · Operation {event.operation ?? "—"} · Provider {event.provider ?? "—"} · Attempt {event.attempt ?? "—"}</p>
+            <p>Queue {event.queue ?? "—"} · Connection {event.connection ?? "—"}</p>
+            {event.error_ref && <p>Browser error reference {event.error_ref}</p>}
+            {event.safe_stack && <div className="source-copy"><p><strong>Throw site and application frames</strong></p><pre>{event.safe_stack.split("\n").filter((line, index) => index === 0 || line.startsWith("[app]")).slice(0, 4).join("\n")}</pre><details><summary>Show complete bounded trace</summary><pre>{event.safe_stack}</pre></details></div>}
+          </li>
+        ))}</ul>
+      </section>
+    )}
+  </section>;
+}

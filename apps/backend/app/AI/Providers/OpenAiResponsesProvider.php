@@ -6,6 +6,7 @@ use App\AI\Data\LlmRequest;
 use App\AI\Data\LlmResponse;
 use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\LlmProviderException;
+use App\AI\ProviderRetryAfter;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -61,8 +62,17 @@ class OpenAiResponsesProvider
         $outputTokens = is_array($body) && is_int($body['usage']['output_tokens'] ?? null) ? $body['usage']['output_tokens'] : null;
         $estimatedCostMicros = $this->estimateCost($resolved, $inputTokens, $outputTokens);
         if (! $response->successful()) {
+            $status = $response->status();
+            $category = match (true) {
+                $status === 429 => LlmProviderException::RATE_LIMITED,
+                $status === 408 || $status === 425 || $status >= 500 => LlmProviderException::TEMPORARY_UNAVAILABLE,
+                default => LlmProviderException::INVALID_CONFIGURATION,
+            };
+            $retryAfterSeconds = in_array($category, [LlmProviderException::RATE_LIMITED, LlmProviderException::TEMPORARY_UNAVAILABLE], true)
+                ? ProviderRetryAfter::parse($response->header('retry-after'))
+                : null;
             throw new LlmProviderException(
-                LlmProviderException::PROVIDER,
+                $category,
                 'The OpenAI provider returned an unsuccessful response.',
                 'openai',
                 $model,
@@ -71,6 +81,7 @@ class OpenAiResponsesProvider
                 outputTokens: $outputTokens,
                 latencyMs: $latencyMs,
                 estimatedCostMicros: $estimatedCostMicros,
+                retryAfterSeconds: $retryAfterSeconds,
             );
         }
 

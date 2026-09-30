@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Diagnostics\ConsoleFailureReporter;
 use App\Models\AuditEvent;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -9,6 +10,7 @@ use App\Services\EmailNormalizer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class BootstrapFirstAdmin extends Command
 {
@@ -20,7 +22,7 @@ class BootstrapFirstAdmin extends Command
 
     protected $description = 'Create the first active admin account.';
 
-    public function handle(EmailNormalizer $emails, AuditLogger $audit): int
+    public function handle(EmailNormalizer $emails, AuditLogger $audit, ConsoleFailureReporter $failures): int
     {
         $password = $this->secret('Password (15-128 characters)');
         if (! is_string($password) || mb_strlen($password) < 15 || mb_strlen($password) > 128) {
@@ -38,7 +40,7 @@ class BootstrapFirstAdmin extends Command
                 }
 
                 if (User::query()->where('role', User::ROLE_ADMIN)->exists()) {
-                    throw new \RuntimeException('An admin account already exists.');
+                    throw ValidationException::withMessages(['admin' => 'An admin account already exists.']);
                 }
                 $user = new User;
                 $user->forceFill([
@@ -50,7 +52,13 @@ class BootstrapFirstAdmin extends Command
                 $audit->record('user.bootstrap_admin', AuditEvent::ACTOR_OPERATOR, null, User::class, $user->id);
             });
         } catch (\Throwable $exception) {
-            $this->error($exception->getMessage());
+            if (($message = $failures->expectedMessage($exception)) !== null) {
+                $this->error($message);
+
+                return self::FAILURE;
+            }
+            $reference = $failures->report($exception, (string) $this->getName());
+            $this->error('Command failed. Reference: '.$reference);
 
             return self::FAILURE;
         }

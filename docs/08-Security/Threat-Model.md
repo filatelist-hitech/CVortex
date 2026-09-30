@@ -28,6 +28,10 @@ External vacancies, recruiter messages, uploads, HTML/web/API responses and tool
 
 Security validation is required before each future ingestion, fetcher, parser, credential or context implementation; human approval does not mitigate a failed technical control.
 
+## Diagnostics extension (2026-09-27)
+
+Admin-only incident APIs expose sanitized operational metadata and bounded stack frames; normal users cannot enumerate them. Browser telemetry is authenticated and rate limited, validates fixed kinds, finite components and a route allowlist, ignores raw message/stack and derives user identity server-side; an opaque reference derived from error name and numeric stack locations appears only on the bounded occurrence. Every configured Laravel logging channel applies the structured redactor before its handler. Nginx access logging uses an explicit JSON field allowlist with URI path only, omitting query strings, request targets and headers; infrastructure error logs remain a separate boundary. Raw stderr logs and queryable incidents have independent failure paths; incident persistence errors cannot replace the original application error. Tests exercise cross-role access, untrusted telemetry, sink failures and fake-secret canaries.
+
 ## MCP Gateway extension (2026-09-27)
 
 The disabled-by-default [MCP Gateway](../02-Architecture/MCP-Gateway.md) is an external **read-only** boundary with exactly `vacancy_get` and `application_context_get`. OAuth bearer scope, active-user enforcement, owner-scoped queries/RLS, strict schemas, bounded output and rate limiting address token misuse, IDOR and excessive disclosure. Vacancy-derived text stays untrusted data. MCP exposes no mutation, approval, fact-review, application-state, message-send, arbitrary URL, filesystem, SQL, shell or secret access. OAuth uses authorization code + PKCE, strict parsed redirect validation, issuer/resource-bound access tokens and bearer-only MCP POSTs; browser cookies do not authenticate MCP.

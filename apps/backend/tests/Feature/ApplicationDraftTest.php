@@ -103,9 +103,18 @@ class ApplicationDraftTest extends TestCase
         app(VacancyAnalysisService::class)->analyze($owner, $queued['snapshot']);
         $this->actingAs($owner);
         $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
-        $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')->assertUnprocessable();
+        $error = $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false)
+            ->assertJsonMissingPath('errors')->json();
+        $this->assertStringNotContainsString('Led a team of 100 engineers.', json_encode($error, JSON_THROW_ON_ERROR));
         $this->assertDatabaseCount('application_draft_items', 0);
         $this->assertDatabaseHas('claims', ['id' => $foreignClaimId, 'owner_id' => $other->id]);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'application_id' => $preparation['id'],
+            'user_id' => $owner->id,
+            'operation' => 'application_draft_generation',
+        ]);
+        $this->assertStringNotContainsString($foreignClaimId, json_encode(\DB::table('diagnostic_occurrences')->get(), JSON_THROW_ON_ERROR));
     }
 
     public function test_rejected_recommendation_remains_saved_and_cannot_be_approved(): void
@@ -293,10 +302,12 @@ class ApplicationDraftTest extends TestCase
         $this->assertSame([], $oversizedItem['claim_usages']);
     }
 
-    public function test_truth_review_provider_failures_are_controlled_for_edit_and_approval(): void
+    public function test_truth_review_provider_failures_are_recorded_once_for_edit_accept_and_approval(): void
     {
         Queue::fake();
         $user = $this->user('draft-review-failure@example.test');
+        $admin = $this->user('draft-review-admin@example.test');
+        $admin->forceFill(['role' => User::ROLE_ADMIN])->save();
         app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
         $provider = new ApplicationDraftFakeProvider;
         $this->app->instance(LlmProvider::class, $provider);
@@ -308,19 +319,79 @@ class ApplicationDraftTest extends TestCase
         $cover = collect($generated['items'])->firstWhere('variant', 'SHORT');
 
         $provider->failNextReview = true;
-        $editFailure = $this->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
+        $provider->nextReviewFailureCategory = LlmProviderException::MALFORMED_OUTPUT;
+        $editFailure = $this->withHeader('X-Request-ID', 'req_truth_edit')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
             'action' => 'edit', 'content' => 'I built and maintained Laravel APIs.',
-        ])->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->json();
+        ])->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($editFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'content' => $cover['content'], 'status' => 'DRAFT']);
 
+        $provider->nextReviewFailureCategory = LlmProviderException::TRANSPORT;
+        $provider->failNextReview = true;
+        $acceptFailure = $this->withHeader('X-Request-ID', 'req_truth_accept')->patchJson('/api/v1/applications/draft-items/'.$cover['id'], [
+            'action' => 'accept',
+        ])->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
+        $this->assertStringNotContainsString('private provider detail', json_encode($acceptFailure, JSON_THROW_ON_ERROR));
+        $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'status' => 'DRAFT']);
+
         $this->patchJson('/api/v1/applications/draft-items/'.$cover['id'], ['action' => 'accept'])->assertOk();
         $provider->failNextReview = true;
-        $approvalFailure = $this->postJson('/api/v1/applications/draft-items/'.$cover['id'].'/approve')
-            ->assertStatus(503)->assertJsonPath('error.code', 'VALIDATION_UNAVAILABLE')->json();
+        $approvalFailure = $this->withHeader('X-Request-ID', 'req_truth_approve')->postJson('/api/v1/applications/draft-items/'.$cover['id'].'/approve')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true)->json();
         $this->assertStringNotContainsString('private provider detail', json_encode($approvalFailure, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_draft_items', ['id' => $cover['id'], 'status' => 'ACCEPTED']);
         $this->assertDatabaseMissing('application_approval_events', ['draft_item_id' => $cover['id'], 'action' => 'APPROVED']);
+
+        foreach (['req_truth_edit', 'req_truth_accept', 'req_truth_approve'] as $requestId) {
+            $this->assertDatabaseHas('diagnostic_occurrences', [
+                'request_id' => $requestId,
+                'application_id' => $preparation['id'],
+                'user_id' => $user->id,
+                'operation' => 'application_truth_review',
+            ]);
+        }
+        $this->assertSame(3, \DB::table('diagnostic_occurrences')->where('application_id', $preparation['id'])->whereNotNull('llm_run_id')->count());
+        $this->assertDatabaseCount('diagnostic_incidents', 2);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_OUTPUT_INVALID', 'occurrence_count' => 1]);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_UNAVAILABLE', 'occurrence_count' => 2]);
+        $this->assertDatabaseHas('application_llm_runs', [
+            'preparation_id' => $preparation['id'], 'workflow' => 'application_truth_review',
+            'error_category' => LlmProviderException::MALFORMED_OUTPUT,
+        ]);
+        $malformedIncidentId = \DB::table('diagnostic_incidents')->where('error_code', 'LLM_OUTPUT_INVALID')->value('id');
+        $this->actingAs($admin)->getJson('/api/v1/diagnostics/incidents?error_code=LLM_OUTPUT_INVALID')
+            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $malformedIncidentId);
+        $this->getJson('/api/v1/diagnostics/incidents?search=LLM_OUTPUT_INVALID')
+            ->assertOk()->assertJsonPath('data.total', 1);
+        $this->getJson('/api/v1/diagnostics/incidents/'.$malformedIncidentId)
+            ->assertOk()->assertJsonPath('data.occurrences.0.application_id', $preparation['id']);
+    }
+
+    public function test_generation_truth_guard_failure_is_recorded_only_once_with_application_correlation(): void
+    {
+        Queue::fake();
+        $user = $this->user('draft-generation-truth-failure@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $provider = new ApplicationDraftFakeProvider;
+        $provider->failNextReview = true;
+        $this->app->instance(LlmProvider::class, $provider);
+        $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
+        $this->actingAs($user);
+        $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
+
+        $this->withHeader('X-Request-ID', 'req_truth_generate')->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_UNAVAILABLE')->assertJsonPath('error.retryable', true);
+
+        $this->assertDatabaseCount('diagnostic_incidents', 1);
+        $this->assertDatabaseCount('diagnostic_occurrences', 1);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_truth_generate',
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+            'operation' => 'application_truth_review',
+        ]);
+        $this->assertNotNull(\DB::table('diagnostic_occurrences')->value('llm_run_id'));
     }
 
     public function test_approval_rejects_a_revision_changed_while_truth_validation_is_in_flight(): void
@@ -407,21 +478,86 @@ class ApplicationDraftTest extends TestCase
         }
     }
 
-    public function test_generation_rejects_output_over_application_content_limit(): void
+    public function test_invalid_generated_output_is_recorded_with_application_run_correlation(): void
     {
         Queue::fake();
         $user = $this->user('draft-oversized@example.test');
         app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
         $provider = new ApplicationDraftFakeProvider;
-        $provider->generationMutation = 'oversized_cover';
         $this->app->instance(LlmProvider::class, $provider);
         $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
         app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
         $this->actingAs($user);
         $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
 
-        $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')->assertUnprocessable();
+        foreach (['oversized_cover', 'invalid_usages'] as $mutation) {
+            $provider->generationMutation = $mutation;
+            $error = $this->withHeader('X-Request-ID', 'req_output_'.$mutation)
+                ->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+                ->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')
+                ->assertJsonPath('error.retryable', false)->assertJsonMissingPath('errors')->json();
+            $this->assertStringNotContainsString('submitted information', strtolower($error['error']['message']));
+        }
+
+        $provider->failNextGeneration = true;
+        $provider->nextGenerationFailureCategory = LlmProviderException::MALFORMED_OUTPUT;
+        $this->withHeader('X-Request-ID', 'req_provider_malformed')->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_OUTPUT_INVALID')->assertJsonPath('error.retryable', false);
+
         $this->assertDatabaseCount('application_draft_items', 0);
+        $this->assertSame([1, 2], \DB::table('diagnostic_incidents')->where('error_code', 'LLM_OUTPUT_INVALID')->orderBy('occurrence_count')->pluck('occurrence_count')->all());
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_UNAVAILABLE']);
+        $this->assertDatabaseCount('diagnostic_occurrences', 3);
+        $this->assertSame(3, \DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->where('incident.error_code', 'LLM_OUTPUT_INVALID')->count());
+        $runs = \DB::table('application_llm_runs')->where('owner_id', $user->id)->where('preparation_id', $preparation['id'])
+            ->where('workflow', 'application_draft_generation')->orderBy('created_at')->get();
+        $this->assertCount(3, $runs);
+        foreach ($runs as $index => $run) {
+            $this->assertSame('FAILED', $run->status);
+            $this->assertSame($index < 2 ? 'OUTPUT_REJECTED' : LlmProviderException::MALFORMED_OUTPUT, $run->error_category);
+            $this->assertDatabaseHas('diagnostic_occurrences', [
+                'llm_run_id' => $run->id,
+                'application_id' => $preparation['id'],
+                'user_id' => $user->id,
+                'operation' => 'application_draft_generation',
+            ]);
+        }
+    }
+
+    public function test_unexpected_generation_failure_uses_one_safe_internal_error_classification(): void
+    {
+        Queue::fake();
+        $user = $this->user('draft-internal-failure@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $provider = new ApplicationDraftFakeProvider;
+        $this->app->instance(LlmProvider::class, $provider);
+        $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
+        $this->actingAs($user);
+        $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
+        $provider->throwUnexpectedGenerationFailure = true;
+
+        $response = $this->withHeader('X-Request-ID', 'req_application_internal')
+            ->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR')
+            ->assertJsonPath('error.retryable', false);
+        $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
+
+        $incident = \DB::table('diagnostic_incidents')->where('error_code', 'INTERNAL_ERROR')->sole();
+        $this->assertSame('ERROR', $incident->severity);
+        $this->assertFalse((bool) $incident->retryable);
+        $this->assertSame(1, $incident->occurrence_count);
+        $this->assertSame('The operation could not be completed. Please review the incident and retry after diagnosis.', $incident->message);
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_FAILED']);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_application_internal',
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+            'operation' => 'application_draft_generation',
+        ]);
     }
 
     public function test_generation_does_not_expose_untrusted_model_reason_or_risk_as_recommendation_facts(): void
@@ -459,9 +595,17 @@ class ApplicationDraftTest extends TestCase
             ->shouldReceive('applicationDraftGeneration')->once()->andThrow(new \RuntimeException('private skill detail'))->getMock());
 
         $response = $this->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
-            ->assertStatus(503)->assertJsonPath('error.code', 'GENERATION_UNAVAILABLE')->json();
+            ->assertStatus(503)->assertJsonPath('error.code', 'LLM_PROVIDER_CONFIGURATION')
+            ->assertJsonPath('error.retryable', false)->json();
         $this->assertStringNotContainsString('private skill detail', json_encode($response, JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('retry', strtolower($response['message']));
         $this->assertDatabaseCount('application_draft_items', 0);
+        $this->assertDatabaseCount('diagnostic_occurrences', 1);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+            'operation' => 'application_draft_generation',
+        ]);
     }
 
     public function test_supported_edit_revalidates_using_confirmed_context_only_and_keeps_injection_as_data(): void
@@ -550,7 +694,7 @@ class ApplicationDraftTest extends TestCase
         $newPreparation = $this->postJson('/api/v1/vacancies/'.$newQueued['vacancy']->id.'/preparation')->assertOk()->json('data');
         $provider->failNextGeneration = true;
         $failed = $this->postJson('/api/v1/applications/preparations/'.$newPreparation['id'].'/generate')->assertServiceUnavailable()->json();
-        $this->assertSame('GENERATION_UNAVAILABLE', $failed['error']['code']);
+        $this->assertSame('LLM_PROVIDER_UNAVAILABLE', $failed['error']['code']);
         $this->assertStringNotContainsString('private provider detail', json_encode($failed, JSON_THROW_ON_ERROR));
         $this->assertDatabaseHas('application_llm_runs', ['preparation_id' => $newPreparation['id'], 'status' => 'FAILED']);
         $this->assertDatabaseCount('application_draft_items', 0);
@@ -588,7 +732,13 @@ class ApplicationDraftFakeProvider implements LlmProvider
 
     public bool $failNextGeneration = false;
 
+    public bool $throwUnexpectedGenerationFailure = false;
+
+    public string $nextGenerationFailureCategory = LlmProviderException::TRANSPORT;
+
     public bool $failNextReview = false;
+
+    public string $nextReviewFailureCategory = LlmProviderException::TRANSPORT;
 
     public ?\Closure $afterNextReview = null;
 
@@ -598,12 +748,17 @@ class ApplicationDraftFakeProvider implements LlmProvider
     public function generateStructured(LlmRequest $request): LlmResponse
     {
         $this->requests[] = $request;
+        if ($request->schemaName === 'application_drafts' && $this->throwUnexpectedGenerationFailure) {
+            $this->throwUnexpectedGenerationFailure = false;
+            throw new \RuntimeException('Internal dependency failed: SECRET_CANARY');
+        }
         if ($request->schemaName === 'application_drafts' && $this->failNextGeneration) {
-            throw new LlmProviderException(LlmProviderException::TRANSPORT, 'private provider detail');
+            $this->failNextGeneration = false;
+            throw new LlmProviderException($this->nextGenerationFailureCategory, 'private provider detail');
         }
         if ($request->schemaName === 'application_truth_review' && $this->failNextReview) {
             $this->failNextReview = false;
-            throw new LlmProviderException(LlmProviderException::TRANSPORT, 'private provider detail');
+            throw new LlmProviderException($this->nextReviewFailureCategory, 'private provider detail');
         }
         if ($request->schemaName === 'vacancy_requirements') {
             $output = ['requirements' => [[
@@ -626,6 +781,9 @@ class ApplicationDraftFakeProvider implements LlmProvider
             ];
             if ($this->generationMutation === 'oversized_cover') {
                 $output['short_cover']['content'] = str_repeat('x', 6001);
+            }
+            if ($this->generationMutation === 'invalid_usages') {
+                $output['recommendations'][0]['claim_usages'][0]['claim_ids'] = ['untrusted-claim'];
             }
             if ($this->generationMutation === 'fabricated_rationale') {
                 $output['recommendations'][0]['reason'] = 'Led a 100-person engineering team for seven years.';

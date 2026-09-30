@@ -8,13 +8,14 @@ tags: [operations, local, docker, m0]
 related:
   - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
   - "[[M0-Runbook]]"
+  - "[[Logging-and-Diagnostics|Logging and Diagnostics]]"
 ---
 
 # Local Development
 
 ## Prerequisites
 
-Install only Git, Docker with Compose support, and Make. Host PHP, Composer, Node.js, npm, PostgreSQL and Redis are not required.
+Install Git, Docker with Compose support, and Make. Host PHP, Composer, Node.js, npm, PostgreSQL and Redis are not required. The optional `make logs-pretty` command also needs host Python 3.
 
 ## Clean bootstrap
 
@@ -47,11 +48,16 @@ Then run `make up` and open the configured port.
 | `make test` | Refresh Laravel package discovery, verify MCP route toggling, and run backend and frontend tests |
 | `make lint` | Run Pint, PHPStan/Larastan, ESLint and TypeScript checks |
 | `make logs SERVICE=backend` | Show the selected service's latest 200 log lines |
+| `make logs-pretty SERVICE=backend` | Format the selected service's latest 200 JSON log lines (requires host Python 3) |
+| `make failed-jobs` | List sanitized final queue failures from diagnostics |
+| `make diagnostics-prune` | Apply configured diagnostic retention immediately; deletes expired records |
 | `make shell SERVICE=backend` | Open a shell in a running service |
 | `make shell SERVICE=backend COMMAND='php -v'` | Run one command in a running service |
 | `make migrate` | Apply Laravel migrations to the running local database |
 
 Do not use `docker compose down --volumes` in the normal workflow: it destroys the persistent M0 database and private-storage volumes.
+
+For user-facing errors, admin investigation, correlation IDs and log fallback, see the [Error Center user guide](../00-Home/Error-Center-User-Guide.md) and [Logging and Diagnostics](Logging-and-Diagnostics.md).
 
 ## Local runtime contract
 

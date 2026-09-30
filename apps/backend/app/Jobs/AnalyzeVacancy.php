@@ -2,7 +2,10 @@
 
 namespace App\Jobs;
 
+use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\VacancyOutputException;
+use App\AI\ProviderRetryAfter;
+use App\Diagnostics\ProviderRetryWarning;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
@@ -21,13 +24,20 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
-    public int $uniqueFor = Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
+    // Keep the dispatch lock through both bounded provider retry delays.
+    public int $uniqueFor = ProviderRetryAfter::MAX_SECONDS * 2 + Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS;
 
     public function __construct(public readonly string $ownerId, public readonly string $snapshotId) {}
 
     public function uniqueId(): string
     {
         return $this->ownerId.':'.$this->snapshotId;
+    }
+
+    /** @return list<int> */
+    public function backoff(): array
+    {
+        return [5, 30];
     }
 
     public function handle(VacancyAnalysisService $service, DatabaseOwnerContext $ownerContext): void
@@ -48,7 +58,39 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
                 $service->analyze($user, $snapshot);
             } catch (VacancyOutputException) {
                 // Invalid semantic output is terminal until an explicit user retry.
+            } catch (LlmProviderException $exception) {
+                $this->retryOrFail($exception, $snapshot);
             }
         });
+    }
+
+    private function retryOrFail(LlmProviderException $exception, VacancySnapshot $snapshot): void
+    {
+        if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
+            $this->fail($exception);
+
+            return;
+        }
+
+        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+            ->where('analysis_status', Vacancy::STATUS_FAILED)
+            ->whereRaw(
+                'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
+                [$snapshot->version],
+            )
+            ->update([
+                'analysis_status' => Vacancy::STATUS_PENDING,
+                'error_code' => null,
+                'updated_at' => now(),
+            ]);
+
+        $delay = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
+        if ($delay === null) {
+            $delays = $this->backoff();
+            $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
+        }
+
+        ProviderRetryWarning::scheduled('vacancy_requirement_extraction', $exception, $this->attempts(), $delay);
+        $this->release($delay);
     }
 }

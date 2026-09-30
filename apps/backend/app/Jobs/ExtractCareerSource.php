@@ -3,6 +3,9 @@
 namespace App\Jobs;
 
 use App\AI\Exceptions\CareerOutputException;
+use App\AI\Exceptions\LlmProviderException;
+use App\AI\ProviderRetryAfter;
+use App\Diagnostics\ProviderRetryWarning;
 use App\Models\CareerSource;
 use App\Models\User;
 use App\Services\CareerExtractionService;
@@ -19,13 +22,20 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
-    public int $uniqueFor = 600;
+    // A job can spend up to 24 hours in each of its two provider retry delays.
+    public int $uniqueFor = ProviderRetryAfter::MAX_SECONDS * 2 + 600;
 
     public function __construct(public readonly string $ownerId, public readonly string $sourceId) {}
 
     public function uniqueId(): string
     {
         return $this->ownerId.':'.$this->sourceId;
+    }
+
+    /** @return list<int> */
+    public function backoff(): array
+    {
+        return [5, 30];
     }
 
     public function handle(CareerExtractionService $service): void
@@ -41,6 +51,34 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
         } catch (CareerOutputException) {
             // Invalid model output is terminal for this source; the service has
             // already persisted a retryable FAILED state for an explicit retry.
+        } catch (LlmProviderException $exception) {
+            $this->retryOrFail($exception, $source);
         }
+    }
+
+    private function retryOrFail(LlmProviderException $exception, CareerSource $source): void
+    {
+        if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
+            $this->fail($exception);
+
+            return;
+        }
+
+        CareerSource::query()->where('owner_id', $this->ownerId)->whereKey($source->id)
+            ->where('extraction_status', CareerSource::STATUS_FAILED)
+            ->update([
+                'extraction_status' => CareerSource::STATUS_PENDING,
+                'error_code' => null,
+                'updated_at' => now(),
+            ]);
+
+        $delay = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
+        if ($delay === null) {
+            $delays = $this->backoff();
+            $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
+        }
+
+        ProviderRetryWarning::scheduled('career_text_extraction', $exception, $this->attempts(), $delay);
+        $this->release($delay);
     }
 }

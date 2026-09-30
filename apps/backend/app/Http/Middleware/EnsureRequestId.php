@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -20,9 +21,29 @@ final class EnsureRequestId
             : (string) Str::uuid();
 
         $request->attributes->set('request_id', $requestId);
-        Log::shareContext(['request_id' => $requestId]);
+        try {
+            Log::shareContext(['request_id' => $requestId]);
+        } catch (\Throwable) {
+            // Request handling and response correlation remain available without the log sink.
+        }
 
         $response = $next($request);
+        if ($response instanceof JsonResponse && $response->getStatusCode() >= 400
+            && $request->is('api/v1/*') && ! $request->is('api/v1/health/*')) {
+            $body = $response->getData(true);
+            if (is_array($body)) {
+                $error = is_array($body['error'] ?? null) ? $body['error'] : [];
+                $error['code'] ??= match ($response->getStatusCode()) {
+                    401 => 'AUTH_REQUIRED', 403 => 'PERMISSION_DENIED', 404 => 'RESOURCE_NOT_FOUND',
+                    422 => 'VALIDATION_FAILED', 429 => 'RATE_LIMITED', default => 'REQUEST_FAILED',
+                };
+                $error['message'] ??= 'The request could not be completed.';
+                $error['request_id'] = $requestId;
+                $error['retryable'] ??= $error['code'] === 'RATE_LIMITED';
+                $body['error'] = $error;
+                $response->setData($body);
+            }
+        }
         $response->headers->set('X-Request-ID', $requestId);
 
         return $response;

@@ -481,12 +481,12 @@ class CareerCoreRemediationTest extends TestCase
             app(CareerExtractionService::class)->extract($user, 'Synthetic provider failure source.');
             $this->fail('Provider failure must fail.');
         } catch (LlmProviderException $exception) {
-            $this->assertSame(LlmProviderException::PROVIDER, $exception->category);
+            $this->assertSame(LlmProviderException::TEMPORARY_UNAVAILABLE, $exception->category);
         }
         $this->assertDatabaseMissing('career_facts', ['owner_id' => $user->id]);
         $this->assertDatabaseHas('llm_runs', [
             'owner_id' => $user->id,
-            'error_category' => LlmProviderException::PROVIDER,
+            'error_category' => LlmProviderException::TEMPORARY_UNAVAILABLE,
             'provider_request_id' => 'req-provider-failure',
             'input_tokens' => 5,
             'output_tokens' => 0,
@@ -506,6 +506,52 @@ class CareerCoreRemediationTest extends TestCase
         $this->assertNotNull(LlmRun::query()->where('owner_id', $user->id)->sole()->latency_ms);
     }
 
+    public function test_retry_after_is_parsed_and_bounded_for_retryable_provider_responses(): void
+    {
+        config([
+            'ai.providers.openai.api_key' => 'synthetic-key',
+            'ai.providers.openai.base_url' => 'https://retry-after.openai.test/v1',
+        ]);
+        $futureDate = gmdate(DATE_RFC7231, time() + 90);
+        $sequence = Http::sequence()
+            ->push(['error' => ['code' => 'rate_limit']], 429, ['Retry-After' => '17'])
+            ->push(['error' => ['code' => 'temporary']], 503, ['Retry-After' => '31'])
+            ->push(['error' => ['code' => 'temporary']], 503)
+            ->push(['error' => ['code' => 'temporary']], 503, ['Retry-After' => 'not-a-delay'])
+            ->push(['error' => ['code' => 'temporary']], 503, ['Retry-After' => '90000'])
+            ->push(['error' => ['code' => 'temporary']], 503, ['Retry-After' => $futureDate])
+            ->push(['error' => ['code' => 'bad_request']], 400, ['Retry-After' => '25']);
+        Http::fake(['retry-after.openai.test/v1/responses' => $sequence]);
+        $this->app->instance(LlmProvider::class, new ResolvedOpenAiTestProvider(app(OpenAiResponsesProvider::class), 'synthetic-model'));
+        $user = $this->user('retry-after@example.test');
+        $cases = [
+            [LlmProviderException::RATE_LIMITED, 17, true],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, 31, true],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, null, true],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, null, true],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, 86400, true],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, 'date', true],
+            [LlmProviderException::INVALID_CONFIGURATION, null, false],
+        ];
+
+        foreach ($cases as $index => [$category, $delay, $retryable]) {
+            try {
+                app(CareerExtractionService::class)->extract($user, 'Retry-After fixture '.$index.'.');
+                $this->fail('Provider response '.$index.' must fail.');
+            } catch (LlmProviderException $exception) {
+                $this->assertSame($category, $exception->category);
+                $this->assertSame($retryable, $exception->isRetryable());
+                if ($delay === 'date') {
+                    $this->assertNotNull($exception->retryAfterSeconds);
+                    $this->assertGreaterThan(0, $exception->retryAfterSeconds);
+                    $this->assertLessThanOrEqual(90, $exception->retryAfterSeconds);
+                } else {
+                    $this->assertSame($delay, $exception->retryAfterSeconds);
+                }
+            }
+        }
+    }
+
     public function test_career_api_and_logs_redact_private_content_on_persistence_failure(): void
     {
         Log::spy();
@@ -523,8 +569,9 @@ class CareerCoreRemediationTest extends TestCase
             ->assertStatus(500)
             ->assertJsonPath('error.code', 'CAREER_OPERATION_FAILED');
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldHaveReceived('error')->once()->withArgs(function (string $message, array $context) use ($private): bool {
-            return $message === 'career.operation_failed'
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'CAREER_OPERATION_FAILED'
                 && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
         });
     }
@@ -546,7 +593,12 @@ class CareerCoreRemediationTest extends TestCase
             $this->addToAssertionCount(1);
         }
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldNotHaveReceived('error');
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_FAILED']);
+        Log::shouldHaveReceived('log')->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'LLM_PROVIDER_FAILED'
+                && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
+        });
     }
 
     public function test_career_http_500_message_is_redacted_from_response_and_logs(): void
@@ -560,9 +612,15 @@ class CareerCoreRemediationTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/api/v1/career/extractions', ['source_text' => $private])
             ->assertStatus(500)
-            ->assertJsonPath('error.code', 'CAREER_OPERATION_FAILED');
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR')
+            ->assertJsonPath('error.retryable', false);
         $this->assertStringNotContainsString($private, $response->getContent());
-        Log::shouldNotHaveReceived('error');
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'INTERNAL_ERROR']);
+        Log::shouldHaveReceived('log')->withArgs(function (string $level, string $message, array $context) use ($private): bool {
+            return $level === 'error' && $message === 'diagnostics.incident'
+                && $context['error_code'] === 'INTERNAL_ERROR'
+                && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), $private);
+        });
     }
 
     /** @return array{fact_type: string, assertion: string, source_excerpt: string, confidence: float} */

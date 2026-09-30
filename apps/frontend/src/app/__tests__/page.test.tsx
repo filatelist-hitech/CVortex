@@ -12,6 +12,19 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
+function mockVacancyPoll(onPoll: (poll: () => void) => void) {
+  const setInterval = window.setInterval.bind(window);
+  const clearInterval = window.clearInterval.bind(window);
+  vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
+    if (timeout === 1500 && typeof handler === "function") {
+      onPoll(handler as () => void);
+      return 0;
+    }
+    return setInterval(handler, timeout);
+  }) as typeof window.setInterval);
+  vi.spyOn(window, "clearInterval").mockImplementation((id) => { if (id !== 0) clearInterval(id); });
+}
+
 describe("access shell", () => {
   it("renders the approved brand and sign-in form", () => {
     render(<Home />);
@@ -96,7 +109,7 @@ describe("access shell", () => {
     fireEvent.change(screen.getByLabelText("Career or resume text"), { target: { value: "Synthetic career text." } });
     fireEvent.click(screen.getByRole("button", { name: "Extract pending facts" }));
 
-    expect(await screen.findByText("Career extraction is temporarily unavailable. Manual fact entry is still available.")).toBeInTheDocument();
+    expect(await screen.findByText("Career extraction could not be completed. Manual fact entry is still available.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add confirmed fact" })).toBeEnabled();
   });
 
@@ -114,7 +127,7 @@ describe("access shell", () => {
     fireEvent.change(screen.getByLabelText("Career or resume text"), { target: { value: "Synthetic career text." } });
     fireEvent.click(screen.getByRole("button", { name: "Extract pending facts" }));
 
-    expect(await screen.findByText("Request failed. Please try again.")).toBeInTheDocument();
+    expect(await screen.findByText("The request could not be completed.")).toBeInTheDocument();
     expect(screen.queryByText(/SQLSTATE private/)).not.toBeInTheDocument();
   });
 
@@ -294,11 +307,7 @@ describe("access shell", () => {
 
   it("selects the newly imported vacancy after refreshing the saved list", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
-      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
-      return 1;
-    }) as typeof window.setInterval);
-    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    mockVacancyPoll((callback) => { poll = callback; });
     const oldSummary = { id: "vacancy-old", title: "Old vacancy", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false };
     const newSummary = { id: "vacancy-new", title: "New vacancy", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false };
     const summaries = [oldSummary, newSummary];
@@ -373,11 +382,7 @@ describe("access shell", () => {
 
   it("keeps a newer explicit selection when a polling list request resolves", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
-      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
-      return 1;
-    }) as typeof window.setInterval);
-    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    mockVacancyPoll((callback) => { poll = callback; });
     const summaries = [
       { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
       { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: "APPLY" as const, analysis_stale: false },
@@ -417,11 +422,7 @@ describe("access shell", () => {
 
   it("ignores an older polling list response when refreshes overlap", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
-      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
-      return 1;
-    }) as typeof window.setInterval);
-    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    mockVacancyPoll((callback) => { poll = callback; });
     const summaries = [
       { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
       { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: "APPLY" as const, analysis_stale: false },
@@ -461,11 +462,7 @@ describe("access shell", () => {
 
   it("falls back when the selected vacancy disappears during a refresh", async () => {
     let poll: (() => void) | undefined;
-    vi.spyOn(window, "setInterval").mockImplementation(((handler: TimerHandler, timeout?: number) => {
-      if (timeout === 1500 && typeof handler === "function") poll = handler as () => void;
-      return 1;
-    }) as typeof window.setInterval);
-    vi.spyOn(window, "clearInterval").mockImplementation(() => undefined);
+    mockVacancyPoll((callback) => { poll = callback; });
     const summaries = [
       { id: "vacancy-a", title: "Vacancy A", company: null, source_url: null, analysis_status: "PENDING" as const, error_code: null, snapshot_version: 1, recommendation: null, analysis_stale: false },
       { id: "vacancy-b", title: "Vacancy B", company: null, source_url: null, analysis_status: "COMPLETED" as const, error_code: null, snapshot_version: 1, recommendation: "APPLY" as const, analysis_stale: false },

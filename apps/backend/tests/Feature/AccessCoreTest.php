@@ -407,11 +407,14 @@ class AccessCoreTest extends TestCase
 
         $this->artisan('user:bootstrap-admin bootstrap-failure@example.test')
             ->expectsQuestion('Password (15-128 characters)', 'a very long safe passphrase')
-            ->expectsOutput('injected audit failure')
+            ->expectsOutputToContain('Command failed. Reference: cli_')
+            ->doesntExpectOutputToContain('injected audit failure')
             ->assertExitCode(1);
 
         $this->assertDatabaseMissing('users', ['email' => 'bootstrap-failure@example.test']);
         $this->assertDatabaseMissing('audit_events', ['event_type' => 'user.bootstrap_admin']);
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'CLI_COMMAND_FAILED']);
+        $this->assertDatabaseHas('diagnostic_occurrences', ['operation' => 'user:bootstrap-admin']);
     }
 
     public function test_disable_rolls_back_status_sessions_and_audit_when_persistence_fails(): void

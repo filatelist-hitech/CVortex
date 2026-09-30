@@ -1,0 +1,254 @@
+openapi: 3.1.0
+info:
+  title: CVortex diagnostics API
+  version: 1.0.0
+  description: Bounded contract for the diagnostics endpoints within the existing /api/v1 API.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+paths:
+  /diagnostics/report:
+    post:
+      summary: Report a sanitized browser failure
+      description: Authenticated active user. Rate limited to ten reports per minute per user. Supplied identity, message and stack are ignored. An optional opaque SHA-256 error reference is stored only on the bounded occurrence; a route is accepted only from the finite route allowlist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [component, kind]
+              properties:
+                component:
+                  type: string
+                  enum: [browser, app-root, global-root]
+                  description: Server-allowlisted component label; arbitrary client labels are rejected.
+                kind:
+                  type: string
+                  enum: [runtime, rejection, render]
+                error_ref:
+                  type: string
+                  pattern: '^[a-f0-9]{64}$'
+                  description: Optional opaque occurrence metadata. It is not trusted as identity or used in incident fingerprints.
+                route:
+                  type: string
+                  enum: ['/', '/register', other]
+                  description: Allowlisted route reference; query strings and arbitrary paths are rejected.
+      responses:
+        '202':
+          description: Accepted
+          headers:
+            X-Request-ID:
+              description: Correlates this telemetry report with backend diagnostics.
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      request_id: { type: string }
+        '401': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503':
+          description: The diagnostics sinks could not accept the report.
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /diagnostics/incidents:
+    get:
+      summary: List grouped incidents
+      description: Admin only; newest last_seen_at first, 25 per page.
+      parameters:
+        - { name: severity, in: query, schema: { type: string, enum: [WARNING, ERROR, CRITICAL] } }
+        - { name: status, in: query, schema: { type: string, enum: [OPEN, RESOLVED, IGNORED] } }
+        - { name: service, in: query, schema: { type: string, maxLength: 32 } }
+        - { name: component, in: query, schema: { type: string, maxLength: 96 } }
+        - { name: environment, in: query, schema: { type: string, maxLength: 32 } }
+        - { name: error_code, in: query, schema: { type: string, maxLength: 96 } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: search, in: query, description: Exact request/job/LLM/application ID or error code, schema: { type: string, maxLength: 128 } }
+        - { name: request_id, in: query, schema: { type: string, maxLength: 128 } }
+        - { name: job_id, in: query, schema: { type: string, maxLength: 128 } }
+        - { name: llm_run_id, in: query, schema: { type: string, maxLength: 26 } }
+        - { name: application_id, in: query, schema: { type: string, maxLength: 26 } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: Laravel paginator in data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Incident' }
+                      current_page: { type: integer }
+                      last_page: { type: integer }
+                      total: { type: integer }
+          headers:
+            X-Request-ID:
+              description: Correlates the response with backend diagnostics.
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /diagnostics/incidents/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Read an incident with recent occurrences
+      description: Admin only.
+      responses:
+        '200': { $ref: '#/components/responses/Detail' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      summary: Change incident lifecycle status
+      description: Admin only; action is audited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [OPEN, RESOLVED, IGNORED] }
+      responses:
+        '200': { $ref: '#/components/responses/Detail' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: cvortex_session
+      description: First-party Sanctum stateful session; mutating requests also require XSRF token.
+  schemas:
+    Error:
+      type: object
+      required: [message, error]
+      properties:
+        message: { type: string }
+        error:
+          type: object
+          required: [code, message, request_id, retryable]
+          properties:
+            code:
+              type: string
+              description: Stable API code, including LLM_PROVIDER_UNAVAILABLE, LLM_PROVIDER_RATE_LIMITED, LLM_PROVIDER_CONFIGURATION, LLM_PROVIDER_FAILED, LLM_OUTPUT_INVALID, LLM_REQUEST_REFUSED and LLM_RESPONSE_INCOMPLETE.
+            message: { type: string }
+            request_id: { type: string }
+            retryable:
+              type: boolean
+              description: True only for retryable failure categories. Explicit 429 rate-limit responses are retryable; other HTTP status codes alone do not imply retryability.
+        errors: { type: object, additionalProperties: true }
+    Incident:
+      type: object
+      required: [id, status, severity, error_code, service, component, environment, message, retryable, impact, recovery_action, occurrence_count, first_seen_at, last_seen_at]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [OPEN, RESOLVED, IGNORED] }
+        severity: { type: string }
+        error_code: { type: string }
+        service: { type: string }
+        component: { type: string }
+        environment: { type: string }
+        message: { type: string }
+        retryable: { type: boolean, description: True only for explicitly retryable failure categories. }
+        impact: { type: string, maxLength: 255 }
+        recovery_action: { type: string, maxLength: 255 }
+        exception_class: { type: [string, 'null'] }
+        occurrence_count: { type: integer }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+    Occurrence:
+      type: object
+      properties:
+        id: { type: string }
+        request_id: { type: [string, 'null'] }
+        job_id: { type: [string, 'null'] }
+        llm_run_id: { type: [string, 'null'] }
+        application_id: { type: [string, 'null'] }
+        user_id: { type: [string, 'null'] }
+        route: { type: [string, 'null'] }
+        operation: { type: [string, 'null'] }
+        provider: { type: [string, 'null'] }
+        queue: { type: [string, 'null'] }
+        connection: { type: [string, 'null'] }
+        attempt: { type: [integer, 'null'] }
+        error_ref: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        safe_stack: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+  responses:
+    Error:
+      description: Safe API error
+      headers:
+        X-Request-ID:
+          description: Correlates the response with backend diagnostics.
+          schema: { type: string }
+        Allow:
+          description: Allowed methods for a method-related error.
+          schema: { type: string }
+        Retry-After:
+          description: Bounded provider retry delay in seconds for an explicitly retryable provider failure.
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Request limit exceeded; returns RATE_LIMITED with retryable true.
+      headers:
+        X-Request-ID:
+          description: Correlates the response with backend diagnostics.
+          schema: { type: string }
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema: { type: string }
+        X-RateLimit-Limit:
+          schema: { type: string }
+        X-RateLimit-Remaining:
+          schema: { type: string }
+        X-RateLimit-Reset:
+          schema: { type: string }
+        RateLimit-Policy:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Detail:
+      description: Incident and at most twenty recent persisted occurrences
+      headers:
+        X-Request-ID:
+          description: Correlates the response with backend diagnostics.
+          schema: { type: string }
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  incident: { $ref: '#/components/schemas/Incident' }
+                  occurrences:
+                    type: array
+                    items: { $ref: '#/components/schemas/Occurrence' }

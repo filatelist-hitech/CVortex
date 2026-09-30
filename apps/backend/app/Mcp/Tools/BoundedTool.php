@@ -2,9 +2,9 @@
 
 namespace App\Mcp\Tools;
 
+use App\Diagnostics\IncidentRecorder;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -48,11 +48,17 @@ abstract class BoundedTool extends Tool
         if (! $exception instanceof ModelNotFoundException
             && ! $exception instanceof ValidationException
             && ! ($exception instanceof HttpExceptionInterface && in_array($exception->getStatusCode(), [401, 403, 404], true))) {
-            Log::error('mcp.tool_failed', [
-                'request_id' => request()->attributes->get('request_id'),
-                'tool' => $this->name(),
-                'exception_type' => $exception::class,
-            ]);
+            try {
+                $request = request();
+                app(IncidentRecorder::class)->record('MCP_TOOL_FAILED', 'An MCP read operation failed.', 'mcp', 'ERROR', $exception, [
+                    'request_id' => $request->attributes->get('request_id'),
+                    'user_id' => $request->user()?->id,
+                    'route' => $request->route()?->getName(),
+                    'operation' => $this->name(),
+                ]);
+            } catch (Throwable) {
+                // Preserve the safe MCP response when both diagnostic sinks are unavailable.
+            }
         }
 
         return match (true) {

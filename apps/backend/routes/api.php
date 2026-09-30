@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CareerController;
 use App\Http\Controllers\CareerExtractionController;
 use App\Http\Controllers\CurrentUserController;
+use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\VacancyController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,13 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'active-user'])->group(function (): void {
         Route::get('/me', CurrentUserController::class);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::middleware('throttle:diagnostics-report')->post('/diagnostics/report', [DiagnosticsController::class, 'report']);
+        Route::get('/diagnostics/incidents', [DiagnosticsController::class, 'index']);
+        Route::get('/diagnostics/incidents/{id}', [DiagnosticsController::class, 'show']);
+        Route::patch('/diagnostics/incidents/{id}', [DiagnosticsController::class, 'update']);
+        if (app()->environment('testing')) {
+            Route::get('/_diagnostics-test/internal', fn () => throw new RuntimeException('Synthetic internal failure.'));
+        }
         Route::group([], function (): void {
             Route::get('/career', [CareerController::class, 'index'])->name('career.index');
             Route::get('/career/trusted', [CareerController::class, 'trusted'])->name('career.trusted');
