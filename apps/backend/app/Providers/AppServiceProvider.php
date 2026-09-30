@@ -57,21 +57,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $syncContexts = new \WeakMap;
-        $restoreContext = static function (JobProcessed|JobExceptionOccurred $event) use ($syncContexts): void {
-            try {
-                $previous = $syncContexts[$event->job] ?? null;
-                unset($syncContexts[$event->job]);
-                Log::withoutContext();
-                Log::flushSharedContext();
-                if ($previous !== null) {
-                    Log::shareContext($previous);
-                }
-            } catch (Throwable) {
-                // Queue processing must continue when log context cleanup fails.
-            }
-        };
-
         Queue::createPayloadUsing(function (): array {
             if (! app()->bound('request')) {
                 return [];
@@ -83,17 +68,18 @@ class AppServiceProvider extends ServiceProvider
                 'user_id' => $request->user()?->id,
             ]];
         });
-        Queue::before(function (JobProcessing $event) use ($syncContexts): void {
-            app(QueueExecutionContext::class)->begin();
+        Queue::before(function (JobProcessing $event): void {
+            try {
+                $previousLogContext = $event->connectionName === 'sync' ? Log::sharedContext() : [];
+            } catch (Throwable) {
+                $previousLogContext = [];
+            }
+            app(QueueExecutionContext::class)->begin($previousLogContext);
             try {
                 $payload = $event->job->payload()['cvortex'] ?? [];
-                $previous = $event->connectionName === 'sync' ? Log::sharedContext() : [];
-                if ($event->connectionName === 'sync') {
-                    $syncContexts[$event->job] = $previous;
-                }
                 Log::withoutContext();
                 Log::flushSharedContext();
-                Log::shareContext(array_merge($previous, array_filter([
+                Log::shareContext(array_merge($previousLogContext, array_filter([
                     'request_id' => $payload['request_id'] ?? null,
                     'job_id' => $event->job->getJobId(),
                     'user_id' => $payload['user_id'] ?? null,
@@ -103,12 +89,12 @@ class AppServiceProvider extends ServiceProvider
                 // Queue processing must continue when log context setup fails.
             }
         });
-        $finishQueueContext = static function (JobProcessed|JobExceptionOccurred $event) use ($restoreContext): void {
-            app(QueueExecutionContext::class)->finish();
-            $restoreContext($event);
-        };
-        Queue::after($finishQueueContext);
-        Queue::exceptionOccurred($finishQueueContext);
+        Queue::after(function (JobProcessed $event): void {
+            $this->restoreQueueLogContext();
+        });
+        Queue::exceptionOccurred(function (JobExceptionOccurred $event): void {
+            $this->restoreQueueLogContext();
+        });
         Queue::failing(function (JobFailed $event): void {
             try {
                 $payload = $event->job->payload()['cvortex'] ?? [];
@@ -169,5 +155,25 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('diagnostics-report', fn (Request $request): Limit => Limit::perMinute(10)->by((string) $request->user()?->id));
 
         Route::pattern('id', '(?i:[0-9A-HJKMNP-TV-Z]{26})');
+    }
+
+    private function restoreQueueLogContext(): void
+    {
+        $previousLogContext = app(QueueExecutionContext::class)->finish();
+        try {
+            Log::flushSharedContext();
+        } catch (Throwable) {
+            // Queue processing must continue when log context cleanup fails.
+        }
+
+        if ($previousLogContext === []) {
+            return;
+        }
+
+        try {
+            Log::shareContext($previousLogContext);
+        } catch (Throwable) {
+            // Queue processing must continue when log context restoration fails.
+        }
     }
 }

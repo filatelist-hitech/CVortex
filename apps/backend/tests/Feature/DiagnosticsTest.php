@@ -1123,6 +1123,38 @@ class DiagnosticsTest extends TestCase
         $this->assertFalse($context->isProcessing());
     }
 
+    public function test_sync_queue_restores_request_and_parent_job_log_context(): void
+    {
+        Log::flushSharedContext();
+        Log::shareContext(['request_id' => 'req_outer', 'user_id' => 'user_outer']);
+
+        $outerJob = Mockery::mock(Job::class);
+        $outerJob->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_outer', 'user_id' => 'user_outer']]);
+        $outerJob->shouldReceive('getJobId')->andReturn('job_outer');
+        $outerJob->shouldReceive('attempts')->andReturn(1);
+
+        $innerJob = Mockery::mock(Job::class);
+        $innerJob->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_inner', 'user_id' => 'user_inner']]);
+        $innerJob->shouldReceive('getJobId')->andReturn('job_inner');
+        $innerJob->shouldReceive('attempts')->andReturn(1);
+
+        Event::dispatch(new JobProcessing('sync', $outerJob));
+        $this->assertSame([
+            'request_id' => 'req_outer', 'job_id' => 'job_outer', 'user_id' => 'user_outer', 'attempt' => 1,
+        ], Log::sharedContext());
+        Event::dispatch(new JobProcessing('sync', $innerJob));
+        $this->assertSame([
+            'request_id' => 'req_inner', 'job_id' => 'job_inner', 'user_id' => 'user_inner', 'attempt' => 1,
+        ], Log::sharedContext());
+
+        Event::dispatch(new JobProcessed('sync', $innerJob));
+        $this->assertSame([
+            'request_id' => 'req_outer', 'job_id' => 'job_outer', 'user_id' => 'user_outer', 'attempt' => 1,
+        ], Log::sharedContext());
+        Event::dispatch(new JobProcessed('sync', $outerJob));
+        $this->assertSame(['request_id' => 'req_outer', 'user_id' => 'user_outer'], Log::sharedContext());
+    }
+
     public function test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request(): void
     {
         config(['queue.default' => 'sync']);
