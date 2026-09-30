@@ -92,6 +92,7 @@ class AppServiceProvider extends ServiceProvider
             $this->restoreQueueLogContext();
         });
         Queue::exceptionOccurred(function (JobExceptionOccurred $event): void {
+            app(QueueExecutionContext::class)->markQueueException($event->exception);
             $this->restoreQueueLogContext();
         });
         Queue::failing(function (JobFailed $event): void {

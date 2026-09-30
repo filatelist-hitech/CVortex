@@ -5,6 +5,7 @@ use App\Diagnostics\IncidentRecorder;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsureRequestId;
 use App\Http\Middleware\SetDatabaseOwnerContext;
+use App\Queue\QueueExecutionContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $recordConsoleException = static function (Throwable $exception): void {
             if (! app()->runningInConsole()) {
                 return;
+            }
+
+            $queueContext = app(QueueExecutionContext::class);
+            if ($queueContext->isProcessing() || $queueContext->isQueueException($exception)) {
+                return; // Queue failures are handled by the queue failure policy, not as CLI incidents.
             }
 
             try {
