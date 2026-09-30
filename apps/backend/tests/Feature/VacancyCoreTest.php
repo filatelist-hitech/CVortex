@@ -16,6 +16,7 @@ use App\Models\Vacancy;
 use App\Models\VacancyAnalysis;
 use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
+use App\Queue\QueueExecutionContext;
 use App\Services\CareerFactService;
 use App\Services\DatabaseOwnerContext;
 use App\Services\TrustedCareerQuery;
@@ -2316,6 +2317,34 @@ class VacancyCoreTest extends TestCase
         $this->assertDatabaseCount('vacancy_snapshots', 1);
         Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $job): bool => $job->ownerId === (string) $user->id && $job->snapshotId === $snapshotId
         );
+    }
+
+    public function test_queued_retryable_vacancy_analysis_does_not_record_an_incident_without_log_context(): void
+    {
+        Queue::fake();
+        $user = $this->user('queued-vacancy-retry-context@example.test');
+        $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', null);
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::TRANSPORT);
+            }
+        });
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andThrow(new \RuntimeException('log context unavailable'));
+
+        try {
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->fail('The retryable provider failure must be rethrown to the queue job.');
+        } catch (LlmProviderException) {
+            $this->addToAssertionCount(1);
+        } finally {
+            $queueContext->finish();
+        }
+
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 
     public function test_all_five_recommendation_classes_follow_explainable_policy(): void

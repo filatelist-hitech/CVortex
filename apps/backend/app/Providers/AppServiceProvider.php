@@ -13,6 +13,7 @@ use App\Logging\SanitizingLogManager;
 use App\Mcp\Http\AddMcpOAuthIssuer;
 use App\Mcp\Http\RequireMcpOAuthResource;
 use App\Mcp\OAuth\ResourceAccessToken;
+use App\Queue\QueueExecutionContext;
 use App\Services\EmailNormalizer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton('log', fn ($app) => new SanitizingLogManager($app));
+        $this->app->singleton(QueueExecutionContext::class);
 
         if (! config('mcp.enabled')) {
             Passport::ignoreRoutes();
@@ -82,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
             ]];
         });
         Queue::before(function (JobProcessing $event) use ($syncContexts): void {
+            app(QueueExecutionContext::class)->begin();
             try {
                 $payload = $event->job->payload()['cvortex'] ?? [];
                 $previous = $event->connectionName === 'sync' ? Log::sharedContext() : [];
@@ -100,8 +103,12 @@ class AppServiceProvider extends ServiceProvider
                 // Queue processing must continue when log context setup fails.
             }
         });
-        Queue::after($restoreContext);
-        Queue::exceptionOccurred($restoreContext);
+        $finishQueueContext = static function (JobProcessed|JobExceptionOccurred $event) use ($restoreContext): void {
+            app(QueueExecutionContext::class)->finish();
+            $restoreContext($event);
+        };
+        Queue::after($finishQueueContext);
+        Queue::exceptionOccurred($finishQueueContext);
         Queue::failing(function (JobFailed $event): void {
             try {
                 $payload = $event->job->payload()['cvortex'] ?? [];
