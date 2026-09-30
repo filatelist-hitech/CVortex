@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Mockery;
@@ -148,6 +149,38 @@ class DiagnosticsTest extends TestCase
         $this->assertFalse(app(DependencyProbe::class)->ready());
     }
 
+    public function test_database_readiness_failure_is_recorded_as_critical(): void
+    {
+        DB::shouldReceive('select')->once()->andThrow(new \RuntimeException('postgres unavailable'));
+        DB::shouldReceive('purge')->once();
+        DB::shouldReceive('transaction')->once()->andReturn(false);
+        Log::shouldReceive('sharedContext')->once()->andReturn([]);
+        Log::shouldReceive('log')->once()->with('critical', 'diagnostics.incident', Mockery::on(
+            fn (array $context): bool => ($context['error_code'] ?? null) === 'DEPENDENCY_UNAVAILABLE'
+                && ($context['component'] ?? null) === 'postgresql'
+                && ($context['operation'] ?? null) === 'readiness_database',
+        ));
+
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
+
+    public function test_redis_readiness_failure_is_recorded_as_critical(): void
+    {
+        DB::shouldReceive('select')->once()->andReturn([['ready' => 1]]);
+        DB::shouldReceive('transaction')->once()->andReturn(false);
+        $connection = Mockery::mock();
+        $connection->shouldReceive('ping')->once()->andThrow(new \RuntimeException('redis unavailable'));
+        Redis::shouldReceive('connection')->once()->andReturn($connection);
+        Log::shouldReceive('sharedContext')->once()->andReturn([]);
+        Log::shouldReceive('log')->once()->with('critical', 'diagnostics.incident', Mockery::on(
+            fn (array $context): bool => ($context['error_code'] ?? null) === 'DEPENDENCY_UNAVAILABLE'
+                && ($context['component'] ?? null) === 'redis'
+                && ($context['operation'] ?? null) === 'readiness_redis',
+        ));
+
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
+
     public function test_request_id_middleware_keeps_http_response_working_when_log_context_fails(): void
     {
         Route::get('/api/v1/_diagnostics-test/log-context-failure', fn () => response()->json(['data' => 'ok']));
@@ -194,6 +227,10 @@ class DiagnosticsTest extends TestCase
         $unstructured = Redactor::text("Authorization: Basic SECRET_CANARY extra words\npassword=\"two words SECRET_CANARY\"\nhttps://example.test/?access_token=SECRET_CANARY&next=ok\nCookie: a=ok; session=SECRET_CANARY");
         $this->assertStringNotContainsString('SECRET_CANARY', $unstructured);
         $this->assertStringContainsString('next=ok', $unstructured);
+        foreach ([',' => 'COMMA_CANARY', ';' => 'SEMICOLON_CANARY', '&' => 'AMPERSAND_CANARY'] as $delimiter => $canary) {
+            $this->assertStringNotContainsString($canary, Redactor::text('password=value'.$delimiter.$canary));
+        }
+        $this->assertStringNotContainsString('BEARER_CANARY', Redactor::text('Authorization: Bearer value,BEARER_CANARY'));
         $encodedQuery = Redactor::text('https://example.test/?access%255Ftoken=ENCODED_SECRET_CANARY&next=ok');
         $this->assertStringNotContainsString('ENCODED_SECRET_CANARY', $encodedQuery);
         $nestedJson = Redactor::text('{"request":{"api_key":{"value":"SECRET_CANARY"},"prompt":"private prompt SECRET_CANARY"}}');

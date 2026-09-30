@@ -20,8 +20,9 @@ final class Redactor
                 // Freeform text still passes through the token and key-value redactors below.
             }
         }
-        $value = preg_replace('/\bBearer\s+[^\s,;&]+/i', 'Bearer [REDACTED]', $value) ?? '[REDACTED]';
+        $value = preg_replace('/\bBearer\s+[^\s]+/i', 'Bearer [REDACTED]', $value) ?? '[REDACTED]';
         $value = preg_replace('/\b(?:Cookie|Set-Cookie)\s*:\s*[^\r\n]*/i', 'Cookie: [REDACTED]', $value) ?? '[REDACTED]';
+        $value = preg_replace('/\b(authorization|cookie|set-cookie)\s*[:=]\s*[^\r\n]*/i', '$1=[REDACTED]', $value) ?? '[REDACTED]';
         $sensitive = 'password(?:[_ -]confirmation)?|access_token|refresh_token|token|authorization|cookie|set-cookie|api[-_ ]?key|client[-_ ]?secret|secret|credential|prompt|source_text|raw_text|resume|candidate_data|recruiter_message|email|phone';
         $value = preg_replace_callback('/([?&])([^=&#]+)=([^&#]*)/', static function (array $match) use ($sensitive): string {
             $key = $match[2];
@@ -35,7 +36,7 @@ final class Redactor
             return $match[0];
         }, $value) ?? '[REDACTED]';
         $value = preg_replace('/"('.$sensitive.')"\s*:\s*"(?:\\\\.|[^"\\\\])*"/i', '"$1":"[REDACTED]"', $value) ?? '[REDACTED]';
-        $value = preg_replace('/\b('.$sensitive.')\s*[:=]\s*(?:"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|[^,\r\n;&]*)/i', '$1=[REDACTED]', $value) ?? '[REDACTED]';
+        $value = preg_replace('/(?<![?&])\b('.$sensitive.')\s*[:=]\s*(?:"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|[^\s\r\n]*)/i', '$1=[REDACTED]', $value) ?? '[REDACTED]';
 
         return mb_substr($value, 0, 500);
     }

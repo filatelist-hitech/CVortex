@@ -43,7 +43,7 @@ class DependencyProbe
     private function recordFailure(string $dependency, string $operation, Throwable $exception): void
     {
         try {
-            app(IncidentRecorder::class)->record('DEPENDENCY_UNAVAILABLE', 'A required readiness dependency is unavailable.', $dependency, 'ERROR', $exception, [
+            app(IncidentRecorder::class)->record('DEPENDENCY_UNAVAILABLE', 'A required readiness dependency is unavailable.', $dependency, 'CRITICAL', $exception, [
                 'operation' => $operation,
             ]);
         } catch (Throwable) {
