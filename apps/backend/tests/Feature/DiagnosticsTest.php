@@ -25,6 +25,7 @@ use App\Services\VacancyAnalysisService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
@@ -42,6 +43,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use Mockery;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger as MonologLogger;
@@ -90,6 +92,16 @@ class DiagnosticsTest extends TestCase
             DiagnosticsSyncFailJob::dispatch();
             throw new \LogicException('The sync test job did not fail as expected.');
         });
+        Route::post('/oauth/_diagnostics-test/failure', function () {
+            report(new \RuntimeException('SQLSTATE[08006] select SECRET_CANARY from oauth_clients'));
+
+            return response()->json(['error' => 'server_error'], 500);
+        })->name('oauth.diagnostics-test.failure');
+        Route::post('/oauth/_diagnostics-test/auth-rejected', function () {
+            report(OAuthServerException::invalidRequest('client_id'));
+
+            return response()->json(['error' => 'invalid_request'], 400);
+        })->name('oauth.diagnostics-test.auth-rejected');
     }
 
     public function test_internal_error_is_safe_correlated_and_grouped(): void
@@ -106,6 +118,57 @@ class DiagnosticsTest extends TestCase
         $this->assertSame(2, DB::table('diagnostic_incidents')->first()->occurrence_count);
         $this->assertDatabaseCount('diagnostic_occurrences', 2);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode(DB::table('diagnostic_occurrences')->get()));
+    }
+
+    public function test_unexpected_oauth_server_failure_is_recorded_without_exposing_internal_details(): void
+    {
+        $response = $this->withHeader('X-Request-ID', 'req_oauth_server_failure')
+            ->postJson('/oauth/_diagnostics-test/failure')
+            ->assertStatus(500)
+            ->assertJsonPath('error', 'server_error');
+
+        $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'INTERNAL_ERROR', 'component' => 'mcp']);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_oauth_server_failure',
+            'operation' => 'oauth.diagnostics-test.failure',
+        ]);
+    }
+
+    public function test_expected_oauth_authentication_error_is_not_recorded_as_incident(): void
+    {
+        $this->withHeader('X-Request-ID', 'req_oauth_auth_rejected')
+            ->postJson('/oauth/_diagnostics-test/auth-rejected')
+            ->assertBadRequest()
+            ->assertJsonPath('error', 'invalid_request');
+
+        $this->assertDatabaseMissing('diagnostic_incidents', ['component' => 'mcp']);
+        $this->assertDatabaseMissing('diagnostic_occurrences', ['request_id' => 'req_oauth_auth_rejected']);
+    }
+
+    public function test_failed_jobs_command_reports_database_outage_with_safe_reference(): void
+    {
+        DB::connection()->beforeExecuting(static function (string $query, array $bindings, $connection): void {
+            if (str_starts_with(strtolower(ltrim($query)), 'select')
+                && str_contains($query, 'diagnostic_occurrences')
+                && str_contains($query, 'job_id')) {
+                throw new QueryException(
+                    $connection->getName(),
+                    $query,
+                    $bindings,
+                    new \PDOException('password=SECRET_CANARY'),
+                );
+            }
+        });
+
+        $this->artisan('diagnostics:failed-jobs')
+            ->expectsOutputToContain('Failed-jobs lookup failed. Reference: cli_')
+            ->doesntExpectOutputToContain('secret_token')
+            ->doesntExpectOutputToContain('SECRET_CANARY')
+            ->assertExitCode(1);
+
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'CLI_COMMAND_FAILED', 'component' => 'console']);
+        $this->assertDatabaseHas('diagnostic_occurrences', ['operation' => 'diagnostics:failed-jobs']);
     }
 
     public function test_recent_reference_ids_remain_searchable_after_repeated_failures(): void
