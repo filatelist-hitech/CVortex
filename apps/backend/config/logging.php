@@ -143,8 +143,14 @@ return [
         ],
 
         'emergency' => [
+            'driver' => 'monolog',
             'tap' => [StructuredLogs::class],
             'path' => storage_path('logs/laravel.log'),
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => storage_path('logs/laravel.log'),
+            ],
+            'level' => 'debug',
         ],
 
     ],

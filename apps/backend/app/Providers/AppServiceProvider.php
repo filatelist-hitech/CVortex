@@ -9,6 +9,7 @@ use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Jobs\AnalyzeVacancy;
 use App\Jobs\ExtractCareerSource;
+use App\Logging\SanitizingLogManager;
 use App\Mcp\Http\AddMcpOAuthIssuer;
 use App\Mcp\Http\RequireMcpOAuthResource;
 use App\Mcp\OAuth\ResourceAccessToken;
@@ -34,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton('log', fn ($app) => new SanitizingLogManager($app));
+
         if (! config('mcp.enabled')) {
             Passport::ignoreRoutes();
         } else {

@@ -6,6 +6,7 @@ use App\Jobs\AnalyzeVacancy;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Support\Facades\DB;
 
 class VacancyReanalysisService
@@ -22,11 +23,16 @@ class VacancyReanalysisService
                     ->lockForUpdate()->findOrFail($vacancyId);
                 $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)
                     ->where('vacancy_id', $vacancy->id)->orderByDesc('version')->orderByDesc('id')->firstOrFail();
-                if ($vacancy->analysis_status === Vacancy::STATUS_RUNNING && ! $vacancy->analysisRunIsStale()) {
+                $staleRunning = $vacancy->analysis_status === Vacancy::STATUS_RUNNING && $vacancy->analysisRunIsStale();
+                if ($vacancy->analysis_status === Vacancy::STATUS_RUNNING && ! $staleRunning) {
                     return ['snapshot' => $snapshot, 'status' => $vacancy->analysis_status];
                 }
                 if ($vacancy->analysis_status !== Vacancy::STATUS_PENDING) {
                     $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null])->save();
+                }
+                if ($staleRunning) {
+                    $staleJob = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+                    app(UniqueLock::class)->release($staleJob);
                 }
                 // A second dispatch is harmless under the snapshot-unique
                 // job policy and can recover stale or missing queued work.

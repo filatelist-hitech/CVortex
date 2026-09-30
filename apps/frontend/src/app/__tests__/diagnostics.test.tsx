@@ -27,8 +27,8 @@ function deferred<T>() {
   const promise = new Promise<T>((finish) => { resolve = finish; });
   return { promise, resolve };
 }
-function listResponse(items: (Omit<typeof incident, "latest_operation" | "latest_provider"> & { latest_operation?: string | null; latest_provider?: string | null })[], page = 1, lastPage = 1) {
-  return Response.json({ data: { data: items, current_page: page, last_page: lastPage, total: lastPage > 1 ? 26 : items.length } });
+function listResponse(items: (Omit<typeof incident, "latest_operation" | "latest_provider"> & { latest_operation?: string | null; latest_provider?: string | null })[], page = 1, lastPage = 1, total = lastPage > 1 ? 26 : items.length) {
+  return Response.json({ data: { data: items, current_page: page, last_page: lastPage, total } });
 }
 function mockData(items = [incident], detailIncident = incident, detailOccurrence: Omit<typeof occurrence, "retry_after_seconds"> & { retry_after_seconds: number | null } = occurrence) {
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
@@ -146,6 +146,49 @@ describe("Error Center", () => {
     expect(await screen.findByText(/Status: RESOLVED/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reopen" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Resolve" })).not.toBeInTheDocument();
+  });
+
+  it("returns to the new last page after resolving the final filtered incident", async () => {
+    const finalIncident = { ...incident, id: "incident-last" };
+    let pageTwoRequests = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const url = new URL(String(input), "http://localhost");
+      if (url.pathname.endsWith("/diagnostics/incidents")) {
+        const page = Number(url.searchParams.get("page") ?? 1);
+        if (page === 2 && url.searchParams.get("status") === "OPEN") {
+          pageTwoRequests++;
+          return pageTwoRequests === 1
+            ? listResponse([finalIncident], 2, 2, 26)
+            : listResponse([], 2, 1, 25);
+        }
+        if (url.searchParams.get("status") === "OPEN" && pageTwoRequests > 1) return listResponse([incident], 1, 1, 25);
+        return listResponse([incident], 1, 2, 26);
+      }
+      if (url.pathname.endsWith("/incident-last") && options?.method === "PATCH") {
+        return Response.json({ data: { incident: { ...finalIncident, status: "RESOLVED" }, occurrences: [occurrence] } });
+      }
+      if (url.pathname.endsWith("/incident-last")) {
+        return Response.json({ data: { incident: finalIncident, occurrences: [occurrence] } });
+      }
+      throw new Error(String(input));
+    });
+
+    render(<Diagnostics />);
+    await screen.findByRole("button", { name: /Vacancy analysis failed/ });
+    fireEvent.click(screen.getByRole("button", { name: "More filters" }));
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "OPEN" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+    await screen.findByRole("button", { name: "Next" });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByText(/Page 2 of 2/);
+    fireEvent.click(await screen.findByRole("button", { name: /Vacancy analysis failed/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Resolve" }));
+    await screen.findByText(/Status: RESOLVED/);
+    fireEvent.click(screen.getByRole("button", { name: /All incidents/ }));
+
+    expect(await screen.findByText(/Page 1 of 1 · 25 incidents/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Vacancy analysis failed/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Page 2 of 1/)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -455,7 +498,7 @@ describe("Error Center", () => {
   it("announces result count and supports ignore then reopen", async () => {
     const fetchMock = mockData();
     render(<Diagnostics />);
-    expect(await screen.findByRole("status", { name: "" })).toHaveTextContent("1 matching incidents");
+    expect(await screen.findByText("1 matching incidents")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Vacancy analysis failed/ }));
     await screen.findByRole("heading", { name: "Vacancy analysis failed" });
     fireEvent.click(screen.getByRole("button", { name: "Ignore" }));

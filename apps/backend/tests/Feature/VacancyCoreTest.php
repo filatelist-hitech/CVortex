@@ -23,6 +23,7 @@ use App\Services\VacancyAnalysisService;
 use App\Services\VacancyIngestionService;
 use App\Services\VacancyMatchingService;
 use App\Services\VacancyRequirementValidator;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -1746,6 +1747,9 @@ class VacancyCoreTest extends TestCase
         $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', null);
         $result['vacancy']->forceFill(['analysis_status' => 'RUNNING'])->save();
         \DB::table('vacancies')->where('id', $result['vacancy']->id)->update(['updated_at' => now()->subMinutes(20)]);
+        $staleJob = new AnalyzeVacancy((string) $user->id, (string) $result['snapshot']->id);
+        app(UniqueLock::class)->release($staleJob);
+        $this->assertTrue(app(UniqueLock::class)->acquire($staleJob));
 
         $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)
             ->assertOk()->assertJsonPath('data.analysis_run_stale', true);
@@ -1755,6 +1759,7 @@ class VacancyCoreTest extends TestCase
         $this->actingAs($user)->postJson('/api/v1/vacancies/'.$result['vacancy']->id.'/reanalyze')->assertAccepted();
         $this->assertSame('PENDING', $result['vacancy']->fresh()->analysis_status);
         Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $queued): bool => $queued->snapshotId === (string) $result['snapshot']->id);
+        Queue::assertPushed(AnalyzeVacancy::class, 2);
     }
 
     public function test_duplicate_import_reclaims_stale_running_analysis(): void

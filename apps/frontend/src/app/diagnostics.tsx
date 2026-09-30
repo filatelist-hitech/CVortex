@@ -101,23 +101,31 @@ export default function Diagnostics() {
   const [total, setTotal] = useState(0);
   const [refreshedAt, setRefreshedAt] = useState<Date | null>(null);
 
-  const load = useCallback(async (current: Filters, nextPage = 1) => {
+  const load = useCallback(async (current: Filters, nextPage = 1): Promise<void> => {
     const generation = ++listGeneration.current;
     latestListQuery.current = { filters: current, page: nextPage };
     setBusy(true);
     setFailed(null);
+    let requestedPage = nextPage;
     try {
-      const params = new URLSearchParams(Object.entries(current).filter(([, value]) => value.trim()));
-      params.set("page", String(nextPage));
-      const result = await api(`/api/v1/diagnostics/incidents?${params}`);
-      if (generation !== listGeneration.current) return;
+      let result;
+      while (true) {
+        const params = new URLSearchParams(Object.entries(current).filter(([, value]) => value.trim()));
+        params.set("page", String(requestedPage));
+        result = await api(`/api/v1/diagnostics/incidents?${params}`);
+        if (generation !== listGeneration.current) return;
+        const lastAvailablePage = Math.max(1, result.data.last_page ?? 1);
+        if (requestedPage <= lastAvailablePage) break;
+        requestedPage = lastAvailablePage;
+        latestListQuery.current = { filters: current, page: requestedPage };
+      }
       setItems(result.data.data); setApplied(current);
-      setPage(result.data.current_page ?? nextPage); setLastPage(result.data.last_page ?? 1);
+      setPage(result.data.current_page ?? requestedPage); setLastPage(result.data.last_page ?? 1);
       setTotal(result.data.total ?? result.data.data.length); setRefreshedAt(new Date());
       setFailed(null);
     } catch (caught) {
       if (generation !== listGeneration.current) return;
-      setFailed({ kind: "list", filters: current, page: nextPage, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable });
+      setFailed({ kind: "list", filters: current, page: requestedPage, message: caught instanceof Error ? caught.message : "Request failed.", retryable: caught instanceof ApiError && caught.retryable });
     } finally { if (generation === listGeneration.current) setBusy(false); }
   }, []);
   useEffect(() => {
