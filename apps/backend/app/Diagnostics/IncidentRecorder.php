@@ -104,13 +104,14 @@ final class IncidentRecorder
 
                 return true;
             });
-            if (($logged || $stored) && $exception !== null) {
-                self::$recordedExceptions ??= new WeakMap;
-                self::$recordedExceptions[$exception] = true;
-            }
         } catch (Throwable) {
             // PostgreSQL can be the failed dependency. Raw stderr remains independent.
             $stored = false;
+        }
+
+        if (($logged || $stored) && $exception !== null) {
+            self::$recordedExceptions ??= new WeakMap;
+            self::$recordedExceptions[$exception] = true;
         }
 
         return $logged || $stored;
