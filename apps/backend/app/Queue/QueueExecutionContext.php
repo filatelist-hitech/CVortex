@@ -6,14 +6,22 @@ final class QueueExecutionContext
 {
     private int $depth = 0;
 
-    public function begin(): void
+    /** @var list<array<string, mixed>> */
+    private array $logContextStack = [];
+
+    /** @param array<string, mixed> $previousLogContext */
+    public function begin(array $previousLogContext = []): void
     {
+        $this->logContextStack[] = $previousLogContext;
         $this->depth++;
     }
 
-    public function finish(): void
+    /** @return array<string, mixed> */
+    public function finish(): array
     {
         $this->depth = max(0, $this->depth - 1);
+
+        return array_pop($this->logContextStack) ?? [];
     }
 
     public function isProcessing(): bool

@@ -69,7 +69,12 @@ class AppServiceProvider extends ServiceProvider
             ]];
         });
         Queue::before(function (JobProcessing $event): void {
-            app(QueueExecutionContext::class)->begin();
+            try {
+                $previousLogContext = Log::sharedContext();
+            } catch (Throwable) {
+                $previousLogContext = [];
+            }
+            app(QueueExecutionContext::class)->begin($previousLogContext);
             try {
                 $payload = $event->job->payload()['cvortex'] ?? [];
                 Log::flushSharedContext();
@@ -84,20 +89,10 @@ class AppServiceProvider extends ServiceProvider
             }
         });
         Queue::after(function (JobProcessed $event): void {
-            app(QueueExecutionContext::class)->finish();
-            try {
-                Log::flushSharedContext();
-            } catch (Throwable) {
-                // Queue processing must continue when log context cleanup fails.
-            }
+            $this->restoreQueueLogContext();
         });
         Queue::exceptionOccurred(function (JobExceptionOccurred $event): void {
-            app(QueueExecutionContext::class)->finish();
-            try {
-                Log::flushSharedContext();
-            } catch (Throwable) {
-                // Queue retries must continue when log context cleanup fails.
-            }
+            $this->restoreQueueLogContext();
         });
         Queue::failing(function (JobFailed $event): void {
             try {
@@ -165,5 +160,25 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('diagnostics-report', fn (Request $request): Limit => Limit::perMinute(10)->by((string) $request->user()?->id));
 
         Route::pattern('id', '(?i:[0-9A-HJKMNP-TV-Z]{26})');
+    }
+
+    private function restoreQueueLogContext(): void
+    {
+        $previousLogContext = app(QueueExecutionContext::class)->finish();
+        try {
+            Log::flushSharedContext();
+        } catch (Throwable) {
+            // Queue processing must continue when log context cleanup fails.
+        }
+
+        if ($previousLogContext === []) {
+            return;
+        }
+
+        try {
+            Log::shareContext($previousLogContext);
+        } catch (Throwable) {
+            // Queue processing must continue when log context restoration fails.
+        }
     }
 }

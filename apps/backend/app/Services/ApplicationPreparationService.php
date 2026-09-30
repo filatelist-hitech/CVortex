@@ -199,25 +199,18 @@ class ApplicationPreparationService
                 if ($exception instanceof LlmProviderException) {
                     $this->recordProviderFailure($exception, $user, $preparation, 'application_draft_generation', $run->id);
                 } else {
-                    app(IncidentRecorder::class)->record(
-                        'APPLICATION_GENERATION_FAILED',
-                        'Application draft generation failed.',
-                        'application',
-                        'ERROR',
-                        $exception,
-                        [
-                            'llm_run_id' => $run->id,
-                            'application_id' => $preparation->id,
-                            'user_id' => $user->id,
-                            'operation' => 'application_draft_generation',
-                        ],
+                    $normalized = new LlmProviderException(
+                        LlmProviderException::PROVIDER,
+                        'Application draft generation failed safely.',
+                        previous: $exception,
                     );
+                    $this->recordProviderFailure($normalized, $user, $preparation, 'application_draft_generation', $run->id);
                 }
             }
             if ($exception instanceof ValidationException || $exception instanceof LlmProviderException) {
                 throw $exception;
             }
-            throw new LlmProviderException(LlmProviderException::PROVIDER, 'Application draft generation failed safely.');
+            throw $normalized;
         }
 
         return $this->resource($user, $preparation);
