@@ -1123,6 +1123,29 @@ class DiagnosticsTest extends TestCase
         $this->assertFalse($context->isProcessing());
     }
 
+    public function test_retrying_queue_exception_is_not_recorded_as_a_console_incident_after_context_cleanup(): void
+    {
+        $context = app(QueueExecutionContext::class);
+        $job = Mockery::mock(Job::class);
+        $job->shouldReceive('payload')->andReturn(['cvortex' => []]);
+        $job->shouldReceive('getJobId')->andReturn('job_retry_report');
+        $job->shouldReceive('attempts')->andReturn(1);
+        $exception = new \RuntimeException('retryable queue failure');
+        Log::shouldReceive('sharedContext')->andReturn([]);
+        Log::shouldReceive('flushSharedContext')->twice()->andThrow(new \RuntimeException('log context unavailable'));
+        Log::shouldReceive('error')->once();
+
+        Event::dispatch(new JobProcessing('redis', $job));
+        $this->assertTrue($context->isProcessing());
+        Event::dispatch(new JobExceptionOccurred('redis', $job, $exception));
+        $this->assertFalse($context->isProcessing());
+        $this->assertTrue($context->isQueueException($exception));
+
+        report($exception);
+
+        $this->assertDatabaseMissing('diagnostic_incidents', ['component' => 'console', 'error_code' => 'INTERNAL_ERROR']);
+    }
+
     public function test_sync_queue_restores_request_and_parent_job_log_context(): void
     {
         Log::flushSharedContext();
