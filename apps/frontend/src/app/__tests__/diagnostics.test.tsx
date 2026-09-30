@@ -95,8 +95,123 @@ describe("Error Center", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 86400 seconds.");
     expect(generate).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 24 hours before trying again.");
+    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 24 hours before retrying a provider-backed action.");
     expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
+  });
+
+  it.each([
+    { action: "edit", status: "DRAFT", button: "Save edit and revalidate" },
+    { action: "accept", status: "DRAFT", button: "Accept draft" },
+    { action: "approve", status: "ACCEPTED", button: "Explicitly approve content" },
+  ])("honors Retry-After after the $action action and leaves Reject available", async ({ action, status, button }) => {
+    const item = {
+      id: "draft-1", kind: "COVER_DRAFT", variant: "SHORT", section: null, before: null,
+      content: "Draft copy.", reason: null, risk: null, status, revision_number: 1,
+      validation_result: "PASS", claim_usages: [], revisions: [], approvals: [],
+    };
+    const preparation = { id: "prep-1", vacancy_id: "vacancy-1", status: "DRAFT", stale: false, items: [item] };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/draft-items/draft-1" && options?.method === "PATCH") {
+        return Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "42" } });
+      }
+      if (path === "/api/v1/applications/draft-items/draft-1/approve" && options?.method === "POST") {
+        return Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "42" } });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
+    await screen.findByRole("button", { name: button });
+    if (action === "edit") fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Edited draft copy." } });
+    const providerAction = screen.getByRole("button", { name: button });
+    expect(providerAction).toBeEnabled();
+    fireEvent.click(providerAction);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
+    expect(providerAction).toBeDisabled();
+    if (action === "edit") fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Draft copy." } });
+    expect(screen.getByRole("button", { name: "Reject" })).toBeEnabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 42 seconds before retrying a provider-backed action.");
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("draft-1"))).toHaveLength(1);
+  });
+
+  it("shares a provider-action cooldown and re-enables draft actions when it expires", async () => {
+    const item = {
+      id: "draft-1", kind: "COVER_DRAFT", variant: "SHORT", section: null, before: null,
+      content: "Draft copy.", reason: null, risk: null, status: "DRAFT", revision_number: 1,
+      validation_result: "PASS", claim_usages: [], revisions: [], approvals: [],
+    };
+    const preparation = { id: "prep-1", vacancy_id: "vacancy-1", status: "DRAFT", stale: false, items: [item] };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/draft-items/draft-1" && options?.method === "PATCH") {
+        return Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "3" } });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
+    await screen.findByRole("button", { name: "Save edit and revalidate" });
+    fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Edited draft copy." } });
+    const saveEdit = screen.getByRole("button", { name: "Save edit and revalidate" });
+    vi.useFakeTimers();
+    await act(async () => {
+      fireEvent.click(saveEdit);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("You can retry after 3 seconds.");
+    fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Draft copy." } });
+    const accept = screen.getByRole("button", { name: "Accept draft" });
+    expect(saveEdit).toBeDisabled();
+    expect(accept).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeEnabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 3 seconds before retrying a provider-backed action.");
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
+    vi.useRealTimers();
+
+    expect(screen.queryByText(/Wait at least/)).not.toBeInTheDocument();
+    expect(accept).toBeEnabled();
+    fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Another edited draft." } });
+    expect(saveEdit).toBeEnabled();
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("draft-1"))).toHaveLength(1);
+  });
+
+  it("does not start a cooldown for a non-retryable API error", async () => {
+    const item = {
+      id: "draft-1", kind: "COVER_DRAFT", variant: "SHORT", section: null, before: null,
+      content: "Draft copy.", reason: null, risk: null, status: "DRAFT", revision_number: 1,
+      validation_result: "PASS", claim_usages: [], revisions: [], approvals: [],
+    };
+    const preparation = { id: "prep-1", vacancy_id: "vacancy-1", status: "DRAFT", stale: false, items: [item] };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/draft-items/draft-1" && options?.method === "PATCH") {
+        return Response.json({ error: { code: "LLM_PROVIDER_CONFIGURATION", retryable: false } }, { status: 503, headers: { "Retry-After": "42" } });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
+    await screen.findByRole("button", { name: "Save edit and revalidate" });
+    fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Edited draft copy." } });
+    const saveEdit = screen.getByRole("button", { name: "Save edit and revalidate" });
+    fireEvent.click(saveEdit);
+
+    expect(await screen.findByRole("alert")).not.toHaveTextContent("You can retry after");
+    expect(screen.queryByText(/Wait at least/)).not.toBeInTheDocument();
+    expect(saveEdit).toBeEnabled();
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("draft-1"))).toHaveLength(1);
   });
 
   it("shows scan-first rows, count, readable time, and compact filters", async () => {
