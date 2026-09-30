@@ -31,11 +31,13 @@ export default function Diagnostics() {
   const [error, setError] = useState<DiagnosticsError | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [busy, setBusy] = useState(false);
+  const [statusMutationPending, setStatusMutationPending] = useState(false);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const listRequestGeneration = useRef(0);
   const detailRequestGeneration = useRef(0);
+  const statusMutationPendingRef = useRef(false);
   const load = useCallback(async (current: Record<string, string>, nextPage = 1) => {
     const requestGeneration = ++listRequestGeneration.current;
     setAnnouncement("");
@@ -82,6 +84,9 @@ export default function Diagnostics() {
   }
 
   async function setStatus(id: string, status: string) {
+    if (statusMutationPendingRef.current) return;
+    statusMutationPendingRef.current = true;
+    setStatusMutationPending(true);
     const requestGeneration = detailRequestGeneration.current;
     setAnnouncement("");
     try {
@@ -96,6 +101,9 @@ export default function Diagnostics() {
     } catch (caught) {
       setError({ message: `Status change to ${status} failed. ${caught instanceof Error ? caught.message : "Please try again."}`,
         retryable: caught instanceof ApiError && caught.retryable, action: { type: "STATUS_CHANGE", id, status } });
+    } finally {
+      statusMutationPendingRef.current = false;
+      setStatusMutationPending(false);
     }
   }
 
@@ -136,7 +144,7 @@ export default function Diagnostics() {
         <p><strong>Next action:</strong> {detail.incident.recovery_action}</p>
         <p>{detail.incident.severity} · {detail.incident.status} · {detail.incident.service}/{detail.incident.component} · {detail.incident.exception_class ?? "Browser event"}</p>
         <p>{detail.incident.occurrence_count} occurrences · first {detail.incident.first_seen_at} · last {detail.incident.last_seen_at}</p>
-        <div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={status === detail.incident.status} onClick={() => void setStatus(detail.incident.id, status)}>{status}</button>)}</div>
+        <div className="actions">{["OPEN", "RESOLVED", "IGNORED"].map((status) => <button key={status} type="button" className="secondary" disabled={statusMutationPending || status === detail.incident.status} onClick={() => void setStatus(detail.incident.id, status)}>{status}</button>)}</div>
         <h4>Recent occurrences</h4>
         <ul>{detail.occurrences.map((event) => (
           <li key={event.id}>

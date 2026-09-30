@@ -279,6 +279,38 @@ describe("diagnostic UI", () => {
     expect(fetchMock.mock.calls.filter(([path, options]) => String(path).endsWith("/incident-1") && options?.method !== "PATCH")).toHaveLength(1);
   });
 
+  it("serializes status changes while a PATCH is pending", async () => {
+    let resolvePatch: ((response: Response) => void) | undefined;
+    let patchCalls = 0;
+    const updatedIncident = { ...incident, status: "IGNORED" };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (options?.method === "PATCH") {
+        patchCalls++;
+        return new Promise((resolve) => { resolvePatch = resolve; });
+      }
+      if (path.endsWith("/incident-1")) return Response.json({ data: { incident, occurrences: [] } });
+      return Response.json({ data: { data: [incident], current_page: 1, last_page: 1, total: 1 } });
+    });
+    render(<Diagnostics />);
+    fireEvent.click(await screen.findByRole("button", { name: /INTERNAL_ERROR/ }));
+    expect(await screen.findByText("Inspect incident details.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "IGNORED" }));
+    await waitFor(() => expect(resolvePatch).toBeDefined());
+    expect(screen.getByRole("button", { name: "RESOLVED" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "OPEN" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "RESOLVED" }));
+    expect(patchCalls).toBe(1);
+    resolvePatch?.(Response.json({ data: { incident: updatedIncident, occurrences: [] } }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Incident status changed to IGNORED.");
+    expect(screen.getByText(/ERROR · IGNORED · backend\/api/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "IGNORED" })).toBeDisabled();
+    expect(fetchMock.mock.calls.filter(([, request]) => request?.method === "PATCH")).toHaveLength(1);
+  });
+
   it("renders a recovery action without an exception message", () => {
     const reset = vi.fn();
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 401 }));
