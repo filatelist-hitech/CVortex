@@ -559,7 +559,7 @@ class ApplicationDraftTest extends TestCase
         }
     }
 
-    public function test_unexpected_generation_failure_uses_one_safe_internal_error_classification(): void
+    public function test_unexpected_generation_failure_uses_one_safe_provider_error_classification(): void
     {
         Queue::fake();
         $user = $this->user('draft-internal-failure@example.test');
@@ -574,17 +574,17 @@ class ApplicationDraftTest extends TestCase
 
         $response = $this->withHeader('X-Request-ID', 'req_application_internal')
             ->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
-            ->assertStatus(500)
-            ->assertJsonPath('error.code', 'INTERNAL_ERROR')
+            ->assertServiceUnavailable()
+            ->assertJsonPath('error.code', 'LLM_PROVIDER_FAILED')
             ->assertJsonPath('error.retryable', false);
         $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
 
-        $incident = \DB::table('diagnostic_incidents')->where('error_code', 'INTERNAL_ERROR')->sole();
+        $incident = \DB::table('diagnostic_incidents')->where('error_code', 'LLM_PROVIDER_FAILED')->sole();
         $this->assertSame('ERROR', $incident->severity);
         $this->assertFalse((bool) $incident->retryable);
         $this->assertSame(1, $incident->occurrence_count);
-        $this->assertSame('The operation could not be completed. Please review the incident and retry after diagnosis.', $incident->message);
-        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'LLM_PROVIDER_FAILED']);
+        $this->assertSame('The analysis could not be completed. Contact your administrator.', $incident->message);
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'INTERNAL_ERROR']);
         $this->assertDatabaseHas('diagnostic_occurrences', [
             'request_id' => 'req_application_internal',
             'application_id' => $preparation['id'],

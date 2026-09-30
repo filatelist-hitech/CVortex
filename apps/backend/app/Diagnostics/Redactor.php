@@ -47,7 +47,7 @@ final class Redactor
             return '[TRUNCATED]';
         }
         if ($value instanceof Throwable) {
-            return $value::class;
+            return self::safeExceptionClass($value);
         }
         if (is_array($value)) {
             $safe = [];
@@ -69,7 +69,7 @@ final class Redactor
 
     public static function stack(Throwable $exception): string
     {
-        $origin = basename($exception->getFile() ?: 'runtime').':'.$exception->getLine().' '.$exception::class.' (throw site)';
+        $origin = basename($exception->getFile() ?: 'runtime').':'.$exception->getLine().' '.self::safeExceptionClass($exception).' (throw site)';
         $applicationFrames = [];
         $frameworkFrames = [];
         foreach (array_slice($exception->getTrace(), 0, 50) as $frame) {
@@ -92,6 +92,11 @@ final class Redactor
         }
 
         return implode("\n", [$origin, ...$frames]);
+    }
+
+    public static function safeExceptionClass(Throwable $exception): string
+    {
+        return explode("\0", $exception::class, 2)[0];
     }
 
     public static function frameFunction(string $value): string

@@ -582,6 +582,43 @@ class DiagnosticsTest extends TestCase
         $this->assertStringNotContainsString("\0", $safeStack);
     }
 
+    public function test_anonymous_throwable_is_safely_named_in_stack_logs_and_incidents(): void
+    {
+        Log::spy();
+        $exception = new class('Safe failure.') extends \RuntimeException {};
+        try {
+            throw $exception;
+        } catch (\Throwable $thrown) {
+            $exception = $thrown;
+        }
+
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'anonymous_throwable', exception: $exception);
+
+        $incident = DB::table('diagnostic_incidents')->where('component', 'anonymous_throwable')->sole();
+        $this->assertStringContainsString('@anonymous', $incident->exception_class);
+        $this->assertStringNotContainsString("\0", $incident->exception_class);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $incident->exception_class);
+        $this->assertStringContainsString('@anonymous', DB::table('diagnostic_occurrences')->where('incident_id', $incident->id)->value('safe_stack'));
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), DB::table('diagnostic_occurrences')->where('incident_id', $incident->id)->value('safe_stack'));
+        $this->assertStringNotContainsString("\0", DB::table('diagnostic_occurrences')->where('incident_id', $incident->id)->value('safe_stack'));
+        $handler = new TestHandler;
+        $monolog = new MonologLogger('test');
+        $monolog->pushHandler($handler);
+        $logger = new Logger($monolog);
+        (new StructuredLogs)($logger);
+        $logger->error('unsafe initial message', ['exception' => $exception]);
+        $structuredRecord = $handler->getRecords()[0];
+        $this->assertSame($incident->exception_class, $structuredRecord->message);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $structuredRecord->context['safe_stack']);
+        $this->assertStringNotContainsString("\0", $structuredRecord->context['safe_stack']);
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context): bool {
+            return $message === 'diagnostics.incident'
+                && str_contains($context['exception_class'] ?? '', '@anonymous')
+                && ! str_contains(json_encode($context), dirname(__DIR__, 2))
+                && ! str_contains(json_encode($context), "\0");
+        });
+    }
+
     public function test_incident_stderr_keeps_only_sanitized_exception_frames(): void
     {
         Log::spy();
@@ -859,10 +896,9 @@ class DiagnosticsTest extends TestCase
     public function test_tied_occurrence_timestamps_use_descending_id_for_every_latest_view(): void
     {
         $admin = $this->user('admin');
-        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
         $recorder = app(IncidentRecorder::class);
-        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: $exception);
-        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: $exception);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42));
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42));
         $id = DB::table('diagnostic_incidents')->where('component', 'tied-occurrences')->value('id');
         $ids = DB::table('diagnostic_occurrences')->where('incident_id', $id)->orderBy('id')->pluck('id');
         $this->assertCount(2, $ids);
@@ -1217,6 +1253,7 @@ class DiagnosticsTest extends TestCase
         $job->shouldReceive('attempts')->andReturn(1);
         $exception = new \RuntimeException('retryable queue failure');
         Log::shouldReceive('sharedContext')->andReturn([]);
+        Log::shouldReceive('withoutContext')->twice()->andReturnSelf();
         Log::shouldReceive('flushSharedContext')->twice()->andThrow(new \RuntimeException('log context unavailable'));
         Log::shouldReceive('error')->once();
 
@@ -1247,16 +1284,16 @@ class DiagnosticsTest extends TestCase
         $innerJob->shouldReceive('attempts')->andReturn(1);
 
         Event::dispatch(new JobProcessing('sync', $outerJob));
-        $this->assertSame([
+        $this->assertEqualsCanonicalizing([
             'request_id' => 'req_outer', 'job_id' => 'job_outer', 'user_id' => 'user_outer', 'attempt' => 1,
         ], Log::sharedContext());
         Event::dispatch(new JobProcessing('sync', $innerJob));
-        $this->assertSame([
+        $this->assertEqualsCanonicalizing([
             'request_id' => 'req_inner', 'job_id' => 'job_inner', 'user_id' => 'user_inner', 'attempt' => 1,
         ], Log::sharedContext());
 
         Event::dispatch(new JobProcessed('sync', $innerJob));
-        $this->assertSame([
+        $this->assertEqualsCanonicalizing([
             'request_id' => 'req_outer', 'job_id' => 'job_outer', 'user_id' => 'user_outer', 'attempt' => 1,
         ], Log::sharedContext());
         Event::dispatch(new JobProcessed('sync', $outerJob));

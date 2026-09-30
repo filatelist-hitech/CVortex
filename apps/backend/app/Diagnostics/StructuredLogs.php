@@ -20,7 +20,7 @@ final class StructuredLogs
             }
 
             return $record->with(
-                message: $exception instanceof Throwable ? $exception::class : Redactor::text($record->message),
+                message: $exception instanceof Throwable ? Redactor::safeExceptionClass($exception) : Redactor::text($record->message),
                 context: ['service' => 'backend', 'environment' => app()->environment(), ...$context],
             );
         });

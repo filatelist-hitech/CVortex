@@ -76,9 +76,17 @@ class AppServiceProvider extends ServiceProvider
             }
             app(QueueExecutionContext::class)->begin($previousLogContext);
             try {
-                $payload = $event->job->payload()['cvortex'] ?? [];
                 Log::withoutContext();
+            } catch (Throwable) {
+                // Queue processing must continue when channel context cleanup fails.
+            }
+            try {
                 Log::flushSharedContext();
+            } catch (Throwable) {
+                // Queue processing must continue when shared context cleanup fails.
+            }
+            try {
+                $payload = $event->job->payload()['cvortex'] ?? [];
                 Log::shareContext(array_merge($previousLogContext, array_filter([
                     'request_id' => $payload['request_id'] ?? null,
                     'job_id' => $event->job->getJobId(),
@@ -161,6 +169,11 @@ class AppServiceProvider extends ServiceProvider
     private function restoreQueueLogContext(): void
     {
         $previousLogContext = app(QueueExecutionContext::class)->finish();
+        try {
+            Log::withoutContext();
+        } catch (Throwable) {
+            // Queue processing must continue when channel context cleanup fails.
+        }
         try {
             Log::flushSharedContext();
         } catch (Throwable) {
