@@ -26,7 +26,7 @@ The admin task is to identify the failed operation, reason, impact, retry decisi
 | Failure category | Stable `error_code` | Coarse but sufficient | No |
 | Duration and provider HTTP status | Not in incident/occurrence response | No | No; omit from UI |
 | Retry-After | Validated provider exception delay | Yes when known | Bounded 0–86400 integer on the occurrence; show unknown otherwise |
-| Correlation | Occurrence request/job/LLM/application IDs | Yes, at most 20 recent events | No |
+| Correlation | Occurrence request/job/LLM/application IDs and opaque browser `error_ref` | Yes, at most 20 recent events | No; expose and copy the stored browser reference in occurrence detail |
 | Frequency | Incident count and first/last seen | Yes | No |
 | Global metrics | Paginated list only | No reliable global aggregates | No; show page context, not invented totals |
 | Related incidents | Exact correlation search, no relation endpoint | Searchable manually | No graph or inferred relationship |
@@ -87,4 +87,4 @@ Titles and causes come only from a closed code-to-label map and safe API strings
 
 The provider filter compares the latest retained occurrence's provider exactly, matching the list label. Search and filters remain combined; an empty combined result names the filter interaction and offers a search-preserving reset. Retry state stores the failed list query/page, detail ID or status target explicitly. A status retry repeats only its idempotent PATCH, and status controls lock during that request. Browser event kinds have human labels, while cause copy states that the root cause was not captured.
 
-Synchronous application-draft operations preserve only a numeric `Retry-After` from 0 to 86400 seconds on retryable API errors. A positive delay is included in the safe recovery message and disables generation, edit, accept and approve until the delay expires; Reject remains available because it does not call the provider. The browser stores only the bounded expiry timestamp so remounting or reloading the draft flow does not bypass the wait. An absent or invalid header does not invent a delay.
+Synchronous application-draft operations preserve only a numeric `Retry-After` from 0 to 86400 seconds on retryable API errors. A positive delay is included in the safe recovery message and disables generation, edit, accept and approve until the delay expires; Reject remains available because it does not call the provider. The browser stores only the bounded expiry timestamp, synchronizes changes across already-open tabs, and restores the deadline after remount or reload. An absent or invalid header does not invent a delay.

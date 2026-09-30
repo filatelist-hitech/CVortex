@@ -301,6 +301,17 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   }, []);
 
   useEffect(() => {
+    const syncSavedCooldown = (event: StorageEvent) => {
+      if (event.key !== APPLICATION_DRAFT_RETRY_KEY && event.key !== null) return;
+      const savedUntil = readSavedRetryDeadline();
+      setRetryAfterUntil(savedUntil);
+      setRetrySecondsRemaining(savedUntil === null ? 0 : Math.max(0, Math.ceil((savedUntil - Date.now()) / 1000)));
+    };
+    window.addEventListener("storage", syncSavedCooldown);
+    return () => window.removeEventListener("storage", syncSavedCooldown);
+  }, []);
+
+  useEffect(() => {
     if (retryAfterUntil === null) return;
     let timeout: ReturnType<typeof setTimeout>;
     const updateRemaining = () => {

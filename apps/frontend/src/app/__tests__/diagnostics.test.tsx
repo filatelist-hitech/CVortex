@@ -21,6 +21,7 @@ const occurrence = {
   id: "event-1", created_at: "2026-09-28T19:00:00Z", request_id: "req_123456789abcdefgh", job_id: "job_123456789abcdefgh",
   llm_run_id: "run_123456789abcdefgh", application_id: "app_123456789abcdefgh", user_id: "user-1",
   route: "/api/v1/vacancies", operation: "vacancy_requirement_extraction", provider: "OpenAI", queue: "analysis-high", connection: "redis", attempt: 3, retry_after_seconds: null,
+  error_ref: null as string | null,
   safe_stack: "ConfiguredLlmProvider.php:23 throw site\n[app] VacancyAnalysisService.php:135 analyze\n[framework] ControllerDispatcher.php:91 dispatch",
 };
 function deferred<T>() {
@@ -213,6 +214,35 @@ describe("Error Center", () => {
     expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
   });
 
+  it("syncs provider cooldown changes from another open tab", async () => {
+    const preparation = { id: "prep-1", vacancy_id: "vacancy-1", status: "DRAFT", stale: false, items: [] };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
+    const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    expect(generate).toBeEnabled();
+    const key = "cvortex.application-draft.retry-until";
+    const deadline = Date.now() + 42_000;
+    act(() => {
+      localStorage.setItem(key, String(deadline));
+      window.dispatchEvent(new StorageEvent("storage", { key, newValue: String(deadline) }));
+    });
+    expect(generate).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 42 seconds before retrying a provider-backed action.");
+
+    act(() => {
+      localStorage.removeItem(key);
+      window.dispatchEvent(new StorageEvent("storage", { key, oldValue: String(deadline), newValue: null }));
+    });
+    expect(generate).toBeEnabled();
+    expect(screen.queryByText(/Wait at least/)).not.toBeInTheDocument();
+  });
+
   it("does not start a cooldown for a non-retryable API error", async () => {
     const item = {
       id: "draft-1", kind: "COVER_DRAFT", variant: "SHORT", section: null, before: null,
@@ -315,6 +345,20 @@ describe("Error Center", () => {
     const framework = screen.getByText("Show framework frames (1)").closest("details");
     expect(framework).not.toHaveAttribute("open");
     expect(screen.getByText(/ControllerDispatcher.php/)).not.toBeVisible();
+  });
+
+  it("shows and copies a browser error reference in occurrence details", async () => {
+    const errorRef = "a".repeat(64);
+    mockData([incident], incident, { ...occurrence, error_ref: errorRef });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    await openDetail();
+    fireEvent.click(screen.getByRole("button", { name: /Attempt 3/ }));
+
+    expect(screen.getByText("Browser error reference")).toBeInTheDocument();
+    expect(screen.getByText(errorRef)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy browser error reference" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(errorRef));
   });
 
   it("copies safe IDs and updates only available status actions", async () => {
