@@ -8,6 +8,7 @@ use App\AI\Data\LlmResponse;
 use App\AI\Data\ModelPolicy;
 use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\CareerOutputException;
+use App\AI\Exceptions\LlmProviderException;
 use App\AI\Providers\OpenAiResponsesProvider;
 use App\AI\RuntimeSkillRegistry;
 use App\Jobs\ExtractCareerSource;
@@ -16,12 +17,14 @@ use App\Models\CareerSource;
 use App\Models\Claim;
 use App\Models\ClaimEvidence;
 use App\Models\User;
+use App\Queue\QueueExecutionContext;
 use App\Services\CareerExtractionService;
 use App\Services\CareerFactService;
 use App\Services\TruthGuard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -56,6 +59,32 @@ class CareerCoreTest extends TestCase
         $this->assertDatabaseHas('llm_runs', ['owner_id' => $user->id, 'status' => 'COMPLETED', 'provider' => 'fake', 'model' => 'fake-structured']);
         $this->assertFalse(\Schema::hasColumn('llm_runs', 'source_text'));
         $this->assertFalse(\Schema::hasColumn('llm_runs', 'api_key'));
+    }
+
+    public function test_queued_retryable_extraction_does_not_record_an_incident_without_log_context(): void
+    {
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::TRANSPORT);
+            }
+        });
+        $user = $this->user('queued-retry-context@example.test');
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andThrow(new \RuntimeException('log context unavailable'));
+
+        try {
+            app(CareerExtractionService::class)->extract($user, 'Synthetic queued source.');
+            $this->fail('The retryable provider failure must be rethrown to the queue job.');
+        } catch (LlmProviderException) {
+            $this->addToAssertionCount(1);
+        } finally {
+            $queueContext->finish();
+        }
+
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 
     public function test_authenticated_user_can_start_extraction_through_the_api(): void

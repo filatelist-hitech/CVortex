@@ -17,6 +17,7 @@ use App\Models\VacancyAnalysis;
 use App\Models\VacancyLlmRun;
 use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
+use App\Queue\QueueExecutionContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -192,12 +193,7 @@ class VacancyAnalysisService
                 'validation_result' => 'NOT_VALIDATED',
                 'error_category' => $exception->category,
             ])->save();
-            try {
-                $shared = Log::sharedContext();
-            } catch (Throwable) {
-                $shared = [];
-            }
-            if (isset($shared['job_id'])) {
+            if (app(QueueExecutionContext::class)->isProcessing()) {
                 try {
                     Log::shareContext(['llm_run_id' => $run->id]);
                 } catch (Throwable) {

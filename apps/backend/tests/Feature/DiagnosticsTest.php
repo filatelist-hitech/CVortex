@@ -15,6 +15,7 @@ use App\Models\CareerSource;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use App\Queue\QueueExecutionContext;
 use App\Services\AuditLogger;
 use App\Services\CareerExtractionService;
 use App\Services\DatabaseOwnerContext;
@@ -26,7 +27,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Logger;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
@@ -805,6 +808,22 @@ class DiagnosticsTest extends TestCase
             'queue' => 'analysis-high', 'connection' => 'sync',
         ]);
         Log::shouldHaveReceived('log')->once()->withArgs(fn ($level, $message, $context): bool => $message === 'diagnostics.incident' && $context['queue'] === 'analysis-high' && $context['connection'] === 'sync');
+    }
+
+    public function test_queue_execution_state_survives_log_context_setup_failure_and_clears_after_exception(): void
+    {
+        $context = app(QueueExecutionContext::class);
+        $job = Mockery::mock(Job::class);
+        $job->shouldReceive('payload')->andReturn(['cvortex' => []]);
+        $job->shouldReceive('getJobId')->andReturn('job_context_test');
+        $job->shouldReceive('attempts')->andReturn(2);
+        Log::shouldReceive('flushSharedContext')->andThrow(new \RuntimeException('log context unavailable'));
+
+        Event::dispatch(new JobProcessing('redis', $job));
+        $this->assertTrue($context->isProcessing());
+
+        Event::dispatch(new JobExceptionOccurred('redis', $job, new \RuntimeException('retryable failure')));
+        $this->assertFalse($context->isProcessing());
     }
 
     public function test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request(): void

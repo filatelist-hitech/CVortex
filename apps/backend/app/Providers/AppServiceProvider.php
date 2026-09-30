@@ -13,9 +13,11 @@ use App\Logging\SanitizingLogManager;
 use App\Mcp\Http\AddMcpOAuthIssuer;
 use App\Mcp\Http\RequireMcpOAuthResource;
 use App\Mcp\OAuth\ResourceAccessToken;
+use App\Queue\QueueExecutionContext;
 use App\Services\EmailNormalizer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton('log', fn ($app) => new SanitizingLogManager($app));
+        $this->app->singleton(QueueExecutionContext::class);
 
         if (! config('mcp.enabled')) {
             Passport::ignoreRoutes();
@@ -66,6 +69,7 @@ class AppServiceProvider extends ServiceProvider
             ]];
         });
         Queue::before(function (JobProcessing $event): void {
+            app(QueueExecutionContext::class)->begin();
             try {
                 $payload = $event->job->payload()['cvortex'] ?? [];
                 Log::flushSharedContext();
@@ -80,10 +84,19 @@ class AppServiceProvider extends ServiceProvider
             }
         });
         Queue::after(function (JobProcessed $event): void {
+            app(QueueExecutionContext::class)->finish();
             try {
                 Log::flushSharedContext();
             } catch (Throwable) {
                 // Queue processing must continue when log context cleanup fails.
+            }
+        });
+        Queue::exceptionOccurred(function (JobExceptionOccurred $event): void {
+            app(QueueExecutionContext::class)->finish();
+            try {
+                Log::flushSharedContext();
+            } catch (Throwable) {
+                // Queue retries must continue when log context cleanup fails.
             }
         });
         Queue::failing(function (JobFailed $event): void {
