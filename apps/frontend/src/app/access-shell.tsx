@@ -30,7 +30,12 @@ const safeErrorMessages: Record<string, string> = {
 };
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly retryable: boolean, public readonly code: string) {
+  constructor(
+    message: string,
+    public readonly retryable: boolean,
+    public readonly code: string,
+    public readonly retryAfterSeconds: number | null = null,
+  ) {
     super(message);
     this.name = "ApiError";
   }
@@ -71,8 +76,18 @@ export async function api(path: string, options: RequestInit = {}) {
     const reference = typeof body?.error?.request_id === "string" ? body.error.request_id : response.headers.get("X-Request-ID");
     const safeCode = /^[A-Z][A-Z0-9_]{2,95}$/.test(code) ? code : "REQUEST_FAILED";
     const retryable = body?.error?.retryable === true;
+    const retryAfterHeader = response.headers.get("Retry-After")?.trim() ?? "";
+    const parsedRetryAfter = /^(0|[1-9]\d*)$/.test(retryAfterHeader) ? Number(retryAfterHeader) : Number.NaN;
+    const retryAfterSeconds = retryable && Number.isSafeInteger(parsedRetryAfter) && parsedRetryAfter <= 86400
+      ? parsedRetryAfter
+      : null;
     const explanation = errorExplanation(safeCode, retryable);
-    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${retryable ? " You can retry." : ""}`, retryable, safeCode);
+    const retryGuidance = retryable
+      ? retryAfterSeconds !== null && retryAfterSeconds > 0
+        ? ` You can retry after ${retryAfterSeconds} seconds.`
+        : " You can retry."
+      : "";
+    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${retryGuidance}`, retryable, safeCode, retryAfterSeconds);
   }
   return response.status === 204 ? null : response.json();
 }
