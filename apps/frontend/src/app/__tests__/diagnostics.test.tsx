@@ -4,6 +4,7 @@ import { ApiError, api } from "../access-shell";
 import AccessShell from "../access-shell";
 import Diagnostics from "../diagnostics";
 import ErrorPage from "../error";
+import { ApplicationDraftPanel } from "../vacancy-workspace";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -53,6 +54,49 @@ describe("Error Center", () => {
     expect(failure).toMatchObject({ code: "LLM_PROVIDER_CONFIGURATION", retryable: false });
     expect(failure.message).toContain("needs administrator configuration");
     expect(failure.message).not.toContain("SECRET");
+  });
+
+  it("preserves only a bounded numeric Retry-After for retryable API failures", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
+      { error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } },
+      { status: 503, headers: { "Retry-After": "86400" } },
+    ));
+    const failure = await api("/api/v1/applications/generate").catch((error) => error);
+    expect(failure).toMatchObject({ retryable: true, retryAfterSeconds: 86400 });
+    expect(failure.message).toContain("You can retry after 86400 seconds.");
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
+      { error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } },
+      { status: 503, headers: { "Retry-After": "86401" } },
+    ));
+    const invalid = await api("/api/v1/applications/generate").catch((error) => error);
+    expect(invalid).toMatchObject({ retryAfterSeconds: null });
+    expect(invalid.message).toBe("The analysis service is temporarily unavailable. You can retry.");
+  });
+
+  it("blocks synchronous draft generation until Retry-After expires", async () => {
+    const preparation = { id: "prep-1", vacancy_id: "vacancy-1", status: "DRAFT", stale: false, items: [] };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1/generate" && options?.method === "POST") {
+        return Response.json(
+          { error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } },
+          { status: 503, headers: { "Retry-After": "86400" } },
+        );
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
+    const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    fireEvent.click(generate);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 86400 seconds.");
+    expect(generate).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 24 hours before trying again.");
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
   });
 
   it("shows scan-first rows, count, readable time, and compact filters", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { api } from "./access-shell";
+import { ApiError, api } from "./access-shell";
 
 type VacancySummary = {
   id: string;
@@ -80,6 +80,19 @@ type DraftItem = {
   approvals: Array<{ action: string; revision_number: number; content_hash: string; validation_result: string; created_at: string }>;
 };
 type Preparation = { id: string; vacancy_id: string; status: "DRAFT" | "APPROVED"; stale: boolean; items: DraftItem[] };
+
+function formatRetryWait(seconds: number): string {
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours} hour${hours === 1 ? "" : "s"}${minutes > 0 ? ` ${minutes} minute${minutes === 1 ? "" : "s"}` : ""}`;
+  }
+  if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  }
+  return `${seconds} second${seconds === 1 ? "" : "s"}`;
+}
 
 const dimensionNames: Record<string, string> = {
   TECHNICAL: "Technical",
@@ -243,13 +256,31 @@ export default function VacancyWorkspace() {
   </section>;
 }
 
-function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
+export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
   const [preparation, setPreparation] = useState<Preparation | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [retryAfterUntil, setRetryAfterUntil] = useState<number | null>(null);
+  const [retrySecondsRemaining, setRetrySecondsRemaining] = useState(0);
   const requestVersion = useRef(0);
+
+  useEffect(() => {
+    if (retryAfterUntil === null) return;
+    let timeout: ReturnType<typeof setTimeout>;
+    const updateRemaining = () => {
+      const remaining = Math.max(0, Math.ceil((retryAfterUntil - Date.now()) / 1000));
+      setRetrySecondsRemaining(remaining);
+      if (remaining === 0) {
+        setRetryAfterUntil(null);
+        return;
+      }
+      timeout = setTimeout(updateRemaining, remaining > 60 ? 60_000 : 1_000);
+    };
+    updateRemaining();
+    return () => clearTimeout(timeout);
+  }, [retryAfterUntil]);
 
   const refresh = useCallback(async (id: string, version = requestVersion.current, preserveEdits = false) => {
     const result = await api(`/api/v1/applications/preparations/${id}`);
@@ -278,7 +309,7 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
   }, [refresh, vacancyId]);
 
   async function generate() {
-    if (!preparation || preparation.stale) return;
+    if (!preparation || preparation.stale || retrySecondsRemaining > 0) return;
     const version = requestVersion.current;
     setBusy("generate");
     setError("");
@@ -289,7 +320,13 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
         setEdits(Object.fromEntries((result.data as Preparation).items.map((item) => [item.id, item.content])));
       }
     } catch (caught) {
-      if (version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Draft generation failed.");
+      if (version === requestVersion.current) {
+        setError(caught instanceof Error ? caught.message : "Draft generation failed.");
+        if (caught instanceof ApiError && caught.retryAfterSeconds !== null && caught.retryAfterSeconds > 0) {
+          setRetryAfterUntil(Date.now() + caught.retryAfterSeconds * 1000);
+          setRetrySecondsRemaining(caught.retryAfterSeconds);
+        }
+      }
     } finally { if (version === requestVersion.current) setBusy(""); }
   }
 
@@ -323,7 +360,7 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
     {error && <div className="alert error" role="alert"><span>{error}</span></div>}
     {preparation?.stale && <p className="stale-callout" role="status"><strong>Preparation is stale.</strong><span>Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing.</span></p>}
     {preparation && !loading && <>
-      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
+      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale || retrySecondsRemaining > 0} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button>{retrySecondsRemaining > 0 && <p role="status">Wait at least {formatRetryWait(retrySecondsRemaining)} before trying again.</p>}</div>}
       {preparation.items.map((item) => <article className="application-draft-item" key={item.id}>
         <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`} · Revision {item.revision_number}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
         {item.before && <p><strong>Before</strong><br />{item.before}</p>}
