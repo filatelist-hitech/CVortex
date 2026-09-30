@@ -74,8 +74,12 @@ final class Redactor
         $frameworkFrames = [];
         foreach (array_slice($exception->getTrace(), 0, 50) as $frame) {
             $file = str_replace('\\', '/', (string) ($frame['file'] ?? ''));
+            $class = (string) ($frame['class'] ?? '');
+            if (str_contains($class, "\0")) {
+                $class = explode("\0", $class, 2)[0];
+            }
             $rendered = basename($file !== '' ? $file : 'runtime').':'.(int) ($frame['line'] ?? 0).' '.
-                self::frameFunction((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']);
+                self::frameFunction($class.($frame['type'] ?? '').$frame['function']);
             if (str_contains($file, '/app/') || str_contains($file, '/routes/')) {
                 $applicationFrames[] = '[app] '.$rendered;
             } else {

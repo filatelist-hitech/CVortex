@@ -94,6 +94,22 @@ function formatRetryWait(seconds: number): string {
   return `${seconds} second${seconds === 1 ? "" : "s"}`;
 }
 
+const APPLICATION_DRAFT_RETRY_KEY = "cvortex.application-draft.retry-until";
+
+function readSavedRetryDeadline(): number | null {
+  try {
+    const saved = window.localStorage.getItem(APPLICATION_DRAFT_RETRY_KEY);
+    if (saved === null) return null;
+    const until = Number(saved);
+    const now = Date.now();
+    if (Number.isSafeInteger(until) && until > now && until <= now + 86_400_000) return until;
+    window.localStorage.removeItem(APPLICATION_DRAFT_RETRY_KEY);
+  } catch {
+    // Browser storage may be disabled; the in-memory cooldown still applies for this mount.
+  }
+  return null;
+}
+
 function retryCooldown(caught: unknown): { until: number; seconds: number } | null {
   if (!(caught instanceof ApiError) || caught.retryAfterSeconds === null || caught.retryAfterSeconds <= 0) return null;
   return { until: Date.now() + caught.retryAfterSeconds * 1000, seconds: caught.retryAfterSeconds };
@@ -269,7 +285,20 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   const [error, setError] = useState("");
   const [retryAfterUntil, setRetryAfterUntil] = useState<number | null>(null);
   const [retrySecondsRemaining, setRetrySecondsRemaining] = useState(0);
+  const [retryCooldownReady, setRetryCooldownReady] = useState(false);
   const requestVersion = useRef(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const savedUntil = readSavedRetryDeadline();
+      if (savedUntil !== null) {
+        setRetryAfterUntil(savedUntil);
+        setRetrySecondsRemaining(Math.max(0, Math.ceil((savedUntil - Date.now()) / 1000)));
+      }
+      setRetryCooldownReady(true);
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     if (retryAfterUntil === null) return;
@@ -278,6 +307,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
       const remaining = Math.max(0, Math.ceil((retryAfterUntil - Date.now()) / 1000));
       setRetrySecondsRemaining(remaining);
       if (remaining === 0) {
+        try { window.localStorage.removeItem(APPLICATION_DRAFT_RETRY_KEY); } catch { /* Keep expiry functional without storage. */ }
         setRetryAfterUntil(null);
         return;
       }
@@ -290,6 +320,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   function pauseProviderActions(caught: unknown) {
     const cooldown = retryCooldown(caught);
     if (!cooldown) return;
+    try { window.localStorage.setItem(APPLICATION_DRAFT_RETRY_KEY, String(cooldown.until)); } catch { /* Keep the active mount protected without storage. */ }
     setRetryAfterUntil(cooldown.until);
     setRetrySecondsRemaining(cooldown.seconds);
   }
@@ -321,7 +352,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   }, [refresh, vacancyId]);
 
   async function generate() {
-    if (!preparation || preparation.stale || retrySecondsRemaining > 0) return;
+    if (!preparation || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0) return;
     const version = requestVersion.current;
     setBusy("generate");
     setError("");
@@ -340,7 +371,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   }
 
   async function act(item: DraftItem, action: "accept" | "edit" | "reject" | "approve") {
-    if (!preparation || preparation.stale || busy || (action !== "reject" && retrySecondsRemaining > 0)) return;
+    if (!preparation || preparation.stale || busy || (action !== "reject" && (!retryCooldownReady || retrySecondsRemaining > 0))) return;
     const version = requestVersion.current;
     setBusy(item.id);
     setError("");
@@ -373,7 +404,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
     {preparation?.stale && <p className="stale-callout" role="status"><strong>Preparation is stale.</strong><span>Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing.</span></p>}
     {retrySecondsRemaining > 0 && <p role="status">Wait at least {formatRetryWait(retrySecondsRemaining)} before retrying a provider-backed action.</p>}
     {preparation && !loading && <>
-      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale || retrySecondsRemaining > 0} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
+      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
       {preparation.items.map((item) => <article className="application-draft-item" key={item.id}>
         <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`} · Revision {item.revision_number}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
         {item.before && <p><strong>Before</strong><br />{item.before}</p>}
@@ -385,11 +416,11 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
         {item.approvals.length > 0 && <details><summary>Approval history</summary><ul>{item.approvals.map((approval, index) => <li key={`${item.id}-approval-${index}`}>{approval.action} · revision {approval.revision_number} · {approval.validation_result} · {approval.content_hash.slice(0, 12)}</li>)}</ul></details>}
         <div className="actions">
           {item.status !== "REJECTED" && item.status !== "APPROVED" && <>
-            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || retrySecondsRemaining > 0 || (edits[item.id] ?? item.content) === item.content} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
-            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || retrySecondsRemaining > 0 || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0 || (edits[item.id] ?? item.content) === item.content} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0 || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
             <button type="button" className="danger" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "reject")}>Reject</button>
           </>}
-          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || retrySecondsRemaining > 0 || item.validation_result !== "PASS" || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
+          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0 || item.validation_result !== "PASS" || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
           {item.status === "APPROVED" && <span className="confirmed-badge">Approved draft · not submitted</span>}
         </div>
       </article>)}
