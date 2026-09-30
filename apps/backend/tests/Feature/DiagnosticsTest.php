@@ -410,6 +410,28 @@ class DiagnosticsTest extends TestCase
         $this->assertLessThanOrEqual(12, count(explode("\n", $record->context['safe_stack'])));
     }
 
+    public function test_safe_stack_removes_absolute_paths_from_anonymous_class_names(): void
+    {
+        $anonymous = new class
+        {
+            public function fail(): void
+            {
+                throw new \RuntimeException('Safe failure.');
+            }
+        };
+
+        $safeStack = '';
+        try {
+            $anonymous->fail();
+        } catch (\RuntimeException $exception) {
+            $safeStack = Redactor::stack($exception);
+        }
+
+        $this->assertStringContainsString('class@anonymous', $safeStack);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $safeStack);
+        $this->assertStringNotContainsString("\0", $safeStack);
+    }
+
     public function test_incident_stderr_keeps_only_sanitized_exception_frames(): void
     {
         Log::spy();

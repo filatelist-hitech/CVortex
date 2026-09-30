@@ -7,7 +7,7 @@ import ErrorPage from "../error";
 import { ApplicationDraftPanel } from "../vacancy-workspace";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.removeItem("cvortex.application-draft.retry-until"); });
 
 const incident = {
   id: "incident-1", severity: "ERROR", status: "OPEN", error_code: "LLM_PROVIDER_UNAVAILABLE",
@@ -179,10 +179,38 @@ describe("Error Center", () => {
     vi.useRealTimers();
 
     expect(screen.queryByText(/Wait at least/)).not.toBeInTheDocument();
+    expect(localStorage.getItem("cvortex.application-draft.retry-until")).toBeNull();
     expect(accept).toBeEnabled();
     fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Another edited draft." } });
     expect(saveEdit).toBeEnabled();
     expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("draft-1"))).toHaveLength(1);
+  });
+
+  it("restores the shared cooldown after a panel remount and vacancy switch", async () => {
+    const preparation = (id: string, vacancyId: string) => ({ id, vacancy_id: vacancyId, status: "DRAFT", stale: false, items: [] });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation("prep-1", "vacancy-1") });
+      if (path === "/api/v1/vacancies/vacancy-2/preparation" && options?.method === "POST") return Response.json({ data: preparation("prep-2", "vacancy-2") });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation("prep-1", "vacancy-1") });
+      if (path === "/api/v1/applications/preparations/prep-2" && options?.method !== "POST") return Response.json({ data: preparation("prep-2", "vacancy-2") });
+      if (path === "/api/v1/applications/preparations/prep-1/generate" && options?.method === "POST") {
+        return Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "42" } });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="First vacancy" />);
+    fireEvent.click(await screen.findByRole("button", { name: "Generate recommendations and cover drafts" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
+    expect(localStorage.getItem("cvortex.application-draft.retry-until")).not.toBeNull();
+
+    cleanup();
+    render(<ApplicationDraftPanel vacancyId="vacancy-2" vacancyTitle="Second vacancy" />);
+    const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    expect(generate).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 42 seconds before retrying a provider-backed action.");
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
   });
 
   it("does not start a cooldown for a non-retryable API error", async () => {
