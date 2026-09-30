@@ -1778,12 +1778,15 @@ class VacancyCoreTest extends TestCase
         \DB::table('vacancies')->where('id', $vacancy->id)->update(['updated_at' => now()->subMinutes(20)]);
         $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, $source, $sourceUrl,
             hash('sha256', $service->canonicalText($source)), now()->subHour());
+        $staleJob = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+        $this->assertTrue(app(UniqueLock::class)->acquire($staleJob));
 
         $duplicate = $service->queue($user, $source, $sourceUrl);
 
         $this->assertTrue($duplicate['duplicate']);
         $this->assertSame('PENDING', $duplicate['vacancy']->fresh()->analysis_status);
         Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $queued): bool => $queued->snapshotId === (string) $snapshot->id);
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
     }
 
     public function test_recent_running_analysis_is_not_reclaimed(): void

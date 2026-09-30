@@ -7,6 +7,7 @@ use App\Jobs\AnalyzeVacancy;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
@@ -45,7 +46,10 @@ class VacancyIngestionService
                         ->orderByDesc('id')
                         ->first();
                     if ($current !== null && hash_equals((string) $current->content_hash, $contentHash)) {
-                        if ($vacancy->analysisRunIsStale()) {
+                        $staleRunning = $vacancy->analysisRunIsStale();
+                        if ($staleRunning) {
+                            $staleJob = new AnalyzeVacancy((string) $user->id, (string) $current->id);
+                            app(UniqueLock::class)->release($staleJob);
                             $vacancy->forceFill([
                                 'analysis_status' => Vacancy::STATUS_PENDING,
                                 'error_code' => null,
