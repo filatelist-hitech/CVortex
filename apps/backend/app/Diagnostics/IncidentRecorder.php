@@ -112,12 +112,13 @@ final class IncidentRecorder
 
                 return true;
             });
-            if ($stored && $exception !== null) {
-                self::markRecorded($exception);
-            }
         } catch (Throwable) {
             // PostgreSQL can be the failed dependency. Raw stderr remains independent.
             $stored = false;
+        }
+
+        if (($logged || $stored) && $exception !== null) {
+            self::markRecorded($exception);
         }
 
         return $logged || $stored;

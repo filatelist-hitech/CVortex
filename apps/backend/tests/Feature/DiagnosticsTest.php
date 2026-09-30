@@ -139,6 +139,18 @@ class DiagnosticsTest extends TestCase
         $this->assertSame('primary operation failure', $original->getMessage());
     }
 
+    public function test_logged_api_exception_is_not_logged_again_when_incident_storage_fails(): void
+    {
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('database unavailable'));
+        Log::spy();
+
+        $this->getJson('/api/v1/_diagnostics-test/fail')
+            ->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR');
+
+        Log::shouldHaveReceived('log')->once()->withArgs(fn ($level, $message): bool => $message === 'diagnostics.incident');
+    }
+
     public function test_readiness_probe_preserves_dependency_failure_when_diagnostics_also_fail(): void
     {
         DB::shouldReceive('select')->once()->andThrow(new \RuntimeException('postgres unavailable'));
