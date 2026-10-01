@@ -1838,13 +1838,13 @@ class VacancyCoreTest extends TestCase
             $text,
             null,
             hash('sha256', $text),
-            now()->subDays(3),
+            now()->subDays(4),
         );
         $legacyDispatchAt = now()->subMinutes(5);
-        \DB::table('vacancy_snapshots')->where('id', $snapshot->id)->update(['created_at' => $legacyDispatchAt]);
+        \DB::table('vacancy_snapshots')->where('id', $snapshot->id)->update(['created_at' => now()->subDays(4)]);
         \DB::table('vacancies')->where('id', $vacancy->id)->update([
-            'created_at' => $legacyDispatchAt,
-            'updated_at' => now(),
+            'created_at' => now()->subDays(4),
+            'updated_at' => $legacyDispatchAt,
         ]);
         $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
         $this->assertTrue(app(UniqueLock::class)->acquire($job));

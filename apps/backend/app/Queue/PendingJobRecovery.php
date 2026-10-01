@@ -27,13 +27,25 @@ final class PendingJobRecovery
     {
         $recoveryAt = $operation->getAttribute('dispatch_recovery_at');
         if ($recoveryAt === null) {
-            $legacyDispatchAt ??= $operation->getAttribute('created_at') ?? $operation->getAttribute('updated_at');
-            if ($legacyDispatchAt === null) {
+            $latestLegacyDispatchAt = null;
+            foreach ([
+                $operation->getAttribute('created_at'),
+                $operation->getAttribute('updated_at'),
+                $legacyDispatchAt,
+            ] as $candidate) {
+                if ($candidate instanceof \DateTimeInterface
+                    && ($latestLegacyDispatchAt === null || $candidate > $latestLegacyDispatchAt)) {
+                    $latestLegacyDispatchAt = $candidate;
+                }
+            }
+
+            if ($latestLegacyDispatchAt === null) {
                 return true;
             }
-            // Before persisted deadlines existed, the jobs used a long unique
-            // lock to protect provider delays. Keep that legacy window intact.
-            $recoveryAt = Carbon::instance($legacyDispatchAt)->addSeconds(LlmProviderException::UNIQUE_LOCK_SECONDS);
+            // Older retry paths refreshed updated_at but had no persisted
+            // deadline. Preserve the unique-lock window from the newest known
+            // dispatch timestamp, including the snapshot timestamp if newer.
+            $recoveryAt = Carbon::instance($latestLegacyDispatchAt)->addSeconds(LlmProviderException::UNIQUE_LOCK_SECONDS);
         }
 
         return $recoveryAt <= now();
