@@ -20,7 +20,7 @@ class CareerSource extends Model
 
     protected $fillable = ['owner_id', 'career_profile_id', 'kind', 'source_text', 'content_hash', 'extraction_status', 'error_code'];
 
-    protected $hidden = ['source_text', 'content_hash', 'next_attempt_at', 'dispatch_recovery_at'];
+    protected $hidden = ['source_text', 'content_hash', 'next_attempt_at', 'dispatch_recovery_at', 'active_run_token'];
 
     protected function casts(): array
     {

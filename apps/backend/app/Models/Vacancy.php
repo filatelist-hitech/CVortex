@@ -25,7 +25,7 @@ class Vacancy extends Model
         'owner_id', 'source_type', 'source_url', 'title', 'company', 'analysis_status', 'error_code',
     ];
 
-    protected $hidden = ['next_attempt_at', 'dispatch_recovery_at'];
+    protected $hidden = ['next_attempt_at', 'dispatch_recovery_at', 'active_run_token'];
 
     protected function casts(): array
     {

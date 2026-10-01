@@ -33,7 +33,7 @@ class VacancyReanalysisService
                     return ['snapshot' => $snapshot, 'status' => $status, 'dispatch' => false];
                 }
                 if ($status !== Vacancy::STATUS_PENDING) {
-                    $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null])->save();
+                    $vacancy->forceFill(['analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null, 'active_run_token' => null])->save();
                 }
                 PendingJobRecovery::reserve($vacancy);
 

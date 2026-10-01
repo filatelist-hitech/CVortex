@@ -56,6 +56,7 @@ class VacancyIngestionService
                             $vacancy->forceFill([
                                 'analysis_status' => Vacancy::STATUS_PENDING,
                                 'error_code' => null,
+                                'active_run_token' => null,
                             ])->save();
                             PendingJobRecovery::reserve($vacancy);
                         }
@@ -83,6 +84,7 @@ class VacancyIngestionService
                     $vacancy->forceFill([
                         'analysis_status' => Vacancy::STATUS_PENDING,
                         'error_code' => null,
+                        'active_run_token' => null,
                         'title' => $this->deterministicTitle($sourceText) ?? $vacancy->title,
                         'company' => $this->deterministicCompany($sourceText) ?? $vacancy->company,
                     ])->save();

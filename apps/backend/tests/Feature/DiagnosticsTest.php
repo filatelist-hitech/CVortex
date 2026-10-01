@@ -1037,8 +1037,7 @@ class DiagnosticsTest extends TestCase
         $analysisFailure = new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION);
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysis = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
-        $analysisService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisService->shouldReceive('analyze')->once()->andThrow($analysisFailure);
+        $analysisService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisFailure);
         $analysis->handle($analysisService, app(DatabaseOwnerContext::class));
         $analysis->assertFailedWith(LlmProviderException::class);
         $this->assertDatabaseHas('vacancies', [
@@ -1049,8 +1048,7 @@ class DiagnosticsTest extends TestCase
         $analysisRateLimit = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 37);
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysisRetry = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
-        $analysisRetryService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisRetryService->shouldReceive('analyze')->once()->andThrow($analysisRateLimit);
+        $analysisRetryService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisRateLimit);
         $analysisRetry->handle($analysisRetryService, app(DatabaseOwnerContext::class));
         $analysisRetry->assertReleased(37)->assertNotFailed();
         $this->assertDatabaseHas('vacancies', [
@@ -1060,8 +1058,7 @@ class DiagnosticsTest extends TestCase
         $analysisTemporary = new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41);
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysisTemporaryJob = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
-        $analysisTemporaryService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisTemporaryService->shouldReceive('analyze')->once()->andThrow($analysisTemporary);
+        $analysisTemporaryService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisTemporary);
         $analysisTemporaryJob->handle($analysisTemporaryService, app(DatabaseOwnerContext::class));
         $analysisTemporaryJob->assertReleased(41)->assertNotFailed();
 
@@ -1073,8 +1070,7 @@ class DiagnosticsTest extends TestCase
         $careerFailure = new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $career = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $careerService = Mockery::mock(CareerExtractionService::class);
-        $careerService->shouldReceive('extract')->once()->andThrow($careerFailure);
+        $careerService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerFailure);
         $career->handle($careerService);
         $career->assertFailedWith(LlmProviderException::class);
         $this->assertDatabaseHas('career_sources', [
@@ -1085,8 +1081,7 @@ class DiagnosticsTest extends TestCase
         $retryableFailure = new LlmProviderException(LlmProviderException::TRANSPORT);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $retryableJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $retryableService = Mockery::mock(CareerExtractionService::class);
-        $retryableService->shouldReceive('extract')->once()->andThrow($retryableFailure);
+        $retryableService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $retryableFailure);
         $retryableJob->handle($retryableService);
         $retryableJob->assertReleased(5)->assertNotFailed();
         $this->assertDatabaseHas('career_sources', [
@@ -1096,8 +1091,7 @@ class DiagnosticsTest extends TestCase
         $careerRateLimit = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 37);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $careerRateLimitJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $careerRateLimitService = Mockery::mock(CareerExtractionService::class);
-        $careerRateLimitService->shouldReceive('extract')->once()->andThrow($careerRateLimit);
+        $careerRateLimitService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerRateLimit);
         $careerRateLimitJob->handle($careerRateLimitService);
         $careerRateLimitJob->assertReleased(37)->assertNotFailed();
         $this->assertDatabaseHas('career_sources', [
@@ -1107,16 +1101,14 @@ class DiagnosticsTest extends TestCase
         $careerTemporary = new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $careerTemporaryJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $careerTemporaryService = Mockery::mock(CareerExtractionService::class);
-        $careerTemporaryService->shouldReceive('extract')->once()->andThrow($careerTemporary);
+        $careerTemporaryService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerTemporary);
         $careerTemporaryJob->handle($careerTemporaryService);
         $careerTemporaryJob->assertReleased(41)->assertNotFailed();
 
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $careerFinalJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
         $careerFinalJob->job->attempts = 3;
-        $careerFinalService = Mockery::mock(CareerExtractionService::class);
-        $careerFinalService->shouldReceive('extract')->once()->andThrow($careerRateLimit);
+        $careerFinalService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerRateLimit);
         $careerFinalJob->handle($careerFinalService);
         $careerFinalJob->assertFailedWith(LlmProviderException::class)->assertNotReleased();
         $this->assertDatabaseHas('career_sources', [
@@ -1126,8 +1118,7 @@ class DiagnosticsTest extends TestCase
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysisFinalJob = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
         $analysisFinalJob->job->attempts = 3;
-        $analysisFinalService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisFinalService->shouldReceive('analyze')->once()->andThrow($analysisRateLimit);
+        $analysisFinalService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisRateLimit);
         $analysisFinalJob->handle($analysisFinalService, app(DatabaseOwnerContext::class));
         $analysisFinalJob->assertFailedWith(LlmProviderException::class)->assertNotReleased();
         $this->assertDatabaseHas('vacancies', [
@@ -1174,8 +1165,7 @@ class DiagnosticsTest extends TestCase
         });
 
         $retry = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $failedAttempt = Mockery::mock(CareerExtractionService::class);
-        $failedAttempt->shouldReceive('extract')->once()->andThrow(new LlmProviderException(
+        $failedAttempt = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, new LlmProviderException(
             LlmProviderException::TRANSPORT,
             providerName: 'openai',
             retryAfterSeconds: 37,
@@ -1188,8 +1178,14 @@ class DiagnosticsTest extends TestCase
 
         $success = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
         $successfulAttempt = Mockery::mock(CareerExtractionService::class);
-        $successfulAttempt->shouldReceive('extract')->once()->andReturnUsing(function () use ($source): CareerSource {
-            CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_COMPLETED]);
+        $successfulAttempt->shouldReceive('extract')->once()->withArgs(function (User $calledUser, string $sourceText, string $runToken) use ($source): bool {
+            CareerSource::query()->whereKey($source->id)->update([
+                'extraction_status' => CareerSource::STATUS_COMPLETED,
+                'active_run_token' => null,
+            ]);
+
+            return true;
+        })->andReturnUsing(function () use ($source): CareerSource {
 
             return $source->fresh();
         });
@@ -1422,6 +1418,22 @@ class DiagnosticsTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         return $this->actingAs($user, 'web')->withSession(['auth_generation' => $user->fresh()->auth_generation]);
+    }
+
+    private function failingQueueService(string $serviceClass, string $method, Vacancy|CareerSource $aggregate, \Throwable $failure): object
+    {
+        $service = Mockery::mock($serviceClass);
+        $service->shouldReceive($method)->once()->withArgs(function (...$arguments) use ($aggregate): bool {
+            $runToken = $arguments[2] ?? null;
+            if (! is_string($runToken)) {
+                return false;
+            }
+            $aggregate->forceFill(['active_run_token' => $runToken])->save();
+
+            return true;
+        })->andThrow($failure);
+
+        return $service;
     }
 }
 

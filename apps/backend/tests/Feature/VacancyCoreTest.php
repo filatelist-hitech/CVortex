@@ -33,6 +33,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use LogicException;
 use Tests\TestCase;
 
@@ -1791,7 +1792,13 @@ class VacancyCoreTest extends TestCase
         $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
         $job->withFakeQueueInteractions();
         $service = \Mockery::mock(VacancyAnalysisService::class);
-        $service->shouldReceive('analyze')->once()->andThrow(
+        $service->shouldReceive('analyze')->once()->withArgs(function (User $calledUser, VacancySnapshot $calledSnapshot, string $runToken) use ($user, $snapshot, $vacancy): bool {
+            $this->assertSame((string) $user->id, (string) $calledUser->id);
+            $this->assertSame((string) $snapshot->id, (string) $calledSnapshot->id);
+            $vacancy->forceFill(['active_run_token' => $runToken])->save();
+
+            return true;
+        })->andThrow(
             new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 60),
         );
 
@@ -1944,6 +1951,44 @@ class VacancyCoreTest extends TestCase
 
         $this->expectException(SafeVacancyException::class);
         $job->handle($service, app(DatabaseOwnerContext::class));
+    }
+
+    public function test_stale_vacancy_attempt_cannot_persist_after_recovery_reclaims_it(): void
+    {
+        Queue::fake();
+        $user = $this->user('vacancy-stale-attempt-fenced@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, 'Laravel is required.', null, hash('sha256', 'Laravel is required.'), now());
+        $replacementToken = (string) Str::uuid();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldReceive('generateStructured')->once()->andReturnUsing(function () use ($vacancy, $replacementToken): LlmResponse {
+            Vacancy::query()->whereKey($vacancy->id)->update([
+                'analysis_status' => Vacancy::STATUS_RUNNING,
+                'active_run_token' => $replacementToken,
+            ]);
+
+            return new LlmResponse(['requirements' => []], 'fake', 'fake-structured', 1, 1, 1, 'stale-request', 1);
+        });
+        $this->app->instance(LlmProvider::class, $provider);
+
+        $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+        $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+        $job->assertNotFailed()->assertNotReleased();
+
+        $this->assertSame(Vacancy::STATUS_RUNNING, $vacancy->fresh()->analysis_status);
+        $this->assertSame($replacementToken, $vacancy->fresh()->active_run_token);
+        $this->assertDatabaseCount('vacancy_requirements', 0);
+        $this->assertDatabaseCount('vacancy_analyses', 0);
+        $this->assertDatabaseHas('vacancy_llm_runs', [
+            'vacancy_snapshot_id' => $snapshot->id,
+            'status' => 'FAILED',
+            'error_category' => 'ATTEMPT_SUPERSEDED',
+        ]);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 
     public function test_legacy_pending_vacancy_keeps_its_original_unique_lock_window(): void

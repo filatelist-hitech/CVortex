@@ -11,6 +11,8 @@ use App\AI\RuntimeSkillRegistry;
 use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Exceptions\SafeVacancyException;
+use App\Exceptions\VacancyAttemptSupersededException;
+use App\Exceptions\VacancyClaimRejectedException;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancyAnalysis;
@@ -21,6 +23,7 @@ use App\Queue\QueueExecutionContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 class VacancyAnalysisService
@@ -33,15 +36,17 @@ class VacancyAnalysisService
         private readonly DatabaseOwnerContext $ownerContext,
     ) {}
 
-    public function analyze(User $user, VacancySnapshot $snapshot): VacancyAnalysis
+    public function analyze(User $user, VacancySnapshot $snapshot, ?string $runToken = null): VacancyAnalysis
     {
+        $runToken ??= (string) Str::uuid();
+
         return $this->ownerContext->run(
             (string) $user->id,
-            fn (): VacancyAnalysis => $this->analyzeForOwner($user, $snapshot),
+            fn (): VacancyAnalysis => $this->analyzeForOwner($user, $snapshot, $runToken),
         );
     }
 
-    private function analyzeForOwner(User $user, VacancySnapshot $snapshot): VacancyAnalysis
+    private function analyzeForOwner(User $user, VacancySnapshot $snapshot, string $runToken): VacancyAnalysis
     {
         $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($snapshot->vacancy_id);
         if (! hash_equals((string) $snapshot->owner_id, (string) $user->id)) {
@@ -73,6 +78,7 @@ class VacancyAnalysisService
                 'error_code' => null,
                 'next_attempt_at' => null,
                 'dispatch_recovery_at' => null,
+                'active_run_token' => $runToken,
                 'updated_at' => now(),
             ]);
         if ($claimed === 0) {
@@ -82,43 +88,62 @@ class VacancyAnalysisService
             if ($current !== null) {
                 return $current;
             }
-            throw new SafeVacancyException;
+            throw new VacancyClaimRejectedException;
         }
         $vacancy->refresh();
 
         try {
             if (! VacancyLlmRun::query()->where('vacancy_snapshot_id', $snapshot->id)->where('status', 'COMPLETED')->exists()) {
-                $this->extractRequirements($user, $snapshot);
+                $this->extractRequirements($user, $snapshot, $runToken);
             }
-            $analysis = $this->matching->analyze($user, $vacancy, $snapshot);
-            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_COMPLETED);
+            $analysis = $this->matching->analyze($user, $vacancy, $snapshot, $runToken);
+            if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_COMPLETED, null, $runToken)) {
+                throw new VacancyAttemptSupersededException;
+            }
 
             return $analysis;
         } catch (VacancyOutputException $exception) {
-            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'INVALID_EXTRACTION_RESULT');
+            if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'INVALID_EXTRACTION_RESULT', $runToken)) {
+                throw new VacancyAttemptSupersededException;
+            }
             throw $exception;
         } catch (LlmProviderException $exception) {
             if (app(QueueExecutionContext::class)->isProcessing() && $exception->isRetryable()) {
                 // The queue job reserves Retry-After and changes RUNNING to
                 // PENDING atomically after this exception reaches its handler.
-                $this->touchCurrentSnapshot($snapshot);
+                if (! $this->touchCurrentSnapshot($snapshot, $runToken)) {
+                    throw new VacancyAttemptSupersededException;
+                }
             } else {
-                $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR');
+                $queueExecution = app(QueueExecutionContext::class)->isProcessing();
+                if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR', $runToken, ! $queueExecution)) {
+                    throw new VacancyAttemptSupersededException;
+                }
             }
             throw $exception;
         } catch (QueryException) {
-            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR');
+            if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR', $runToken)) {
+                throw new VacancyAttemptSupersededException;
+            }
             throw new SafeVacancyException;
         } catch (Throwable $exception) {
-            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR');
+            if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR', $runToken)) {
+                throw new VacancyAttemptSupersededException;
+            }
             throw $exception;
         }
     }
 
-    private function transitionCurrentSnapshot(VacancySnapshot $snapshot, string $status, ?string $errorCode = null): void
-    {
-        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+    private function transitionCurrentSnapshot(
+        VacancySnapshot $snapshot,
+        string $status,
+        ?string $errorCode,
+        string $runToken,
+        bool $clearRunToken = true,
+    ): bool {
+        return Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
             ->where('analysis_status', Vacancy::STATUS_RUNNING)
+            ->where('active_run_token', $runToken)
             ->whereRaw(
                 'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
                 [$snapshot->version],
@@ -127,23 +152,26 @@ class VacancyAnalysisService
                 'error_code' => $errorCode,
                 'next_attempt_at' => null,
                 'dispatch_recovery_at' => null,
+                'active_run_token' => $clearRunToken ? null : $runToken,
                 'updated_at' => now(),
-            ]);
+            ]) === 1;
     }
 
-    private function touchCurrentSnapshot(VacancySnapshot $snapshot): void
+    private function touchCurrentSnapshot(VacancySnapshot $snapshot, string $runToken): bool
     {
-        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+        return Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
             ->where('analysis_status', Vacancy::STATUS_RUNNING)
+            ->where('active_run_token', $runToken)
             ->whereRaw(
                 'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
                 [$snapshot->version],
-            )->update(['updated_at' => now()]);
+            )->update(['updated_at' => now()]) === 1;
     }
 
-    private function extractRequirements(User $user, VacancySnapshot $snapshot): void
+    private function extractRequirements(User $user, VacancySnapshot $snapshot, string $runToken): void
     {
         try {
+            $this->assertCurrentAttempt($snapshot, $runToken);
             $skill = $this->skills->vacancyRequirementExtraction();
             $retryCount = VacancyLlmRun::query()->where('vacancy_snapshot_id', $snapshot->id)->count();
             $run = VacancyLlmRun::query()->create([
@@ -158,7 +186,9 @@ class VacancyAnalysisService
                 'retry_count' => $retryCount,
             ]);
         } catch (Throwable $exception) {
-            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'SETUP_ERROR');
+            if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'SETUP_ERROR', $runToken)) {
+                throw new VacancyAttemptSupersededException;
+            }
             throw $exception;
         }
 
@@ -173,55 +203,77 @@ class VacancyAnalysisService
             ));
             $requirements = $this->validator->validate($response->output, $snapshot->raw_text);
 
-            DB::transaction(function () use ($requirements, $snapshot, $user, $skill, $run, $response): void {
-                VacancyRequirement::query()->where('vacancy_snapshot_id', $snapshot->id)->delete();
-                foreach ($requirements as $requirement) {
-                    VacancyRequirement::query()->create([
-                        'owner_id' => $user->id,
-                        'vacancy_snapshot_id' => $snapshot->id,
-                        ...$requirement,
-                        'extracted_by' => $skill->id.'@'.$skill->version,
-                        'candidate_hash' => hash('sha256', implode("\0", [
-                            $requirement['dimension'], $requirement['importance'], $requirement['label'], $requirement['source_excerpt'],
-                        ])),
-                    ]);
-                }
-                $run->forceFill([
-                    'provider' => $response->provider,
-                    'model' => $response->model,
-                    'provider_request_id' => $response->providerRequestId,
-                    'status' => 'COMPLETED',
-                    'input_tokens' => $response->inputTokens,
-                    'output_tokens' => $response->outputTokens,
-                    'latency_ms' => $response->latencyMs,
-                    'estimated_cost_micros' => $response->estimatedCostMicros,
-                    'validation_result' => 'PASS',
-                    'error_category' => null,
-                ])->save();
-            });
+            try {
+                DB::transaction(function () use ($requirements, $snapshot, $user, $skill, $run, $response, $runToken): void {
+                    $this->assertCurrentAttempt($snapshot, $runToken);
+                    VacancyRequirement::query()->where('vacancy_snapshot_id', $snapshot->id)->delete();
+                    foreach ($requirements as $requirement) {
+                        VacancyRequirement::query()->create([
+                            'owner_id' => $user->id,
+                            'vacancy_snapshot_id' => $snapshot->id,
+                            ...$requirement,
+                            'extracted_by' => $skill->id.'@'.$skill->version,
+                            'candidate_hash' => hash('sha256', implode("\0", [
+                                $requirement['dimension'], $requirement['importance'], $requirement['label'], $requirement['source_excerpt'],
+                            ])),
+                        ]);
+                    }
+                    $run->forceFill([
+                        'provider' => $response->provider,
+                        'model' => $response->model,
+                        'provider_request_id' => $response->providerRequestId,
+                        'status' => 'COMPLETED',
+                        'input_tokens' => $response->inputTokens,
+                        'output_tokens' => $response->outputTokens,
+                        'latency_ms' => $response->latencyMs,
+                        'estimated_cost_micros' => $response->estimatedCostMicros,
+                        'validation_result' => 'PASS',
+                        'error_category' => null,
+                    ])->save();
+                });
+            } catch (VacancyAttemptSupersededException $exception) {
+                $this->markRunSuperseded($run);
+                throw $exception;
+            }
         } catch (VacancyOutputException $exception) {
-            $run->forceFill([
-                'status' => 'FAILED',
-                'validation_result' => $exception->category,
-                'error_category' => $exception->category,
-            ])->save();
+            try {
+                DB::transaction(function () use ($snapshot, $runToken, $run, $exception): void {
+                    $this->assertCurrentAttempt($snapshot, $runToken);
+                    $run->forceFill([
+                        'status' => 'FAILED',
+                        'validation_result' => $exception->category,
+                        'error_category' => $exception->category,
+                    ])->save();
+                });
+            } catch (VacancyAttemptSupersededException $superseded) {
+                $this->markRunSuperseded($run);
+                throw $superseded;
+            }
             app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', ErrorCatalog::incidentDetails('LLM_OUTPUT_INVALID')['message'], 'vacancy', 'ERROR', $exception, [
                 'llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'vacancy_requirement_extraction',
             ]);
             throw $exception;
         } catch (LlmProviderException $exception) {
-            $run->forceFill([
-                'provider' => $exception->providerName,
-                'model' => $exception->resolvedModel,
-                'provider_request_id' => $exception->providerRequestId,
-                'status' => 'FAILED',
-                'input_tokens' => $exception->inputTokens,
-                'output_tokens' => $exception->outputTokens,
-                'latency_ms' => $exception->latencyMs,
-                'estimated_cost_micros' => $exception->estimatedCostMicros,
-                'validation_result' => 'NOT_VALIDATED',
-                'error_category' => $exception->category,
-            ])->save();
+            try {
+                DB::transaction(function () use ($snapshot, $runToken, $run, $exception): void {
+                    $this->assertCurrentAttempt($snapshot, $runToken);
+                    $run->forceFill([
+                        'provider' => $exception->providerName,
+                        'model' => $exception->resolvedModel,
+                        'provider_request_id' => $exception->providerRequestId,
+                        'status' => 'FAILED',
+                        'input_tokens' => $exception->inputTokens,
+                        'output_tokens' => $exception->outputTokens,
+                        'latency_ms' => $exception->latencyMs,
+                        'estimated_cost_micros' => $exception->estimatedCostMicros,
+                        'validation_result' => 'NOT_VALIDATED',
+                        'error_category' => $exception->category,
+                    ])->save();
+                });
+            } catch (VacancyAttemptSupersededException $superseded) {
+                $this->markRunSuperseded($run);
+                throw $superseded;
+            }
             if (app(QueueExecutionContext::class)->isProcessing()) {
                 try {
                     Log::shareContext(['llm_run_id' => $run->id]);
@@ -237,5 +289,28 @@ class VacancyAnalysisService
             }
             throw $exception;
         }
+    }
+
+    private function assertCurrentAttempt(VacancySnapshot $snapshot, string $runToken): void
+    {
+        DB::transaction(function () use ($snapshot, $runToken): void {
+            $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)
+                ->where('owner_id', $snapshot->owner_id)->lockForUpdate()->first();
+            if ($vacancy === null || $vacancy->analysis_status !== Vacancy::STATUS_RUNNING
+                || $vacancy->active_run_token !== $runToken
+                || VacancySnapshot::query()->where('owner_id', $snapshot->owner_id)
+                    ->where('vacancy_id', $snapshot->vacancy_id)->where('version', '>', $snapshot->version)->exists()) {
+                throw new VacancyAttemptSupersededException;
+            }
+        });
+    }
+
+    private function markRunSuperseded(VacancyLlmRun $run): void
+    {
+        $run->forceFill([
+            'status' => 'FAILED',
+            'validation_result' => 'NOT_VALIDATED',
+            'error_category' => 'ATTEMPT_SUPERSEDED',
+        ])->save();
     }
 }

@@ -6,7 +6,8 @@ use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\VacancyOutputException;
 use App\AI\ProviderRetryAfter;
 use App\Diagnostics\ProviderRetryWarning;
-use App\Exceptions\SafeVacancyException;
+use App\Exceptions\VacancyAttemptSupersededException;
+use App\Exceptions\VacancyClaimRejectedException;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
@@ -20,6 +21,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 {
@@ -56,10 +58,13 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
                 return;
             }
 
+            $runToken = (string) Str::uuid();
             try {
-                $service->analyze($user, $snapshot);
-            } catch (SafeVacancyException $exception) {
-                $expectedDuplicate = DB::transaction(function () use ($snapshot): bool {
+                $service->analyze($user, $snapshot, $runToken);
+            } catch (VacancyAttemptSupersededException) {
+                return;
+            } catch (VacancyClaimRejectedException $exception) {
+                $expectedDuplicate = DB::transaction(function () use ($snapshot, $runToken): bool {
                     $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)
                         ->where('owner_id', $snapshot->owner_id)->lockForUpdate()->first();
                     if ($vacancy === null) {
@@ -74,7 +79,8 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
                     return ($vacancy->analysis_status === Vacancy::STATUS_PENDING
                             && $nextAttemptAt instanceof \DateTimeInterface
                             && $nextAttemptAt > now())
-                        || ($vacancy->analysis_status === Vacancy::STATUS_RUNNING && $isCurrentSnapshot);
+                        || ($vacancy->analysis_status === Vacancy::STATUS_RUNNING
+                            && $isCurrentSnapshot && $vacancy->active_run_token !== $runToken);
                 });
 
                 if ($expectedDuplicate) {
@@ -84,31 +90,38 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
             } catch (VacancyOutputException) {
                 // Invalid semantic output is terminal until an explicit user retry.
             } catch (LlmProviderException $exception) {
-                $this->retryOrFail($exception, $snapshot);
+                $this->retryOrFail($exception, $snapshot, $runToken);
             }
         });
     }
 
-    private function retryOrFail(LlmProviderException $exception, VacancySnapshot $snapshot): void
+    private function retryOrFail(LlmProviderException $exception, VacancySnapshot $snapshot, string $runToken): void
     {
         if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
-            DB::transaction(function () use ($snapshot): void {
+            $owned = DB::transaction(function () use ($snapshot, $runToken): bool {
                 $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
                     ->lockForUpdate()->first();
-                if ($vacancy === null || ! in_array($vacancy->analysis_status, [Vacancy::STATUS_FAILED, Vacancy::STATUS_RUNNING], true)) {
-                    return;
+                if ($vacancy === null || $vacancy->active_run_token !== $runToken
+                    || ! in_array($vacancy->analysis_status, [Vacancy::STATUS_FAILED, Vacancy::STATUS_RUNNING], true)) {
+                    return false;
                 }
                 if (VacancySnapshot::query()->where('owner_id', $snapshot->owner_id)
                     ->where('vacancy_id', $snapshot->vacancy_id)->where('version', '>', $snapshot->version)->exists()) {
-                    return;
+                    return false;
                 }
                 $vacancy->forceFill([
                     'analysis_status' => Vacancy::STATUS_FAILED,
                     'error_code' => 'PROVIDER_ERROR',
                     'next_attempt_at' => null,
                     'dispatch_recovery_at' => null,
+                    'active_run_token' => null,
                 ])->save();
+
+                return true;
             });
+            if (! $owned) {
+                return;
+            }
             $this->fail($exception);
 
             return;
@@ -120,23 +133,30 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
             $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
         }
 
-        DB::transaction(function () use ($snapshot, $delay): void {
+        $owned = DB::transaction(function () use ($snapshot, $delay, $runToken): bool {
             $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
                 ->lockForUpdate()->first();
-            if ($vacancy === null || ! in_array($vacancy->analysis_status, [Vacancy::STATUS_FAILED, Vacancy::STATUS_RUNNING], true)) {
-                return;
+            if ($vacancy === null || $vacancy->active_run_token !== $runToken
+                || ! in_array($vacancy->analysis_status, [Vacancy::STATUS_FAILED, Vacancy::STATUS_RUNNING], true)) {
+                return false;
             }
             $hasNewerSnapshot = VacancySnapshot::query()->where('owner_id', $snapshot->owner_id)
                 ->where('vacancy_id', $snapshot->vacancy_id)->where('version', '>', $snapshot->version)->exists();
             if ($hasNewerSnapshot) {
-                return;
+                return false;
             }
             $vacancy->forceFill([
                 'analysis_status' => Vacancy::STATUS_PENDING,
                 'error_code' => null,
+                'active_run_token' => null,
             ])->save();
             PendingJobRecovery::reserve($vacancy, $delay);
+
+            return true;
         });
+        if (! $owned) {
+            return;
+        }
 
         ProviderRetryWarning::scheduled('vacancy_requirement_extraction', $exception, $this->attempts(), $delay);
         $this->release($delay);
