@@ -763,21 +763,38 @@ describe("Error Center", () => {
 
   it("shows recorded retry delay and accessible occurrence date", async () => {
     const limited = { ...incident, error_code: "LLM_PROVIDER_RATE_LIMITED" };
-    mockData([limited], limited, { ...occurrence, retry_after_seconds: 42 });
+    const createdAt = new Date().toISOString();
+    mockData([limited], limited, { ...occurrence, created_at: createdAt, retry_after_seconds: 42 });
     render(<Diagnostics />);
     fireEvent.click(await screen.findByRole("button", { name: /Vacancy analysis failed/ }));
-    expect(await screen.findByText("Retry after 42 seconds.")).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent("Wait at least 42 seconds, then retry the operation.");
+    await screen.findByRole("heading", { name: "Vacancy analysis failed" });
+    const decision = screen.getByRole("region", { name: "Diagnosis and next action" });
+    expect(decision).toHaveTextContent("Wait at least 42 seconds, then retry the operation.");
     const time = screen.getByRole("button", { name: /Request/ }).querySelector("time");
-    expect(time).toHaveTextContent(/28 Sep/);
+    expect(time).toHaveAttribute("datetime", createdAt);
     expect(time).toHaveAttribute("aria-label", expect.stringContaining("2026"));
   });
 
   it("shows a recorded temporary provider retry delay", async () => {
-    mockData([incident], incident, { ...occurrence, retry_after_seconds: 41 });
+    mockData([incident], incident, { ...occurrence, created_at: new Date().toISOString(), retry_after_seconds: 41 });
     await openDetail();
-    expect(screen.getByText("Retry after 41 seconds.")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent("Wait at least 41 seconds, then retry the operation.");
+  });
+
+  it("shows only the remaining provider retry delay", async () => {
+    const limited = { ...incident, error_code: "LLM_PROVIDER_RATE_LIMITED" };
+    const createdAt = new Date(Date.now() - (86400 - 3600) * 1000).toISOString();
+    mockData([limited], limited, { ...occurrence, created_at: createdAt, retry_after_seconds: 86400 });
+    await openDetail();
+    expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent("Wait at least 3600 seconds, then retry the operation.");
+  });
+
+  it("makes an expired provider retry immediately available", async () => {
+    const limited = { ...incident, error_code: "LLM_PROVIDER_RATE_LIMITED" };
+    const createdAt = new Date(Date.now() - 90000 * 1000).toISOString();
+    mockData([limited], limited, { ...occurrence, created_at: createdAt, retry_after_seconds: 86400 });
+    await openDetail();
+    expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent("Retry is available now.");
   });
 
   it("does not invent an unrecorded retry delay", async () => {
