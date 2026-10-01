@@ -59,12 +59,25 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
             try {
                 $service->analyze($user, $snapshot);
             } catch (SafeVacancyException $exception) {
-                $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)
-                    ->where('owner_id', $snapshot->owner_id)->first();
-                $nextAttemptAt = $vacancy?->getAttribute('next_attempt_at');
-                if ($vacancy?->analysis_status === Vacancy::STATUS_PENDING
-                    && $nextAttemptAt instanceof \DateTimeInterface
-                    && $nextAttemptAt > now()) {
+                $expectedDuplicate = DB::transaction(function () use ($snapshot): bool {
+                    $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)
+                        ->where('owner_id', $snapshot->owner_id)->lockForUpdate()->first();
+                    if ($vacancy === null) {
+                        return false;
+                    }
+
+                    $latestSnapshotId = VacancySnapshot::query()->where('owner_id', $snapshot->owner_id)
+                        ->where('vacancy_id', $snapshot->vacancy_id)->latest('version')->value('id');
+                    $isCurrentSnapshot = hash_equals((string) $snapshot->id, (string) $latestSnapshotId);
+                    $nextAttemptAt = $vacancy->getAttribute('next_attempt_at');
+
+                    return ($vacancy->analysis_status === Vacancy::STATUS_PENDING
+                            && $nextAttemptAt instanceof \DateTimeInterface
+                            && $nextAttemptAt > now())
+                        || ($vacancy->analysis_status === Vacancy::STATUS_RUNNING && $isCurrentSnapshot);
+                });
+
+                if ($expectedDuplicate) {
                     return;
                 }
                 throw $exception;

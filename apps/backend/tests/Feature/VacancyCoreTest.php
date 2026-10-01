@@ -1883,6 +1883,69 @@ class VacancyCoreTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_concurrent_duplicate_vacancy_job_while_current_analysis_runs_is_a_noop(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('vacancy-running-duplicate-job@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_RUNNING,
+        ]);
+        $text = 'Synthetic concurrent duplicate analysis.';
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+
+        $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+
+        $job->assertNotFailed()->assertNotReleased();
+        $this->assertSame(Vacancy::STATUS_RUNNING, $vacancy->fresh()->analysis_status);
+        $this->assertNull($vacancy->fresh()->next_attempt_at);
+        $this->assertNull($vacancy->fresh()->dispatch_recovery_at);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_vacancy_job_does_not_swallow_safe_exception_after_claim_failure(): void
+    {
+        $user = $this->user('vacancy-safe-exception-propagates@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_FAILED,
+        ]);
+        $text = 'Synthetic rejected vacancy claim.';
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        $service = \Mockery::mock(VacancyAnalysisService::class);
+        $service->shouldReceive('analyze')->once()->andThrow(new SafeVacancyException);
+        $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+
+        $this->expectException(SafeVacancyException::class);
+        $job->handle($service, app(DatabaseOwnerContext::class));
+    }
+
     public function test_legacy_pending_vacancy_keeps_its_original_unique_lock_window(): void
     {
         Queue::fake();
