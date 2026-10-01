@@ -290,6 +290,56 @@ class CareerCoreTest extends TestCase
         $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 
+    public function test_queued_terminal_extraction_stays_owned_until_job_finalizes(): void
+    {
+        Queue::fake();
+        $user = $this->user('queued-terminal-career@example.test');
+        $sourceText = 'Synthetic terminal provider failure.';
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $sourceText,
+            'content_hash' => hash('sha256', $sourceText),
+            'extraction_status' => CareerSource::STATUS_PENDING,
+        ]);
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
+            }
+        });
+        $service = app(CareerExtractionService::class);
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andReturnUsing(function () use ($service, $user, $sourceText): void {
+            $service->queue($user, $sourceText);
+        });
+
+        try {
+            $job = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+            $job->handle($service);
+            $job->assertFailedWith(LlmProviderException::class)->assertNotReleased();
+        } finally {
+            $queueContext->finish();
+        }
+
+        Queue::assertNothingPushed();
+        $this->assertDatabaseHas('career_sources', [
+            'id' => $source->id,
+            'extraction_status' => CareerSource::STATUS_FAILED,
+            'error_code' => 'PROVIDER_ERROR',
+            'active_run_token' => null,
+        ]);
+        $this->assertDatabaseHas('llm_runs', [
+            'career_source_id' => $source->id,
+            'status' => 'FAILED',
+            'error_category' => LlmProviderException::NOT_CONFIGURED,
+        ]);
+    }
+
     public function test_authenticated_user_can_start_extraction_through_the_api(): void
     {
         Queue::fake();

@@ -267,16 +267,17 @@ class CareerExtractionService
             try {
                 DB::transaction(function () use ($source, $runToken, $exception, $queueExecution, $run): void {
                     $currentSource = $this->lockCurrentAttempt($source, $runToken);
-                    if (! ($queueExecution->isProcessing() && $exception->isRetryable())) {
+                    if (! $queueExecution->isProcessing()) {
                         $currentSource->forceFill([
                             'extraction_status' => CareerSource::STATUS_FAILED,
                             'error_code' => 'PROVIDER_ERROR',
                             'next_attempt_at' => null,
                             'dispatch_recovery_at' => null,
-                            'active_run_token' => $queueExecution->isProcessing() ? $runToken : null,
+                            'active_run_token' => null,
                         ])->save();
                     } else {
-                        // The job persists Retry-After and clears ownership atomically.
+                        // The job owns both retryable and terminal finalization.
+                        // Keep RUNNING and fenced until it publishes PENDING or FAILED.
                         $currentSource->forceFill(['updated_at' => now()])->save();
                     }
                     $run->forceFill([

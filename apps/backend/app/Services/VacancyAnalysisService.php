@@ -108,15 +108,16 @@ class VacancyAnalysisService
             }
             throw $exception;
         } catch (LlmProviderException $exception) {
-            if (app(QueueExecutionContext::class)->isProcessing() && $exception->isRetryable()) {
-                // The queue job reserves Retry-After and changes RUNNING to
-                // PENDING atomically after this exception reaches its handler.
+            $queueExecution = app(QueueExecutionContext::class)->isProcessing();
+            if ($queueExecution) {
+                // The queue job owns both retryable and terminal finalization.
+                // Keep the aggregate RUNNING and fenced until its handler
+                // atomically publishes PENDING or FAILED.
                 if (! $this->touchCurrentSnapshot($snapshot, $runToken)) {
                     throw new VacancyAttemptSupersededException;
                 }
             } else {
-                $queueExecution = app(QueueExecutionContext::class)->isProcessing();
-                if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR', $runToken, ! $queueExecution)) {
+                if (! $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR', $runToken)) {
                     throw new VacancyAttemptSupersededException;
                 }
             }

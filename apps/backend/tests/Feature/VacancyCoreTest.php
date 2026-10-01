@@ -2621,6 +2621,55 @@ class VacancyCoreTest extends TestCase
         $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 
+    public function test_queued_terminal_vacancy_analysis_stays_owned_until_job_finalizes(): void
+    {
+        Queue::fake();
+        $user = $this->user('queued-terminal-vacancy@example.test');
+        $sourceUrl = 'https://jobs.example.test/queued-terminal-vacancy';
+        $sourceText = 'Laravel is required.';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'source_url' => $sourceUrl,
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, $sourceText, $sourceUrl, hash('sha256', $sourceText), now());
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
+            }
+        });
+        $ingestion = app(VacancyIngestionService::class);
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andReturnUsing(function () use ($ingestion, $user, $sourceText, $sourceUrl): void {
+            $ingestion->queue($user, $sourceText, $sourceUrl);
+        });
+
+        try {
+            $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+            $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+            $job->assertFailedWith(LlmProviderException::class)->assertNotReleased();
+        } finally {
+            $queueContext->finish();
+        }
+
+        Queue::assertNothingPushed();
+        $this->assertDatabaseHas('vacancies', [
+            'id' => $vacancy->id,
+            'analysis_status' => Vacancy::STATUS_FAILED,
+            'error_code' => 'PROVIDER_ERROR',
+            'active_run_token' => null,
+        ]);
+        $this->assertDatabaseHas('vacancy_llm_runs', [
+            'vacancy_snapshot_id' => $snapshot->id,
+            'status' => 'FAILED',
+            'error_category' => LlmProviderException::NOT_CONFIGURED,
+        ]);
+    }
+
     public function test_all_five_recommendation_classes_follow_explainable_policy(): void
     {
         Queue::fake();
