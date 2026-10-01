@@ -74,7 +74,9 @@ if ($action === 'seed-recovery') {
             'dispatch_recovery_at' => now()->subMinutes(7),
         ])->save();
         DB::table('vacancies')->where('id', $vacancy->id)->update(['updated_at' => now()->subMinutes(10)]);
-        if (! app(UniqueLock::class)->acquire(new AnalyzeVacancy((string) $owner->id, (string) $snapshot->id))) {
+        $vacancyJob = new AnalyzeVacancy((string) $owner->id, (string) $snapshot->id);
+        app(UniqueLock::class)->release($vacancyJob);
+        if (! app(UniqueLock::class)->acquire($vacancyJob)) {
             throw new RuntimeException('Could not seed the orphan Vacancy unique lock.');
         }
 
@@ -93,7 +95,9 @@ if ($action === 'seed-recovery') {
             'dispatch_recovery_at' => now()->subMinutes(7),
         ])->save();
         DB::table('career_sources')->where('id', $source->id)->update(['updated_at' => now()->subMinutes(10)]);
-        if (! app(UniqueLock::class)->acquire(new ExtractCareerSource((string) $owner->id, (string) $source->id))) {
+        $careerJob = new ExtractCareerSource((string) $owner->id, (string) $source->id);
+        app(UniqueLock::class)->release($careerJob);
+        if (! app(UniqueLock::class)->acquire($careerJob)) {
             throw new RuntimeException('Could not seed the orphan Career unique lock.');
         }
         echo 'vacancy='.$vacancy->id.' snapshot='.$snapshot->id.' career_source='.$source->id.PHP_EOL;
