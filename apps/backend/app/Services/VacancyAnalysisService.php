@@ -67,6 +67,7 @@ class VacancyAnalysisService
                 'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
                 [$snapshot->version],
             )
+            ->where(fn ($query) => $query->whereNull('next_attempt_at')->orWhere('next_attempt_at', '<=', now()))
             ->update([
                 'analysis_status' => Vacancy::STATUS_RUNNING,
                 'error_code' => null,

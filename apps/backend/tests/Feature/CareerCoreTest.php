@@ -83,10 +83,42 @@ class CareerCoreTest extends TestCase
         $this->assertFalse(app(UniqueLock::class)->acquire($job));
 
         $this->app->instance(LlmProvider::class, new FakeLlmProvider([['facts' => []]]));
-        app(CareerExtractionService::class)->extract($user, $text);
+        Carbon::setTestNow($source->fresh()->next_attempt_at->addSecond());
+        try {
+            app(CareerExtractionService::class)->extract($user, $text);
+        } finally {
+            Carbon::setTestNow();
+        }
         $this->assertSame(CareerSource::STATUS_COMPLETED, $source->fresh()->extraction_status);
         $this->assertNull($source->fresh()->next_attempt_at);
         $this->assertNull($source->fresh()->dispatch_recovery_at);
+    }
+
+    public function test_career_worker_cannot_claim_pending_source_before_retry_deadline(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('career-retry-deadline-claim@example.test');
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $text = 'Synthetic career retry deadline claim.';
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $text,
+            'content_hash' => hash('sha256', $text),
+            'extraction_status' => CareerSource::STATUS_PENDING,
+        ]);
+        PendingJobRecovery::reserve($source, 60);
+        $deadline = $source->fresh()->next_attempt_at;
+
+        $result = app(CareerExtractionService::class)->extract($user, $text);
+
+        $this->assertSame(CareerSource::STATUS_PENDING, $result->fresh()->extraction_status);
+        $this->assertEquals($deadline, $result->fresh()->next_attempt_at);
+        $this->assertDatabaseCount('llm_runs', 0);
     }
 
     public function test_stale_career_running_source_is_recovered_but_fresh_work_is_held(): void

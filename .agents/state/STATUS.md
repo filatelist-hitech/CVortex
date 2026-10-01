@@ -563,3 +563,9 @@ Fresh exact-head review found that legacy `PENDING` rows with null persisted dea
 ### PR #37 CI retry synchronization — 2026-10-01
 
 Exact-head CI for `03cf9a2640237115ff0462c646fa9cddf43fbccd` exposed a timing race in the Preview access-shell test: the provider-action button is intentionally disabled until its persisted cooldown state is loaded asynchronously, while the test asserted enabled immediately after locating it. The test now waits for the existing enabled condition before clicking; product behavior is unchanged. Full frontend Vitest passed (70/70), ESLint for the changed test, TypeScript typecheck and production build passed. `git fetch origin --prune` now completes cleanly after correcting ownership of the affected remote-tracking reflogs. Fresh exact-head CI and Codex review remain pending for this test adjustment; PR #37 remains open.
+
+### PR #37 retry claim review remediation — 2026-10-01
+
+Fresh exact-head review of `5fd0ac62c4cadf4ed4bba1e1d181f6451b9d6d79` found that an already queued duplicate Career or Vacancy job could claim `PENDING` work before its persisted `next_attempt_at`, bypassing provider retry delay. Both atomic claim updates now require the deadline to be null or due. Regressions exercise duplicate worker claims before the deadline and assert the operation remains pending, the deadline remains persisted, and no LLM run/provider call starts. The existing orphan-recovery test now advances its frozen clock to the newly reserved immediate retry deadline before synchronous execution.
+
+Validation: Career/Vacancy feature files passed (131 tests / 815 assertions / 1 PostgreSQL-only skip); PostgreSQL concurrency harness passed (import, reanalysis and single-dispatch Career/Vacancy orphan recovery races); Pint and PHPStan passed (0 errors). Exact-head CI and fresh review remain pending after push. PR #37 remains open.

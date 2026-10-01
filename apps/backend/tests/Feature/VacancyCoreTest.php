@@ -1821,6 +1821,30 @@ class VacancyCoreTest extends TestCase
         $this->assertFalse(app(UniqueLock::class)->acquire($job));
     }
 
+    public function test_vacancy_worker_cannot_claim_pending_analysis_before_retry_deadline(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('vacancy-retry-deadline-claim@example.test');
+        $result = app(VacancyIngestionService::class)->queue($user, 'Synthetic retry deadline requirement.', null);
+        PendingJobRecovery::reserve($result['vacancy'], 60);
+        $deadline = $result['vacancy']->fresh()->next_attempt_at;
+
+        try {
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->fail('A duplicate worker claimed analysis before its retry deadline.');
+        } catch (SafeVacancyException) {
+            // The duplicate job must not reach the provider before the deadline.
+        }
+
+        $vacancy = $result['vacancy']->fresh();
+        $this->assertSame(Vacancy::STATUS_PENDING, $vacancy->analysis_status);
+        $this->assertEquals($deadline, $vacancy->next_attempt_at);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
+    }
+
     public function test_legacy_pending_vacancy_keeps_its_original_unique_lock_window(): void
     {
         Queue::fake();

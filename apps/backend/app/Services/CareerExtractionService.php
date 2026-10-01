@@ -124,6 +124,7 @@ class CareerExtractionService
 
         $claimed = CareerSource::query()->whereKey($source->id)
             ->whereIn('extraction_status', [CareerSource::STATUS_PENDING, CareerSource::STATUS_FAILED])
+            ->where(fn ($query) => $query->whereNull('next_attempt_at')->orWhere('next_attempt_at', '<=', now()))
             ->update([
                 'extraction_status' => CareerSource::STATUS_RUNNING,
                 'error_code' => null,
