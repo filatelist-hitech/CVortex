@@ -1844,6 +1844,45 @@ class VacancyCoreTest extends TestCase
         $this->assertDatabaseCount('vacancy_llm_runs', 0);
     }
 
+    public function test_duplicate_vacancy_job_before_retry_deadline_is_a_noop(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('vacancy-early-duplicate-job@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $text = 'Synthetic early duplicate retry deadline.';
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        PendingJobRecovery::reserve($vacancy, 60);
+        $deadline = $vacancy->fresh()->next_attempt_at;
+        $recoveryAt = $vacancy->fresh()->dispatch_recovery_at;
+        $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+
+        $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+
+        $job->assertNotFailed()->assertNotReleased();
+        $this->assertSame(Vacancy::STATUS_PENDING, $vacancy->fresh()->analysis_status);
+        $this->assertEquals($deadline, $vacancy->fresh()->next_attempt_at);
+        $this->assertEquals($recoveryAt, $vacancy->fresh()->dispatch_recovery_at);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+        Queue::assertNothingPushed();
+    }
+
     public function test_legacy_pending_vacancy_keeps_its_original_unique_lock_window(): void
     {
         Queue::fake();

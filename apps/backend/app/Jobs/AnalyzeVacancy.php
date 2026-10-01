@@ -6,6 +6,7 @@ use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\VacancyOutputException;
 use App\AI\ProviderRetryAfter;
 use App\Diagnostics\ProviderRetryWarning;
+use App\Exceptions\SafeVacancyException;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
@@ -57,6 +58,16 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 
             try {
                 $service->analyze($user, $snapshot);
+            } catch (SafeVacancyException $exception) {
+                $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)
+                    ->where('owner_id', $snapshot->owner_id)->first();
+                $nextAttemptAt = $vacancy?->getAttribute('next_attempt_at');
+                if ($vacancy?->analysis_status === Vacancy::STATUS_PENDING
+                    && $nextAttemptAt instanceof \DateTimeInterface
+                    && $nextAttemptAt > now()) {
+                    return;
+                }
+                throw $exception;
             } catch (VacancyOutputException) {
                 // Invalid semantic output is terminal until an explicit user retry.
             } catch (LlmProviderException $exception) {
