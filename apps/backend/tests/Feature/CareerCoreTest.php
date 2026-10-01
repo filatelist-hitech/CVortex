@@ -48,8 +48,7 @@ class CareerCoreTest extends TestCase
             'kind' => 'PASTED_TEXT',
             'source_text' => $text,
             'content_hash' => hash('sha256', $text),
-            'extraction_status' => CareerSource::STATUS_FAILED,
-            'error_code' => 'PROVIDER_ERROR',
+            'extraction_status' => CareerSource::STATUS_RUNNING,
         ]);
         $job = new ExtractCareerSource((string) $user->id, (string) $source->id);
         $job->withFakeQueueInteractions();
@@ -217,6 +216,7 @@ class CareerCoreTest extends TestCase
 
     public function test_queued_retryable_extraction_does_not_record_an_incident_without_log_context(): void
     {
+        Queue::fake();
         $this->app->instance(LlmProvider::class, new class implements LlmProvider
         {
             public function generateStructured(LlmRequest $request): LlmResponse
@@ -238,6 +238,9 @@ class CareerCoreTest extends TestCase
             $queueContext->finish();
         }
 
+        $this->assertDatabaseHas('career_sources', ['owner_id' => $user->id, 'extraction_status' => CareerSource::STATUS_RUNNING]);
+        app(CareerExtractionService::class)->queue($user, 'Synthetic queued source.');
+        Queue::assertNothingPushed();
         $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 

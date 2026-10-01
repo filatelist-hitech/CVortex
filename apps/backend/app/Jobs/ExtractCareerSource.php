@@ -60,6 +60,19 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
     private function retryOrFail(LlmProviderException $exception, CareerSource $source): void
     {
         if (! $exception->isRetryable() || $this->attempts() >= $this->tries) {
+            DB::transaction(function () use ($source): void {
+                $current = CareerSource::query()->where('owner_id', $this->ownerId)
+                    ->lockForUpdate()->find($source->id);
+                if ($current === null || ! in_array($current->extraction_status, [CareerSource::STATUS_FAILED, CareerSource::STATUS_RUNNING], true)) {
+                    return;
+                }
+                $current->forceFill([
+                    'extraction_status' => CareerSource::STATUS_FAILED,
+                    'error_code' => 'PROVIDER_ERROR',
+                    'next_attempt_at' => null,
+                    'dispatch_recovery_at' => null,
+                ])->save();
+            });
             $this->fail($exception);
 
             return;
@@ -74,7 +87,7 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
         DB::transaction(function () use ($source, $delay): void {
             $current = CareerSource::query()->where('owner_id', $this->ownerId)
                 ->lockForUpdate()->find($source->id);
-            if ($current === null || $current->extraction_status !== CareerSource::STATUS_FAILED) {
+            if ($current === null || ! in_array($current->extraction_status, [CareerSource::STATUS_FAILED, CareerSource::STATUS_RUNNING], true)) {
                 return;
             }
             $current->forceFill([

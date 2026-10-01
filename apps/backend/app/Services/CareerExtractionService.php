@@ -235,12 +235,19 @@ class CareerExtractionService
             ]);
             throw $exception;
         } catch (LlmProviderException $exception) {
-            $source->forceFill([
-                'extraction_status' => CareerSource::STATUS_FAILED,
-                'error_code' => 'PROVIDER_ERROR',
-                'next_attempt_at' => null,
-                'dispatch_recovery_at' => null,
-            ])->save();
+            $queueExecution = app(QueueExecutionContext::class);
+            if ($queueExecution->isProcessing() && $exception->isRetryable()) {
+                // Keep retryable queue work RUNNING until the job atomically
+                // stores its retry deadline and transitions it back to PENDING.
+                $source->forceFill(['updated_at' => now()])->save();
+            } else {
+                $source->forceFill([
+                    'extraction_status' => CareerSource::STATUS_FAILED,
+                    'error_code' => 'PROVIDER_ERROR',
+                    'next_attempt_at' => null,
+                    'dispatch_recovery_at' => null,
+                ])->save();
+            }
             $run->forceFill([
                 'provider' => $exception->providerName,
                 'model' => $exception->resolvedModel,
@@ -253,7 +260,7 @@ class CareerExtractionService
                 'validation_result' => 'NOT_VALIDATED',
                 'error_category' => $exception->category,
             ])->save();
-            if (app(QueueExecutionContext::class)->isProcessing()) {
+            if ($queueExecution->isProcessing()) {
                 try {
                     Log::shareContext(['llm_run_id' => $run->id]);
                 } catch (Throwable) {

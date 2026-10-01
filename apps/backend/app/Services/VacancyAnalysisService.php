@@ -98,7 +98,13 @@ class VacancyAnalysisService
             $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'INVALID_EXTRACTION_RESULT');
             throw $exception;
         } catch (LlmProviderException $exception) {
-            $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR');
+            if (app(QueueExecutionContext::class)->isProcessing() && $exception->isRetryable()) {
+                // The queue job reserves Retry-After and changes RUNNING to
+                // PENDING atomically after this exception reaches its handler.
+                $this->touchCurrentSnapshot($snapshot);
+            } else {
+                $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'PROVIDER_ERROR');
+            }
             throw $exception;
         } catch (QueryException) {
             $this->transitionCurrentSnapshot($snapshot, Vacancy::STATUS_FAILED, 'ANALYSIS_ERROR');
@@ -123,6 +129,16 @@ class VacancyAnalysisService
                 'dispatch_recovery_at' => null,
                 'updated_at' => now(),
             ]);
+    }
+
+    private function touchCurrentSnapshot(VacancySnapshot $snapshot): void
+    {
+        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+            ->where('analysis_status', Vacancy::STATUS_RUNNING)
+            ->whereRaw(
+                'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
+                [$snapshot->version],
+            )->update(['updated_at' => now()]);
     }
 
     private function extractRequirements(User $user, VacancySnapshot $snapshot): void

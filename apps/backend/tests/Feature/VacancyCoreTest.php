@@ -1777,8 +1777,7 @@ class VacancyCoreTest extends TestCase
             'owner_id' => $user->id,
             'source_type' => 'PASTED_TEXT',
             'title' => 'Synthetic vacancy',
-            'analysis_status' => Vacancy::STATUS_FAILED,
-            'error_code' => 'PROVIDER_ERROR',
+            'analysis_status' => Vacancy::STATUS_RUNNING,
         ]);
         $snapshot = VacancySnapshot::record(
             (string) $user->id,
@@ -2447,7 +2446,8 @@ class VacancyCoreTest extends TestCase
     {
         Queue::fake();
         $user = $this->user('queued-vacancy-retry-context@example.test');
-        $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', null);
+        $sourceUrl = 'https://jobs.example.test/queued-vacancy-retry-context';
+        $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', $sourceUrl);
         $this->app->instance(LlmProvider::class, new class implements LlmProvider
         {
             public function generateStructured(LlmRequest $request): LlmResponse
@@ -2468,6 +2468,9 @@ class VacancyCoreTest extends TestCase
             $queueContext->finish();
         }
 
+        $this->assertDatabaseHas('vacancies', ['id' => $result['vacancy']->id, 'analysis_status' => Vacancy::STATUS_RUNNING]);
+        app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', $sourceUrl);
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
         $this->assertDatabaseCount('diagnostic_incidents', 0);
     }
 
