@@ -92,6 +92,7 @@ describe("Error Center", () => {
 
     render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
     const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    await waitFor(() => expect(generate).toBeEnabled());
     fireEvent.click(generate);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 86400 seconds.");
@@ -202,7 +203,9 @@ describe("Error Center", () => {
     });
 
     render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="First vacancy" />);
-    fireEvent.click(await screen.findByRole("button", { name: "Generate recommendations and cover drafts" }));
+    const firstGenerate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    await waitFor(() => expect(firstGenerate).toBeEnabled());
+    fireEvent.click(firstGenerate);
     expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
     expect(localStorage.getItem("cvortex.application-draft.retry-until")).not.toBeNull();
 
@@ -210,7 +213,7 @@ describe("Error Center", () => {
     render(<ApplicationDraftPanel vacancyId="vacancy-2" vacancyTitle="Second vacancy" />);
     const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
     expect(generate).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("Wait at least 42 seconds before retrying a provider-backed action.");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Wait at least 42 seconds before retrying a provider-backed action."));
     expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
   });
 
@@ -306,6 +309,7 @@ describe("Error Center", () => {
 
     render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
     const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    await waitFor(() => expect(generate).toBeEnabled());
     expect(localStorage.getItem(key)).toBeNull();
     fireEvent.click(generate);
 
