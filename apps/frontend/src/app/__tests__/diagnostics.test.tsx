@@ -235,12 +235,85 @@ describe("Error Center", () => {
     expect(generate).toBeDisabled();
     expect(screen.getByRole("status")).toHaveTextContent("Wait at least 42 seconds before retrying a provider-backed action.");
 
+    vi.useFakeTimers();
+    vi.setSystemTime(deadline + 1);
     act(() => {
       localStorage.removeItem(key);
       window.dispatchEvent(new StorageEvent("storage", { key, oldValue: String(deadline), newValue: null }));
     });
+    vi.useRealTimers();
     expect(generate).toBeEnabled();
     expect(screen.queryByText(/Wait at least/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the longest active provider deadline when a shorter response arrives in another tab", async () => {
+    const preparation = (id: string, vacancyId: string) => ({ id, vacancy_id: vacancyId, status: "DRAFT", stale: false, items: [] });
+    const key = "cvortex.application-draft.retry-until";
+    const shortResponse = deferred<Response>();
+    let longDeadline = 0;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation("prep-1", "vacancy-1") });
+      if (path === "/api/v1/vacancies/vacancy-2/preparation" && options?.method === "POST") return Response.json({ data: preparation("prep-2", "vacancy-2") });
+      if (["prep-1", "prep-2"].some((id) => path === `/api/v1/applications/preparations/${id}`) && options?.method !== "POST") {
+        const id = path.includes("prep-1") ? "prep-1" : "prep-2";
+        return Response.json({ data: preparation(id, id === "prep-1" ? "vacancy-1" : "vacancy-2") });
+      }
+      if (path === "/api/v1/applications/preparations/prep-2/generate" && options?.method === "POST") {
+        return shortResponse.promise;
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<><ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="First vacancy" /><ApplicationDraftPanel vacancyId="vacancy-2" vacancyTitle="Second vacancy" /></>);
+    const generateButtons = await screen.findAllByRole("button", { name: "Generate recommendations and cover drafts" });
+    expect(generateButtons).toHaveLength(2);
+    expect(generateButtons[0]).toBeEnabled();
+    expect(generateButtons[1]).toBeEnabled();
+    fireEvent.click(generateButtons[1]);
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1));
+
+    // Another in-flight request has already written its longer deadline, but its storage event is delayed.
+    longDeadline = Date.now() + 3_600_000;
+    localStorage.setItem(key, String(longDeadline));
+    // The short response writes before the other tab's longer storage event is delivered.
+    localStorage.setItem(key, String(Date.now() + 5_000));
+    shortResponse.resolve(Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "5" } }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 5 seconds.");
+    expect(generateButtons[0]).toBeEnabled();
+
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key, newValue: String(longDeadline) })));
+    await waitFor(() => expect(Number(localStorage.getItem(key))).toBe(longDeadline));
+    expect(generateButtons[0]).toBeDisabled();
+    expect(generateButtons[1]).toBeDisabled();
+    expect(screen.getAllByRole("status").every((status) => status.textContent?.includes("Wait at least"))).toBe(true);
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
+  });
+
+  it("extends an existing cooldown for a longer retry response and ignores expired persisted deadlines", async () => {
+    const preparation = { id: "prep-1", vacancy_id: "vacancy-1", status: "DRAFT", stale: false, items: [] };
+    const key = "cvortex.application-draft.retry-until";
+    localStorage.setItem(key, String(Date.now() - 1_000));
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const path = String(input);
+      if (path === "/api/v1/vacancies/vacancy-1/preparation" && options?.method === "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1" && options?.method !== "POST") return Response.json({ data: preparation });
+      if (path === "/api/v1/applications/preparations/prep-1/generate" && options?.method === "POST") {
+        return Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "42" } });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    render(<ApplicationDraftPanel vacancyId="vacancy-1" vacancyTitle="Backend Engineer" />);
+    const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    expect(localStorage.getItem(key)).toBeNull();
+    fireEvent.click(generate);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
+    const savedDeadline = Number(localStorage.getItem(key));
+    expect(savedDeadline).toBeGreaterThan(Date.now() + 40_000);
+    expect(savedDeadline).toBeLessThanOrEqual(Date.now() + 42_000);
+    expect(generate).toBeDisabled();
   });
 
   it("does not start a cooldown for a non-retryable API error", async () => {

@@ -17,7 +17,9 @@ use App\Models\CareerFactType;
 use App\Models\CareerSource;
 use App\Models\LlmRun;
 use App\Models\User;
+use App\Queue\PendingJobRecovery;
 use App\Queue\QueueExecutionContext;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -49,20 +51,52 @@ class CareerExtractionService
         $profile = $this->facts->profileFor($user);
 
         try {
-            $source = CareerSource::query()->firstOrCreate(
-                ['owner_id' => $user->id, 'content_hash' => hash('sha256', $sourceText)],
-                [
-                    'career_profile_id' => $profile->id,
-                    'kind' => 'PASTED_TEXT',
-                    'source_text' => $sourceText,
-                    'extraction_status' => CareerSource::STATUS_PENDING,
-                ],
-            );
+            $result = DB::transaction(function () use ($user, $sourceText, $profile): array {
+                $source = CareerSource::query()->firstOrCreate(
+                    ['owner_id' => $user->id, 'content_hash' => hash('sha256', $sourceText)],
+                    [
+                        'career_profile_id' => $profile->id,
+                        'kind' => 'PASTED_TEXT',
+                        'source_text' => $sourceText,
+                        'extraction_status' => CareerSource::STATUS_PENDING,
+                    ],
+                );
+                $created = $source->wasRecentlyCreated;
+                $source = CareerSource::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($source->id);
+                $dispatch = false;
+                $releaseLock = false;
+
+                if ($created) {
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                } elseif ($source->extraction_status === CareerSource::STATUS_FAILED) {
+                    $source->forceFill(['extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null])->save();
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                    $releaseLock = true;
+                } elseif ($source->extractionRunIsStale()) {
+                    $source->forceFill(['extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null])->save();
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                    $releaseLock = true;
+                } elseif ($source->extraction_status === CareerSource::STATUS_PENDING
+                    && PendingJobRecovery::recoveryIsDue($source)) {
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                    $releaseLock = true;
+                }
+
+                return ['source' => $source, 'dispatch' => $dispatch, 'release_lock' => $releaseLock];
+            });
         } catch (QueryException) {
             throw new SafeCareerException;
         }
 
-        if (in_array($source->extraction_status, [CareerSource::STATUS_PENDING, CareerSource::STATUS_FAILED], true)) {
+        $source = $result['source'];
+        if ($result['dispatch']) {
+            if ($result['release_lock']) {
+                app(UniqueLock::class)->release(new ExtractCareerSource((string) $user->id, (string) $source->id));
+            }
             ExtractCareerSource::dispatch((string) $user->id, (string) $source->id)->afterCommit();
         }
 
@@ -90,7 +124,13 @@ class CareerExtractionService
 
         $claimed = CareerSource::query()->whereKey($source->id)
             ->whereIn('extraction_status', [CareerSource::STATUS_PENDING, CareerSource::STATUS_FAILED])
-            ->update(['extraction_status' => CareerSource::STATUS_RUNNING, 'error_code' => null, 'updated_at' => now()]);
+            ->update([
+                'extraction_status' => CareerSource::STATUS_RUNNING,
+                'error_code' => null,
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+                'updated_at' => now(),
+            ]);
         if ($claimed === 0) {
             return $source->fresh();
         }
@@ -110,7 +150,12 @@ class CareerExtractionService
                 'retry_count' => $retryCount,
             ]);
         } catch (Throwable $exception) {
-            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SETUP_ERROR'])->save();
+            $source->forceFill([
+                'extraction_status' => CareerSource::STATUS_FAILED,
+                'error_code' => 'SETUP_ERROR',
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+            ])->save();
             if ($exception instanceof QueryException) {
                 throw new SafeCareerException;
             }
@@ -144,7 +189,12 @@ class CareerExtractionService
                         'status' => CareerFact::STATUS_PENDING,
                     ]);
                 }
-                $source->forceFill(['extraction_status' => CareerSource::STATUS_COMPLETED, 'error_code' => null])->save();
+                $source->forceFill([
+                    'extraction_status' => CareerSource::STATUS_COMPLETED,
+                    'error_code' => null,
+                    'next_attempt_at' => null,
+                    'dispatch_recovery_at' => null,
+                ])->save();
                 $run->forceFill([
                     'provider' => $response->provider,
                     'model' => $response->model,
@@ -159,7 +209,12 @@ class CareerExtractionService
                 ])->save();
             });
         } catch (CareerOutputException $exception) {
-            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SCHEMA_INVALID'])->save();
+            $source->forceFill([
+                'extraction_status' => CareerSource::STATUS_FAILED,
+                'error_code' => 'SCHEMA_INVALID',
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+            ])->save();
             $failureMetadata = [
                 'provider' => $response->provider,
                 'model' => $response->model,
@@ -179,7 +234,12 @@ class CareerExtractionService
             ]);
             throw $exception;
         } catch (LlmProviderException $exception) {
-            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR'])->save();
+            $source->forceFill([
+                'extraction_status' => CareerSource::STATUS_FAILED,
+                'error_code' => 'PROVIDER_ERROR',
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+            ])->save();
             $run->forceFill([
                 'provider' => $exception->providerName,
                 'model' => $exception->resolvedModel,

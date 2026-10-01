@@ -8,6 +8,7 @@ use App\AI\ProviderRetryAfter;
 use App\Diagnostics\ProviderRetryWarning;
 use App\Models\CareerSource;
 use App\Models\User;
+use App\Queue\PendingJobRecovery;
 use App\Services\CareerExtractionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
 {
@@ -63,19 +65,24 @@ class ExtractCareerSource implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        CareerSource::query()->where('owner_id', $this->ownerId)->whereKey($source->id)
-            ->where('extraction_status', CareerSource::STATUS_FAILED)
-            ->update([
-                'extraction_status' => CareerSource::STATUS_PENDING,
-                'error_code' => null,
-                'updated_at' => now(),
-            ]);
-
         $delay = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
         if ($delay === null) {
             $delays = $this->backoff();
             $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
         }
+
+        DB::transaction(function () use ($source, $delay): void {
+            $current = CareerSource::query()->where('owner_id', $this->ownerId)
+                ->lockForUpdate()->find($source->id);
+            if ($current === null || $current->extraction_status !== CareerSource::STATUS_FAILED) {
+                return;
+            }
+            $current->forceFill([
+                'extraction_status' => CareerSource::STATUS_PENDING,
+                'error_code' => null,
+            ])->save();
+            PendingJobRecovery::reserve($current, $delay);
+        });
 
         ProviderRetryWarning::scheduled('career_text_extraction', $exception, $this->attempts(), $delay);
         $this->release($delay);

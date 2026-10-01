@@ -9,6 +9,7 @@ use App\Diagnostics\ProviderRetryWarning;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use App\Queue\PendingJobRecovery;
 use App\Services\DatabaseOwnerContext;
 use App\Services\VacancyAnalysisService;
 use Illuminate\Bus\Queueable;
@@ -17,6 +18,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
 {
@@ -71,23 +73,29 @@ class AnalyzeVacancy implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
-            ->where('analysis_status', Vacancy::STATUS_FAILED)
-            ->whereRaw(
-                'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
-                [$snapshot->version],
-            )
-            ->update([
-                'analysis_status' => Vacancy::STATUS_PENDING,
-                'error_code' => null,
-                'updated_at' => now(),
-            ]);
-
         $delay = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
         if ($delay === null) {
             $delays = $this->backoff();
             $delay = $delays[min(max(0, $this->attempts() - 1), count($delays) - 1)] ?? 0;
         }
+
+        DB::transaction(function () use ($snapshot, $delay): void {
+            $vacancy = Vacancy::query()->whereKey($snapshot->vacancy_id)->where('owner_id', $snapshot->owner_id)
+                ->lockForUpdate()->first();
+            if ($vacancy === null || $vacancy->analysis_status !== Vacancy::STATUS_FAILED) {
+                return;
+            }
+            $hasNewerSnapshot = VacancySnapshot::query()->where('owner_id', $snapshot->owner_id)
+                ->where('vacancy_id', $snapshot->vacancy_id)->where('version', '>', $snapshot->version)->exists();
+            if ($hasNewerSnapshot) {
+                return;
+            }
+            $vacancy->forceFill([
+                'analysis_status' => Vacancy::STATUS_PENDING,
+                'error_code' => null,
+            ])->save();
+            PendingJobRecovery::reserve($vacancy, $delay);
+        });
 
         ProviderRetryWarning::scheduled('vacancy_requirement_extraction', $exception, $this->attempts(), $delay);
         $this->release($delay);

@@ -67,7 +67,13 @@ class VacancyAnalysisService
                 'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
                 [$snapshot->version],
             )
-            ->update(['analysis_status' => Vacancy::STATUS_RUNNING, 'error_code' => null, 'updated_at' => now()]);
+            ->update([
+                'analysis_status' => Vacancy::STATUS_RUNNING,
+                'error_code' => null,
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+                'updated_at' => now(),
+            ]);
         if ($claimed === 0) {
             $current = VacancyAnalysis::query()->where('owner_id', $user->id)
                 ->where('vacancy_snapshot_id', $snapshot->id)->forCareerSignature($signature)
@@ -109,7 +115,13 @@ class VacancyAnalysisService
             ->whereRaw(
                 'NOT EXISTS (SELECT 1 FROM vacancy_snapshots AS newer_snapshot WHERE newer_snapshot.owner_id = vacancies.owner_id AND newer_snapshot.vacancy_id = vacancies.id AND newer_snapshot.version > ?)',
                 [$snapshot->version],
-            )->update(['analysis_status' => $status, 'error_code' => $errorCode, 'updated_at' => now()]);
+            )->update([
+                'analysis_status' => $status,
+                'error_code' => $errorCode,
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+                'updated_at' => now(),
+            ]);
     }
 
     private function extractRequirements(User $user, VacancySnapshot $snapshot): void

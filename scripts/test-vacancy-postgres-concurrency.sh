@@ -37,7 +37,7 @@ test -n "$owner_id"
 CREATE TABLE vacancy_import_test_barrier (worker_id varchar(16) PRIMARY KEY);
 SELECT format('GRANT SELECT, INSERT ON vacancy_import_test_barrier TO %I', :'runtime_user') \gexec
 CREATE TABLE vacancy_reanalysis_test_barrier (name varchar(32) PRIMARY KEY, released boolean NOT NULL DEFAULT false);
-INSERT INTO vacancy_reanalysis_test_barrier (name) VALUES ('reanalyze-a'), ('import-b'), ('analyze-pause');
+INSERT INTO vacancy_reanalysis_test_barrier (name) VALUES ('reanalyze-a'), ('import-b'), ('analyze-pause'), ('recover-a'), ('career-recover-a');
 SELECT format('GRANT SELECT ON vacancy_reanalysis_test_barrier TO %I', :'runtime_user') \gexec
 SQL
 
@@ -155,4 +155,35 @@ retry_two=$(race_worker reanalyze-c "$vacancy_id" | tail -n 1)
   -c "UPDATE vacancy_reanalysis_test_barrier SET released = true WHERE name = 'analyze-pause'" >/dev/null
 wait_worker "$analysis_pid" "$temp_dir/analyze-pause"
 race_worker verify "$reanalyzed_snapshot"
-echo 'vacancy-postgres-concurrency: PASS (independent import and reanalysis races converged)'
+
+# Two concurrent orphan recoveries must serialize on their owner-scoped rows.
+recovery_seed=$(race_worker seed-recovery ignored | tail -n 1)
+recovery_vacancy=$(sed -n 's/.*vacancy=\([^ ]*\).*/\1/p' <<<"$recovery_seed")
+recovery_source=$(sed -n 's/.*career_source=\([^ ]*\).*/\1/p' <<<"$recovery_seed")
+test -n "$recovery_vacancy" && test -n "$recovery_source"
+
+race_worker recover-a "$recovery_vacancy" >"$temp_dir/recover-a" 2>&1 &
+recover_pid=$!
+wait_marker paused "$temp_dir/recover-a"
+race_worker recover-b "$recovery_vacancy" >"$temp_dir/recover-b" 2>&1 &
+recover_two_pid=$!
+wait_lock recover-b
+"${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -v ON_ERROR_STOP=1 \
+  -c "UPDATE vacancy_reanalysis_test_barrier SET released = true WHERE name = 'recover-a'" >/dev/null
+wait_worker "$recover_pid" "$temp_dir/recover-a"
+wait_worker "$recover_two_pid" "$temp_dir/recover-b"
+[[ "$(cat "$temp_dir/recover-a")" == *"jobs=1"* && "$(cat "$temp_dir/recover-b")" == *"jobs=0"* ]]
+
+race_worker career-recover-a ignored >"$temp_dir/career-recover-a" 2>&1 &
+career_recover_pid=$!
+wait_marker paused "$temp_dir/career-recover-a"
+race_worker career-recover-b ignored >"$temp_dir/career-recover-b" 2>&1 &
+career_recover_two_pid=$!
+wait_lock career-recover-b
+"${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -v ON_ERROR_STOP=1 \
+  -c "UPDATE vacancy_reanalysis_test_barrier SET released = true WHERE name = 'career-recover-a'" >/dev/null
+wait_worker "$career_recover_pid" "$temp_dir/career-recover-a"
+wait_worker "$career_recover_two_pid" "$temp_dir/career-recover-b"
+[[ "$(cat "$temp_dir/career-recover-a")" == *"jobs=1"* && "$(cat "$temp_dir/career-recover-b")" == *"jobs=0"* ]]
+
+echo 'vacancy-postgres-concurrency: PASS (import, reanalysis and single-dispatch Vacancy/Career orphan recovery races converged)'

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\AI\Exceptions\LlmProviderException;
+use App\Queue\PendingJobRecovery;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,19 +25,22 @@ class Vacancy extends Model
         'owner_id', 'source_type', 'source_url', 'title', 'company', 'analysis_status', 'error_code',
     ];
 
+    protected $hidden = ['next_attempt_at', 'dispatch_recovery_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'next_attempt_at' => 'immutable_datetime',
+            'dispatch_recovery_at' => 'immutable_datetime',
+        ];
+    }
+
     public function analysisRunIsStale(): bool
     {
         if ($this->analysis_status !== self::STATUS_RUNNING || $this->updated_at === null) {
             return false;
         }
 
-        $connection = (string) config('queue.default', 'redis');
-        $retryAfter = (int) config('queue.connections.'.$connection.'.retry_after', 90);
-        $workerTimeout = (int) config('horizon.defaults.supervisor-1.timeout', config('horizon.defaults.timeout', 60));
-        // A provider retry leaves the analysis PENDING; unique-lock lifetime
-        // must not delay recovery of a worker that was stranded in RUNNING.
-        $staleAfter = max(180, $retryAfter * 2, $workerTimeout * 2);
-
-        return $this->updated_at->lte(now()->subSeconds($staleAfter));
+        return PendingJobRecovery::runIsStale($this->updated_at);
     }
 }

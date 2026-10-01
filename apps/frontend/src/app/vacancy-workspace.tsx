@@ -96,13 +96,19 @@ function formatRetryWait(seconds: number): string {
 
 const APPLICATION_DRAFT_RETRY_KEY = "cvortex.application-draft.retry-until";
 
+function activeRetryDeadline(value: string | null): number | null {
+  if (value === null) return null;
+  const until = Number(value);
+  const now = Date.now();
+  return Number.isSafeInteger(until) && until > now && until <= now + 86_400_000 ? until : null;
+}
+
 function readSavedRetryDeadline(): number | null {
   try {
     const saved = window.localStorage.getItem(APPLICATION_DRAFT_RETRY_KEY);
     if (saved === null) return null;
-    const until = Number(saved);
-    const now = Date.now();
-    if (Number.isSafeInteger(until) && until > now && until <= now + 86_400_000) return until;
+    const until = activeRetryDeadline(saved);
+    if (until !== null) return until;
     window.localStorage.removeItem(APPLICATION_DRAFT_RETRY_KEY);
   } catch {
     // Browser storage may be disabled; the in-memory cooldown still applies for this mount.
@@ -303,13 +309,20 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   useEffect(() => {
     const syncSavedCooldown = (event: StorageEvent) => {
       if (event.key !== APPLICATION_DRAFT_RETRY_KEY && event.key !== null) return;
+      const now = Date.now();
       const savedUntil = readSavedRetryDeadline();
-      setRetryAfterUntil(savedUntil);
-      setRetrySecondsRemaining(savedUntil === null ? 0 : Math.max(0, Math.ceil((savedUntil - Date.now()) / 1000)));
+      const eventUntil = event.key === APPLICATION_DRAFT_RETRY_KEY ? activeRetryDeadline(event.newValue) : null;
+      const memoryUntil = retryAfterUntil;
+      const until = Math.max(savedUntil ?? 0, eventUntil ?? 0, memoryUntil && memoryUntil > now ? memoryUntil : 0) || null;
+      if (until !== null && until !== savedUntil) {
+        try { window.localStorage.setItem(APPLICATION_DRAFT_RETRY_KEY, String(until)); } catch { /* Keep the active mount protected without storage. */ }
+      }
+      setRetryAfterUntil(until);
+      setRetrySecondsRemaining(until === null ? 0 : Math.max(0, Math.ceil((until - now) / 1000)));
     };
     window.addEventListener("storage", syncSavedCooldown);
     return () => window.removeEventListener("storage", syncSavedCooldown);
-  }, []);
+  }, [retryAfterUntil]);
 
   useEffect(() => {
     if (retryAfterUntil === null) return;
@@ -331,9 +344,13 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
   function pauseProviderActions(caught: unknown) {
     const cooldown = retryCooldown(caught);
     if (!cooldown) return;
-    try { window.localStorage.setItem(APPLICATION_DRAFT_RETRY_KEY, String(cooldown.until)); } catch { /* Keep the active mount protected without storage. */ }
-    setRetryAfterUntil(cooldown.until);
-    setRetrySecondsRemaining(cooldown.seconds);
+    const savedUntil = readSavedRetryDeadline();
+    const now = cooldown.until - cooldown.seconds * 1000;
+    const until = Math.max(cooldown.until, retryAfterUntil && retryAfterUntil > now ? retryAfterUntil : 0, savedUntil ?? 0);
+    const seconds = Math.max(0, Math.ceil((until - now) / 1000));
+    try { window.localStorage.setItem(APPLICATION_DRAFT_RETRY_KEY, String(until)); } catch { /* Keep the active mount protected without storage. */ }
+    setRetryAfterUntil(until);
+    setRetrySecondsRemaining(seconds);
   }
 
   const refresh = useCallback(async (id: string, version = requestVersion.current, preserveEdits = false) => {

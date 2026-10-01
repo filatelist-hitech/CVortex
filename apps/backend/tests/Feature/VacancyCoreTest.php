@@ -16,6 +16,7 @@ use App\Models\Vacancy;
 use App\Models\VacancyAnalysis;
 use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
+use App\Queue\PendingJobRecovery;
 use App\Queue\QueueExecutionContext;
 use App\Services\CareerFactService;
 use App\Services\DatabaseOwnerContext;
@@ -23,10 +24,12 @@ use App\Services\TrustedCareerQuery;
 use App\Services\VacancyAnalysisService;
 use App\Services\VacancyIngestionService;
 use App\Services\VacancyMatchingService;
+use App\Services\VacancyReanalysisService;
 use App\Services\VacancyRequirementValidator;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
@@ -140,6 +143,8 @@ class VacancyCoreTest extends TestCase
 
         app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
 
+        $this->assertNull($result['vacancy']->fresh()->next_attempt_at);
+        $this->assertNull($result['vacancy']->fresh()->dispatch_recovery_at);
         $this->assertDatabaseCount('vacancy_requirements', 2);
         $this->assertDatabaseHas('vacancy_requirements', ['label' => 'Laravel', 'importance' => 'MANDATORY']);
         $this->assertDatabaseHas('vacancy_requirements', ['label' => 'Symfony', 'importance' => 'PREFERRED']);
@@ -1763,6 +1768,99 @@ class VacancyCoreTest extends TestCase
         Queue::assertPushed(AnalyzeVacancy::class, 2);
     }
 
+    public function test_vacancy_retry_deadline_preserves_delay_and_orphan_recovery_reserves_once(): void
+    {
+        Queue::fake();
+        $user = $this->user('vacancy-orphan-recovery@example.test');
+        $text = 'Synthetic delayed vacancy source.';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_FAILED,
+            'error_code' => 'PROVIDER_ERROR',
+        ]);
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+        $job->withFakeQueueInteractions();
+        $service = \Mockery::mock(VacancyAnalysisService::class);
+        $service->shouldReceive('analyze')->once()->andThrow(
+            new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 60),
+        );
+
+        $job->handle($service, app(DatabaseOwnerContext::class));
+
+        $job->assertReleased(60);
+        $vacancy->refresh();
+        $this->assertSame(Vacancy::STATUS_PENDING, $vacancy->analysis_status);
+        $this->assertGreaterThanOrEqual(now()->addSeconds(59)->timestamp, $vacancy->next_attempt_at->timestamp);
+        $this->assertGreaterThanOrEqual($vacancy->next_attempt_at->timestamp + PendingJobRecovery::recoveryWindowSeconds(), $vacancy->dispatch_recovery_at->timestamp);
+        $this->assertArrayNotHasKey('next_attempt_at', $vacancy->toArray());
+        $this->assertArrayNotHasKey('dispatch_recovery_at', $vacancy->toArray());
+
+        app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        Queue::assertNothingPushed();
+
+        $this->assertTrue(app(UniqueLock::class)->acquire($job));
+        Carbon::setTestNow($vacancy->dispatch_recovery_at->addSecond());
+        try {
+            app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+            app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        } finally {
+            Carbon::setTestNow();
+        }
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
+        $this->assertFalse(app(UniqueLock::class)->acquire($job));
+    }
+
+    public function test_legacy_pending_vacancy_keeps_its_original_unique_lock_window(): void
+    {
+        Queue::fake();
+        $user = $this->user('legacy-vacancy-recovery@example.test');
+        $text = 'Synthetic legacy pending vacancy.';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now()->subDays(3),
+        );
+        $legacyDispatchAt = now()->subMinutes(5);
+        \DB::table('vacancy_snapshots')->where('id', $snapshot->id)->update(['created_at' => $legacyDispatchAt]);
+        \DB::table('vacancies')->where('id', $vacancy->id)->update([
+            'created_at' => $legacyDispatchAt,
+            'updated_at' => now(),
+        ]);
+        $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+        $this->assertTrue(app(UniqueLock::class)->acquire($job));
+
+        app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        Queue::assertNothingPushed();
+
+        Carbon::setTestNow($legacyDispatchAt->addSeconds(LlmProviderException::UNIQUE_LOCK_SECONDS + 1));
+        try {
+            app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        } finally {
+            Carbon::setTestNow();
+        }
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
+    }
+
     public function test_duplicate_import_reclaims_stale_running_analysis(): void
     {
         Queue::fake();
@@ -2303,6 +2401,8 @@ class VacancyCoreTest extends TestCase
             'owner_id' => $user->id,
             'analysis_status' => 'FAILED',
             'error_code' => 'PROVIDER_ERROR',
+            'next_attempt_at' => null,
+            'dispatch_recovery_at' => null,
         ]);
         $this->assertDatabaseHas('vacancy_snapshots', ['id' => $snapshotId, 'raw_text' => $rawText]);
         $this->actingAs($user)->getJson('/api/v1/vacancies')
