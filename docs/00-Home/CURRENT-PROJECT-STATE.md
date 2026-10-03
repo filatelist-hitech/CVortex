@@ -250,7 +250,7 @@ CI из `.github/workflows/quality.yml` на audited SHA выполняет `mak
 | Roadmap | Есть, accepted | Отражает M0–M6 и порядок M1/M2. Метаданные Roadmap датированы 2026-09-12 и описывают план, а текущие статусы задают `PROJECT.md`/`.agents/state/*`. |
 | PRD / Requirements / MVP-Scope | Отдельные canonical документы не найдены | Product design, roadmap и bounded task specs частично выполняют эту роль. Границы MVP описаны в M2 task/roadmap; навигация их не определяет. |
 | User Flows / User Guide / Process Map | Есть и обновлены 2026-10-03 | Preview flow описан; документы честно отмечают, что acceptance ещё не прошёл и что generated drafts не скачиваются/не отправляются. |
-| Documentation Map | Есть, `updated: 2026-10-03` | Текущая навигация разделяет пользовательские, продуктовые и технические материалы; это хороший индекс, но audit report в него сейчас не включён. |
+| Documentation Map | Есть, `updated: 2026-10-03` | Текущая навигация разделяет пользовательские, продуктовые и технические материалы и включает ссылку на этот audit report. |
 | Domain / data docs | Есть M1.2/M1.3/M1.4 и Phase-06 conceptual docs | Текущую схему определяют migrations. Отдельного ERD-to-migration reconciliation отчёта не найдено; старую conceptual diagram нужно сверять с migrations. |
 | API docs | `docs/05-API/diagnostics.openapi.yaml` | OpenAPI полно описывает diagnostics boundary, но не все first-party `/api/v1` routes в одном canonical spec. Другие feature contracts распределены между data docs/tasks. |
 | Agent docs / tasks / state | Богатый и маршрутный набор | `NEXT.md` и `BLOCKERS.md` ясно фиксируют Preview gate; task metadata M1.3/M1.4 отстали от delivery evidence. |
@@ -521,17 +521,17 @@ Health показывает состояние каждой области. Эт
 
 ## 23. Рекомендуемая сверка project state
 
-Во время аудита state-файлы не менялись.
+После аудита состояние сверено с canonical-файлами:
 
-- `NEXT.md`: **оставить** текущую цель Preview 0.1; она остаётся canonical product task. Начать реальный Preview flow можно после устранения PostgreSQL blocker.
-- `BLOCKERS.md`: PostgreSQL blocker live подтверждён: backend config `DB_DATABASE=cvortex2`; текущий PostgreSQL каталог содержит `cvortex` и `cvortex_dev2`, но не `cvortex2`; readiness 503. В аудит-сессии миграции не запускались.
-- `STATUS.md`: добавить эту dated runtime-check запись и отметить, что homepage 200/Compose healthy не отменяют readiness failure.
+- `NEXT.md`: текущая цель Preview 0.1 сохранена; она остаётся canonical product task. Начать реальный Preview flow можно после устранения PostgreSQL blocker. Файл не менялся.
+- `BLOCKERS.md`: PostgreSQL blocker live подтверждён: backend config `DB_DATABASE=cvortex2`; текущий PostgreSQL каталог содержит `cvortex` и `cvortex_dev2`, но не `cvortex2`; readiness 503. В аудит-сессии миграции не запускались. Файл не менялся.
+- `STATUS.md`: после аудита добавлена dated-запись со ссылкой на этот отчёт и результатами runtime-проверок: Compose healthy и homepage 200 не отменяют readiness 503 из-за отсутствующей `cvortex2`; `migrate:status` остановился до миграций.
 - `.agents/tasks/m1-3-vacancy-core.md`: сверить статус с PR #27/#28 merge и `PROJECT.md`; удалить устаревшее “awaiting re-review” только после проверки acceptance history.
 - `.agents/tasks/m1-4-application-draft.md`: отделить уже merged implementation от ещё не принятого Preview 0.1; не маркировать full slice PASS до user E2E.
 - `BLOCKERS.md`/статус интеграций: обозначить внешний MCP ChatGPT/Tunnel E2E как отдельный non-MVP blocker; его entitlement и tunnel доступ остаются UNKNOWN.
 - `PROJECT.md`: базовое описание M1.4/Preview/M2 соответствует текущему факту; менять его стоит только вместе с outcome Preview и reconciliation task statuses.
 
-Сначала показать отчёт пользователю. State и repo metadata по итогам аудита автоматически не менять.
+Отчёт включён в `Documentation-Map.md`. Дополнительные изменения `NEXT.md`, `BLOCKERS.md` и repo metadata в рамках сверки не выполнялись.
 
 ## 24. Проверки, выполненные в этом аудите
 
