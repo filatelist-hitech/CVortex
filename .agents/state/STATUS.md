@@ -747,3 +747,8 @@ Validation: both test accounts completed same-origin CSRF/login/`/api/v1/me` che
 Added a Codex compatibility manifest with author and interface metadata plus an explicit `./skills/` reference, while retaining the portable root Agent Plugins manifest. Updated the local setup guide to distinguish both manifests and their shared skill directory.
 
 Validation: parsed both plugin manifests and the repo marketplace as JSON; checked matching plugin identity/version and marketplace source path; installed from the repo marketplace using an isolated Codex CLI home and confirmed the installed cache contains `skills/cvortex/SKILL.md`; `git diff --check` passed. This validated package ingestion and skill packaging, not ChatGPT MCP app runtime.
+
+
+### Chat inside CVortex — architecture research, 2026-10-04
+
+User selected chat inside CVortex over the ChatGPT-to-MCP result submission flow. Read current repository adapter and ADR-0021; verified missing raw vacancy text and incomplete-analysis empty-context behavior. Fetched official Sign in with ChatGPT plan usage, registration, inference and preview-limitations documentation. It documents eligible subscription inference via outbound OAuth, correcting the earlier blanket unsupported claim. Added proposed ADR-0023 and a bounded implementation packet. No runtime implementation, registration, inference, model/account eligibility proof, MCP write tool or product-data mutation performed. Existing uncommitted operator/provider changes remain in the original checkout; architecture artifacts were prepared in an isolated docs branch and transferred to feature/chatgpt-local-mcp-integration with explicit user authorization. Preview/M2 gates unchanged.
