@@ -3,76 +3,65 @@ title: Documentation Map
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-27
+updated: 2026-10-03
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
+  - "[[User-Guide|User Guide]]"
   - "[[../01-Product/Vision|Vision]]"
-  - "[[../01-Product/Principles|Principles]]"
   - "[[../01-Product/Scope|Scope]]"
   - "[[../01-Product/Roadmap|Roadmap]]"
-  - "[[../01-Product/Glossary|Glossary]]"
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
-  - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
-  - "[[../10-Operations/Local-Development|Local Development]]"
-  - "[[Error-Center-User-Guide|Error Center user guide]]"
-  - "[[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]]"
 ---
 
 # Documentation Map
 
-`docs/` is both the Git-tracked engineering documentation tree and the Obsidian vault for CVortex. Markdown remains canonical; Obsidian is an interface, not a separate knowledge database.
+`docs/` is the Git-tracked project documentation and an Obsidian-compatible vault. Markdown is canonical; every document should remain readable in GitHub and other Markdown viewers.
 
-## Core documents
+## User and operator documentation
 
-- [[CVortex]] — project home and stable summary.
-- [[../01-Product/Vision|Vision]] — problem, value and desired outcome.
-- [[../01-Product/Principles|Principles]] — non-negotiable product/engineering principles.
-- [[../01-Product/Scope|Scope]] — current product scope, deferred work and non-goals.
-- [[../01-Product/Roadmap|Roadmap]] — **canonical implementation sequence and milestone/value checkpoints**.
-- [[../01-Product/Glossary|Glossary]] — canonical terminology.
-- [[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]] — accepted PRD, requirements and user-flow baseline; its former embedded roadmap is superseded by [[../01-Product/Roadmap|Roadmap]].
-- [[../02-Architecture/Architecture-Baseline|Architecture Baseline]] — accepted system boundaries/invariants.
-- [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] — accepted C4/component/deployment design.
-- [[../02-Architecture/M0-Runtime|M0 Runtime]] — implemented local runtime topology, version baseline, health, persistence and exposure boundaries.
-- [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — accepted conceptual data, ownership, provenance and audit model.
-- [[../04-Data/M1-2-Career-Core|M1.2 Career Core Implementation]] — implemented Career lifecycle, API, provenance, Truth Guard and runtime-AI boundary.
-- [[../04-Data/M1-3-Vacancy-Core|M1.3 Vacancy Core Implementation]] — pasted-text snapshots, requirement extraction, explainable matching, recommendation and API boundary.
-- [[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]] — saved Preview 0.1 preparation, recommendation/draft provenance, Truth Guard review, explicit approval and API boundary.
-- [[../04-Data/Diagnostics|Diagnostics data model]] — grouped incidents, occurrences, correlation and retention.
-- [[Error-Center-User-Guide|Error Center user guide]] — what users should do after an error and how administrators investigate incidents.
-- [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
-- [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
-- [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.
-- [[../07-Design/Design-Foundation|Design Foundation]] — visual/interaction/accessibility baseline and Git token authority.
-- [[../07-Design/Figma-Handoff|Figma Handoff]] — Figma bootstrap/review/drift procedure and current capability limitation.
-- [[../10-Operations/Local-Development|Local Development]] — clean bootstrap and stable Make interface.
-- [[../10-Operations/M0-Runbook|M0 Runbook]] — health diagnosis, recovery and validation commands.
-- [[../10-Operations/Logging-and-Diagnostics|Logging and Diagnostics]] — structured events, Error Center and CLI fallback.
+- [[CVortex|CVortex home]] — concise description of the product as it exists now.
+- [[User-Guide|User Guide]] — sign-in, Career Facts, vacancy analysis, drafts, privacy and feature limits.
+- [[../10-Operations/Local-Development|Local Development]] — requirements, setup, environment, start/stop/update and troubleshooting for a local installation.
+- [[../10-Operations/M0-Runbook|M0 Runbook]] — service health and operator diagnosis.
+- [[Error-Center-User-Guide|Error Center user guide]] — actions for users and administrators when an operation fails.
+- [[../10-Operations/M1-Access-Core|Access Core]] — first administrator, invitations, registration and access operations.
+- [[../10-Operations/Logging-and-Diagnostics|Logging and Diagnostics]] — operator diagnostics and log fallback.
+- [[../10-Operations/MCP-Gateway-Validation|MCP Gateway validation]] — optional advanced integration validation; MCP is disabled by default.
+
+## Product and implementation references
+
+- [[../01-Product/Vision|Vision]], [[../01-Product/Principles|Principles]], [[../01-Product/Scope|Scope]] and [[../01-Product/Glossary|Glossary]] — product intent, constraints and terminology. Scope and Roadmap describe direction, not proof that a feature exists.
+- [[../01-Product/Roadmap|Roadmap]] — canonical implementation sequence and status.
+- [[../02-Architecture/Architecture-Baseline|Architecture Baseline]], [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] and [[../02-Architecture/M0-Runtime|M0 Runtime]] — boundaries, accepted system design and local topology.
+- [[../04-Data/M1-2-Career-Core|M1.2 Career Core]], [[../04-Data/M1-3-Vacancy-Core|M1.3 Vacancy Core]] and [[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]] — implemented domain/API contracts and validation boundaries.
+- [[../04-Data/Diagnostics|Diagnostics data model]] and [[../05-API/diagnostics.openapi.yaml|Diagnostics API contract]].
+- [[../06-AI/Phase-06-AI-Design|AI design]], [[../08-Security/Threat-Model|Threat Model]] and [[../07-Design/Design-Foundation|Design Foundation]].
+- [[../07-Design/Figma-Handoff|Figma Handoff]] — design source, handoff process and known review boundary.
+- [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative accepted architecture decisions.
 
 ## Documentation areas
 
-| Directory | Purpose | Current state |
+| Directory | Purpose | State |
 |---|---|---|
-| `00-Home/` | Home pages and maps | Active |
-| `01-Product/` | Vision, principles, scope, PRD, roadmap | Active |
-| `02-Architecture/` | Architecture views and diagrams | Active; baseline accepted |
-| `03-ADR/` | Architecture decisions | Active; see the ADR index for current decisions |
-| `04-Data/` | Conceptual data/provenance/ownership | Active; Phase 06 accepted |
-| `05-API/` | API conventions/contracts | Active; diagnostics OpenAPI contract |
-| `06-AI/` | Provider/model-policy/skills/workflows/evals | Active; Phase 06 accepted |
-| `07-Design/` | Design system/tokens/Figma | Active; Phase 07 completed |
-| `08-Security/` | Threat model/security controls | Active; Phase 06 accepted |
-| `09-QA/` | Testing/evaluation strategy | Reserved; M0 checks live with applications/CI |
-| `10-Operations/` | Local operations/deployment/observability | Active; M0 local runtime documented |
+| `00-Home/` | Product home, user guide and documentation map | Active |
+| `01-Product/` | Vision, principles, scope, product design and roadmap | Active; roadmap is execution authority for product sequencing |
+| `02-Architecture/` | Architecture views and runtime topology | Active |
+| `03-ADR/` | Accepted, proposed and superseded architecture decisions | Active; see its index |
+| `04-Data/` | Data ownership, provenance and implemented domain contracts | Active |
+| `05-API/` | API contracts | Active |
+| `06-AI/` | Provider/model, skills, workflow and evaluation design | Active |
+| `07-Design/` | Design system, tokens and Figma handoff | Active |
+| `08-Security/` | Threat model and security controls | Active |
+| `09-QA/` | Dedicated QA documentation | Reserved; executable checks live with apps/scripts/CI |
+| `10-Operations/` | Local operation, deployment and observability | Active |
 | `11-Research/` | Promoted research summaries | Reserved |
-| `99-Archive/` | Deprecated/superseded docs | Reserved |
+| `99-Archive/` | Deprecated or superseded documents | Reserved |
 
-## Rules
+## Navigation rules
 
-- Significant architecture changes require ADR review; roadmap sequencing changes do not silently rewrite accepted architecture.
-- Research-dependent facts are verified before they become architecture/implementation facts.
-- Concrete versions, external API capabilities, prices and model mappings are freshness-sensitive.
-- Mermaid is preferred for engineering diagrams where practical.
-- Documents remain readable in Git without Obsidian.
-- Current execution authority comes from `.agents/state/NEXT.md` + blockers + the active task spec, not from legacy phase files.
+- User steps belong in the User Guide or operator guides; product intent and future plans stay in Product and Architecture references.
+- A planned feature is not available because it appears in Scope, a design, an ADR or a roadmap target. Check the User Guide and current roadmap status.
+- Material architecture decisions require ADR coverage. Do not silently contradict an accepted decision.
+- Obsidian wiki links may aid navigation, but GitHub-relative Markdown links remain available where they help readers outside Obsidian.
+- Current task authority comes from `.agents/state/NEXT.md`, blockers and an authorized task—not from this map or a roadmap milestone.

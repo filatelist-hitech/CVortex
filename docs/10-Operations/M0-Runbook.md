@@ -3,7 +3,7 @@ title: M0 Runbook
 status: active
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-03
 tags: [operations, runbook, m0, health]
 related:
   - "[[Local-Development]]"
@@ -16,8 +16,9 @@ related:
 
 ```sh
 docker compose ps
-curl -i http://localhost:8080/api/v1/health/live
-curl -i http://localhost:8080/api/v1/health/ready
+health_authority="$(docker compose port nginx 80)"
+curl -i "http://${health_authority}/api/v1/health/live"
+curl -i "http://${health_authority}/api/v1/health/ready"
 make logs SERVICE=backend
 make logs SERVICE=horizon
 ```
@@ -28,6 +29,7 @@ Expected healthy bodies are `{"status":"live"}` and `{"status":"ready"}`. Livene
 
 - **Port bind fails:** another process owns 8080. Set a free `CVORTEX_PORT` and matching `APP_URL` in root `.env`, then run `make up` again. Do not stop an unrelated process blindly.
 - **Readiness is 503:** inspect `docker compose ps`, then PostgreSQL, Redis and backend logs. Restore the failed dependency and retry readiness; backend restart is normally unnecessary.
+- **PostgreSQL is healthy but readiness is 503:** verify that `POSTGRES_DB` in the ignored root `.env` names a database present in the existing PostgreSQL volume. A Docker healthcheck confirms the configured server/database probe, not Laravel's application connection. Follow the non-destructive database-name recovery in [Local Development](Local-Development.md).
 - **Horizon is not running:** check Redis health and `make logs SERVICE=horizon`; after Redis returns, confirm with `docker compose exec horizon php artisan horizon:status`.
 - **Dependencies are absent/corrupt:** run `make init` again. It reuses root `.env` and restores locked container dependencies.
 - **A clean service restart is needed:** use `make restart`, which preserves persistent volumes and recreates services in dependency-safe order.

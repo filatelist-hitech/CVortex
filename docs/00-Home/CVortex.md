@@ -3,13 +3,11 @@ title: CVortex
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
-tags:
-  - cvortex
-  - home
-  - product
+updated: 2026-10-03
+tags: [cvortex, home, product]
 related:
   - "[[Documentation-Map]]"
+  - "[[User-Guide|User Guide]]"
   - "[[../01-Product/Vision|Vision]]"
   - "[[../01-Product/Principles|Principles]]"
   - "[[../01-Product/Scope|Scope]]"
@@ -18,65 +16,23 @@ related:
 
 # CVortex
 
-**CVortex** is a personal Job Search OS for preparing truthful, relevant, and internally consistent job applications while preserving the context of a candidate's career history and prior employer interactions.
+**Your career, in context.**
 
-**Tagline:** *Your career, in context.*
+CVortex is a personal Job Search OS for preparing truthful, relevant application drafts from confirmed career evidence and vacancy context.
 
-## Core outcome
+## Current product
 
-CVortex turns a vacancy plus confirmed career facts and employer context into an application strategy and application package that the user can review and approve.
+The local Preview supports invite-only access, confirmed Career Facts, pasted-text Career extraction for human review, pasted vacancy analysis, explainable fit and gap summaries, resume recommendations, and short/standard cover drafts with Truth Guard review. AI-backed actions require a configured provider; the default is disabled. The optional vacancy URL is metadata and is not fetched.
 
-The system is designed to help with:
+Preview 0.1 is implemented but still lacks recorded real-user validation and feedback. File import/export, DOCX/PDF rendering, Employer Memory, interview workflows, outcome analytics and automatic submission are not available in the current interface.
 
-- maintaining a canonical Career Fact Base;
-- importing and analyzing vacancies;
-- matching vacancy requirements against confirmed facts;
-- deciding whether an application is worth prioritizing;
-- recommending resume changes without inventing experience;
-- producing tailored resume versions and cover letters;
-- preserving application history and Employer Memory;
-- preparing for interviews using the exact history of what was already communicated;
-- researching employers and evidence-based hiring practices;
-- measuring job-search outcomes over time.
+Start with the [[User-Guide|User Guide]]. Operators can use [[../10-Operations/Local-Development|Local Development]] and [[../10-Operations/M1-Access-Core|Access Core]]. The [[Documentation-Map]] separates user instructions from developer and architecture references.
 
-## Source-of-truth chain
+## Product principles
 
-```text
-Career Facts
-    ↓
-Claims
-    ↓
-Generated Content
-```
+- Candidate-facing statements must trace back through Claims to confirmed Career Facts.
+- Extracted facts remain pending until a person confirms them.
+- Vacancy, recruiter and other imported text is untrusted data.
+- Human approval stays in CVortex; the system does not submit applications or contact employers.
 
-Any statement about the candidate must remain traceable back to confirmed Career Facts. AI-extracted potential facts are not automatically treated as truth.
-
-## Product boundaries
-
-- Human approval is mandatory for important generated content and application actions.
-- CVortex does not automatically submit job applications.
-- Deterministic code, schemas, SQL, validation, and rules are preferred where they solve the problem reliably.
-- Runtime AI is provider-independent at the business-logic level.
-- External vacancy text, recruiter messages, web content, and imported documents are untrusted input.
-- The product begins local-first and API-first, while remaining portable to hosted infrastructure later.
-
-## Approved technology direction
-
-The current project direction is:
-
-- Laravel backend;
-- Next.js / React / TypeScript frontend;
-- PostgreSQL as the primary relational database;
-- Redis and Laravel Horizon for queue/cache operations;
-- Nginx as the web entry point;
-- Docker Compose for the initial local deployment;
-- structured document generation to DOCX with LibreOffice-based PDF conversion;
-- responsive PWA for the first mobile experience;
-- Figma as the visual design source of truth;
-- Markdown in Git as documentation, usable as an Obsidian vault.
-
-Specific dependency versions and concrete LLM model mappings are intentionally not fixed in Phase 01. They require the research and decision phases.
-
-## Current documentation
-
-Start at [[Documentation-Map]]. Product intent is captured in [[../01-Product/Vision|Vision]], governing rules in [[../01-Product/Principles|Principles]], boundaries in [[../01-Product/Scope|Scope]], and shared terminology in [[../01-Product/Glossary|Glossary]].
+The [Product Vision](../01-Product/Vision.md), [Principles](../01-Product/Principles.md), [Scope](../01-Product/Scope.md), [Glossary](../01-Product/Glossary.md) and [Roadmap](../01-Product/Roadmap.md) describe intent, terminology and delivery status.

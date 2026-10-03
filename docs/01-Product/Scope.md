@@ -3,7 +3,7 @@ title: Scope
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-03
 tags:
   - product
   - scope
@@ -19,6 +19,8 @@ related:
 # Scope
 
 This document records the approved product direction. Detailed architecture, data, API and AI contracts are defined by accepted design documents/ADRs; implementation sequencing is defined by [[Roadmap]].
+
+Scope describes intended product behavior, not a feature-completion checklist. For a verified summary of the current interface and unavailable capabilities, use the [[../00-Home/User-Guide|User Guide]] and [[Roadmap]].
 
 ## In scope for the product direction
 

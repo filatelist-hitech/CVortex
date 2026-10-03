@@ -2,99 +2,58 @@
 
 **Your career, in context.**
 
-CVortex is a personal Job Search OS for adapting resumes to vacancies, generating cover letters, preserving employer context, preparing for interviews, and tracking the effectiveness of a job search.
+CVortex is a personal Job Search OS. It keeps career evidence connected to vacancy analysis and application drafts, so candidate-facing statements can be reviewed against confirmed facts.
 
-## Project status
+## What works today
 
-CVortex is in active pre-release development.
+The current local Preview lets an invited user:
 
-The completed slices are **M0 · Runnable Core** and **M1.1–M1.3 · First Value**. **M1.4 · Application Draft** was squash-merged into `stage` by PR #31 on 2026-09-24; Preview 0.1 still needs recorded real-user validation and feedback before the full M1.4 slice can be marked PASS. M2 implementation has not started, and its planning task remains blocked until that evidence is available.
+- add confirmed Career Facts manually or paste career/resume text for AI-assisted extraction and human review;
+- paste vacancy text and compare its requirements with confirmed career evidence across seven dimensions;
+- review an explainable application-priority recommendation and its gaps or unknowns;
+- prepare resume recommendations and short or standard cover-letter drafts, edit or reject them, and explicitly approve content that passes Truth Guard.
 
-M1.2 is **not the MVP**. M1.1–M1.4 define M1's first complete workflow target, Preview 0.1 (`v0.1.0`); Preview remains unvalidated until its real-user acceptance criteria and feedback are recorded. M2 targets the practical application-package MVP (`v0.2.0`). A completed slice or merged PR does not create a release; release tags are created only from validated `main` commits.
+The optional vacancy URL is saved as metadata; CVortex does not fetch it. File import, DOCX/PDF generation, employer history, interview preparation, outcome tracking and automatic application submission are not available in this Preview. AI-backed actions require provider configuration; a new local installation defaults to `AI_PROVIDER=none`.
 
-The accepted release roadmap is:
+CVortex is invite-only and in pre-release development. Preview 0.1 still needs recorded real-user validation and feedback. See the [current product status and roadmap](docs/01-Product/Roadmap.md) for the distinction between shipped slices and later plans.
 
-| Milestone | Product checkpoint | Target version | Release mode |
-|---|---|---|---|
-| M0 · Runnable Core | Runnable technical baseline | `v0.1.0-alpha.1` | Optional prerelease |
-| M1 · First Value | First truthful end-to-end workflow / Preview 0.1 | `v0.1.0` | Preview |
-| M2 · Real Application Package | First practical application package | `v0.2.0` | MVP |
-| M3 · Imports & Integrations | Safe imports and supported source integrations | `v0.3.0` | Minor |
-| M4 · Employer Journey | Employer/recruiter context and interview workflow | `v0.4.0` | Minor |
-| M5 · Outcomes & Analytics | Evidence-based job-search analytics | `v0.5.0` | Minor |
-| M6 · Distribution & Hardening | VPS/cloud path and operational hardening | `v0.6.0` | Minor |
+## Run locally
 
-Release tags are created from validated `main` commits only. Completing a milestone on `stage` does not itself create a Git tag or GitHub Release. `v1.0.0` remains a separate explicit stability decision after M6.
+Requirements: Git, Make, Docker with Compose, and a running Docker engine. From a fresh checkout:
 
-See [docs/01-Product/Roadmap.md](docs/01-Product/Roadmap.md) and [.github/roadmap.yml](.github/roadmap.yml) for the canonical roadmap and release metadata.
-
-## M0 quick start
-
-Host prerequisites:
-
-- Git;
-- Docker with Compose;
-- Make.
-
-From a clean checkout:
-
-```bash
+```sh
+git clone https://github.com/filatelist-hitech/CVortex.git
+cd CVortex
 make init
 docker compose --env-file .env config --quiet
 make up
 make migrate
 ```
 
-CVortex is exposed through Nginx on the loopback interface at `http://127.0.0.1:8080` by default. Override the port with `CVORTEX_PORT` in the root `.env` when needed.
+Check that the services are healthy and the application dependencies are ready:
 
-For an existing checkout, database-volume recovery and the full startup checklist are documented in [Local Development](docs/10-Operations/Local-Development.md). Do not run `docker compose down --volumes` as a routine fix: it removes the persistent local database and private-storage volumes.
-
-Useful commands:
-
-```bash
-make test
-make lint
-make logs SERVICE=backend
-make shell SERVICE=backend
-make down
+```sh
+docker compose ps
+health_authority="$(docker compose port nginx 80)"
+curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-`make down` is intentionally non-destructive for the persistent PostgreSQL and private-storage state defined by M0.
+Open the `APP_URL` value in the ignored root `.env` (default: `http://localhost:8080`). `make init` creates that file and generates local secrets. See [Local Development](docs/10-Operations/Local-Development.md) before changing database or port settings.
 
-## Project principles
+To create the first administrator and issue an invitation, follow [Access and first sign-in](docs/10-Operations/M1-Access-Core.md). A new install has no default account.
 
-- **Truth-first:** candidate statements must be grounded in confirmed career facts.
-- **Traceability:** generated content must remain traceable through claims to confirmed facts.
-- **Consistency-first:** previous applications and employer-specific claims must not silently contradict each other.
-- **Human approval:** CVortex does not automatically submit applications.
-- **Deterministic before AI:** use code, validation, SQL, and rules when they are more reliable than an LLM.
-- **Local-first / API-first:** local Docker Compose first, with a path to VPS/cloud later.
-- **Security-first:** vacancies, recruiter messages, websites, and imported documents are untrusted input.
+## Start here
 
-## Current stack
+- [User Guide](docs/00-Home/User-Guide.md) — sign-in, Career Facts, vacancies, recommendations, drafts, privacy and current limits.
+- [Local Development](docs/10-Operations/Local-Development.md) — installation, environment, start/stop/update and troubleshooting.
+- [Error Center guide](docs/00-Home/Error-Center-User-Guide.md) — what to do with a user-facing error.
+- [Documentation Map](docs/00-Home/Documentation-Map.md) — user, operator, developer and architecture documents.
+- [Product Roadmap](docs/01-Product/Roadmap.md) — what is implemented, active or planned.
 
-- Backend: PHP / Laravel
-- Frontend: Next.js / React / TypeScript
-- Database: PostgreSQL
-- Queue/cache: Redis + Laravel Horizon
-- Web: Nginx
-- Infrastructure: Docker Compose
-- Documents: DOCX templates + LibreOffice headless to PDF are planned for M2
-- Distribution: responsive web first; broader PWA/distribution hardening belongs to later milestones
+## Project documentation
 
-Exact runtime and dependency versions are pinned in the implementation artifacts and lockfiles rather than duplicated here. The repository files are the version authority for the current runtime.
+User instructions live under `docs/00-Home/` and local operation guides under `docs/10-Operations/`. Architecture, data/API contracts, security, AI and accepted decisions remain under their dedicated documentation areas. See the [Documentation Map](docs/00-Home/Documentation-Map.md) or [Architecture Decision Index](docs/03-ADR/INDEX.md).
 
-## Branches
+## Privacy basics
 
-- `main` — stable/release branch.
-- `stage` — integration and staging branch.
-- `feature/*`, `fix/*`, `chore/*`, `docs/*`, `ci/*` — short-lived branches based on `stage`.
-- `hotfix/*` — emergency fixes based on `main`, merged back to both `main` and `stage`.
-
-Normal development pull requests target `stage`. Promotion to `main` happens through a separate release PR.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository workflow.
-
-## Sensitive data
-
-Do not commit real resumes, recruiter correspondence, API keys, tokens, credentials, production exports, or other private career data to the repository. Use sanitized fixtures for tests and examples.
+Career, vacancy and draft data are private and owner-scoped. The local Compose database and private file storage persist in Docker named volumes. Nginx is the only host-published service and binds to loopback by default. Do not commit real resumes, recruiter correspondence, credentials or other personal career data. When an AI provider is configured, the relevant text for that operation is sent to that provider; keep secrets out of pasted source material.

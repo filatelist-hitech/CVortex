@@ -4,35 +4,41 @@ status: active
 owner: project
 created: 2026-09-12
 updated: 2026-10-03
-tags: [operations, local, docker, m0]
+tags: [operations, local, docker, setup]
 related:
+  - "[[../00-Home/User-Guide|User Guide]]"
   - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
   - "[[M0-Runbook]]"
   - "[[Logging-and-Diagnostics|Logging and Diagnostics]]"
 ---
 
-# Local Development
+# Локальная установка и эксплуатация
 
-## Prerequisites
+Это инструкция для локального Preview CVortex через Docker Compose. Поддерживаемая граница здесь — рабочая копия репозитория на компьютере; публичное production-размещение этим runbook не настраивается.
 
-Install Git, Docker with Compose support, and Make. Host PHP, Composer, Node.js, npm, PostgreSQL and Redis are not required. The optional `make logs-pretty` command also needs host Python 3.
+## Требования
 
-## First launch
+На компьютере нужны Git, Make, Docker с поддержкой Compose и запущенный Docker Engine/Desktop. PHP, Composer, Node.js, npm, PostgreSQL и Redis на хосте не нужны: они работают в контейнерах. Для дополнительной команды `make logs-pretty` нужен Python 3.
 
-From the repository root:
+## Установка с нуля
 
 ```sh
+git clone https://github.com/filatelist-hitech/CVortex.git
+cd CVortex
 make init
 docker compose --env-file .env config --quiet
 make up
 make migrate
 ```
 
-`make init` must run before the first `make up`: it creates the ignored root `.env` when absent, generates local secrets, builds the images and installs locked dependencies in named volumes. It also repairs a missing or unsafe runtime database password. Re-running it is safe, but it preserves existing `.env` values, including `POSTGRES_DB`; it does not rename or recreate a database in an existing PostgreSQL volume.
+Что происходит:
 
-The `docker compose ... config --quiet` check catches missing required variables before containers start. `make migrate` is the repository migration entry point: it first provisions the restricted `cvortex_app` role and then runs Laravel migrations through the privileged `migration` service.
+- `make init` копирует `.env.example` в игнорируемый `.env`, если файла ещё нет; генерирует `APP_KEY`, пароль PostgreSQL и отдельный пароль роли приложения; собирает образы и устанавливает зафиксированные зависимости в Docker volumes.
+- `docker compose ... config --quiet` проверяет, что Compose может собрать конфигурацию. При ошибке не запускайте стек, пока не исправите значения.
+- `make up` запускает сервисы в фоне.
+- `make migrate` настраивает ограниченную роль приложения `cvortex_app`, затем применяет миграции Laravel через отдельный сервис миграций.
 
-After the stack starts, verify the result:
+Проверьте readiness и откройте приложение только после успешного ответа:
 
 ```sh
 docker compose ps
@@ -40,28 +46,79 @@ health_authority="$(docker compose port nginx 80)"
 curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-The readiness endpoint must return a successful response. It probes the runtime PostgreSQL and Redis dependencies; `/api/v1/health/live` only validates the HTTP/application path. The command asks Compose for Nginx's effective published address, so it honors the configured `CVORTEX_PORT` with Compose's dotenv parsing without executing or printing `.env`. Open the configured `APP_URL` in a browser only after this check passes.
+При успехе endpoint возвращает HTTP 200 и `{"status":"ready"}`. Затем откройте значение `APP_URL` из `.env` — по умолчанию `http://localhost:8080`. Создание администратора и приглашения описано в [Access and first sign-in](M1-Access-Core.md); новой установке не выдаётся стандартная учётная запись.
 
-If port 8080 is already occupied, change both values in `.env` so application URLs remain coherent:
+## Environment
+
+`.env.example` содержит безопасные локальные значения и пустые места для внешних секретов. Не вставляйте в Git реальные пароли, API keys, приглашения или персональные карьерные данные. `make init` генерирует локальные секреты в `.env`; не заменяйте этот файл примером из другой рабочей копии.
+
+| Переменная | Назначение |
+|---|---|
+| `CVORTEX_PORT` | Порт loopback-публикации Nginx; по умолчанию `8080` |
+| `APP_URL` | Адрес, который открывает браузер; должен соответствовать порту и host |
+| `POSTGRES_DB` | Имя базы внутри существующего PostgreSQL volume |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD` | Административное подключение PostgreSQL и миграций; значения должны соответствовать уже инициализированному volume |
+| `POSTGRES_RUNTIME_USER`, `POSTGRES_RUNTIME_PASSWORD` | Отдельная ограниченная роль backend/Horizon; пароль генерирует `make init` и он должен отличаться от административного |
+| `AI_PROVIDER` | По умолчанию `none`; для текущего OpenAI adapter задаётся `openai` |
+| `OPENAI_API_KEY` | Секрет провайдера; нужен только при `AI_PROVIDER=openai` |
+| `OPENAI_BASE_URL` | Адрес API провайдера; по умолчанию официальный OpenAI API URL |
+| `OPENAI_CAREER_EXTRACTION_MODEL` | Модель для извлечения Career Facts и требований вакансии |
+| `OPENAI_APPLICATION_DRAFT_MODEL` | Модель для подготовки/проверки черновиков; переменная поддерживается backend, но отсутствует в `.env.example` |
+| `MCP_ENABLED` | По умолчанию `false`; расширенная read-only MCP интеграция, не нужна обычному Preview |
+
+Для смены стандартного порта измените обе строки в `.env`, затем переподнимите сервисы:
 
 ```dotenv
 CVORTEX_PORT=18080
 APP_URL=http://localhost:18080
 ```
 
-Then run `make up` and open the configured port.
-
-## Recover a database-name mismatch
-
-If `make migrate` fails with an error such as:
-
-```text
-FATAL: database "cvortex1" does not exist
+```sh
+make up
 ```
 
-the running PostgreSQL volume was initialized with a different `POSTGRES_DB` than the current `.env`. The failure happens in `10-runtime-role.sh`, before Laravel migration code runs. This is a configuration mismatch, not a reason to delete the database volume.
+AI-провайдер в чистой установке отключён. Без него доступны ручное добавление Career Facts, проверка/подтверждение фактов, просмотр сохранённых данных и детерминированная часть сопоставления. Извлечение текста, анализ вакансии и генерация/семантическая проверка черновиков требуют настроенного провайдера и выбранных имён моделей. Точные переменные — в `apps/backend/config/ai.php`; конкретные модели и их стоимость выбирает и проверяет оператор. MCP, OAuth и внешний tunnel — отдельная расширенная настройка, см. [MCP Gateway validation](MCP-Gateway-Validation.md).
 
-Stop the stack without removing volumes and inspect the databases that actually exist:
+## Остановить, запустить и обновить
+
+| Действие | Команда | Результат |
+|---|---|---|
+| Запустить остановленный стек | `make up` | Поднимает контейнеры в фоне |
+| Остановить стек | `make down` | Удаляет контейнеры/сеть, сохраняет PostgreSQL и private-storage volumes |
+| Пересоздать сервисы | `make restart` | Выполняет `down`, затем `up`; volumes сохраняются |
+| Применить миграции | `make migrate` | Обновляет схему локальной базы |
+
+Для обновления исходников в рабочей копии с настроенной upstream-веткой:
+
+```sh
+git status --short
+git pull --ff-only
+make init
+docker compose --env-file .env config --quiet
+make up
+make migrate
+```
+
+Сначала разрешите локальные Git-изменения; `git pull --ff-only` не объединяет расходящиеся ветки. `make init` пересобирает образы и зависимости, но сохраняет существующие значения `.env`; миграции затрагивают постоянную базу. В репозитории нет пользовательской команды или проверенной процедуры backup/restore базы и приватных файлов: не удаляйте volumes и не считайте Git копией пользовательских данных.
+
+## Диагностика запуска
+
+### Страница открывается, но readiness возвращает 503
+
+`/api/v1/health/live` проверяет путь HTTP → Nginx → Laravel. Только `/api/v1/health/ready` проверяет ещё PostgreSQL и Redis. Если readiness не готов, посмотрите состояния и журналы:
+
+```sh
+docker compose ps
+make logs SERVICE=backend
+make logs SERVICE=postgres
+make logs SERVICE=redis
+```
+
+Зависимость PostgreSQL может быть healthy как контейнер, но Laravel всё ещё не сможет подключиться, если база из `POSTGRES_DB` отсутствует в существующем volume.
+
+### В сообщении указано `database "…" does not exist`
+
+Обычно `.env` содержит имя базы, отличное от имени при первой инициализации volume. Сначала остановите контейнеры и только прочитайте список баз:
 
 ```sh
 make down
@@ -70,69 +127,47 @@ docker compose exec -T postgres sh -lc \
   'psql -U "$POSTGRES_USER" -d postgres -Atc "SELECT datname FROM pg_database ORDER BY datname;"'
 ```
 
-If the expected database is present under another name, update only `POSTGRES_DB` in the ignored root `.env` to that existing name. Keep `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_RUNTIME_USER` and `POSTGRES_RUNTIME_PASSWORD` consistent with the initialized volume, then recreate the services and retry:
+Если нужные данные находятся в базе с другим именем, задайте это существующее имя в `POSTGRES_DB` в `.env`. Не меняйте имена пользователей/пароли вслепую: Compose volume мог быть инициализирован прежними значениями. Затем проверьте конфигурацию и повторите миграции:
 
 ```sh
-make down
 docker compose --env-file .env config --quiet
 make up
 make migrate
 ```
 
-If the required database is not listed, stop before changing credentials or storage. Identify which Compose project and named volume contain the intended data; do not run `docker compose down --volumes` in the normal recovery path. That command destroys the persistent PostgreSQL and private-storage volumes.
+Если ожидаемой базы нет, остановитесь и выясните, какой Compose project/volume содержит данные. **Не запускайте `docker compose down --volumes` как способ исправления**: это удалит персистентную базу и private storage.
 
-## Existing checkout checklist
+### Порт уже занят
 
-Use this sequence when the checkout already has an ignored `.env` or an existing PostgreSQL volume:
+Задайте свободные согласованные `CVORTEX_PORT` и `APP_URL` в `.env`, затем выполните `make up`. Не останавливайте неизвестный процесс только ради освобождения порта.
 
-1. Run `make init` and review the non-secret values in `.env`, especially `CVORTEX_PORT`, `APP_URL` and `POSTGRES_DB`.
-2. Run `docker compose --env-file .env config --quiet`.
-3. Start with `make up` and confirm `docker compose ps` reports healthy services.
-4. Run `make migrate` before opening the application.
-5. Check the loopback health endpoint and then use the browser.
+### Сервис нездоров или операция падает
 
-Never copy a `.env` from another checkout blindly: its database name and credentials may belong to a different named volume.
+Проверьте `docker compose ps`, затем журналы конкретного сервиса через `make logs SERVICE=backend|postgres|redis|frontend|horizon`. Для пользовательской ошибки сохраните код и Reference ID и передайте администратору; см. [Error Center user guide](../00-Home/Error-Center-User-Guide.md) и [Logging and Diagnostics](Logging-and-Diagnostics.md).
 
-## Stable commands
+## Хранение и границы сети
 
-| Command | Effect |
+Compose хранит PostgreSQL и `storage/app/private` в именованных Docker volumes; Redis намеренно без постоянного диска. Только Nginx публикуется на host, причём на `127.0.0.1`. Внутренние сервисы доступны по сети Compose. Не открывайте публичный порт роутера как shortcut для удалённого доступа.
+
+Career, vacancy и draft данные содержат чувствительную информацию и переживают `make down`, `make restart` и `make up`. Команда `docker compose down --volumes` удаляет как минимум базу и private storage. Локальные Docker-логи ограничены ротацией; это не backup и не архив.
+
+## Полезные команды разработчика/оператора
+
+| Команда | Назначение |
 |---|---|
-| `make init` | Create local config once, build and install locked dependencies |
-| `make up` | Start the stack in the background |
-| `make down` | Stop/remove containers and networks; preserve named volumes |
-| `make restart` | Recreate the stack in dependency-safe order; preserve named volumes |
-| `make test` | Refresh Laravel package discovery, verify MCP route toggling, and run backend and frontend tests |
-| `make lint` | Run Pint, PHPStan/Larastan, ESLint and TypeScript checks |
-| `make logs SERVICE=backend` | Show the selected service's latest 200 log lines |
-| `make logs-pretty SERVICE=backend` | Format the selected service's latest 200 JSON log lines (requires host Python 3) |
-| `make failed-jobs` | List sanitized final queue failures from diagnostics |
-| `make diagnostics-prune` | Apply configured diagnostic retention immediately; deletes expired records |
-| `make shell SERVICE=backend` | Open a shell in a running service |
-| `make shell SERVICE=backend COMMAND='php -v'` | Run one command in a running service |
-| `make migrate` | Apply Laravel migrations to the running local database |
+| `make test` | Backend/frontend tests и проверка переключения MCP routes |
+| `make lint` | Pint, PHPStan/Larastan, ESLint и TypeScript |
+| `make logs SERVICE=backend` | Последние 200 строк журнала сервиса |
+| `make logs-pretty SERVICE=backend` | Форматирует JSON-журнал; требует Python 3 на хосте |
+| `make failed-jobs` | Список финальных ошибок очереди через диагностику |
+| `make diagnostics-prune` | Немедленно удаляет записи диагностики за пределами retention |
+| `make shell SERVICE=backend` | Открывает shell в работающем контейнере |
+| `make shell SERVICE=backend COMMAND='php -v'` | Выполняет команду внутри контейнера |
 
-Do not use `docker compose down --volumes` in the normal workflow: it destroys the persistent M0 database and private-storage volumes.
+Для полного операторского чеклиста и health probes см. [M0 Runbook](M0-Runbook.md). Для детальной схемы сервисов см. [M0 Runtime](../02-Architecture/M0-Runtime.md).
 
-For user-facing errors, admin investigation, correlation IDs and log fallback, see the [Error Center user guide](../00-Home/Error-Center-User-Guide.md) and [Logging and Diagnostics](Logging-and-Diagnostics.md).
+## Расширенная настройка MCP
 
-## Local runtime contract
+Входящий MCP Gateway выключен по умолчанию и предоставляет только два read-only инструмента: `vacancy_get` и `application_context_get`. Он не принимает изменения черновиков, фактов или статусов. Для локального Inspector, OAuth и Secure MCP Tunnel нужны отдельные ключи, OAuth resource/issuer и подтверждённые доступы; обычное использование веб-интерфейса ничего из этого не требует.
 
-### Optional local MCP Gateway
-
-MCP is disabled by default. The only required toggle is `MCP_ENABLED=false` (default) or `MCP_ENABLED=true` for local protocol testing. These optional, non-secret overrides are read only when the advertised URL differs from `APP_URL`:
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `MCP_ENABLED` | `false` | Enables MCP and its OAuth/discovery routes |
-| `MCP_RESOURCE_URL` | `<APP_URL origin>/mcp/v1` | Canonical protected-resource URI expected on OAuth requests and tokens |
-| `MCP_AUTHORIZATION_SERVER_URL` | `<APP_URL origin>` | Exact OAuth issuer and endpoint origin |
-
-For Secure MCP Tunnel, set `MCP_RESOURCE_URL` to the canonical resource URL ChatGPT receives from the tunnel. The 401 `resource_metadata` challenge follows that URL's authority and path; it does not trust Host/forwarded headers. Set `MCP_AUTHORIZATION_SERVER_URL` independently to a reachable issuer because the tunnel does not automatically tunnel OAuth authorization/token endpoints.
-
-For a local Inspector run, keep the default local URLs. Enable MCP in the ignored root `.env`, generate Passport signing keys once as the PHP-FPM user with `docker compose exec -T -u www-data backend php artisan passport:keys`, inspect migrations with `docker compose exec -T backend php artisan migrate:status`, and apply only pending migrations through the repository workflow. Recreate the backend and Horizon so the flag is loaded. Keep keys in ignored private backend storage; never print or commit tokens. Nginx remains loopback-bound. If Laravel routes are cached, clear the route cache after changing the flag. Obtain a user-scoped OAuth token through the authorization flow and use MCP Inspector's Streamable HTTP transport. Browser cookies and shared static bearer tokens do not authenticate MCP.
-
-Neither gateway initialization, OAuth, discovery nor either read tool requires `OPENAI_API_KEY` or an available `LlmProvider`. Keep outbound AI configuration independent. In production set `APP_DEBUG=false`; safe MCP client responses do not prevent framework logs from containing local exception detail. Secure MCP Tunnel settings belong to the separate tunnel-client process/profile, not CVortex `.env`: `CONTROL_PLANE_TUNNEL_ID` identifies the selected tunnel; `CONTROL_PLANE_API_KEY` is the runtime secret used by `doctor`/`run` and must come from the user's secret manager/environment. `OPENAI_ADMIN_KEY` is a separate administrative secret for tunnel CRUD and must not be given to the long-lived daemon. Never commit or log any tunnel secret. Runtime use requires Tunnels Read + Use; create/edit access requires Read + Manage.
-
-Local Inspector validation does not establish ChatGPT connectivity. OpenAI Secure MCP Tunnel can carry MCP traffic and OAuth discovery, but it does not provision or automatically tunnel the authorization server; its issuer, authorization and token endpoints must remain reachable for OAuth. Before a remote connection, verify actual account/workspace entitlement, the exact canonical MCP resource and issuer, token checks, tunnel/workspace association and tunnel permissions. Do not open inbound router/firewall ports or expose the local server publicly as a shortcut. See [MCP Gateway architecture](../02-Architecture/MCP-Gateway.md), [validation evidence](MCP-Gateway-Validation.md) and [current OpenAI/MCP research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md).
-
-Frontend uses `next dev`; backend uses PHP-FPM. Source changes arrive through bind mounts while `vendor`, `node_modules` and `.next` stay container-managed. The browser uses only the same-origin `/api/v1` boundary and must not receive Docker service names or backend secrets.
+Следуйте [MCP Gateway architecture](../02-Architecture/MCP-Gateway.md), [MCP Gateway validation](MCP-Gateway-Validation.md) и принятому [ADR-0021](../03-ADR/ADR-0021-inbound-mcp-read-only.md). Не включайте gateway и не раскрывайте локальный endpoint вовне без отдельной настройки и проверки.

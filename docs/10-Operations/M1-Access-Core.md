@@ -31,12 +31,14 @@ docker compose exec backend php artisan user:bootstrap-admin admin@example.test
 
 The command fails without side effects if any admin exists.
 
+Replace `INVITATION_ULID` and `USER_ULID` below with the identifiers reported by CVortex; the uppercase words are placeholders, not literal IDs.
+
 ```bash
 docker compose exec backend php artisan invitation:create --email=person@example.test --expires=7
 docker compose exec backend php artisan invitation:create --expires=7
-docker compose exec backend php artisan invitation:revoke <invitation-ulid>
-docker compose exec backend php artisan user:disable <user-ulid>
-docker compose exec backend php artisan user:enable <user-ulid>
+docker compose exec backend php artisan invitation:revoke INVITATION_ULID
+docker compose exec backend php artisan user:disable USER_ULID
+docker compose exec backend php artisan user:enable USER_ULID
 ```
 
 `invitation:create` prints the invitation ULID for a later `invitation:revoke` call and prints the one-time registration URL on a separate line. Invitation expiry is 7 days by default, constrained to 1–30 days. Tokens are 32 random bytes represented as hex, HMAC-SHA-256 protected at rest, printed only once and expected in `/register#token=<value>`. The `/register` Client Component reads the fragment into transient in-memory state, immediately removes it with `history.replaceState`, and submits it only in the registration body; it never copies the token to a query string, persistent browser storage or a referrer-bearing navigation.
