@@ -651,3 +651,9 @@ Validation: Markdown rendered for 11 user/operator documents; 42 relative Markdo
 Applied a humanizer pass to prose in `README.md`, the CVortex home and documentation maps, both user guides, the process map, product scope, and the local development, diagnostics, M0, M1 access and MCP validation guides. Simplified repeated explanations and instructions, tightened transitions, and removed dash-heavy phrasing. Preview 0.1 acceptance, the M2 gate, MCP E2E status, and known local runtime limitations retain their existing status. The added Mermaid diagrams and technical identifiers were not changed.
 
 Validation performed: `git diff --check`; Markdown fence balance across 14 changed documents; `bash -n` on 15 fenced shell blocks; relative Markdown and Obsidian file targets across 14 changed documents. Markdown and Mermaid renderers were unavailable in this checkout, so those renders were not rerun. `NEXT.md` and `BLOCKERS.md` remain unchanged.
+
+### PR #39 Codex review remediation — 2026-10-03
+
+Fixed the P2 configuration mismatch: Compose now forwards `OPENAI_APPLICATION_DRAFT_MODEL` through the shared backend/Horizon environment, `.env.example` exposes the setting, and the local setup guide explains how to enable draft generation. This is a bounded correction to the review finding; no provider credentials were added.
+
+Validation: `docker compose --env-file .env config --quiet` passed; a rendered Compose config with a test model confirmed the value reaches both `backend` and `horizon`; `git diff --check` passed. No containers, runtime configuration, database or volumes were changed.
