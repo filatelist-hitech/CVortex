@@ -667,3 +667,21 @@ Validation: confirmed the call order in `VacancyAnalysisService::analyzeForOwner
 Recorded the audit in [the current project-state report](../../docs/00-Home/CURRENT-PROJECT-STATE.md), based on `a599330bbaec5ff957bd6d6600136b97c2a83655`, which matched `origin/stage` during the audit. Compose services were healthy and the homepage returned HTTP 200, but `/api/v1/health/ready` returned 503 because configured database `cvortex2` is absent from the existing PostgreSQL volume; `migrate:status` stopped before migrations. Preview 0.1 remains blocked pending runtime reconciliation and real-user acceptance; M2 remains gated. No migration or data changes were made. `NEXT.md` and `BLOCKERS.md` remain unchanged.
 
 Validation: the audit's live checks and their results are recorded in the report's checks table. No application test suite was rerun for this documentation record.
+
+### Local PostgreSQL readiness restoration — 2026-10-03
+
+Read-only inspection identified `cvortex` as the intended database in the existing Compose PostgreSQL volume: it contains all 24 current repository migrations, Access/Career/Vacancy/Application Preparation/Diagnostics tables, and nonzero user/domain row counts. `cvortex_dev2` has no application tables or migration history. The prior audit observed an absent `cvortex2`; at the start of this work, the ignored local `.env` selected the empty `cvortex_dev2`. The local `POSTGRES_DB` now selects `cvortex`, and the affected containers were recreated without removing the existing volume. No migration or destructive database operation was run.
+
+Validation: Compose configuration passed; PostgreSQL accepted connections; Redis returned `PONG`; Horizon reported running; backend `migrate:status` read all 24 migrations as `Ran`; homepage and `/api/v1/health/ready` both returned HTTP 200. The PostgreSQL readiness blocker was removed from `BLOCKERS.md`. `NEXT.md` remains Preview 0.1, which has not started.
+
+### Local migration credential reconciliation — 2026-10-03
+
+A subsequent `make migrate` failed because the PostgreSQL `cvortex` role's stored password differed from the existing local `.env` value. Socket access and `pg_isready` had not verified network password authentication. After confirming Compose passed the same password to PostgreSQL and the migration container, the local `cvortex` role password was set to that existing value. No database, schema, application rows or volume were replaced.
+
+Validation: network password authentication to `cvortex` passed; the migration container read all 24 migrations as `Ran`; `make migrate` completed with `Nothing to migrate.` The local configuration still targets the evidence-selected `cvortex` database.
+
+### Isolated local test accounts — 2026-10-03
+
+At the user's explicit request, created a separate `cvortex_test` database without copying or altering the existing `cvortex` data. Applied the repository's 24 migrations to the new database, created one ACTIVE CVortex admin through `user:bootstrap-admin`, and created one ACTIVE standard user through the invitation service. The ignored local `.env` now selects `cvortex_test`; generated test credentials are stored only in the ignored, owner-readable `.env.local-test-accounts`. The original database remains available for later selection.
+
+Validation: both test accounts completed same-origin CSRF/login/`/api/v1/me` checks with their expected roles. Migration status on the new database shows all 24 migrations as `Ran`. Preview 0.1 and M2 were not started; `NEXT.md` is unchanged.
