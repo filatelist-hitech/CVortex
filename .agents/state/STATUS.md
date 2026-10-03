@@ -645,3 +645,9 @@ Validation: Markdown rendered for 12 changed documents; 19 fenced blocks balance
 Reworked the Russian prose across the README, user guides, process map, documentation map and local operator instructions. Translated the remaining operator pages for logging/diagnostics and MCP validation. Exact interface labels, commands, API names, status values and technical identifiers remain unchanged; internal technical references remain outside this language pass. No application code or runtime configuration changed.
 
 Validation: Markdown rendered for 11 user/operator documents; 42 relative Markdown targets and heading anchors plus 72 Obsidian links resolved; all 15 shell snippets passed `bash -n`; all five Mermaid diagrams rendered in the locally available Mermaid/Chrome toolchain; and `git diff --check` passed. `NEXT.md` and `BLOCKERS.md` were not changed by this pass.
+
+### User-facing documentation editorial pass: 2026-10-03
+
+Applied a humanizer pass to prose in `README.md`, the CVortex home and documentation maps, both user guides, the process map, product scope, and the local development, diagnostics, M0, M1 access and MCP validation guides. Simplified repeated explanations and instructions, tightened transitions, and removed dash-heavy phrasing. Preview 0.1 acceptance, the M2 gate, MCP E2E status, and known local runtime limitations retain their existing status. The added Mermaid diagrams and technical identifiers were not changed.
+
+Validation performed: `git diff --check`; Markdown fence balance across 14 changed documents; `bash -n` on 15 fenced shell blocks; relative Markdown and Obsidian file targets across 14 changed documents. Markdown and Mermaid renderers were unavailable in this checkout, so those renders were not rerun. `NEXT.md` and `BLOCKERS.md` remain unchanged.
