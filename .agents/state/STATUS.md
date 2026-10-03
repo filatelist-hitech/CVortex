@@ -723,3 +723,27 @@ Historical accidental GET credentials appeared in dev-server logs; an initial un
 The user reports successful OAuth authorization and supplies ChatGPT results for sequential vacancy_get and application_context_get calls against two actual vacancy IDs. Both return bounded data; invalid placeholder ID is rejected. Thus OAuth and read-only tool invocation are confirmed by user-provided E2E evidence, not a new independent agent execution. Both vacancies have FAILED analysis and empty requirements/confirmed_claims; meaningful analyzed-context acceptance is not demonstrated. A separately inspected runtime log records LLM_PROVIDER_UNAVAILABLE for the OpenAI AnalyzeVacancy job; cause is not established and no provider fix is claimed. This is separate from the now-working MCP transport. No product phase transition is authorized.
 
 Current user explicitly authorizes commit and ordinary push of the accumulated bounded integration/login fixes to the existing feature branch. Validation from this same session: full backend 301 tests / 2329 assertions / 11 skipped, frontend final 74 tests, backend/frontend lint and static analysis, isolated production frontend build, structural live OAuth metadata and isolated Chromium login submission/no-JS denial checks passed. No secrets or real tunnel identifiers are part of the repository diff.
+
+### Local PostgreSQL readiness restoration — 2026-10-03
+
+Read-only inspection identified `cvortex` as the intended database in the existing Compose PostgreSQL volume: it contains all 24 current repository migrations, Access/Career/Vacancy/Application Preparation/Diagnostics tables, and nonzero user/domain row counts. `cvortex_dev2` has no application tables or migration history. The prior audit observed an absent `cvortex2`; at the start of this work, the ignored local `.env` selected the empty `cvortex_dev2`. The local `POSTGRES_DB` now selects `cvortex`, and the affected containers were recreated without removing the existing volume. No migration or destructive database operation was run.
+
+Validation: Compose configuration passed; PostgreSQL accepted connections; Redis returned `PONG`; Horizon reported running; backend `migrate:status` read all 24 migrations as `Ran`; homepage and `/api/v1/health/ready` both returned HTTP 200. The PostgreSQL readiness blocker was removed from `BLOCKERS.md`. `NEXT.md` remains Preview 0.1, which has not started.
+
+### Local migration credential reconciliation — 2026-10-03
+
+A subsequent `make migrate` failed because the PostgreSQL `cvortex` role's stored password differed from the existing local `.env` value. Socket access and `pg_isready` had not verified network password authentication. After confirming Compose passed the same password to PostgreSQL and the migration container, the local `cvortex` role password was set to that existing value. No database, schema, application rows or volume were replaced.
+
+Validation: network password authentication to `cvortex` passed; the migration container read all 24 migrations as `Ran`; `make migrate` completed with `Nothing to migrate.` The local configuration still targets the evidence-selected `cvortex` database.
+
+### Isolated local test accounts — 2026-10-03
+
+At the user's explicit request, created a separate `cvortex_test` database without copying or altering the existing `cvortex` data. Applied the repository's 24 migrations to the new database, created one ACTIVE CVortex admin through `user:bootstrap-admin`, and created one ACTIVE standard user through the invitation service. The ignored local `.env` now selects `cvortex_test`; generated test credentials are stored only in the ignored, owner-readable `.env.local-test-accounts`. The original database remains available for later selection.
+
+Validation: both test accounts completed same-origin CSRF/login/`/api/v1/me` checks with their expected roles. Migration status on the new database shows all 24 migrations as `Ran`. Preview 0.1 and M2 were not started; `NEXT.md` is unchanged.
+
+### PR #42 Codex plugin ingestion review remediation — 2026-10-03
+
+Added a Codex compatibility manifest with author and interface metadata plus an explicit `./skills/` reference, while retaining the portable root Agent Plugins manifest. Updated the local setup guide to distinguish both manifests and their shared skill directory.
+
+Validation: parsed both plugin manifests and the repo marketplace as JSON; checked matching plugin identity/version and marketplace source path; installed from the repo marketplace using an isolated Codex CLI home and confirmed the installed cache contains `skills/cvortex/SKILL.md`; `git diff --check` passed. This validated package ingestion and skill packaging, not ChatGPT MCP app runtime.

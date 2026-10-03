@@ -148,9 +148,9 @@ tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --hea
    codex plugin list --marketplace cvortex-repository --json
    ```
 
-   До изменения существующего `~/.codex/config.toml` сохраните его копию; CLI добавляет marketplace и plugin, не заменяя весь файл. Установка из CLI активирует skill в Codex plugin environment. Если marketplace доступен в desktop Plugins Directory, перезапустите desktop app и установите/проверьте plugin в поддерживаемом Work/Codex surface. Это skill package, а не гарантия MCP app runtime. В этом репозитории лежат portable package и repo marketplace: [plugin manifest](../../integrations/chatgpt/plugin.json), [marketplace](../../.agents/plugins/marketplace.json). Пока настоящий `plugin_asdk_app...` ID не зарегистрирован, пакет содержит только truth-first skill-инструкции и не подключает MCP app.
+   До изменения существующего `~/.codex/config.toml` сохраните его копию; CLI добавляет marketplace и plugin, не заменяя весь файл. Установка из CLI активирует skill в Codex plugin environment. Если marketplace доступен в desktop Plugins Directory, перезапустите desktop app и установите/проверьте plugin в поддерживаемом Work/Codex surface. Это skill package, а не гарантия MCP app runtime. В этом репозитории лежат переносимый root manifest, Codex compatibility manifest и repo marketplace: [portable manifest](../../integrations/chatgpt/plugin.json), [Codex manifest](../../integrations/chatgpt/.codex-plugin/plugin.json), [marketplace](../../.agents/plugins/marketplace.json). Оба manifest указывают на один пакетный каталог `skills/`. Пока настоящий `plugin_asdk_app...` ID не зарегистрирован в самом пакете, он содержит только skill-инструкции и не подключает MCP app.
 
-Пакет использует текущий формат OpenAI `plugin.json` и skill в `skills/cvortex/SKILL.md`. Он запрещает выдумывать факты, считает текст вакансии недоверенными данными, направляет к двум read-only tools и не утверждает, что созданный текст сохранён в CVortex.
+Root `plugin.json` использует переносимый Agent Plugins формат; `.codex-plugin/plugin.json` задаёт Codex identity, интерфейс и путь `./skills/`. Skill находится в `skills/cvortex/SKILL.md`: он запрещает выдумывать факты, считает текст вакансии недоверенными данными, направляет к двум read-only tools и не утверждает, что созданный текст сохранён в CVortex.
 
 ## Проверка в ChatGPT
 
