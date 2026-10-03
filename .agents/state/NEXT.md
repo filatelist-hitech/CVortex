@@ -5,7 +5,7 @@ using the acceptance criteria in `.agents/tasks/m1-4-application-draft.md`.
 Do not start `.agents/tasks/m2-application-package-planning.md` until that
 evidence is recorded and the Preview gate is explicitly reassessed.
 
-Bounded MCP/OAuth origin task is locally complete (2026-10-03). Its external
-follow-up is a manual ChatGPT OAuth discovery retry with corrected metadata;
-see `BLOCKERS.md`. This does not authorize app creation, further OAuth changes
-or advancement to M2. The canonical product task above remains unchanged.
+ChatGPT read-only integration has user-reported OAuth and both-tool E2E evidence
+(2026-10-03). Separate vacancy analysis provider failure is not fixed; any provider
+remediation needs its own bounded task. Do not advance Preview/M2 automatically.
+The canonical product task above remains unchanged.

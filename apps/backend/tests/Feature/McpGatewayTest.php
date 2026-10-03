@@ -197,6 +197,85 @@ class McpGatewayTest extends TestCase
         }
     }
 
+    public function test_tunnel_resource_is_bound_across_pkce_code_refresh_and_mcp_requests(): void
+    {
+        $origin = 'http://127.0.0.1:8080';
+        $resource = 'https://tunnel.example.test/v1/mcp/tunnel_fixture';
+        config(['app.url' => $origin, 'mcp.resource' => $resource, 'mcp.authorization_server' => null]);
+        $this->withoutMiddleware(ThrottleRequests::class);
+        [$user, $vacancyId] = $this->vacancy('mcp-tunnel-flow@example.test');
+        $callback = 'https://chatgpt.com/connector/oauth/tunnel-test';
+        $clientId = $this->postJson('/oauth/register', $this->oauthRegistration($callback))
+            ->assertCreated()->json('client_id');
+        $this->getJson('/.well-known/oauth-protected-resource/mcp/v1')->assertOk()
+            ->assertJsonPath('resource', $resource)
+            ->assertJsonPath('authorization_servers', [$origin]);
+        $this->getJson('/.well-known/oauth-authorization-server')->assertOk()
+            ->assertJsonPath('issuer', $origin)
+            ->assertJsonPath('authorization_endpoint', $origin.'/oauth/authorize');
+
+        $verifier = str_repeat('a', 64);
+        $authorization = [
+            'response_type' => 'code', 'client_id' => $clientId, 'redirect_uri' => $callback,
+            'scope' => 'mcp:use', 'state' => 'tunnel-test-state', 'resource' => $resource,
+            'code_challenge' => rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '='),
+            'code_challenge_method' => 'S256',
+        ];
+        foreach ([$origin.'/mcp/v1', 'https://tunnel.example.test/v1/mcp/other-tunnel'] as $wrongResource) {
+            $this->getJson('/oauth/authorize?'.http_build_query([...$authorization, 'resource' => $wrongResource]))
+                ->assertBadRequest()->assertJsonPath('error', 'invalid_target');
+        }
+        $login = $this->get('/oauth/authorize?'.http_build_query($authorization))->assertOk()
+            ->assertViewIs('mcp.login')->assertSee('Войдите в CVortex');
+        $this->assertSame($origin.'/', $login->viewData('loginUrl'));
+        $this->assertSame($authorization, (function (string $url): array {
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $parameters);
+
+            return $parameters;
+        })($login->viewData('authorizationUrl')));
+        $this->assertSame($origin, substr($login->viewData('authorizationUrl'), 0, strlen($origin)));
+        $this->assertStringContainsString('no-store', (string) $login->headers->get('Cache-Control'));
+        $this->getJson('/oauth/authorize?'.http_build_query($authorization))->assertUnauthorized();
+        $this->actingAs($user, 'web')->get('/oauth/authorize?'.http_build_query($authorization))
+            ->assertOk()->assertSee('Authorize')->assertDontSee('submit application drafts');
+        $authToken = session('authToken');
+        $approval = $this->post('/oauth/authorize', [
+            '_token' => session()->token(), 'client_id' => $clientId, 'state' => $authorization['state'], 'auth_token' => $authToken,
+        ])->assertRedirect();
+        $location = (string) $approval->headers->get('Location');
+        $this->assertSame($origin, $this->queryParameter($location, 'iss'));
+        $this->assertSame($authorization['state'], $this->queryParameter($location, 'state'));
+        $code = $this->queryParameter($location, 'code');
+        $this->assertNotEmpty($code);
+        $grant = [
+            'grant_type' => 'authorization_code', 'client_id' => $clientId, 'redirect_uri' => $callback,
+            'code' => $code, 'code_verifier' => $verifier, 'resource' => $resource,
+        ];
+        $this->postJson('/oauth/token', [...$grant, 'resource' => $origin.'/mcp/v1'])
+            ->assertBadRequest()->assertJsonPath('error', 'invalid_target');
+        $issued = $this->postJson('/oauth/token', $grant)->assertOk()->json();
+        $parsed = (new Parser(new JoseEncoder))->parse($issued['access_token']);
+        $this->assertSame($resource, $parsed->claims()->get('resource'));
+        $this->assertSame($origin, $parsed->claims()->get('iss'));
+        $tools = $this->mcpRequestWithToken($issued['access_token'], ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])
+            ->assertOk()->json('result.tools');
+        $this->assertSame(['vacancy_get', 'application_context_get'], array_column($tools, 'name'));
+        foreach (['vacancy_get', 'application_context_get'] as $tool) {
+            $this->mcpRequestWithToken($issued['access_token'], $this->mcpCall($tool, ['vacancy_id' => $vacancyId]))
+                ->assertOk()->assertJsonPath('result.isError', false);
+        }
+        $refresh = ['grant_type' => 'refresh_token', 'client_id' => $clientId,
+            'refresh_token' => $issued['refresh_token'], 'resource' => $resource];
+        $this->postJson('/oauth/token', [...$refresh, 'resource' => 'https://tunnel.example.test/v1/mcp/other-tunnel'])
+            ->assertBadRequest()->assertJsonPath('error', 'invalid_target');
+        $refreshed = $this->postJson('/oauth/token', $refresh)->assertOk()->json('access_token');
+        $this->assertSame($resource, (new Parser(new JoseEncoder))->parse($refreshed)->claims()->get('resource'));
+        $this->mcpRequestWithToken($refreshed, $this->mcpCall('vacancy_get', ['vacancy_id' => $vacancyId]))->assertOk();
+        config(['mcp.resource' => 'https://tunnel.example.test/v1/mcp/other-tunnel']);
+        $this->mcpRequestWithToken($refreshed, $this->mcpCall('vacancy_get', ['vacancy_id' => $vacancyId]))
+            ->assertUnauthorized()->assertJsonPath('error', 'invalid_token');
+    }
+
     public function test_oauth_resource_discovery_and_grant_parameters_are_exact(): void
     {
         $resource = app(McpResource::class);

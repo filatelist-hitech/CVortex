@@ -104,7 +104,7 @@ OAuth-проверки также подтверждают, что заголо�
 
 Local correction **PASS**, ChatGPT E2E **BLOCKED_EXTERNAL / manual follow-up**. `APP_URL=http://127.0.0.1:8080` is the single existing base; both optional MCP overrides are empty. Root local defaults and active ignored .env were corrected; backend/Horizon recreated and backend config cache cleared without migration/data changes.
 
-Executed `make test`: backend 300 tests / 2285 assertions / 11 skipped; frontend 73 passed. Includes existing OAuth code/refresh/PKCE/redirect/resource/issuer checks, exactly-two-read-tools and no-mutation tests, plus new structural local metadata regression independent of request Host. `make lint` passed Pint (187 files), PHPStan (117 files, no errors), ESLint and TypeScript. Compose example config validation and `git diff --check` passed.
+Executed `make test`: backend 300 tests / 2285 assertions / 11 skipped; frontend 73 passed. Includes existing OAuth metadata, redirect/resource/issuer and bearer checks, exactly-two-read-tools and no-mutation tests, plus new structural local metadata regression independent of request Host. `make lint` passed Pint (187 files), PHPStan (117 files, no errors), ESLint and TypeScript. Compose example config validation and `git diff --check` passed.
 
 Both live `curl -fsS` discovery requests returned HTTP 200 and valid JSON. Independent structured HTTP assertions verified:
 
@@ -121,3 +121,18 @@ No `localhost` occurs in either live metadata response. S256, code, refresh_toke
 `CONTROL_PLANE_API_KEY` is absent from this process; doctor was not run. Use the existing local profile with `tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --health.listen-addr 127.0.0.1:0`; flag semantics were checked against installed v0.0.15 help and matching official release docs linked in the setup guide. No localhost trust exception is necessary.
 
 User-provided pre-correction logs show successful `harpoon` dispatch and `oauth-prmd-source-0` status 200 while ChatGPT reports OAuth discovery failure. A fresh post-correction UI retry was not performed; these logs do not prove an upstream defect. Keep any remaining external discovery failure separate from this fixed local configuration issue; do not weaken OAuth or add undocumented workarounds.
+
+
+## Tunnel resource and browser login validation — 2026-10-03
+
+This supersedes the earlier direct-local resource setup for ChatGPT Tunnel. The user supplied post-correction evidence: DCR 201 and authorize resource equal to the selected tunnel MCP identifier, resulting in invalid_target. Official installed-release architecture documents PRMD resource rewriting and direct browser authorization. Existing `MCP_RESOURCE_URL` was set to that exact value in ignored `.env`; APP_URL/issuer/endpoints remain `http://127.0.0.1:8080`. No actual tunnel ID/URL is committed. No OAuth resource allowlist, matcher or token validation was broadened.
+
+New `McpGatewayTest::test_tunnel_resource_is_bound_across_pkce_code_refresh_and_mcp_requests` passes DCR, structural metadata, guest browser login prompt, JSON 401, authenticated consent, issuer/state callback, S256 authorization-code exchange, exactly two tools, both read calls, refresh and renewed MCP access. Wrong local/other-tunnel resource requests and tokens for another configured tunnel are rejected. The focused regression passed 1 test / 44 assertions. Consent copy now accurately describes read-only access.
+
+Live structured metadata validation confirms configured tunnel resource and local authorization-server metadata without localhost. The actual ChatGPT client authorization request with configured resource passed the resource gate and initially returned 401 for absent session; the local resource still returned 400 invalid_target. A malformed synthetic non-UUID client_id probe returned 500 (PostgreSQL UUID input), so it is not counted as a successful validation or attributed to Tunnel; the real UUID client probe above was used instead. Browser guest handling now renders the bounded login guidance page (live HTTP 200), with trusted-config URLs, no-store and no-referrer. No user was logged in or consent approved by the agent.
+
+Final `make test` PASS: backend 301 tests / 2329 assertions / 11 skipped, frontend 73; final `make lint` PASS: Pint 187 files, PHPStan 117/no errors, ESLint and TypeScript. Compose example config, docs links/fences, no real tunnel ID/state/API-key literal in the diff and `git diff --check` passed. Current ChatGPT outcome is recorded in STATUS. Runtime key is unavailable in this process; doctor is not rerun. User login/consent and actual ChatGPT read calls remain E2E evidence to collect, not inferred from isolated tests.
+
+## User-reported ChatGPT read E2E — 2026-10-03
+
+The user confirmed successful OAuth authorization and supplied ChatGPT outputs from sequential vacancy_get/application_context_get calls against two actual vacancies. Both returned bounded read-only context; a placeholder ID was correctly rejected. Evidence level: user-provided ChatGPT transcript, not independent agent invocation. Both analysis statuses were FAILED with empty requirements/confirmed_claims. This confirms transport/auth/tool access, not successful vacancy analysis or substantive confirmed-career matching. Separate runtime metadata shows LLM_PROVIDER_UNAVAILABLE from OpenAI AnalyzeVacancy; no provider remediation is included in this integration delivery.

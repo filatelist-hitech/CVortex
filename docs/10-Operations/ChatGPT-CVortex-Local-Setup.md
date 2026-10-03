@@ -43,7 +43,7 @@ make up
 MCP_ENABLED=true
 ```
 
-Локальный canonical origin: `APP_URL=http://127.0.0.1:8080`, `CVORTEX_PORT=8080`. Оставьте существующие `MCP_RESOURCE_URL=` и `MCP_AUTHORIZATION_SERVER_URL=` пустыми: `McpResource` выводит resource `/mcp/v1`, issuer и endpoints `/oauth/authorize`, `/oauth/token`, `/oauth/register` из `APP_URL`. Compose передаёт эти optional overrides backend и Horizon, но для этого локального сценария они не нужны. В существующем `.env` замените только non-secret `APP_URL`, затем выполните `docker compose up -d --no-deps backend horizon` и `docker compose exec -T backend php artisan config:clear`. Не смешивайте `localhost` и `127.0.0.1`: это разные OAuth origins, даже если оба ведут на loopback. Metadata не берёт адреса из request Host/body; overrides предназначены только для доверенной deployment configuration, не пользовательского ввода. Не задавайте выдуманный tunnel URL.
+Локальный transport/OAuth origin: `APP_URL=http://127.0.0.1:8080`, `CVORTEX_PORT=8080`; issuer и endpoints `/oauth/authorize`, `/oauth/token`, `/oauth/register` выводятся из APP_URL. `MCP_AUTHORIZATION_SERVER_URL=` оставьте пустым. Для прямого Inspector `MCP_RESOURCE_URL=` тоже пустой. Для ChatGPT через Tunnel задайте в ignored локальном `.env` существующий `MCP_RESOURCE_URL` **точным полным значением `resource` из текущего ChatGPT authorization request**. Tunnel переписывает PRMD resource в свой endpoint; равенство resource и локального origin в этом режиме не требуется. Это trusted deployment configuration: не берите значение автоматически из request/Host/body и не разрешайте wildcard или все tunnel URLs. URL идентификатора не загружается сервером по HTTP. Не записывайте реальный tunnel ID/URL в repository. Compose передаёт обе настройки backend и Horizon. После изменения выполните `docker compose up -d --no-deps backend horizon` и `docker compose exec -T backend php artisan config:clear`. При смене tunnel resource настройте точное новое значение и заново пройдите OAuth. Не смешивайте localhost и 127.0.0.1 для issuer/endpoints.
 
 Примените изменение окружения перезапуском Compose:
 
@@ -129,7 +129,7 @@ tunnel-client doctor --profile cvortex-chatgpt --explain
 tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --health.listen-addr 127.0.0.1:0
 ```
 
-Для установленного v0.0.15 `--harpoon.allow-plaintext-http` необходим для регистрации trusted HTTP loopback PRMD в Harpoon; это не отключает OAuth. Health port `0` предотвращает конфликт с Nginx на 8080. Дополнительный `--mcp.oauth-trusted-origin http://localhost:8080` не нужен: target, resource и issuer используют один origin. Не добавляйте arbitrary trusted origins. Источник: [официальная конфигурация установленного release](https://github.com/openai/tunnel-client/blob/a390c168ff1b2d14e73a95991c186c6aba3ff5a0/docs/configuration.md#harpoon-mcp-outbound-http-allowlist).
+Для установленного v0.0.15 `--harpoon.allow-plaintext-http` необходим для регистрации trusted HTTP loopback PRMD в Harpoon; это не отключает OAuth. Health port `0` предотвращает конфликт с Nginx на 8080. Дополнительный `--mcp.oauth-trusted-origin http://localhost:8080` не нужен: local target и issuer/endpoints используют один origin; tunnel resource — отдельный точный идентификатор. Не добавляйте arbitrary trusted origins. Источник: [официальная конфигурация установленного release](https://github.com/openai/tunnel-client/blob/a390c168ff1b2d14e73a95991c186c6aba3ff5a0/docs/configuration.md#harpoon-mcp-outbound-http-allowlist).
 
 Оставьте `run` запущенным во время discovery и вызовов ChatGPT. `doctor` проверяет связность и OAuth metadata; сохраняйте только безопасный итог, не дампьте окружение и не печатайте ключ. Актуальные имена sample и поля всегда сверяйте с CLI: OpenAI меняет `tunnel-client` независимо от кода CVortex.
 
@@ -195,3 +195,18 @@ tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --hea
 - `CONTROL_PLANE_API_KEY` и настоящий `tunnel_id` относятся к Secure MCP Tunnel. Не сохраняйте runtime key в `.env`, Git, skill/package, логи или переписку.
 - Не открывайте Nginx в публичную сеть и не заменяйте Secure MCP Tunnel публичным туннелем.
 - На 2026-10-03 локальные OAuth metadata отвечали `200`, неавторизованный `POST /mcp/v1` — `401`. В ChatGPT Plus доступна форма custom MCP, а существующий Platform tunnel разрешается этой формой. Официальный `tunnel-client` v0.0.15 установлен, его официальный SHA-256 проверен; локальный профиль `cvortex-chatgpt` создан с `env:CONTROL_PLANE_API_KEY`. `doctor --explain` остановился только на отсутствии этой переменной. Приложение не создано, runtime client не запущен, OAuth/data reads, ChatGPT E2E и native Desktop discovery не проверены.
+
+
+### OAuth resource mismatch после discovery
+
+Если DCR вернул 201, а браузерный authorize возвращает `invalid_target`, сравните только decoded `resource` с локальной trusted настройкой `MCP_RESOURCE_URL`. Не меняйте `APP_URL` на tunnel-service URL: браузер должен попасть на локальный authorize endpoint. Строгая проверка одного configured resource применяется к authorization/token/refresh и resource claim bearer token. Issuer остаётся локальным; существующий Passport `aud` остаётся client ID, дополнительно проверяется resource claim.
+
+Начните новый ChatGPT connection flow после настройки. Войдите своим аккаунтом в CVortex именно на `http://127.0.0.1:8080`, затем повторите подключение: session на localhost не подтверждает вход на 127.0.0.1. Неавторизованный browser authorize показывает страницу входа с ссылкой на существующий CVortex login в новой вкладке и ссылкой возврата к проверенному OAuth request; JSON-запрос остаётся 401. При корректной session открывается consent. Подтвердите read-only доступ самостоятельно. Код/refresh tokens и state в документацию/логи не копируйте.
+
+Источник: [официальный contract установленного tunnel-client](https://github.com/openai/tunnel-client/blob/a390c168ff1b2d14e73a95991c186c6aba3ff5a0/docs/architecture.md#oauth-protected-mcp). Contract переписывания PRMD подтверждён источником; точное значение текущего resource подтверждено пользовательским authorization request, не вычислено из внутреннего hostname.
+
+### Login submits GET instead of POST
+
+If the browser navigates to a URL containing login fields instead of posting `/api/v1/auth/login`, frontend hydration has failed. For the canonical local `127.0.0.1` host, Next.js dev-server configuration explicitly allows only that additional dev origin; do not use wildcard origins. After restarting frontend, open the clean root URL and hard-refresh. The form now specifies POST and disables submit until hydration. Do not put credentials in URLs or copy cookie/password values from DevTools into support evidence. Credentials already sent in a URL may be present in browser history and dev-server logs; change the affected password through the existing operator process, with explicit authorization for any log/data cleanup.
+
+Verified 2026-10-03: isolated Chromium loads and hydrates the form; synthetic invalid login goes by POST and receives controlled 422, with no email/password in query strings or JS runtime errors. With JavaScript disabled, form submission remains disabled and the native method is POST. This checks browser submission and denial, not the user's successful login or ChatGPT consent.

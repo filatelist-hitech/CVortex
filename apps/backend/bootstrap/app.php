@@ -5,6 +5,7 @@ use App\Diagnostics\IncidentRecorder;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsureRequestId;
 use App\Http\Middleware\SetDatabaseOwnerContext;
+use App\Mcp\OAuth\McpResource;
 use App\Queue\QueueExecutionContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Passport\Exceptions\AuthenticationException;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -31,6 +33,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if (! $request->expectsJson() && $request->isMethod('GET')
+                && $request->route()?->getName() === 'passport.authorizations.authorize') {
+                $resource = app(McpResource::class);
+
+                return response()->view('mcp.login', [
+                    'loginUrl' => $resource->url('/'),
+                    'authorizationUrl' => $resource->url('/oauth/authorize').'?'.http_build_query($request->query()),
+                ])->header('Cache-Control', 'no-store')->header('Referrer-Policy', 'no-referrer');
+            }
+        });
         $recordConsoleException = static function (Throwable $exception): void {
             if (! app()->runningInConsole()) {
                 return;
