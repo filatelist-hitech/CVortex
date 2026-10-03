@@ -603,3 +603,9 @@ Validation: both terminal regressions passed (2 tests / 14 assertions); VacancyC
 Fresh exact-head review of `4306420f5ecf041282c5c0f099af20e564a70c02` found one actionable P2: Error Center guidance restarted the full persisted `retry_after_seconds` interval when an incident was viewed later. The frontend now derives the remaining delay from `occurrence.created_at + retry_after_seconds`, reports the retry as available after expiry, and covers recent, partially elapsed and expired delays with regressions. `NEXT.md` and `BLOCKERS.md` remain unchanged under the explicit PR follow-up.
 
 Validation: focused Error Center Vitest passed (52/52); ESLint and TypeScript typecheck passed; `git diff --check` passed. Pending bounded commit/push, exact-head checks, thread reply/resolve and fresh Codex review; PR #37 remains open.
+
+### PR #37 retry guidance expiry refresh — 2026-10-03
+
+Fresh exact-head Codex review of `41592b509ec99ae80ed11f40e078b6fffe915766` found one actionable P2: an open Error Center detail kept stale retry guidance after the persisted provider deadline elapsed. The frontend now schedules a bounded rerender at the absolute retry deadline; missing or invalid timestamps remain without invented guidance. Added a regression that advances the clock while the detail remains open and verifies the transition from a one-second wait to `Retry is available now.`
+
+Validation: the regression first reproduced the stale guidance and failed; after the fix, the full diagnostics Vitest passed (53/53), ESLint, TypeScript typecheck, production build and `git diff --check` passed. Pending bounded commit/push, exact-head checks, thread reply/resolve and one fresh Codex review; PR #37 remains open.

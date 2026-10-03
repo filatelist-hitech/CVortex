@@ -797,6 +797,28 @@ describe("Error Center", () => {
     expect(screen.getByRole("region", { name: "Diagnosis and next action" })).toHaveTextContent("Retry is available now.");
   });
 
+  it("refreshes retry guidance when the provider deadline expires", async () => {
+    vi.useFakeTimers();
+    try {
+      const now = new Date("2026-10-03T12:00:00.000Z");
+      vi.setSystemTime(now);
+      const limited = { ...incident, error_code: "LLM_PROVIDER_RATE_LIMITED" };
+      const createdAt = new Date(now.getTime() - 1000).toISOString();
+      mockData([limited], limited, { ...occurrence, created_at: createdAt, retry_after_seconds: 2 });
+      render(<Diagnostics />);
+      await act(async () => { await vi.runAllTimersAsync(); });
+      const row = screen.getByRole("button", { name: /Vacancy analysis failed/ });
+      await act(async () => { fireEvent.click(row); });
+      expect(screen.getByRole("heading", { name: "Vacancy analysis failed" })).toBeInTheDocument();
+      const decision = screen.getByRole("region", { name: "Diagnosis and next action" });
+      expect(decision).toHaveTextContent("Wait at least 1 second, then retry the operation.");
+      await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
+      expect(decision).toHaveTextContent("Retry is available now.");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("does not invent an unrecorded retry delay", async () => {
     const limited = { ...incident, error_code: "LLM_PROVIDER_RATE_LIMITED" };
     mockData([limited], limited);

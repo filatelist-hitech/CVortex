@@ -49,11 +49,15 @@ function titleFor(item: Incident, occurrence?: Occurrence): string {
   return item.error_code.startsWith("LLM_") ? "Analysis failed" : "Operation failed";
 }
 function causeFor(item: Incident): string { return item.error_code === "FRONTEND_RUNTIME_ERROR" ? "The browser reported a failure, but the root cause was not captured." : causes[item.error_code] ?? "Cause not classified; inspect safe technical context"; }
-function retryRemainingSeconds(latest?: Occurrence): number | null {
+function retryDeadline(latest?: Occurrence): number | null {
   if (latest?.retry_after_seconds == null) return null;
   const createdAt = Date.parse(latest.created_at);
   if (!Number.isFinite(createdAt)) return null;
-  return Math.max(0, Math.ceil((createdAt + latest.retry_after_seconds * 1000 - Date.now()) / 1000));
+  return createdAt + latest.retry_after_seconds * 1000;
+}
+function retryRemainingSeconds(latest?: Occurrence): number | null {
+  const deadline = retryDeadline(latest);
+  return deadline == null ? null : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
 }
 function retryGuidance(latest?: Occurrence): string | null {
   const remaining = retryRemainingSeconds(latest);
@@ -109,6 +113,7 @@ export default function Diagnostics() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [technicalOpen, setTechnicalOpen] = useState(false);
   const [copied, setCopied] = useState("");
+  const [, setRetryTick] = useState(0);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -220,6 +225,14 @@ export default function Diagnostics() {
   const extraFilters = active.some(([key]) => key !== "search" && key !== "sort");
   const selected = detail?.incident;
   const latest = detail?.occurrences[0];
+  const retryDeadlineAt = retryDeadline(latest);
+  useEffect(() => {
+    if (retryDeadlineAt == null) return;
+    const delay = retryDeadlineAt - Date.now();
+    if (delay <= 0) return;
+    const timer = window.setTimeout(() => setRetryTick((tick) => tick + 1), delay + 1);
+    return () => window.clearTimeout(timer);
+  }, [retryDeadlineAt]);
   const retryMessage = selected ? retryGuidance(latest) : null;
   const visibleOpen = items.filter((item) => item.status === "OPEN").length;
   const visibleCritical = items.filter((item) => item.severity === "CRITICAL").length;
