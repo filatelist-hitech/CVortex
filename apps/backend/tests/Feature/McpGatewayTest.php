@@ -164,6 +164,39 @@ class McpGatewayTest extends TestCase
         $this->mcpRequestWithToken($active['access_token'], $this->mcpCall('vacancy_get', ['vacancy_id' => $vacancyId]))->assertUnauthorized();
     }
 
+    public function test_local_oauth_metadata_uses_one_configured_origin_independent_of_request_host(): void
+    {
+        config(['app.url' => 'http://127.0.0.1:8080', 'mcp.resource' => null, 'mcp.authorization_server' => null]);
+
+        $protected = $this->getJson('http://localhost/.well-known/oauth-protected-resource/mcp/v1')
+            ->assertOk()
+            ->assertJsonPath('resource', 'http://127.0.0.1:8080/mcp/v1')
+            ->assertJsonPath('authorization_servers.0', 'http://127.0.0.1:8080')
+            ->assertJsonPath('bearer_methods_supported.0', 'header')
+            ->json();
+        $authorization = $this->getJson('http://localhost/.well-known/oauth-authorization-server')
+            ->assertOk()
+            ->assertJsonPath('issuer', 'http://127.0.0.1:8080')
+            ->assertJsonPath('authorization_endpoint', 'http://127.0.0.1:8080/oauth/authorize')
+            ->assertJsonPath('token_endpoint', 'http://127.0.0.1:8080/oauth/token')
+            ->assertJsonPath('registration_endpoint', 'http://127.0.0.1:8080/oauth/register')
+            ->assertJsonPath('grant_types_supported', ['authorization_code', 'refresh_token'])
+            ->assertJsonPath('response_types_supported', ['code'])
+            ->assertJsonPath('scopes_supported', ['mcp:use'])
+            ->assertJsonPath('code_challenge_methods_supported', ['S256'])
+            ->assertJsonPath('token_endpoint_auth_methods_supported', ['none'])
+            ->assertJsonPath('authorization_response_iss_parameter_supported', true)
+            ->json();
+
+        $this->assertSame($protected['authorization_servers'][0], $authorization['issuer']);
+        $this->assertSame(parse_url($protected['resource'], PHP_URL_HOST), parse_url($authorization['issuer'], PHP_URL_HOST));
+        $this->assertSame(parse_url($protected['resource'], PHP_URL_PORT), parse_url($authorization['issuer'], PHP_URL_PORT));
+        foreach ([$protected['resource'], ...$protected['authorization_servers'], $authorization['issuer'],
+            $authorization['authorization_endpoint'], $authorization['token_endpoint'], $authorization['registration_endpoint']] as $url) {
+            $this->assertSame('127.0.0.1', parse_url($url, PHP_URL_HOST));
+        }
+    }
+
     public function test_oauth_resource_discovery_and_grant_parameters_are_exact(): void
     {
         $resource = app(McpResource::class);

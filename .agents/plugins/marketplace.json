@@ -1,0 +1,20 @@
+{
+  "name": "cvortex-repository",
+  "plugins": [
+    {
+      "name": "cvortex-read-only",
+      "source": {
+        "source": "local",
+        "path": "./integrations/chatgpt"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "interface": {
+        "displayName": "CVortex"
+      }
+    }
+  ]
+}

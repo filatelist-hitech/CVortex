@@ -1,0 +1,7 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "cvortex-read-only",
+  "version": "0.1.0",
+  "description": "Truth-first job search workflows using the connected CVortex read-only MCP app.",
+  "keywords": ["cvortex", "job-search", "career", "mcp", "read-only"]
+}

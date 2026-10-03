@@ -3,7 +3,7 @@ title: CVortex MCP Gateway
 status: active
 owner: project
 created: 2026-09-25
-updated: 2026-09-27
+updated: 2026-10-03
 tags: [architecture, mcp, ai, security]
 related: [../03-ADR/ADR-0021-inbound-mcp-read-only.md, ../08-Security/Threat-Model.md]
 ---
@@ -21,8 +21,11 @@ An external MCP client can read bounded context for the authenticated CVortex us
 
 ```mermaid
 flowchart LR
-    Client[ChatGPT / MCP client] --> OAuth[OAuth 2.1 + PKCE]
-    OAuth --> Gateway[CVortex MCP Gateway]
+    Client[ChatGPT web MCP app] --> Tunnel[OpenAI Secure MCP Tunnel]
+    TunnelClient[tunnel-client on local host] -->|outbound HTTPS| Tunnel
+    TunnelClient -->|local HTTP| Gateway[CVortex MCP Gateway]
+    Client --> OAuth[OAuth 2.1 + PKCE]
+    OAuth --> Gateway
     Gateway --> Auth[Authenticated active user]
     Auth --> Tools[vacancy_get / application_context_get]
     Tools --> Adapter[Owner-scoped application services]
@@ -39,9 +42,9 @@ Inbound MCP and outbound model execution remain separate. The existing `LlmProvi
 
 The authorization server requires the exact canonical OAuth `resource` on authorization and token requests, places that resource in the issued access token and checks it again on MCP requests. The access token issuer must match the configured authorization-server issuer. OAuth metadata advertises issuer response support; successful and error authorization redirects include the issuer when the callback passes the same strict URI policy. DCR accepts the documented ChatGPT stable and callback-ID redirect forms plus exact native loopback callbacks with dynamic ports. It rejects host confusion, userinfo, path traversal, encoded paths, query/fragment and malformed URIs.
 
-The protected-resource challenge URL is derived from the canonical `MCP_RESOURCE_URL`, not the inbound Host or forwarded-proto headers. For a private-server tunnel, configure that URL to the externally advertised MCP resource; configure `MCP_AUTHORIZATION_SERVER_URL` to the reachable OAuth issuer separately.
+The protected-resource challenge URL is derived from the canonical `MCP_RESOURCE_URL`, not the inbound Host or forwarded-proto headers. OpenAI documents Secure MCP Tunnel as the private path for local servers: the local `tunnel-client` initiates outbound HTTPS and forwards requests to the local MCP URL without opening an inbound port. Current OpenAI tunnel documentation says the service rewrites protected-resource discovery/resource URLs for the selected tunnel. Keep the local `APP_URL`/MCP resource consistent with the running server; set `MCP_RESOURCE_URL` or `MCP_AUTHORIZATION_SERVER_URL` only when the deployment has a deliberately different canonical resource or issuer. The OAuth authorization endpoint still has to be reachable by the browser; a tunnel does not automatically make every OAuth endpoint public or local.
 
-The local stack binds Nginx to loopback. Public exposure is not enabled by this feature. A Secure MCP Tunnel remains the preferred remote path when account/workspace permissions and the OAuth metadata/resource mapping are verified. OpenAI documents MCP traffic and OAuth discovery through the tunnel; the tunnel does not provision or automatically tunnel the authorization server, whose issuer, authorization and token endpoints must remain reachable for the OAuth flow. See [current product research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md) and [validation evidence](../10-Operations/MCP-Gateway-Validation.md).
+The local stack binds Nginx to loopback. Public exposure is not enabled by this feature. Direct ChatGPT access to `localhost` is not supported by the current Help Center; Secure MCP Tunnel is the documented private path. Tunnel traffic traverses OpenAI's tunnel service, while the MCP server stays local. OAuth authorization reachability must be verified separately. See [current product research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md), [local setup guide](../10-Operations/ChatGPT-CVortex-Local-Setup.md) and [validation evidence](../10-Operations/MCP-Gateway-Validation.md).
 
 ## Tool contract
 
@@ -61,3 +64,7 @@ No MCP capability can create or modify drafts, approve content, confirm/reject/u
 Missing/invalid bearer tokens receive a safe 401 response and protected-resource challenge. Missing scope or inactive accounts are denied. Cross-owner resources are non-enumerating `NOT_FOUND`. Tool errors use stable codes; unexpected failures return a request ID and generic error without exception text, SQL or stack trace. Safe auth/error log entries exclude bearer/refresh tokens, secrets, prompt content and private career data. `APP_DEBUG=false` is required in production; local framework logs can include additional exception detail outside the MCP response boundary.
 
 Discovery and authenticated reads are rate-limited. The MCP request path has no write rate bucket because there are no MCP write operations. See [local operations](../10-Operations/Local-Development.md) and [MCP validation](../10-Operations/MCP-Gateway-Validation.md) for tested results and the exact local environment contract.
+
+### Canonical local OAuth origin — 2026-10-03
+
+For local Secure MCP Tunnel, `APP_URL=http://127.0.0.1:8080` is the existing canonical configuration. Leave `MCP_RESOURCE_URL` and `MCP_AUTHORIZATION_SERVER_URL` empty: `McpResource` deterministically derives resource `/mcp/v1`, issuer and all three OAuth endpoints from that origin. Compose forwards the existing optional overrides. Do not mix `localhost` with `127.0.0.1`: OAuth origin/trust and issuer/resource comparisons distinguish them. Host headers and request bodies cannot configure these URLs. No new endpoint or tool is introduced.

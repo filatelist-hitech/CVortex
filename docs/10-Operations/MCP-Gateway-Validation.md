@@ -36,7 +36,22 @@ related: [../02-Architecture/MCP-Gateway.md, ../03-ADR/ADR-0021-inbound-mcp-read
 | `docker compose --env-file .env.example config --quiet` | PASS. |
 | `git diff --check` | PASS при итоговой проверке перед коммитом. |
 
+## Повторная проверка discovery и безопасного отказа — 2026-10-03
+
+В текущем локальном Compose-стеке все три OAuth discovery адреса (`/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`) ответили HTTP 200. Неавторизованный Streamable HTTP `POST /mcp/v1` на запрос `initialize` ответил HTTP 401 с JSON-объектом безопасной ошибки. Тело ошибки не содержит стек. Это подтверждает локальные discovery/deny границы, но не выполняет `initialize` с bearer-токеном и не обновляет доказательство инструментов `tools/list`; для этого сохраняются результаты Inspector от 2026-09-27 выше.
+
 Живые вызовы Inspector использовали существующую вакансию Preview `01m3fvhmxhp83kcz80ecrd0jwg`. Название вакансии, компанию и учётные данные OAuth не приводим. Для поиска и вызовов инструментов использовалась ранее выданная сессия OAuth. Полный новый сценарий DCR → вход → согласие → токен в эту проверку не вошёл: в браузере CVortex показывал страницу входа, а учётных данных пользователя не было. Не считайте вызов с сохранённой авторизацией доказательством нового входа и согласия.
+
+## Автоматизированная регрессия — 2026-10-03
+
+| Проверка | Результат |
+|---|---|
+| `make test` | PASS: backend — 299 тестов, 2261 assertion, 11 пропусков; frontend — 73 теста. `McpGatewayTest` повторно проверил точный `tools/list` (`vacancy_get`, `application_context_get`, count=2), отсутствие MCP-записи и отсутствие изменения строк владельца. |
+| `make lint` | PASS: Pint — 187 файлов; PHPStan — 117 файлов без ошибок; ESLint и TypeScript прошли. |
+| `bash scripts/test-application-postgres-boundary.sh` | PASS: PostgreSQL runtime-role/RLS suite выполнилась до и после точечного rollback/re-up — по 3 теста и 55 assertions; `vacancies`, Career Facts и users сохранились. Harness выделяет точные OAuth/Application migration records во временной БД и не меняет постоянную БД/volume. |
+| Проверка текущих discovery routes | PASS: три OAuth metadata endpoint ответили HTTP 200; неавторизованный `POST /mcp/v1` — HTTP 401 с JSON error. |
+
+Автоматизированный MCP набор был запущен повторно, но MCP Inspector с новым CVortex OAuth входом в этот прогон не запускался. Последний фактический Inspector `tools/list`/оба tool call со снимком продукта остаётся датирован 2026-09-27; текущий результат `make test` не является новым Inspector или ChatGPT E2E.
 
 Обезличенный фрагмент живого ответа Inspector:
 
@@ -73,13 +88,36 @@ OAuth-проверки также подтверждают, что заголо�
 
 - **Обнаружение MCP и чтение через локальный MCP Inspector: PASS.**
 - **Новый вход Inspector, согласие и получение токена: НЕ ВЫПОЛНЕНО в этой проверке.** В текущем браузере не было авторизованной сессии CVortex. Сохранённая OAuth-авторизация позволила выполнить реальные чтения, но не заменяет проверку нового сценария.
-- **Режим разработчика ChatGPT и вызовы инструментов: ЗАБЛОКИРОВАНО интерактивным доступом к учётной записи и рабочему пространству.** В боковой панели ChatGPT была видна подписка Plus, но до настройки режима разработчика и создания приложения дело не дошло. Поэтому нельзя утверждать, что доступ по подписке разрешён или запрещён. В официальной документации по тарифам Plus эта возможность описана неоднозначно; см. датированное [исследование OpenAI/MCP](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md).
-- **Secure MCP Tunnel: НЕ ПРОВЕРЕН.** Последний официальный клиент для macOS arm64 скачали во временную папку и сверили его SHA-256 с манифестом выпуска; команда `help quickstart` отработала. Клиент не установлен в `PATH`; профиль и фоновую службу не запускали: Platform показывал страницу входа, идентификатора туннеля, разрешений Tunnels Read + Use и ключа запуска не было. Входящий порт и публичный прокси не открывали.
+- **ChatGPT Plus UI, 2026-10-03: ФОРМА ВИДНА, ПОДКЛЮЧЕНИЕ НЕ ПРОВЕРЕНО.** В ChatGPT web была видна учётная запись Plus и Plugins → `+` → `Create custom MCP server`; форма предлагала `Server URL` и `Tunnel`, а существующая запись Platform tunnel разрешилась при выборе по ID. Форму не отправляли, разрешения не подтверждали, приложение не создавали. Официальные источники расходятся по Plus read-only entitlement: Developer Mode guide включает Plus, а Help Center FAQ описывает Pro и рабочие тарифы, но Plus не упоминает. См. датированное [исследование OpenAI/MCP](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md).
+- **Secure MCP Tunnel current boundary — 2026-10-03:** local metadata correction and checks are recorded below. Runtime key is absent from this agent process, so doctor is not rerun. The user reports successful Harpoon PRMD HTTP 200 before correction; post-fix ChatGPT discovery remains manual/unverified. Earlier key/daemon observations are historical and do not describe the user’s current shell.
+- **ChatGPT Desktop: НЕ ПРОВЕРЕН.** Создание custom MCP app выполняется через документированный ChatGPT web flow; Help Center описывает MCP apps как web-only. Текущий repo marketplace flow относится к Work mode или Codex surface в ChatGPT desktop. Он устанавливает plugin/skill package, но сам по себе не создаёт MCP-подключение. Реального Desktop tool discovery или вызова не было.
 
-Обнаружение OAuth через ChatGPT, передача ресурса через удалённое соединение, выбор инструментов, отказ на запросы изменения данных и изоляция разных пользователей в ChatGPT не проверялись. Успех в Inspector нельзя называть сквозной проверкой ChatGPT. Ставить ChatGPT-совместимость PASS можно только после реального подключения и успешного вызова обоих инструментов чтения.
+Обнаружение OAuth через ChatGPT, передача ресурса через Secure MCP Tunnel, выбор инструментов, отказ на запросы изменения данных, prompt-injection сценарий и изоляция разных пользователей в ChatGPT не проверялись. Успех в Inspector нельзя называть сквозной проверкой ChatGPT. Ставить ChatGPT-совместимость PASS можно только после реального подключения и успешного вызова обоих инструментов чтения и генерации текста в ChatGPT без записи в CVortex.
 
 ## Секреты и журналы
 
 Учётные данные процесса туннеля нельзя хранить в `.env` репозитория. Передавайте их через хранилище секретов оператора или переменные окружения процесса согласно актуальной инструкции OpenAI. Не выводите токены и секреты в тестовый журнал.
 
 Ошибки авторизации MCP возвращают клиенту безопасные структурированные ответы. Ожидаемые ошибки bearer-авторизации Passport записываются только с безопасными метаданными запроса. Для production задайте `APP_DEBUG=false`. Не утверждайте, что серверный журнал содержит только метаданные, если проверка обработчика этого не подтверждает.
+
+## Canonical local origin validation — 2026-10-03
+
+Local correction **PASS**, ChatGPT E2E **BLOCKED_EXTERNAL / manual follow-up**. `APP_URL=http://127.0.0.1:8080` is the single existing base; both optional MCP overrides are empty. Root local defaults and active ignored .env were corrected; backend/Horizon recreated and backend config cache cleared without migration/data changes.
+
+Executed `make test`: backend 300 tests / 2285 assertions / 11 skipped; frontend 73 passed. Includes existing OAuth code/refresh/PKCE/redirect/resource/issuer checks, exactly-two-read-tools and no-mutation tests, plus new structural local metadata regression independent of request Host. `make lint` passed Pint (187 files), PHPStan (117 files, no errors), ESLint and TypeScript. Compose example config validation and `git diff --check` passed.
+
+Both live `curl -fsS` discovery requests returned HTTP 200 and valid JSON. Independent structured HTTP assertions verified:
+
+| Field | Actual value |
+| --- | --- |
+| PRMD resource | `http://127.0.0.1:8080/mcp/v1` |
+| PRMD authorization_servers[0] / AS issuer | `http://127.0.0.1:8080` |
+| authorization_endpoint | `http://127.0.0.1:8080/oauth/authorize` |
+| token_endpoint | `http://127.0.0.1:8080/oauth/token` |
+| registration_endpoint | `http://127.0.0.1:8080/oauth/register` |
+
+No `localhost` occurs in either live metadata response. S256, code, refresh_token, mcp:use, public-client none, DCR and issuer response support remain advertised and tested. No tool/domain/OAuth security implementation changed; no runtime secret was added.
+
+`CONTROL_PLANE_API_KEY` is absent from this process; doctor was not run. Use the existing local profile with `tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --health.listen-addr 127.0.0.1:0`; flag semantics were checked against installed v0.0.15 help and matching official release docs linked in the setup guide. No localhost trust exception is necessary.
+
+User-provided pre-correction logs show successful `harpoon` dispatch and `oauth-prmd-source-0` status 200 while ChatGPT reports OAuth discovery failure. A fresh post-correction UI retry was not performed; these logs do not prove an upstream defect. Keep any remaining external discovery failure separate from this fixed local configuration issue; do not weaken OAuth or add undocumented workarounds.

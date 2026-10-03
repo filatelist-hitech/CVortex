@@ -54,7 +54,26 @@ test "$baseline_fact" = 1
 test "$baseline_vacancy" = 1
 
 echo 'application-postgres-boundary: rollback OAuth and application preparation migrations'
-"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration php artisan migrate:rollback --step=6 --force
+application_oauth_migrations=(
+  2026_09_24_000013_create_application_preparations
+  2026_09_24_225859_create_oauth_auth_codes_table
+  2026_09_24_225900_create_oauth_access_tokens_table
+  2026_09_24_225901_create_oauth_refresh_tokens_table
+  2026_09_24_225902_create_oauth_clients_table
+  2026_09_24_225903_create_oauth_device_codes_table
+)
+migration_names_sql=$(printf "'%s'," "${application_oauth_migrations[@]}")
+migration_names_sql=${migration_names_sql%,}
+rollback_batch=$(( $("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc \
+  'SELECT COALESCE(MAX(batch), 0) FROM migrations') + 1 ))
+selected_migrations=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc \
+  "SELECT count(*) FROM migrations WHERE migration = ANY (ARRAY[$migration_names_sql])")
+test "$selected_migrations" = "${#application_oauth_migrations[@]}"
+"${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -v ON_ERROR_STOP=1 \
+  -c "UPDATE migrations SET batch = $rollback_batch WHERE migration = ANY (ARRAY[$migration_names_sql])" \
+  >/dev/null
+"${compose[@]}" run --rm --no-deps -e DB_DATABASE="$database" migration \
+  php artisan migrate:rollback --batch="$rollback_batch" --force
 application_tables=$("${compose[@]}" exec -T postgres psql -U "$pg_user" -d "$database" -Atqc \
   "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE 'application_%'")
 test "$application_tables" = 0
