@@ -654,6 +654,6 @@ Validation performed: `git diff --check`; Markdown fence balance across 14 chang
 
 ### PR #39 Codex review remediation — 2026-10-03
 
-Fixed the P2 configuration mismatch: Compose now forwards `OPENAI_APPLICATION_DRAFT_MODEL` through the shared backend/Horizon environment, `.env.example` exposes the setting, and the local setup guide explains how to enable draft generation. This is a bounded correction to the review finding; no provider credentials were added.
+Fixed the P2 configuration mismatch: Compose forwards `OPENAI_APPLICATION_DRAFT_MODEL` through the shared backend/Horizon environment, `.env.example` exposes the setting, and the local setup guide explains how to enable draft generation. A fresh exact-head review also found the application pricing inputs were not forwarded; those are now exposed and forwarded too, with the guide clarifying they are required for cost estimates. This is a bounded correction to review findings; no provider credentials were added.
 
 Validation: `docker compose --env-file .env config --quiet` passed; a rendered Compose config with a test model confirmed the value reaches both `backend` and `horizon`; `git diff --check` passed. No containers, runtime configuration, database or volumes were changed.
