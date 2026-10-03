@@ -609,3 +609,9 @@ Validation: focused Error Center Vitest passed (52/52); ESLint and TypeScript ty
 Fresh exact-head Codex review of `41592b509ec99ae80ed11f40e078b6fffe915766` found one actionable P2: an open Error Center detail kept stale retry guidance after the persisted provider deadline elapsed. The frontend now schedules a bounded rerender at the absolute retry deadline; missing or invalid timestamps remain without invented guidance. Added a regression that advances the clock while the detail remains open and verifies the transition from a one-second wait to `Retry is available now.`
 
 Validation: the regression first reproduced the stale guidance and failed; after the fix, the full diagnostics Vitest passed (53/53), ESLint, TypeScript typecheck, production build and `git diff --check` passed. Pending bounded commit/push, exact-head checks, thread reply/resolve and one fresh Codex review; PR #37 remains open.
+
+### Local startup documentation — 2026-10-03
+
+The local launch runbook now requires `make init`, Compose configuration validation, `make up`, `make migrate`, and an explicit loopback health check. It documents the observed PostgreSQL database-name mismatch (`POSTGRES_DB` pointing at a database absent from the existing named volume), explains that the failure occurs before Laravel migrations, and gives a non-destructive recovery path without removing persistent volumes. The README quick start links to the runbook and includes the migration step.
+
+Validation: current Compose runtime was inspected; `docker compose ps` reported healthy services; the PostgreSQL database list was queried read-only; and the documented `docker compose --env-file .env config --quiet` / health-check commands remain the required launch checks. No database, volume, migration or application state was modified by this documentation task.
