@@ -697,3 +697,21 @@ The user explicitly authorized this bounded GIT/RELEASE override despite the can
 ### PR #42 quick-start origin review remediation — 2026-10-03
 
 The Codex P2 review noted that the root README still directed users to `localhost:8080` after the canonical APP_URL moved to `127.0.0.1:8080`. Updated the quick-start URL and pushed commit `ccb6488dc836293eacbd8cf63b0eca80e1298a02`. The existing regression `test_local_oauth_metadata_uses_one_configured_origin_independent_of_request_host` covers the configured-origin boundary. `git diff --check` passed, and a targeted README scan confirmed no `localhost:8080` reference remains. Replied to and resolved only the matching review thread; a fresh exact-head review remains pending. The ChatGPT OAuth/E2E blocker remains unchanged.
+
+### Local PostgreSQL readiness restoration — 2026-10-03
+
+Read-only inspection identified `cvortex` as the intended database in the existing Compose PostgreSQL volume: it contains all 24 current repository migrations, Access/Career/Vacancy/Application Preparation/Diagnostics tables, and nonzero user/domain row counts. `cvortex_dev2` has no application tables or migration history. The prior audit observed an absent `cvortex2`; at the start of this work, the ignored local `.env` selected the empty `cvortex_dev2`. The local `POSTGRES_DB` now selects `cvortex`, and the affected containers were recreated without removing the existing volume. No migration or destructive database operation was run.
+
+Validation: Compose configuration passed; PostgreSQL accepted connections; Redis returned `PONG`; Horizon reported running; backend `migrate:status` read all 24 migrations as `Ran`; homepage and `/api/v1/health/ready` both returned HTTP 200. The PostgreSQL readiness blocker was removed from `BLOCKERS.md`. `NEXT.md` remains Preview 0.1, which has not started.
+
+### Local migration credential reconciliation — 2026-10-03
+
+A subsequent `make migrate` failed because the PostgreSQL `cvortex` role's stored password differed from the existing local `.env` value. Socket access and `pg_isready` had not verified network password authentication. After confirming Compose passed the same password to PostgreSQL and the migration container, the local `cvortex` role password was set to that existing value. No database, schema, application rows or volume were replaced.
+
+Validation: network password authentication to `cvortex` passed; the migration container read all 24 migrations as `Ran`; `make migrate` completed with `Nothing to migrate.` The local configuration still targets the evidence-selected `cvortex` database.
+
+### Isolated local test accounts — 2026-10-03
+
+At the user's explicit request, created a separate `cvortex_test` database without copying or altering the existing `cvortex` data. Applied the repository's 24 migrations to the new database, created one ACTIVE CVortex admin through `user:bootstrap-admin`, and created one ACTIVE standard user through the invitation service. The ignored local `.env` now selects `cvortex_test`; generated test credentials are stored only in the ignored, owner-readable `.env.local-test-accounts`. The original database remains available for later selection.
+
+Validation: both test accounts completed same-origin CSRF/login/`/api/v1/me` checks with their expected roles. Migration status on the new database shows all 24 migrations as `Ran`. Preview 0.1 and M2 were not started; `NEXT.md` is unchanged.
