@@ -615,3 +615,9 @@ Validation: the regression first reproduced the stale guidance and failed; after
 The local launch runbook now requires `make init`, Compose configuration validation, `make up`, `make migrate`, and an explicit loopback health check. It documents the observed PostgreSQL database-name mismatch (`POSTGRES_DB` pointing at a database absent from the existing named volume), explains that the failure occurs before Laravel migrations, and gives a non-destructive recovery path without removing persistent volumes. The README quick start links to the runbook and includes the migration step.
 
 Validation: current Compose runtime was inspected; `docker compose ps` reported healthy services; the PostgreSQL database list was queried read-only; and the documented `docker compose --env-file .env config --quiet` / health-check commands remain the required launch checks. No database, volume, migration or application state was modified by this documentation task.
+
+### PR #38 startup readiness documentation remediation — 2026-10-03
+
+Fixed both current P2 review findings in the existing documentation PR: post-migration verification now uses the dependency-aware `/api/v1/health/ready` probe, and the health-check command reads only `CVORTEX_PORT` from `.env` without executing or exposing the file. The documented browser step now uses the configured `APP_URL`. No runtime code, Compose configuration, database, volume or `stage` state changed.
+
+Validation: the documented shell snippet passed `/bin/sh -n`; the configured-port parser returned the current `CVORTEX_PORT=8080`; the readiness request reached `/api/v1/health/ready` and returned the known local `503 {"status":"not_ready"}` caused by the existing database-name mismatch; Markdown targets and `git diff --check` passed.
