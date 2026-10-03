@@ -656,4 +656,8 @@ Validation performed: `git diff --check`; Markdown fence balance across 14 chang
 
 Fixed the P2 configuration mismatch: Compose forwards `OPENAI_APPLICATION_DRAFT_MODEL` through the shared backend/Horizon environment, `.env.example` exposes the setting, and the local setup guide explains how to enable draft generation. A fresh exact-head review also found the application pricing inputs were not forwarded; those are now exposed and forwarded too, with the guide clarifying they are required for cost estimates. This is a bounded correction to review findings; no provider credentials were added.
 
-Validation: `docker compose --env-file .env config --quiet` passed; a rendered Compose config with a test model confirmed the value reaches both `backend` and `horizon`; `git diff --check` passed. No containers, runtime configuration, database or volumes were changed.
+Validation: `docker compose --env-file .env config --quiet` passed; a rendered Compose config with a test model confirmed the value reaches both `backend` and `horizon`; `git diff --check` passed. Repository Compose configuration changed, but no containers were recreated and no local runtime state, database or volumes were changed.
+
+Fresh exact-head Codex review also found that the user guide overstated offline matching availability. The user and local setup guides now clarify that first analysis of a vacancy needs AI to extract requirements; deterministic matching can be repeated offline only after requirements were successfully extracted, because manual requirement entry is not available.
+
+Validation: confirmed the call order in `VacancyAnalysisService::analyzeForOwner()`, then checked the edited Markdown targets and `git diff --check`. No application code or runtime state changed.
