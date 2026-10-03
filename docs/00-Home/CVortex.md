@@ -24,7 +24,7 @@ CVortex is a personal Job Search OS for preparing truthful, relevant application
 
 The local Preview supports invite-only access, confirmed Career Facts, pasted-text Career extraction for human review, pasted vacancy analysis, explainable fit and gap summaries, resume recommendations, and short/standard cover drafts with Truth Guard review. AI-backed actions require a configured provider; the default is disabled. The optional vacancy URL is metadata and is not fetched.
 
-Preview 0.1 is implemented but still lacks recorded real-user validation and feedback. File import/export, DOCX/PDF rendering, Employer Memory, interview workflows, outcome analytics and automatic submission are not available in the current interface.
+M1.4 is implemented in `stage`; Preview 0.1 real-user validation and feedback are still pending. File import/export, DOCX/PDF rendering, Employer Memory, interview workflows, outcome analytics and automatic submission are not available in the current interface.
 
 Start with the [[User-Guide|User Guide]]. Operators can use [[../10-Operations/Local-Development|Local Development]] and [[../10-Operations/M1-Access-Core|Access Core]]. The [[Documentation-Map]] separates user instructions from developer and architecture references.
 

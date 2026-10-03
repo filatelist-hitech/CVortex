@@ -8,6 +8,7 @@ tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
   - "[[User-Guide|User Guide]]"
+  - "[[Process-Map|Process Map]]"
   - "[[../01-Product/Vision|Vision]]"
   - "[[../01-Product/Scope|Scope]]"
   - "[[../01-Product/Roadmap|Roadmap]]"
@@ -22,6 +23,7 @@ related:
 
 - [[CVortex|CVortex home]] — concise description of the product as it exists now.
 - [[User-Guide|User Guide]] — sign-in, Career Facts, vacancy analysis, drafts, privacy and feature limits.
+- [[Process-Map|Process Map]] — the implemented Preview workflow, provenance, local runtime and diagnostics; planned M2 scope is marked separately.
 - [[../10-Operations/Local-Development|Local Development]] — requirements, setup, environment, start/stop/update and troubleshooting for a local installation.
 - [[../10-Operations/M0-Runbook|M0 Runbook]] — service health and operator diagnosis.
 - [[Error-Center-User-Guide|Error Center user guide]] — actions for users and administrators when an operation fails.
