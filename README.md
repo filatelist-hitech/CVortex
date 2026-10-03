@@ -1,100 +1,66 @@
 # CVortex
 
-**Your career, in context.**
+**Поиск работы с опорой на ваш опыт.**
 
-CVortex is a personal Job Search OS for adapting resumes to vacancies, generating cover letters, preserving employer context, preparing for interviews, and tracking the effectiveness of a job search.
+CVortex помогает искать работу и готовить отклики на основе подтверждённых фактов о вашей карьере. Система сопоставляет ваш опыт с требованиями вакансии, а каждое утверждение в черновике можно проверить по источнику.
 
-## Project status
+## Текущее состояние
 
-CVortex is in active pre-release development.
+Этапы M1.1, M1.2 и M1.3 реализованы. Реализация M1.4 находится в `stage`. Проверка Preview 0.1 с реальными пользователями и сбор отзывов ещё не завершены. M2 пока не начат.
 
-The completed slices are **M0 · Runnable Core** and **M1.1–M1.3 · First Value**. **M1.4 · Application Draft** was squash-merged into `stage` by PR #31 on 2026-09-24; Preview 0.1 still needs recorded real-user validation and feedback before the full M1.4 slice can be marked PASS. M2 implementation has not started, and its planning task remains blocked until that evidence is available.
+## Что уже работает
 
-M1.2 is **not the MVP**. M1.1–M1.4 define M1's first complete workflow target, Preview 0.1 (`v0.1.0`); Preview remains unvalidated until its real-user acceptance criteria and feedback are recorded. M2 targets the practical application-package MVP (`v0.2.0`). A completed slice or merged PR does not create a release; release tags are created only from validated `main` commits.
+- Вход по приглашению и отдельное рабочее пространство для каждого пользователя.
+- Факты о карьере можно добавлять вручную без ИИ. Если вставить текст, система предложит факты, которые должен подтвердить человек.
+- Текст вакансии можно вставить в CVortex: система выделит требования, сопоставит их с подтверждённым опытом по семи направлениям и объяснит рекомендацию по приоритету.
+- После анализа вакансии можно получить рекомендации по резюме и два черновика сопроводительного письма: краткий и стандартный. Их можно изменить, принять или отклонить. Утвердить можно только принятую версию, прошедшую проверку достоверности.
 
-The accepted release roadmap is:
+Для извлечения фактов, анализа вакансии и подготовки черновиков нужен сервис ИИ. В новой установке он выключен: `AI_PROVIDER=none`. Ссылка на вакансию сохраняется для справки. CVortex не открывает её и не загружает страницу.
 
-| Milestone | Product checkpoint | Target version | Release mode |
-|---|---|---|---|
-| M0 · Runnable Core | Runnable technical baseline | `v0.1.0-alpha.1` | Optional prerelease |
-| M1 · First Value | First truthful end-to-end workflow / Preview 0.1 | `v0.1.0` | Preview |
-| M2 · Real Application Package | First practical application package | `v0.2.0` | MVP |
-| M3 · Imports & Integrations | Safe imports and supported source integrations | `v0.3.0` | Minor |
-| M4 · Employer Journey | Employer/recruiter context and interview workflow | `v0.4.0` | Minor |
-| M5 · Outcomes & Analytics | Evidence-based job-search analytics | `v0.5.0` | Minor |
-| M6 · Distribution & Hardening | VPS/cloud path and operational hardening | `v0.6.0` | Minor |
+## Как проходит работа
 
-Release tags are created from validated `main` commits only. Completing a milestone on `stage` does not itself create a Git tag or GitHub Release. `v1.0.0` remains a separate explicit stability decision after M6.
+```mermaid
+flowchart LR
+  Invite[Получить приглашение и войти] --> Facts[Подтвердить факты о карьере]
+  Facts --> Vacancy[Вставить текст вакансии]
+  Vacancy --> Match[Посмотреть совпадения и пробелы]
+  Match --> Drafts[Подготовить и проверить черновики]
+  Drafts --> Guard[Проверить достоверность]
+  Guard --> Approval[Явно утвердить материал]
+  Approval --> Stop([Остановиться до отправки])
+```
 
-See [docs/01-Product/Roadmap.md](docs/01-Product/Roadmap.md) and [.github/roadmap.yml](.github/roadmap.yml) for the canonical roadmap and release metadata.
+Полная [карта процессов](docs/00-Home/Process-Map.md) показывает происхождение данных, запуск локальной версии и разбор ошибок.
 
-## M0 quick start
+## Запуск на своём компьютере
 
-Host prerequisites:
+Нужны Git, Make, Docker с Compose и запущенный Docker Engine. В терминале выполните:
 
-- Git;
-- Docker with Compose;
-- Make.
-
-From a clean checkout:
-
-```bash
+```sh
+git clone https://github.com/filatelist-hitech/CVortex.git
+cd CVortex
 make init
 docker compose --env-file .env config --quiet
 make up
 make migrate
+health_authority="$(docker compose port nginx 80)"
+curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-CVortex is exposed through Nginx on the loopback interface at `http://127.0.0.1:8080` by default. Override the port with `CVORTEX_PORT` in the root `.env` when needed.
+Когда проверка готовности завершится успешно, откройте адрес `APP_URL` из локального файла `.env` (по умолчанию `http://localhost:8080`). Установка и устранение проблем описаны в разделе [Локальная установка](docs/10-Operations/Local-Development.md). Инструкции по созданию администратора и приглашению пользователей находятся в разделе [Первый вход и управление доступом](docs/10-Operations/M1-Access-Core.md).
 
-For an existing checkout, database-volume recovery and the full startup checklist are documented in [Local Development](docs/10-Operations/Local-Development.md). Do not run `docker compose down --volumes` as a routine fix: it removes the persistent local database and private-storage volumes.
+## Документация
 
-Useful commands:
+- [Руководство пользователя](docs/00-Home/User-Guide.md): вход, факты о карьере, вакансии и черновики.
+- [Карта процессов](docs/00-Home/Process-Map.md): Preview, происхождение данных, локальный запуск и диагностика.
+- [Разбор ошибок](docs/00-Home/Error-Center-User-Guide.md): действия пользователя и администратора.
+- [Карта документации](docs/00-Home/Documentation-Map.md): остальные пользовательские и технические материалы.
+- [План развития](docs/01-Product/Roadmap.md): выполненные этапы и дальнейшие планы.
 
-```bash
-make test
-make lint
-make logs SERVICE=backend
-make shell SERVICE=backend
-make down
-```
+## Чего пока нет
 
-`make down` is intentionally non-destructive for the persistent PostgreSQL and private-storage state defined by M0.
+CVortex пока не создаёт файлы DOCX/PDF и не отправляет отклики работодателям. MCP выключен по умолчанию. При отдельной настройке его инструменты смогут только читать данные. Факты о карьере, вакансии и черновики могут содержать личные сведения. Не добавляйте их в Git вместе с паролями и ключами.
 
-## Project principles
+## Как внести вклад
 
-- **Truth-first:** candidate statements must be grounded in confirmed career facts.
-- **Traceability:** generated content must remain traceable through claims to confirmed facts.
-- **Consistency-first:** previous applications and employer-specific claims must not silently contradict each other.
-- **Human approval:** CVortex does not automatically submit applications.
-- **Deterministic before AI:** use code, validation, SQL, and rules when they are more reliable than an LLM.
-- **Local-first / API-first:** local Docker Compose first, with a path to VPS/cloud later.
-- **Security-first:** vacancies, recruiter messages, websites, and imported documents are untrusted input.
-
-## Current stack
-
-- Backend: PHP / Laravel
-- Frontend: Next.js / React / TypeScript
-- Database: PostgreSQL
-- Queue/cache: Redis + Laravel Horizon
-- Web: Nginx
-- Infrastructure: Docker Compose
-- Documents: DOCX templates + LibreOffice headless to PDF are planned for M2
-- Distribution: responsive web first; broader PWA/distribution hardening belongs to later milestones
-
-Exact runtime and dependency versions are pinned in the implementation artifacts and lockfiles rather than duplicated here. The repository files are the version authority for the current runtime.
-
-## Branches
-
-- `main` — stable/release branch.
-- `stage` — integration and staging branch.
-- `feature/*`, `fix/*`, `chore/*`, `docs/*`, `ci/*` — short-lived branches based on `stage`.
-- `hotfix/*` — emergency fixes based on `main`, merged back to both `main` and `stage`.
-
-Normal development pull requests target `stage`. Promotion to `main` happens through a separate release PR.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository workflow.
-
-## Sensitive data
-
-Do not commit real resumes, recruiter correspondence, API keys, tokens, credentials, production exports, or other private career data to the repository. Use sanitized fixtures for tests and examples.
+Порядок работы с репозиторием описан в [CONTRIBUTING.md](CONTRIBUTING.md).

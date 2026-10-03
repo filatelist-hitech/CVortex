@@ -1,46 +1,103 @@
 ---
-title: Logging and Diagnostics
+title: Журналы и диагностика
 status: implemented
 owner: project
 created: 2026-09-27
-updated: 2026-09-29
+updated: 2026-10-03
 tags: [operations, logging, diagnostics]
-related: ["[[../03-ADR/ADR-0022-local-diagnostics|ADR-0022]]", "[[../00-Home/Error-Center-User-Guide|Error Center user guide]]", "[[M0-Runbook|M0 Runbook]]"]
+related: ["[[../03-ADR/ADR-0022-local-diagnostics|ADR-0022]]", "[[../00-Home/Error-Center-User-Guide|Руководство по разбору ошибок]]", "[[M0-Runbook|Операционная инструкция M0]]"]
 ---
 
-# Logging and Diagnostics
+# Журналы и диагностика
 
-For the sign-in flow, filters, status actions and user-visible error messages, start with the [Error Center user guide](../00-Home/Error-Center-User-Guide.md). This page is for the operator of the local Compose stack. The [diagnostics OpenAPI contract](../05-API/diagnostics.openapi.yaml) describes the protected endpoints.
+Сначала прочитайте [руководство по разбору ошибок](../00-Home/Error-Center-User-Guide.md). В нём описаны вход, фильтры, смена статусов и сообщения для пользователя. Эта страница предназначена оператору локальной установки CVortex в Docker Compose. Защищённые адреса диагностики описаны в [контракте API](../05-API/diagnostics.openapi.yaml).
 
-## Pipeline and contract
+## Как формируются журналы и записи об ошибках
 
-Laravel writes JSON records to stderr in Compose. Every selectable non-null Laravel channel, including each member of a configured log stack, runs `StructuredLogs` before writing to its sink. `StructuredLogs` redacts nested sensitive keys, bearer credentials, credential-bearing headers, quoted or whitespace-delimited key/value secrets and sensitive URL query values before formatting. When an exception is present, the log keeps its class and at most twelve sanitized lines in `safe_stack`: the throw-site basename and line, then application caller frames, followed by framework frames, each with basename, line and class/function only. No arguments, absolute paths or exception messages are retained. Backend application events use dotted `event_name` identifiers and safe metadata only: timestamp, level, environment, service, component, error_code, exception_class, request_id, job_id, llm_run_id, application_id, user_id, route, queue/job/attempt, provider, operation, duration_ms and retryable when applicable. Omit inapplicable fields. Application code must not log request bodies, CV/recruiter/vacancy text, prompts, full provider responses, credentials or raw exception messages. `DEBUG` is development detail, `INFO` ordinary lifecycle, `WARNING` recovered/degraded operation, `ERROR` final user/job failure, and `CRITICAL` unavailable core dependencies or integrity failures. Validation and ordinary 4xx denials are not incidents.
+### Журналы приложения
 
-Nginx replaces any client-supplied `X-Request-ID` with its own request ID before forwarding to Laravel. Laravel shares that trusted ID with logger context and returns it in the response. JSON API errors include stable `error.code`, safe `error.message`, `error.request_id`, and `error.retryable`; validation retains the Laravel `errors` map. Uncaught CLI/scheduler exceptions and unexpected HTTP exceptions are recorded as incidents while Laravel's normal reporting remains enabled. Known operator commands and the diagnostics prune command catch failures, record a safe console incident and print a `cli_…` reference. Final queue failures and unexpected MCP tool catches are recorded by the queue/MCP diagnostic boundary. Every boundary treats incident storage and logging as best-effort. HTTP exception responses retain only safe `Allow`, `Retry-After`, and rate-limit headers; cookies, redirects, arbitrary headers and malformed values are discarded. Provider retryability follows the failure category rather than generic HTTP status: transport, provider 429 and temporary-availability failures may be retried, while missing/invalid provider configuration, refusal, incomplete output and malformed output are terminal. Provider 429 returns `LLM_PROVIDER_RATE_LIMITED` and `retryable=true`. For 429, 408, 425 and 5xx provider responses, queued retries honor a bounded numeric `Retry-After` when supplied; without a valid delay they use the bounded exponential schedule. First-party HTTP 429 returns `RATE_LIMITED`. Configuration, refusal, incomplete and malformed categories have stable codes, and API responses, incidents and frontend messages share the same catalog. The frontend offers a Retry action only when the API sets the flag. Generated application output rejected by deterministic validation returns and records `LLM_OUTPUT_INVALID` and is linked to its LLM run and preparation. Queued payloads carry origin request/user IDs, workers add the job ID to log context, and final `JobFailed` events record queue, connection and attempt. Jobs back off for retryable provider categories and fail immediately for terminal ones. LLM failure records link to existing `llm_runs`/`vacancy_llm_runs` IDs and provider metadata. No second root correlation ID is created.
+Laravel записывает журналы в формате JSON в поток ошибок контейнера. Перед записью каждый настроенный канал Laravel проходит через `StructuredLogs`, в том числе каналы внутри объединённого журнала (`stack`). Этот фильтр удаляет секреты по именам вложенных полей, из заголовков с учётными данными, из строк вида «ключ=значение» и из чувствительных параметров URL. Он также скрывает bearer-токены.
 
-PostgreSQL `diagnostic_incidents` stores one row per fingerprint and lifecycle `OPEN`, `RESOLVED`, `IGNORED`, with category-derived retryability, impact and recovery action; `diagnostic_occurrences` stores recent detail including queue and connection when applicable. A retryable provider occurrence stores a validated integer retry delay from 0 to 86400 seconds when supplied; missing or invalid delays remain null, and no raw response header is stored. Unique extraction and analysis jobs keep their dispatch lock for both possible maximum 24-hour retry delays plus a ten-minute execution buffer, matching their three-attempt limit. Every error increments `occurrence_count`; approximately the latest thousand occurrences per fingerprint retain searchable references, with pruning every hundred events after that threshold. The same exception object is recorded once even when a synchronous queue failure bubbles into the request exception handler. `RESOLVED` reopens on recurrence, while `IGNORED` remains ignored. Effective admin status changes enter `audit_events`; a repeated no-op status request does not. Neither table is an audit log or an LLM accounting replacement. The admin-only Error Center offers severity/status/service/component/environment/code/provider/time filters, exact search for request/job/LLM/application IDs or code, paginated list, detail and lifecycle controls. Incident detail puts safe impact, retry status, next action and first/last seen before raw correlation metadata. Ordinary users cannot read or mutate diagnostics. Browser telemetry is authenticated, rate limited, accepts only the finite component allowlist `browser`, `app-root`, `global-root` and fixed event kinds, ignores supplied message/stack/user ID, and stores a server-derived user ID. If both diagnostic sinks fail, telemetry returns a safe 503 instead of claiming it was stored. Because browser code cannot choose other fingerprint fields, its open incident groups have finite cardinality; open groups remain retained under the lifecycle policy.
+Если возникло исключение, в `safe_stack` сохраняется не более двенадцати очищенных строк. Сначала указываются имя файла и строка, где возникла ошибка, затем вызовы из кода приложения и фреймворка. Для каждого кадра остаются только имя файла, номер строки, класс и функция. Аргументы, полные пути и текст исключения не сохраняются.
 
-Horizon remains the queue execution/failure view. `make failed-jobs` lists sanitized final queue incidents through `diagnostics:failed-jobs`. Compose disables Laravel's raw failed-job database payload store; the existing project has no `failed_jobs` migration. Error Center shows a grouped incident with origin IDs; it does not mirror Horizon. Sensitive text is omitted from diagnostic storage, and stack lines retain only basenames, line numbers, class/function names and the throw-site marker (no arguments or absolute paths).
+События приложения используют имена `event_name` с точками и только безопасные метаданные. В зависимости от события могут записываться:
 
-Unexpected 5xx failures reported on `/api/v1`, OAuth/MCP endpoints and OAuth discovery routes are persisted as incidents. Expected OAuth protocol/authentication rejections remain excluded. If `diagnostics:failed-jobs` cannot read PostgreSQL, it reports a safe CLI reference and exits nonzero; use the reference to search diagnostics when the database recovers. The command does not print SQL or driver exception details.
+- время, уровень важности, окружение, служба и компонент;
+- код ошибки и класс исключения;
+- идентификаторы запроса, фоновой задачи, запуска ИИ, подготовки отклика и пользователя;
+- маршрут, очередь, задача, номер попытки, провайдер, операция, длительность и возможность повтора.
 
-## Operator workflow
+Поля, неприменимые к событию, не добавляются. Код приложения не должен записывать в журнал тело запроса, текст резюме, письма рекрутера или вакансии, запросы к ИИ, полный ответ провайдера, секреты и исходный текст исключения.
 
-1. Ask for the safe error code, Reference ID, approximate time and action. Do not request the user's password, full CV, prompt or provider credential.
-2. An active admin signs in and opens `/diagnostics` from the workspace link. Paste the exact request, job, LLM run or application ID, or error code in the primary search. Other filters combine with search; clear their chips if an expected result disappears. Provider compares exactly with the latest retained occurrence. `hours` filters `last_seen_at` to the last 24, 168 or 720 hours; the advanced dates also test `last_seen_at`. Default ordering is `OPEN` first, then CRITICAL/ERROR/WARNING, then newest; selectable sorts include last/first seen and occurrence count. The API returns 25 groups per page. Its list projection of the latest retained occurrence supplies operation/provider labels without exposing stack or identity data.
-3. Read Cause, Impact, Recommended action and Retryable before technical context. The impact statement is category-level and does not prove data was unchanged; verify product state separately. Compare request/job/LLM/application IDs, attempt and provider with the product operation. Open one occurrence for its metadata. Technical details are closed initially; when needed, the throw site and application frames precede a separate framework disclosure. Detail returns the latest 20 retained occurrences; `occurrence_count` is the lifetime count for the group, even after old detail is pruned. A browser `digest` shown when telemetry fails is not necessarily a searchable request ID.
-4. After confirming the actual operation recovered, set `RESOLVED`. A new matching failure reopens it. Use `IGNORED` only for a consciously accepted event; recurrence does not reopen that status. Status changes are audited. Neither state repairs the underlying operation.
+Уровни журнала означают следующее:
 
-| Scenario | Check | Expected boundary |
+| Уровень | Значение |
+|---|---|
+| `DEBUG` | Подробности для разработки. |
+| `INFO` | Обычные события работы приложения. |
+| `WARNING` | Операция восстановилась или работает с ограничениями. |
+| `ERROR` | Операция пользователя или фоновой задачи завершилась ошибкой. |
+| `CRITICAL` | Недоступна важная зависимость или нарушена целостность данных. |
+
+Ошибки проверки полей и обычные ответы HTTP `4xx` не считаются инцидентами.
+
+### Связь запроса с ошибкой
+
+Nginx заменяет переданный клиентом `X-Request-ID` своим идентификатором и передаёт его Laravel. Приложение добавляет доверенный идентификатор в контекст журнала и возвращает в ответе. Ошибка API содержит стабильные поля `error.code`, безопасное `error.message`, `error.request_id` и `error.retryable`. При ошибке проверки полей сохраняется карта Laravel `errors`.
+
+Неожиданные HTTP-ошибки и исключения планировщика или консольной команды записываются как инциденты; обычная обработка ошибок Laravel остаётся включённой. Известные операторские команды и команда очистки старых записей перехватывают сбой, стараются сохранить безопасную запись и выводят ссылку вида `cli_…`. Ошибки очереди и перехваченные сбои инструментов MCP проходят через отдельную границу диагностики. Запись об ошибке и журналирование выполняются по возможности: их сбой обычно не должен мешать основной работе.
+
+В ответах на исключения остаются только безопасные заголовки `Allow`, `Retry-After` и ограничения частоты запросов. Cookie, перенаправления, произвольные заголовки и некорректные значения удаляются.
+
+### Повторы запросов к ИИ
+
+Возможность повтора определяется причиной сбоя, а не только кодом HTTP. Повтор допустим при проблеме соединения, ответе провайдера `429` и временной недоступности. Неверная конфигурация, отказ провайдера, неполный или некорректный ответ считаются окончательными ошибками.
+
+При ограничении провайдера система возвращает `LLM_PROVIDER_RATE_LIMITED` и `retryable=true`. Для ответов `429`, `408`, `425` и `5xx` фоновая задача учитывает числовой `Retry-After`, если он задан и укладывается в разрешённый предел. Иначе применяется ограниченное экспоненциальное расписание повторов. Для ограничения частоты запросов самого CVortex возвращается `RATE_LIMITED`. Коды API, записи диагностики и сообщения интерфейса используют общий каталог ошибок. Кнопка повтора показывается только при `retryable=true`.
+
+Если детерминированная проверка отклоняет результат генерации, API возвращает и записывает `LLM_OUTPUT_INVALID`. Ошибка связывается с запуском ИИ и подготовкой отклика. Фоновая задача сохраняет исходные идентификаторы запроса и пользователя. Рабочий процесс добавляет идентификатор задачи в контекст журнала. Окончательный сбой фиксирует очередь, соединение и номер попытки. При временных сбоях задача запускается повторно, при окончательных она завершается сразу. В записи используются существующие идентификаторы `llm_runs` или `vacancy_llm_runs`. Дополнительный корневой идентификатор связи не создаётся.
+
+### Хранение и просмотр инцидентов
+
+Таблица PostgreSQL `diagnostic_incidents` хранит одну запись на группу одинаковых сбоев и её состояние: `OPEN`, `RESOLVED` или `IGNORED`. Причина сбоя определяет возможность повтора, влияние и рекомендуемое действие. Таблица `diagnostic_occurrences` хранит подробности недавних повторов, включая очередь и соединение, если они применимы.
+
+Для повтора, ограниченного провайдером, сохраняется только проверенная задержка от 0 до 86 400 секунд. Если задержка отсутствует или некорректна, поле остаётся пустым; исходный заголовок ответа не сохраняется. Для извлечения и анализа вакансии уникальная фоновая задача удерживает блокировку на срок двух максимально возможных задержек повтора по 24 часа и ещё десять минут на выполнение. Это соответствует пределу в три попытки. Если синхронная ошибка очереди доходит и до обработчика HTTP-запроса, одно и то же исключение записывается только один раз.
+
+Каждый повтор увеличивает `occurrence_count`. Для поиска сохраняются примерно тысяча последних подробностей на группу. После этого очистка запускается каждые сто новых событий. Новый сбой переводит `RESOLVED` обратно в `OPEN`; статус `IGNORED` остаётся без изменений. Фактическая смена статуса администратором записывается в `audit_events`. Повтор команды без смены статуса новой записи не создаёт. Эти таблицы не заменяют журнал аудита или учёт расходов на ИИ.
+
+В административной панели «Диагностика» доступны фильтры по важности, статусу, службе, компоненту, окружению, коду ошибки, провайдеру и времени. Поиск принимает только точные идентификаторы запроса, фоновой задачи, запуска ИИ или подготовки отклика, а также код ошибки. Список постраничный; подробности показывают безопасное описание влияния, возможность повтора, следующий шаг и время первого и последнего случая до технических связей. Обычный пользователь не может читать или менять диагностические записи.
+
+### Ошибки в браузере
+
+Отправка диагностики из браузера требует активного входа и доступности API. Принимаются только перечисленные компоненты `browser`, `app-root`, `global-root` и заранее заданные типы событий. Переданные браузером текст ошибки, стек и идентификатор пользователя игнорируются; идентификатор пользователя берётся на сервере.
+
+Если оба хранилища диагностики недоступны, API отвечает безопасной ошибкой `503` и не сообщает, что событие сохранено. Браузер не управляет остальными полями группировки ошибки, поэтому число открытых браузерных групп ограничено. Найти недавнюю ссылку можно только среди примерно тысячи последних событий группы.
+
+## Очереди и панель диагностики
+
+Horizon показывает состояние очереди и окончательно завершившиеся фоновые задачи. Команда `make failed-jobs` выводит очищенные записи о таких сбоях через `diagnostics:failed-jobs`. Compose отключает сохранение исходного содержимого неудачных задач Laravel; в проекте нет миграции `failed_jobs`. Панель диагностики показывает объединённую запись со связанными идентификаторами, но не копирует список Horizon.
+
+Из диагностических записей удаляются чувствительные тексты. В строках стека остаются только имена файлов, номера строк, классы и функции, а также отметка места возникновения ошибки. Аргументы и полные пути не сохраняются.
+
+Неожиданные ошибки `5xx` в API `/api/v1`, OAuth/MCP и адресах обнаружения OAuth сохраняются как инциденты. Ожидаемые отказы OAuth при входе или проверке протокола не записываются. Если `diagnostics:failed-jobs` не может подключиться к PostgreSQL, команда выводит безопасный идентификатор для поиска и завершается с ненулевым кодом. Она не выводит SQL и подробности ошибки драйвера.
+
+## Действия оператора
+
+1. Попросите сообщить безопасный код ошибки, `Reference ID`, примерное время и действие. Не запрашивайте пароль, полный текст резюме, запрос к ИИ или ключ провайдера.
+2. Войдите под действующей учётной записью администратора и откройте `/diagnostics`. Введите точный идентификатор запроса, фоновой задачи, запуска ИИ или подготовки отклика либо код ошибки. Поиск сочетается с остальными фильтрами; если запись не находится, снимите лишние фильтры. Фильтр провайдера сравнивает точное значение из последнего сохранённого события. Фильтр периода использует время последнего события: последние 24 часа, 7 или 30 дней; расширенные даты также сравниваются с этим временем. Сначала показываются открытые записи, затем ошибки по важности (`CRITICAL`, `ERROR`, `WARNING`) и по времени от новых к старым. Доступны сортировки по времени первого и последнего события и числу повторов. API выдаёт 25 групп на страницу; краткий список показывает сведения последнего события, но не стек и не данные пользователя.
+3. До просмотра технических подробностей прочитайте «Причину» (`Cause`), «Влияние» (`Impact`), «Рекомендуемое действие» (`Recommended action`) и «Можно ли повторить» (`Retryable`). Влияние описывает категорию сбоя и не доказывает, что данные остались без изменений. Сверьте идентификаторы запроса, фоновой задачи, запуска ИИ и подготовки с самой операцией. При необходимости откройте подробности отдельного повтора. Технические сведения изначально скрыты; сначала показаны место сбоя и кадры приложения, а сведения о фреймворке раскрываются отдельно. Подробная запись возвращает до двадцати последних повторов, тогда как `occurrence_count` хранит общее число за всё время. Идентификатор браузера `digest` при сбое отправки телеметрии не обязательно можно найти поиском по запросу.
+4. Проверьте отдельно, завершилась ли исходная операция и восстановилась ли работа. Только после этого установите `RESOLVED`. Новый такой же сбой снова откроет запись. Статус `IGNORED` используйте, только если команда сознательно решила пока не разбирать сбой; повторение не изменит этот статус. Смена статуса попадает в аудит, но сама по себе не исправляет операцию.
+
+| Ситуация | Что проверить | Какой результат ожидается |
 |---|---|---|
-| API reports a safe 500 or provider 503 | Search its `Reference`; inspect `error_code`, `last_seen_at`, provider and related run | Response has no raw exception/stack; incident groups repeated failures |
-| Career extraction or vacancy analysis fails in Horizon | Search request or job ID; compare `llm_run_id` and final `attempt` | Transient provider retries keep the product operation `PENDING` while queued; it becomes `FAILED` only when retries stop, and final queue failure creates one diagnostic occurrence |
-| Browser fallback appears | Search returned Reference and `FRONTEND_RUNTIME_ERROR` around the time | Telemetry needs an authenticated session and available API/database; an unsent event may have no incident |
-| Validation, authentication or authorization is rejected | Correct input/session/access; use request ID in short-lived logs if needed | Ordinary 4xx responses are not stored as incidents |
-| Same error repeats | Compare `occurrence_count`, first/last seen and recent occurrences | One fingerprint stays one incident; older per-event IDs eventually expire |
-| No Error Center result or PostgreSQL is down | Check health, then local backend/Horizon logs using the ID | Incident persistence can fail independently; stderr remains the fallback |
+| API вернул безопасную ошибку `500` или провайдера `503` | Найдите `Reference`; сверьте `error_code`, время последнего события, провайдера и связанный запуск. | В ответе нет текста исключения и стека; повторяющиеся сбои объединены в одну запись. |
+| Horizon не выполнил извлечение фактов или анализ вакансии | Найдите запрос или фоновую задачу; сверьте `llm_run_id` и последнюю попытку. | Пока возможны повторы провайдера, операция остаётся `PENDING`. Она станет `FAILED`, когда попытки закончатся; финальный сбой задачи создаст одну запись диагностики. |
+| Появилось запасное сообщение браузера | Ищите указанный `Reference` и `FRONTEND_RUNTIME_ERROR` около времени ошибки. | Для отправки события нужны вход пользователя и доступные API с базой. Несохранённое событие не появится в панели. |
+| CVortex отклонил ввод, вход или действие из-за прав | Исправьте данные, войдите снова или проверьте доступ. При необходимости ищите идентификатор запроса в недавних журналах. | Обычные ответы `4xx` не записываются как инциденты. |
+| Один и тот же сбой повторяется | Сравните `occurrence_count`, время первого и последнего события и последние подробности. | Повторы одной причины остаются в одной группе; идентификаторы старых событий со временем удаляются. |
+| Запись не найдена или PostgreSQL недоступен | Проверьте готовность служб, затем журналы `backend` и Horizon по идентификатору. | Сохранение диагностики может отказать отдельно; поток ошибок контейнера остаётся запасным источником. |
 
-Useful local commands from the repository root:
+Команды запускайте из корня репозитория:
 
 ```sh
 docker compose ps
@@ -49,21 +106,23 @@ make logs SERVICE=horizon
 make failed-jobs
 ```
 
-`make logs-pretty SERVICE=backend` formats the last 200 JSON lines when Python 3 is installed on the host; `make logs` itself needs only Docker and Make. `make failed-jobs` reads PostgreSQL and will not work during a database outage. To find one reference in available backend logs, replace the placeholder with an exact safe ID:
+`make logs-pretty SERVICE=backend` форматирует последние 200 строк JSON и требует Python 3 на компьютере. Для `make logs` достаточно Docker и Make. Команда `make failed-jobs` читает PostgreSQL и не сработает при недоступной базе. Чтобы найти конкретный безопасный идентификатор в доступных журналах `backend`, подставьте его вместо примера:
 
 ```sh
 docker compose logs --no-color --tail=200 backend | rg --fixed-strings '<request-id>'
 ```
 
-The application logger sanitizes its records, but Compose also collects independent Nginx, PostgreSQL and other service output; their raw lines do **not** pass through Laravel's redactor. Request URLs or infrastructure diagnostics may appear there. Keep raw logs local and inspect them before sharing excerpts.
+Laravel очищает журналы приложения, но Nginx, PostgreSQL и другие службы Compose пишут отдельно и обходят этот фильтр. Их строки могут содержать адреса запросов и сведения об инфраструктуре. Не публикуйте необработанные журналы; перед передачей фрагмента проверьте его вручную.
 
-## Retention and fallback
+## Срок хранения и запасная диагностика
 
-Compose uses Docker's rotating `local` logs (`10m` × `5` per service); `make logs SERVICE=backend` and `docker compose logs` read them even when PostgreSQL is unavailable. `LOG_CHANNEL=daily` uses Laravel file retention where selected outside Compose. Every configured log channel and Laravel's emergency fallback applies `StructuredLogs`; if channel construction fails, the fallback retains only redacted message/context and a sanitized stack. `DIAGNOSTIC_OCCURRENCE_DAYS` defaults to 30; `DIAGNOSTIC_CLOSED_DAYS` defaults to 90. The scheduler runs `diagnostics:prune` daily. `make diagnostics-prune` runs the same **deleting** cleanup manually; use it only when applying the configured retention is intended. Open incidents are retained. Browser telemetry cannot create unlimited open groups because client-controlled fingerprint dimensions are restricted to finite allowlists; recent reference lookup is additionally bounded to approximately the latest thousand occurrences per fingerprint. This is local retention, not a backup policy.
+В Compose журналы служб записываются в ротируемые файлы Docker `local` (по 10 МБ, не более пяти файлов на службу). Команды `make logs SERVICE=backend` и `docker compose logs` читают их и при недоступности PostgreSQL. Если вне Compose выбрана настройка Laravel `LOG_CHANNEL=daily`, применяются сроки хранения файловых журналов Laravel.
 
-If the UI is unavailable:
+Каждый канал журналирования, включая аварийный канал Laravel, использует `StructuredLogs`. Если канал не удаётся создать, аварийный журнал сохраняет только очищенное сообщение, контекст и безопасный стек. Срок хранения по умолчанию задают `DIAGNOSTIC_OCCURRENCE_DAYS` (30 дней) и `DIAGNOSTIC_CLOSED_DAYS` (90 дней). Планировщик ежедневно запускает `diagnostics:prune`. Команда `make diagnostics-prune` вручную удаляет записи с истёкшим сроком хранения. Запускайте её, только если такая очистка ожидаема. Открытые записи не удаляются. Для браузерных ошибок число открытых групп ограничено разрешёнными значениями полей. Поиск ссылок ограничен примерно тысячей последних повторов на группу. Эти ограничения относятся к локальному хранению, а не к резервному копированию.
 
-```bash
+Если веб-интерфейс недоступен, проверьте службы и журналы:
+
+```sh
 docker compose ps
 docker compose exec -T backend php artisan route:list --path=api/v1/health
 make logs SERVICE=backend
@@ -72,4 +131,6 @@ make logs SERVICE=horizon
 make failed-jobs
 ```
 
-Check `/api/v1/health/live` and `/api/v1/health/ready` through the configured loopback Nginx port, then search the reported `request_id` in backend logs. If a job failed, compare `job_id` with Horizon/failed-jobs and the incident. For LLM failures inspect the linked run's safe provider/skill/status metadata; never copy prompts or keys into tickets. If PostgreSQL is down, use stderr and health probes until recovery. Incident `RESOLVED` means the symptom was handled; it is not proof that an external provider or product flow is healthy. There is no external log collector, alert delivery or long-term archive in this bounded implementation.
+Проверьте `/api/v1/health/live` и `/api/v1/health/ready` через настроенный локальный порт Nginx, затем найдите `request_id` в журналах `backend`. Если не завершилась фоновая задача, сверьте `job_id` с Horizon, результатом `failed-jobs` и записью диагностики. Для ошибки ИИ проверьте только безопасные сведения о провайдере, операции и статусе связанного запуска; не копируйте запросы к модели или ключи в задачи и сообщения.
+
+Если PostgreSQL недоступен, до восстановления базы используйте поток ошибок контейнеров и проверки готовности. Статус `RESOLVED` означает, что команда отметила симптом как разобранный; это не доказывает, что сервис ИИ или весь пользовательский сценарий исправен. Во внедрённом варианте нет внешнего сборщика журналов, доставки оповещений и долговременного архива.

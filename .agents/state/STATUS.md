@@ -627,3 +627,37 @@ Validation: the documented shell snippet passed `/bin/sh -n`; the configured-por
 Fresh exact-head review found that the first configured-port parser did not preserve all valid Compose dotenv forms such as quoted, spaced or inline-commented values. The health command now obtains Nginx's effective published address through `docker compose port nginx 80`, delegating port resolution to Compose and preserving the `/ready` readiness check. No runtime code, Compose configuration, database, volume or `stage` state changed.
 
 Validation: the updated shell snippet passed `/bin/sh -n`; `docker compose port nginx 80` returned the configured loopback address; the readiness request used that address and returned the known local `503 {"status":"not_ready"}` caused by the existing database-name mismatch; and `git diff --check` passed.
+
+### User-facing documentation refresh — 2026-10-03
+
+Reworked the root README into a concise project landing page, added a current-state User Guide, separated user/operator instructions from product and architecture references in the documentation map, and clarified that Scope records direction rather than feature availability. Reconciled the local setup/runbook with Makefile, Compose, health routes and environment sources; corrected shell placeholders in Access Core and removed legacy diagnostic codes no longer emitted by the application. Current limitations are explicit: AI is disabled by default, vacancy URLs are metadata only, application drafts are not document exports or submissions, MCP is read-only/disabled by default, account recovery and backup/restore are not implemented, and Preview 0.1 lacks recorded real-user acceptance.
+
+Validation: Markdown render/fence checks passed for 55 `README.md`/`docs` files; shell syntax passed for 22 documentation command blocks; relative Markdown/Obsidian file targets passed across 99 project Markdown files; Compose configuration passed with both `.env` and `.env.example`; and `git diff --check` passed. `make up` and `docker compose ps` passed with services running/healthy; the local homepage returned HTTP 200, while `/api/v1/health/ready` returned HTTP 503. `make migrate` stopped in runtime-role provisioning before Laravel migrations because the configured database is absent from the existing PostgreSQL volume. No setup rebuild, migration, volume or application-data change was performed.
+
+### README and process map documentation — 2026-10-03
+
+Reworked the README as a human-readable landing page with current M1/Preview status, available capabilities, a compact user flow, local quick start and focused documentation links. Added `docs/00-Home/Process-Map.md` with separate Preview, provenance, local runtime and diagnostics diagrams; M2 package work is clearly marked as planned and gated on Preview 0.1 evidence. Linked the map from the Documentation Map. `NEXT.md` and `BLOCKERS.md` remain unchanged; no Preview E2E or M2 work started.
+
+Validation: Markdown rendered for 12 changed documents; 19 fenced blocks balanced; 40 relative Markdown and 76 Obsidian links resolved; all 12 shell snippets passed `sh -n`/`bash -n`; all five Mermaid diagrams rendered to SVG using the locally installed Mermaid 11.15.0 and Chrome; `git diff --check` passed. Reused the prior runtime evidence that local readiness returns 503 due to the configured database being absent from the existing PostgreSQL volume. Runtime, database and volume were not changed.
+
+### User and operator documentation language pass — 2026-10-03
+
+Reworked the Russian prose across the README, user guides, process map, documentation map and local operator instructions. Translated the remaining operator pages for logging/diagnostics and MCP validation. Exact interface labels, commands, API names, status values and technical identifiers remain unchanged; internal technical references remain outside this language pass. No application code or runtime configuration changed.
+
+Validation: Markdown rendered for 11 user/operator documents; 42 relative Markdown targets and heading anchors plus 72 Obsidian links resolved; all 15 shell snippets passed `bash -n`; all five Mermaid diagrams rendered in the locally available Mermaid/Chrome toolchain; and `git diff --check` passed. `NEXT.md` and `BLOCKERS.md` were not changed by this pass.
+
+### User-facing documentation editorial pass: 2026-10-03
+
+Applied a humanizer pass to prose in `README.md`, the CVortex home and documentation maps, both user guides, the process map, product scope, and the local development, diagnostics, M0, M1 access and MCP validation guides. Simplified repeated explanations and instructions, tightened transitions, and removed dash-heavy phrasing. Preview 0.1 acceptance, the M2 gate, MCP E2E status, and known local runtime limitations retain their existing status. The added Mermaid diagrams and technical identifiers were not changed.
+
+Validation performed: `git diff --check`; Markdown fence balance across 14 changed documents; `bash -n` on 15 fenced shell blocks; relative Markdown and Obsidian file targets across 14 changed documents. Markdown and Mermaid renderers were unavailable in this checkout, so those renders were not rerun. `NEXT.md` and `BLOCKERS.md` remain unchanged.
+
+### PR #39 Codex review remediation — 2026-10-03
+
+Fixed the P2 configuration mismatch: Compose forwards `OPENAI_APPLICATION_DRAFT_MODEL` through the shared backend/Horizon environment, `.env.example` exposes the setting, and the local setup guide explains how to enable draft generation. A fresh exact-head review also found the application pricing inputs were not forwarded; those are now exposed and forwarded too, with the guide clarifying they are required for cost estimates. This is a bounded correction to review findings; no provider credentials were added.
+
+Validation: `docker compose --env-file .env config --quiet` passed; a rendered Compose config with a test model confirmed the value reaches both `backend` and `horizon`; `git diff --check` passed. Repository Compose configuration changed, but no containers were recreated and no local runtime state, database or volumes were changed.
+
+Fresh exact-head Codex review also found that the user guide overstated offline matching availability. The user and local setup guides now clarify that first analysis of a vacancy needs AI to extract requirements; deterministic matching can be repeated offline only after requirements were successfully extracted, because manual requirement entry is not available.
+
+Validation: confirmed the call order in `VacancyAnalysisService::analyzeForOwner()`, then checked the edited Markdown targets and `git diff --check`. No application code or runtime state changed.

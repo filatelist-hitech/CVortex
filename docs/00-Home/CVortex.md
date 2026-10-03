@@ -3,80 +3,36 @@ title: CVortex
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
-tags:
-  - cvortex
-  - home
-  - product
+updated: 2026-10-03
+tags: [cvortex, home, product]
 related:
   - "[[Documentation-Map]]"
-  - "[[../01-Product/Vision|Vision]]"
-  - "[[../01-Product/Principles|Principles]]"
-  - "[[../01-Product/Scope|Scope]]"
-  - "[[../01-Product/Glossary|Glossary]]"
+  - "[[User-Guide|Руководство пользователя]]"
+  - "[[../01-Product/Vision|Видение продукта]]"
+  - "[[../01-Product/Principles|Принципы]]"
+  - "[[../01-Product/Scope|Объём продукта]]"
+  - "[[../01-Product/Glossary|Словарь терминов]]"
 ---
 
 # CVortex
 
-**CVortex** is a personal Job Search OS for preparing truthful, relevant, and internally consistent job applications while preserving the context of a candidate's career history and prior employer interactions.
+**Поиск работы с опорой на ваш опыт.**
 
-**Tagline:** *Your career, in context.*
+CVortex помогает искать работу и готовить отклики на основе подтверждённых фактов о вашей карьере. Система сопоставляет ваш опыт с требованиями вакансии.
 
-## Core outcome
+## Что доступно сейчас
 
-CVortex turns a vacancy plus confirmed career facts and employer context into an application strategy and application package that the user can review and approve.
+В локальной предварительной версии можно войти по приглашению, добавить факты о карьере вручную или предложить их из вставленного текста. Также можно разобрать текст вакансии и подготовить рекомендации по резюме и черновики сопроводительных писем. Предложенные факты нужно подтвердить, а черновики проходят проверку достоверности. Для извлечения, анализа вакансий и подготовки черновиков нужен сервис ИИ. По умолчанию он выключен. Ссылка на вакансию сохраняется для справки, но CVortex не загружает страницу.
 
-The system is designed to help with:
+Реализация M1.4 уже находится в `stage`, но Preview 0.1 ещё не проверен на реальных пользователях и отзывы не собраны. Работа над M2 не началась. Пока нельзя импортировать или экспортировать файлы, создавать DOCX/PDF, вести историю общения с работодателями, готовиться к собеседованиям или анализировать результаты поиска. Автоматической отправки откликов тоже нет.
 
-- maintaining a canonical Career Fact Base;
-- importing and analyzing vacancies;
-- matching vacancy requirements against confirmed facts;
-- deciding whether an application is worth prioritizing;
-- recommending resume changes without inventing experience;
-- producing tailored resume versions and cover letters;
-- preserving application history and Employer Memory;
-- preparing for interviews using the exact history of what was already communicated;
-- researching employers and evidence-based hiring practices;
-- measuring job-search outcomes over time.
+Начните с [[User-Guide|руководства пользователя]]. Администратору пригодятся инструкции [[../10-Operations/Local-Development|по локальной установке]] и [[../10-Operations/M1-Access-Core|по доступу и приглашениям]]. Остальные материалы собраны в [[Documentation-Map|карте документации]].
 
-## Source-of-truth chain
+## Основные правила
 
-```text
-Career Facts
-    ↓
-Claims
-    ↓
-Generated Content
-```
+- Каждое утверждение о кандидате должно подтверждаться проверенным фактом о его карьере.
+- Предложенные системой факты остаются неподтверждёнными, пока человек их не проверит.
+- Текст вакансий, писем рекрутера и других внешних источников считается недоверенным вводом.
+- Окончательное решение принимает человек. CVortex не отправляет отклики и не связывается с работодателями.
 
-Any statement about the candidate must remain traceable back to confirmed Career Facts. AI-extracted potential facts are not automatically treated as truth.
-
-## Product boundaries
-
-- Human approval is mandatory for important generated content and application actions.
-- CVortex does not automatically submit job applications.
-- Deterministic code, schemas, SQL, validation, and rules are preferred where they solve the problem reliably.
-- Runtime AI is provider-independent at the business-logic level.
-- External vacancy text, recruiter messages, web content, and imported documents are untrusted input.
-- The product begins local-first and API-first, while remaining portable to hosted infrastructure later.
-
-## Approved technology direction
-
-The current project direction is:
-
-- Laravel backend;
-- Next.js / React / TypeScript frontend;
-- PostgreSQL as the primary relational database;
-- Redis and Laravel Horizon for queue/cache operations;
-- Nginx as the web entry point;
-- Docker Compose for the initial local deployment;
-- structured document generation to DOCX with LibreOffice-based PDF conversion;
-- responsive PWA for the first mobile experience;
-- Figma as the visual design source of truth;
-- Markdown in Git as documentation, usable as an Obsidian vault.
-
-Specific dependency versions and concrete LLM model mappings are intentionally not fixed in Phase 01. They require the research and decision phases.
-
-## Current documentation
-
-Start at [[Documentation-Map]]. Product intent is captured in [[../01-Product/Vision|Vision]], governing rules in [[../01-Product/Principles|Principles]], boundaries in [[../01-Product/Scope|Scope]], and shared terminology in [[../01-Product/Glossary|Glossary]].
+Замысел, правила, границы и планы развития описаны в документах [«Видение продукта»](../01-Product/Vision.md), [«Принципы»](../01-Product/Principles.md), [«Объём продукта»](../01-Product/Scope.md), [«Словарь терминов»](../01-Product/Glossary.md) и [«План развития»](../01-Product/Roadmap.md).

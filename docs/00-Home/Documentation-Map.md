@@ -1,78 +1,69 @@
 ---
-title: Documentation Map
+title: Карта документации
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-27
+updated: 2026-10-03
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
-  - "[[../01-Product/Vision|Vision]]"
-  - "[[../01-Product/Principles|Principles]]"
-  - "[[../01-Product/Scope|Scope]]"
-  - "[[../01-Product/Roadmap|Roadmap]]"
-  - "[[../01-Product/Glossary|Glossary]]"
-  - "[[../03-ADR/INDEX|Architecture Decision Index]]"
-  - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
-  - "[[../10-Operations/Local-Development|Local Development]]"
-  - "[[Error-Center-User-Guide|Error Center user guide]]"
-  - "[[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]]"
+  - "[[User-Guide|Руководство пользователя]]"
+  - "[[Process-Map|Карта процессов]]"
+  - "[[../01-Product/Vision|Видение продукта]]"
+  - "[[../01-Product/Scope|Объём продукта]]"
+  - "[[../01-Product/Roadmap|План развития]]"
+  - "[[../03-ADR/INDEX|Указатель архитектурных решений]]"
 ---
 
-# Documentation Map
+# Карта документации
 
-`docs/` is both the Git-tracked engineering documentation tree and the Obsidian vault for CVortex. Markdown remains canonical; Obsidian is an interface, not a separate knowledge database.
+Документация проекта хранится в `docs/` как обычные Markdown-файлы в Git. Её можно просматривать в Obsidian, но для чтения Obsidian не нужен.
 
-## Core documents
+## Для пользователей и операторов
 
-- [[CVortex]] — project home and stable summary.
-- [[../01-Product/Vision|Vision]] — problem, value and desired outcome.
-- [[../01-Product/Principles|Principles]] — non-negotiable product/engineering principles.
-- [[../01-Product/Scope|Scope]] — current product scope, deferred work and non-goals.
-- [[../01-Product/Roadmap|Roadmap]] — **canonical implementation sequence and milestone/value checkpoints**.
-- [[../01-Product/Glossary|Glossary]] — canonical terminology.
-- [[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]] — accepted PRD, requirements and user-flow baseline; its former embedded roadmap is superseded by [[../01-Product/Roadmap|Roadmap]].
-- [[../02-Architecture/Architecture-Baseline|Architecture Baseline]] — accepted system boundaries/invariants.
-- [[../02-Architecture/Phase-06-System-Design|Phase 06 System Design]] — accepted C4/component/deployment design.
-- [[../02-Architecture/M0-Runtime|M0 Runtime]] — implemented local runtime topology, version baseline, health, persistence and exposure boundaries.
-- [[../04-Data/Phase-06-Data-Design|Phase 06 Data Design]] — accepted conceptual data, ownership, provenance and audit model.
-- [[../04-Data/M1-2-Career-Core|M1.2 Career Core Implementation]] — implemented Career lifecycle, API, provenance, Truth Guard and runtime-AI boundary.
-- [[../04-Data/M1-3-Vacancy-Core|M1.3 Vacancy Core Implementation]] — pasted-text snapshots, requirement extraction, explainable matching, recommendation and API boundary.
-- [[../04-Data/M1-4-Application-Draft|M1.4 Application Draft]] — saved Preview 0.1 preparation, recommendation/draft provenance, Truth Guard review, explicit approval and API boundary.
-- [[../04-Data/Diagnostics|Diagnostics data model]] — grouped incidents, occurrences, correlation and retention.
-- [[Error-Center-User-Guide|Error Center user guide]] — what users should do after an error and how administrators investigate incidents.
-- [[../06-AI/Phase-06-AI-Design|Phase 06 AI Design]] — accepted provider-independent AI/Truth Guard contracts.
-- [[../08-Security/Threat-Model|Phase 06 Threat Model]] — threats, controls and validation strategy.
-- [[../03-ADR/INDEX|Architecture Decision Index]] — authoritative architecture-decision inventory.
-- [[../07-Design/Design-Foundation|Design Foundation]] — visual/interaction/accessibility baseline and Git token authority.
-- [[../07-Design/Figma-Handoff|Figma Handoff]] — Figma bootstrap/review/drift procedure and current capability limitation.
-- [[../10-Operations/Local-Development|Local Development]] — clean bootstrap and stable Make interface.
-- [[../10-Operations/M0-Runbook|M0 Runbook]] — health diagnosis, recovery and validation commands.
-- [[../10-Operations/Logging-and-Diagnostics|Logging and Diagnostics]] — structured events, Error Center and CLI fallback.
+- [[CVortex|О CVortex]]: возможности и текущие ограничения продукта.
+- [[User-Guide|Руководство пользователя]]: вход, факты о карьере, вакансии, черновики и защита данных.
+- [[Process-Map|Карта процессов]]: Preview, происхождение данных, локальный запуск и диагностика. Планы M2 выделены отдельно.
+- [[../10-Operations/Local-Development|Локальная установка]]: требования, настройка, запуск, остановка, обновление и устранение проблем.
+- [[../10-Operations/M0-Runbook|Проверка и восстановление M0]]: состояние служб и действия оператора.
+- [[Error-Center-User-Guide|Разбор ошибок]]: действия пользователя и администратора при сбое.
+- [[../10-Operations/M1-Access-Core|Доступ и приглашения]]: создание первого администратора, выдача приглашений и управление доступом.
+- [[../10-Operations/Logging-and-Diagnostics|Журналы и диагностика]]: поиск причины сбоя и действия при недоступности панели.
+- [[../10-Operations/MCP-Gateway-Validation|Проверка MCP Gateway]]: дополнительная интеграция, выключенная по умолчанию.
 
-## Documentation areas
+## Описание продукта и технические материалы
 
-| Directory | Purpose | Current state |
+- [[../01-Product/Vision|Видение]], [[../01-Product/Principles|принципы]], [[../01-Product/Scope|объём продукта]] и [[../01-Product/Glossary|словарь]]: замысел, ограничения и термины. Эти документы описывают направление, а не подтверждают готовность функций.
+- [[../01-Product/Roadmap|План развития]]: последовательность этапов и их текущий статус.
+- [[../02-Architecture/Architecture-Baseline|Архитектурные границы]], [[../02-Architecture/Phase-06-System-Design|системный дизайн]] и [[../02-Architecture/M0-Runtime|схема M0]]: устройство системы, принятые решения и локальный запуск.
+- [[../04-Data/M1-2-Career-Core|M1.2: факты о карьере]], [[../04-Data/M1-3-Vacancy-Core|M1.3: вакансии]] и [[../04-Data/M1-4-Application-Draft|M1.4: черновики отклика]]: структура данных, API и правила проверки.
+- [[../04-Data/Diagnostics|Модель диагностики]] и [[../05-API/diagnostics.openapi.yaml|контракт API диагностики]].
+- [[../06-AI/Phase-06-AI-Design|Проектирование работы с ИИ]], [[../08-Security/Threat-Model|модель угроз]] и [[../07-Design/Design-Foundation|основы дизайна]].
+- [[../07-Design/Figma-Handoff|Передача макетов из Figma]]: источник дизайна, порядок передачи и известные ограничения проверки.
+- [[../03-ADR/INDEX|Указатель архитектурных решений]]: список принятых архитектурных решений.
+
+## Разделы документации
+
+| Папка | Содержание | Состояние |
 |---|---|---|
-| `00-Home/` | Home pages and maps | Active |
-| `01-Product/` | Vision, principles, scope, PRD, roadmap | Active |
-| `02-Architecture/` | Architecture views and diagrams | Active; baseline accepted |
-| `03-ADR/` | Architecture decisions | Active; see the ADR index for current decisions |
-| `04-Data/` | Conceptual data/provenance/ownership | Active; Phase 06 accepted |
-| `05-API/` | API conventions/contracts | Active; diagnostics OpenAPI contract |
-| `06-AI/` | Provider/model-policy/skills/workflows/evals | Active; Phase 06 accepted |
-| `07-Design/` | Design system/tokens/Figma | Active; Phase 07 completed |
-| `08-Security/` | Threat model/security controls | Active; Phase 06 accepted |
-| `09-QA/` | Testing/evaluation strategy | Reserved; M0 checks live with applications/CI |
-| `10-Operations/` | Local operations/deployment/observability | Active; M0 local runtime documented |
-| `11-Research/` | Promoted research summaries | Reserved |
-| `99-Archive/` | Deprecated/superseded docs | Reserved |
+| `00-Home/` | Главная страница, руководства и навигация | В работе |
+| `01-Product/` | Видение, принципы, границы, дизайн продукта и план развития | В работе; порядок этапов задаёт план развития |
+| `02-Architecture/` | Архитектура и схема запуска | В работе |
+| `03-ADR/` | Принятые, предложенные и заменённые решения | В работе; см. указатель раздела |
+| `04-Data/` | Владение данными, их происхождение и договорённости по моделям | В работе |
+| `05-API/` | Контракты API | В работе |
+| `06-AI/` | Сервисы ИИ, модели, сценарии и оценка ИИ | В работе |
+| `07-Design/` | Дизайн-система, токены и передача макетов | В работе |
+| `08-Security/` | Модель угроз и меры защиты | В работе |
+| `09-QA/` | Отдельные документы по тестированию | Зарезервировано; проверки хранятся рядом с приложениями, скриптами и CI |
+| `10-Operations/` | Локальный запуск, обслуживание и диагностика | В работе |
+| `11-Research/` | Исследования, результаты которых включены в документацию | Зарезервировано |
+| `99-Archive/` | Устаревшие и заменённые документы | Зарезервировано |
 
-## Rules
+## Как читать документацию
 
-- Significant architecture changes require ADR review; roadmap sequencing changes do not silently rewrite accepted architecture.
-- Research-dependent facts are verified before they become architecture/implementation facts.
-- Concrete versions, external API capabilities, prices and model mappings are freshness-sensitive.
-- Mermaid is preferred for engineering diagrams where practical.
-- Documents remain readable in Git without Obsidian.
-- Current execution authority comes from `.agents/state/NEXT.md` + blockers + the active task spec, not from legacy phase files.
+- Порядок действий для пользователя и оператора описан в руководствах. Замысел продукта, архитектуру и планы развития ищите в справочных документах.
+- Описание функции в планах или проектных документах не означает, что она уже работает. Сверяйтесь с руководством пользователя и текущим статусом плана развития.
+- Существенные архитектурные решения оформляются отдельными ADR. Эта карта не заменяет и не переопределяет их.
+- Ссылки Obsidian помогают переходить между заметками. Рядом с ними оставлены обычные ссылки Markdown там, где они нужны для GitHub и других просмотрщиков.
+- Следующую разрешённую задачу определяют `.agents/state/NEXT.md`, список блокеров и явное поручение, а не эта карта и не номер этапа в плане развития.
