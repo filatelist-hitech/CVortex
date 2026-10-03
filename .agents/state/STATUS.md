@@ -661,3 +661,9 @@ Validation: `docker compose --env-file .env config --quiet` passed; a rendered C
 Fresh exact-head Codex review also found that the user guide overstated offline matching availability. The user and local setup guides now clarify that first analysis of a vacancy needs AI to extract requirements; deterministic matching can be repeated offline only after requirements were successfully extracted, because manual requirement entry is not available.
 
 Validation: confirmed the call order in `VacancyAnalysisService::analyzeForOwner()`, then checked the edited Markdown targets and `git diff --check`. No application code or runtime state changed.
+
+### Project-state audit — 2026-10-03
+
+Recorded the audit in [the current project-state report](../../docs/00-Home/CURRENT-PROJECT-STATE.md), based on `a599330bbaec5ff957bd6d6600136b97c2a83655`, which matched `origin/stage` during the audit. Compose services were healthy and the homepage returned HTTP 200, but `/api/v1/health/ready` returned 503 because configured database `cvortex2` is absent from the existing PostgreSQL volume; `migrate:status` stopped before migrations. Preview 0.1 remains blocked pending runtime reconciliation and real-user acceptance; M2 remains gated. No migration or data changes were made. `NEXT.md` and `BLOCKERS.md` remain unchanged.
+
+Validation: the audit's live checks and their results are recorded in the report's checks table. No application test suite was rerun for this documentation record.
