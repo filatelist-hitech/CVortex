@@ -40,10 +40,14 @@ From a clean checkout:
 
 ```bash
 make init
+docker compose --env-file .env config --quiet
 make up
+make migrate
 ```
 
 CVortex is exposed through Nginx on the loopback interface at `http://127.0.0.1:8080` by default. Override the port with `CVORTEX_PORT` in the root `.env` when needed.
+
+For an existing checkout, database-volume recovery and the full startup checklist are documented in [Local Development](docs/10-Operations/Local-Development.md). Do not run `docker compose down --volumes` as a routine fix: it removes the persistent local database and private-storage volumes.
 
 Useful commands:
 

@@ -3,7 +3,7 @@ title: Local Development
 status: active
 owner: project
 created: 2026-09-12
-updated: 2026-09-27
+updated: 2026-10-03
 tags: [operations, local, docker, m0]
 related:
   - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
@@ -17,16 +17,30 @@ related:
 
 Install Git, Docker with Compose support, and Make. Host PHP, Composer, Node.js, npm, PostgreSQL and Redis are not required. The optional `make logs-pretty` command also needs host Python 3.
 
-## Clean bootstrap
+## First launch
 
 From the repository root:
 
 ```sh
 make init
+docker compose --env-file .env config --quiet
 make up
+make migrate
 ```
 
-Open `http://localhost:8080`. `make init` creates ignored root `.env` only when absent, generates local secrets, builds the images and installs locked dependencies in named volumes. Re-running it is safe and preserves an existing `.env`.
+`make init` must run before the first `make up`: it creates the ignored root `.env` when absent, generates local secrets, builds the images and installs locked dependencies in named volumes. It also repairs a missing or unsafe runtime database password. Re-running it is safe, but it preserves existing `.env` values, including `POSTGRES_DB`; it does not rename or recreate a database in an existing PostgreSQL volume.
+
+The `docker compose ... config --quiet` check catches missing required variables before containers start. `make migrate` is the repository migration entry point: it first provisions the restricted `cvortex_app` role and then runs Laravel migrations through the privileged `migration` service.
+
+After the stack starts, verify the result:
+
+```sh
+docker compose ps
+health_authority="$(docker compose port nginx 80)"
+curl -fsS "http://${health_authority}/api/v1/health/ready"
+```
+
+The readiness endpoint must return a successful response. It probes the runtime PostgreSQL and Redis dependencies; `/api/v1/health/live` only validates the HTTP/application path. The command asks Compose for Nginx's effective published address, so it honors the configured `CVORTEX_PORT` with Compose's dotenv parsing without executing or printing `.env`. Open the configured `APP_URL` in a browser only after this check passes.
 
 If port 8080 is already occupied, change both values in `.env` so application URLs remain coherent:
 
@@ -36,6 +50,48 @@ APP_URL=http://localhost:18080
 ```
 
 Then run `make up` and open the configured port.
+
+## Recover a database-name mismatch
+
+If `make migrate` fails with an error such as:
+
+```text
+FATAL: database "cvortex1" does not exist
+```
+
+the running PostgreSQL volume was initialized with a different `POSTGRES_DB` than the current `.env`. The failure happens in `10-runtime-role.sh`, before Laravel migration code runs. This is a configuration mismatch, not a reason to delete the database volume.
+
+Stop the stack without removing volumes and inspect the databases that actually exist:
+
+```sh
+make down
+make up
+docker compose exec -T postgres sh -lc \
+  'psql -U "$POSTGRES_USER" -d postgres -Atc "SELECT datname FROM pg_database ORDER BY datname;"'
+```
+
+If the expected database is present under another name, update only `POSTGRES_DB` in the ignored root `.env` to that existing name. Keep `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_RUNTIME_USER` and `POSTGRES_RUNTIME_PASSWORD` consistent with the initialized volume, then recreate the services and retry:
+
+```sh
+make down
+docker compose --env-file .env config --quiet
+make up
+make migrate
+```
+
+If the required database is not listed, stop before changing credentials or storage. Identify which Compose project and named volume contain the intended data; do not run `docker compose down --volumes` in the normal recovery path. That command destroys the persistent PostgreSQL and private-storage volumes.
+
+## Existing checkout checklist
+
+Use this sequence when the checkout already has an ignored `.env` or an existing PostgreSQL volume:
+
+1. Run `make init` and review the non-secret values in `.env`, especially `CVORTEX_PORT`, `APP_URL` and `POSTGRES_DB`.
+2. Run `docker compose --env-file .env config --quiet`.
+3. Start with `make up` and confirm `docker compose ps` reports healthy services.
+4. Run `make migrate` before opening the application.
+5. Check the loopback health endpoint and then use the browser.
+
+Never copy a `.env` from another checkout blindly: its database name and credentials may belong to a different named volume.
 
 ## Stable commands
 
