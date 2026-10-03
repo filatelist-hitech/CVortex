@@ -715,3 +715,9 @@ Validation: network password authentication to `cvortex` passed; the migration c
 At the user's explicit request, created a separate `cvortex_test` database without copying or altering the existing `cvortex` data. Applied the repository's 24 migrations to the new database, created one ACTIVE CVortex admin through `user:bootstrap-admin`, and created one ACTIVE standard user through the invitation service. The ignored local `.env` now selects `cvortex_test`; generated test credentials are stored only in the ignored, owner-readable `.env.local-test-accounts`. The original database remains available for later selection.
 
 Validation: both test accounts completed same-origin CSRF/login/`/api/v1/me` checks with their expected roles. Migration status on the new database shows all 24 migrations as `Ran`. Preview 0.1 and M2 were not started; `NEXT.md` is unchanged.
+
+### PR #42 Codex plugin ingestion review remediation — 2026-10-03
+
+Added a Codex compatibility manifest with author and interface metadata plus an explicit `./skills/` reference, while retaining the portable root Agent Plugins manifest. Updated the local setup guide to distinguish both manifests and their shared skill directory.
+
+Validation: parsed both plugin manifests and the repo marketplace as JSON; checked matching plugin identity/version and marketplace source path; installed from the repo marketplace using an isolated Codex CLI home and confirmed the installed cache contains `skills/cvortex/SKILL.md`; `git diff --check` passed. This validated package ingestion and skill packaging, not ChatGPT MCP app runtime.
