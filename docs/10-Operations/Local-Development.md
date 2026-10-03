@@ -36,11 +36,11 @@ After the stack starts, verify the result:
 
 ```sh
 docker compose ps
-health_port="$(awk -F= '$1 == "CVORTEX_PORT" { print $2; exit }' .env)"
-curl -fsS "http://127.0.0.1:${health_port:-8080}/api/v1/health/ready"
+health_authority="$(docker compose port nginx 80)"
+curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-The readiness endpoint must return a successful response. It probes the runtime PostgreSQL and Redis dependencies; `/api/v1/health/live` only validates the HTTP/application path. The command reads only `CVORTEX_PORT` from `.env` without executing or printing the file. Open the configured `APP_URL` in a browser only after this check passes.
+The readiness endpoint must return a successful response. It probes the runtime PostgreSQL and Redis dependencies; `/api/v1/health/live` only validates the HTTP/application path. The command asks Compose for Nginx's effective published address, so it honors the configured `CVORTEX_PORT` with Compose's dotenv parsing without executing or printing `.env`. Open the configured `APP_URL` in a browser only after this check passes.
 
 If port 8080 is already occupied, change both values in `.env` so application URLs remain coherent:
 
