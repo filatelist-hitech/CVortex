@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import CareerWorkspace from "./career-workspace";
+import Diagnostics from "./diagnostics";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
@@ -28,7 +30,12 @@ const safeErrorMessages: Record<string, string> = {
 };
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly retryable: boolean, public readonly code: string) {
+  constructor(
+    message: string,
+    public readonly retryable: boolean,
+    public readonly code: string,
+    public readonly retryAfterSeconds: number | null = null,
+  ) {
     super(message);
     this.name = "ApiError";
   }
@@ -69,13 +76,23 @@ export async function api(path: string, options: RequestInit = {}) {
     const reference = typeof body?.error?.request_id === "string" ? body.error.request_id : response.headers.get("X-Request-ID");
     const safeCode = /^[A-Z][A-Z0-9_]{2,95}$/.test(code) ? code : "REQUEST_FAILED";
     const retryable = body?.error?.retryable === true;
+    const retryAfterHeader = response.headers.get("Retry-After")?.trim() ?? "";
+    const parsedRetryAfter = /^(0|[1-9]\d*)$/.test(retryAfterHeader) ? Number(retryAfterHeader) : Number.NaN;
+    const retryAfterSeconds = retryable && Number.isSafeInteger(parsedRetryAfter) && parsedRetryAfter <= 86400
+      ? parsedRetryAfter
+      : null;
     const explanation = errorExplanation(safeCode, retryable);
-    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${retryable ? " You can retry." : ""}`, retryable, safeCode);
+    const retryGuidance = retryable
+      ? retryAfterSeconds !== null && retryAfterSeconds > 0
+        ? ` You can retry after ${retryAfterSeconds} seconds.`
+        : " You can retry."
+      : "";
+    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${retryGuidance}`, retryable, safeCode, retryAfterSeconds);
   }
   return response.status === 204 ? null : response.json();
 }
 
-export default function AccessShell({ registrationRoute = false }: { registrationRoute?: boolean }) {
+export default function AccessShell({ registrationRoute = false, destination = "career" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
   const [token, setToken] = useState("");
@@ -115,6 +132,9 @@ export default function AccessShell({ registrationRoute = false }: { registratio
   }
 
   if (user) {
+    if (destination === "diagnostics") {
+      return user.role === "admin" ? <main className="career-shell diagnostics-shell"><nav aria-label="Workspace"><Link href="/">← Career workspace</Link></nav><Diagnostics /></main> : <main className="shell"><section className="status-card"><h1>Access denied</h1><p>Diagnostics are available to administrators only.</p><Link href="/">Return to workspace</Link></section></main>;
+    }
     return <CareerWorkspace email={user.email} role={user.role} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
   }
 

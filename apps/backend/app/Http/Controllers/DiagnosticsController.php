@@ -25,22 +25,37 @@ final class DiagnosticsController extends Controller
             'status' => [Rule::in(['OPEN', 'RESOLVED', 'IGNORED'])],
             'service' => ['string', 'max:32'], 'component' => ['string', 'max:96'],
             'environment' => ['string', 'max:32'], 'error_code' => ['string', 'max:96'],
+            'provider' => ['string', 'max:64'],
             'from' => ['date'], 'to' => ['date'],
             'search' => ['string', 'max:128'],
             'request_id' => ['string', 'max:128'], 'job_id' => ['string', 'max:128'],
             'llm_run_id' => ['string', 'max:26'], 'application_id' => ['string', 'max:26'],
+            'sort' => [Rule::in(['priority', 'last_seen', 'first_seen', 'occurrences', 'severity'])],
+            'hours' => [Rule::in(['24', '168', '720'])],
         ]);
-        $query = DB::table('diagnostic_incidents');
+        $query = DB::table('diagnostic_incidents')->select('diagnostic_incidents.*')
+            ->selectSub(DB::table('diagnostic_occurrences')->select('operation')
+                ->whereColumn('incident_id', 'diagnostic_incidents.id')
+                ->orderByDesc('created_at')->orderByDesc('id')->limit(1), 'latest_operation')
+            ->selectSub(DB::table('diagnostic_occurrences')->select('provider')
+                ->whereColumn('incident_id', 'diagnostic_incidents.id')
+                ->orderByDesc('created_at')->orderByDesc('id')->limit(1), 'latest_provider');
         foreach (['severity', 'status', 'service', 'component', 'environment', 'error_code'] as $key) {
             if (isset($filters[$key])) {
                 $query->where($key, $filters[$key]);
             }
+        }
+        if (isset($filters['provider'])) {
+            $query->whereRaw('(SELECT provider FROM diagnostic_occurrences WHERE incident_id = diagnostic_incidents.id ORDER BY created_at DESC, id DESC LIMIT 1) = ?', [$filters['provider']]);
         }
         if (isset($filters['from'])) {
             $query->where('last_seen_at', '>=', Carbon::parse($filters['from'])->startOfDay());
         }
         if (isset($filters['to'])) {
             $query->where('last_seen_at', '<=', Carbon::parse($filters['to'])->endOfDay());
+        }
+        if (isset($filters['hours'])) {
+            $query->where('last_seen_at', '>=', now()->subHours((int) $filters['hours']));
         }
         foreach (['request_id', 'job_id', 'llm_run_id', 'application_id'] as $key) {
             if (isset($filters[$key])) {
@@ -56,7 +71,21 @@ final class DiagnosticsController extends Controller
             });
         }
 
-        $incidents = $query->orderByDesc('last_seen_at')->paginate(25)->through(function (object $incident): object {
+        $sort = $filters['sort'] ?? 'priority';
+        if ($sort === 'priority') {
+            $query->orderByRaw("CASE status WHEN 'OPEN' THEN 0 WHEN 'RESOLVED' THEN 1 ELSE 2 END")
+                ->orderByRaw("CASE severity WHEN 'CRITICAL' THEN 0 WHEN 'ERROR' THEN 1 ELSE 2 END");
+        } elseif ($sort === 'severity') {
+            $query->orderByRaw("CASE severity WHEN 'CRITICAL' THEN 0 WHEN 'ERROR' THEN 1 ELSE 2 END");
+        } elseif ($sort === 'first_seen') {
+            $query->orderByDesc('first_seen_at');
+        } elseif ($sort === 'occurrences') {
+            $query->orderByDesc('occurrence_count');
+        }
+        if ($sort === 'priority' || $sort === 'severity' || $sort === 'last_seen') {
+            $query->orderByDesc('last_seen_at');
+        }
+        $incidents = $query->orderBy('id')->paginate(25)->through(function (object $incident): object {
             $incident->retryable = (bool) $incident->retryable;
 
             return $incident;
@@ -72,7 +101,7 @@ final class DiagnosticsController extends Controller
         abort_if($incident === null, 404);
         $incident->retryable = (bool) $incident->retryable;
         $occurrences = DB::table('diagnostic_occurrences')->where('incident_id', $id)
-            ->orderByDesc('created_at')->limit(20)->get();
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(20)->get();
 
         return response()->json(['data' => ['incident' => $incident, 'occurrences' => $occurrences]]);
     }
@@ -84,6 +113,9 @@ final class DiagnosticsController extends Controller
         DB::transaction(function () use ($id, $data, $audit, $user): void {
             $incident = DB::table('diagnostic_incidents')->where('id', $id)->lockForUpdate()->first();
             abort_if($incident === null, 404);
+            if ($incident->status === $data['status']) {
+                return;
+            }
             DB::table('diagnostic_incidents')->where('id', $id)->update(['status' => $data['status'], 'updated_at' => now()]);
             $audit->record('diagnostics.incident.status_changed', 'USER', $user, 'diagnostic_incident', $id, ['status' => $data['status']]);
         });
@@ -100,7 +132,7 @@ final class DiagnosticsController extends Controller
             'error_ref' => ['sometimes', 'string', 'regex:/\\A[a-f0-9]{64}\\z/'],
             'route' => ['sometimes', 'string', Rule::in(self::BROWSER_ROUTES)],
         ]);
-        $recorded = $recorder->record('FRONTEND_RUNTIME_ERROR', 'A browser operation failed.', $data['component'], 'ERROR', null, [
+        $recorded = $recorder->record('FRONTEND_RUNTIME_ERROR', 'The browser reported a failure. Its root cause was not captured.', $data['component'], 'ERROR', null, [
             'service' => 'frontend', 'request_id' => $request->attributes->get('request_id'),
             'user_id' => $request->user()?->id, 'operation' => $data['kind'],
             'route' => $data['route'] ?? null, 'error_ref' => $data['error_ref'] ?? null,

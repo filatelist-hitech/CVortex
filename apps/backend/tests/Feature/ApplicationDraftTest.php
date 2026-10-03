@@ -7,6 +7,7 @@ use App\AI\Data\LlmRequest;
 use App\AI\Data\LlmResponse;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
+use App\Models\ApplicationDraftItem;
 use App\Models\ApplicationPreparation;
 use App\Models\CareerFact;
 use App\Models\CareerSource;
@@ -392,6 +393,38 @@ class ApplicationDraftTest extends TestCase
             'operation' => 'application_truth_review',
         ]);
         $this->assertNotNull(\DB::table('diagnostic_occurrences')->value('llm_run_id'));
+    }
+
+    public function test_unexpected_generation_failure_uses_the_same_code_in_api_and_diagnostics(): void
+    {
+        Queue::fake();
+        $user = $this->user('draft-generation-unexpected-failure@example.test');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $this->app->instance(LlmProvider::class, new ApplicationDraftFakeProvider);
+        $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer. Laravel is required.', null);
+        app(VacancyAnalysisService::class)->analyze($user, $queued['snapshot']);
+        $this->actingAs($user);
+        $preparation = $this->postJson('/api/v1/vacancies/'.$queued['vacancy']->id.'/preparation')->assertOk()->json('data');
+        ApplicationDraftItem::creating(static function (): void {
+            throw new \RuntimeException('database write failed');
+        });
+
+        $this->withHeader('X-Request-ID', 'req_generation_storage_failure')
+            ->postJson('/api/v1/applications/preparations/'.$preparation['id'].'/generate')
+            ->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR');
+
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'INTERNAL_ERROR']);
+        $this->assertDatabaseMissing('diagnostic_incidents', ['error_code' => 'APPLICATION_GENERATION_FAILED']);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_generation_storage_failure',
+            'application_id' => $preparation['id'],
+            'user_id' => $user->id,
+        ]);
+        $this->assertSame(1, \DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->where('occurrence.request_id', 'req_generation_storage_failure')
+            ->where('incident.error_code', 'INTERNAL_ERROR')->count());
     }
 
     public function test_approval_rejects_a_revision_changed_while_truth_validation_is_in_flight(): void

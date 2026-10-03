@@ -555,8 +555,9 @@ describe("access shell", () => {
     render(<Home />);
     fireEvent.click(await screen.findByRole("button", { name: /Backend Engineer/ }));
     expect(await screen.findByRole("heading", { name: "Prepare for Backend Engineer" })).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: "Generate recommendations and cover drafts" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Generate recommendations and cover drafts" }));
+    const generate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
+    await waitFor(() => expect(generate).toBeEnabled());
+    fireEvent.click(generate);
     expect(await screen.findByDisplayValue("Built Laravel APIs.")).toBeInTheDocument();
     expect(screen.getByText(/not submit an application or contact an employer/i)).toBeInTheDocument();
     fireEvent.change(screen.getByDisplayValue("Built Laravel APIs."), { target: { value: "Built Laravel APIs. " } });

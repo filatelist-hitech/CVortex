@@ -8,6 +8,7 @@ use App\AI\Data\LlmResponse;
 use App\AI\Data\ModelPolicy;
 use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\CareerOutputException;
+use App\AI\Exceptions\LlmProviderException;
 use App\AI\Providers\OpenAiResponsesProvider;
 use App\AI\RuntimeSkillRegistry;
 use App\Jobs\ExtractCareerSource;
@@ -16,12 +17,17 @@ use App\Models\CareerSource;
 use App\Models\Claim;
 use App\Models\ClaimEvidence;
 use App\Models\User;
+use App\Queue\PendingJobRecovery;
+use App\Queue\QueueExecutionContext;
 use App\Services\CareerExtractionService;
 use App\Services\CareerFactService;
 use App\Services\TruthGuard;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -29,6 +35,202 @@ use Tests\TestCase;
 class CareerCoreTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_career_retry_deadline_preserves_delayed_retry_then_recovers_one_orphan(): void
+    {
+        Queue::fake();
+        $user = $this->user('career-orphan-recovery@example.test');
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $text = 'Synthetic delayed career source.';
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $text,
+            'content_hash' => hash('sha256', $text),
+            'extraction_status' => CareerSource::STATUS_RUNNING,
+        ]);
+        $job = new ExtractCareerSource((string) $user->id, (string) $source->id);
+        $job->withFakeQueueInteractions();
+        $service = \Mockery::mock(CareerExtractionService::class);
+        $service->shouldReceive('extract')->once()->withArgs(function (User $calledUser, string $calledText, string $runToken) use ($user, $text, $source): bool {
+            $this->assertSame((string) $user->id, (string) $calledUser->id);
+            $this->assertSame($text, $calledText);
+            $source->forceFill(['active_run_token' => $runToken])->save();
+
+            return true;
+        })->andThrow(
+            new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 60),
+        );
+
+        $job->handle($service);
+
+        $job->assertReleased(60);
+        $source->refresh();
+        $this->assertSame(CareerSource::STATUS_PENDING, $source->extraction_status);
+        $this->assertGreaterThanOrEqual(now()->addSeconds(59)->timestamp, $source->next_attempt_at->timestamp);
+        $this->assertGreaterThanOrEqual($source->next_attempt_at->timestamp + PendingJobRecovery::recoveryWindowSeconds(), $source->dispatch_recovery_at->timestamp);
+        $this->assertArrayNotHasKey('next_attempt_at', $source->toArray());
+        $this->assertArrayNotHasKey('dispatch_recovery_at', $source->toArray());
+
+        app(CareerExtractionService::class)->queue($user, $text);
+        Queue::assertNothingPushed();
+
+        $this->assertTrue(app(UniqueLock::class)->acquire($job));
+        Carbon::setTestNow($source->dispatch_recovery_at->addSecond());
+        try {
+            app(CareerExtractionService::class)->queue($user, $text);
+            app(CareerExtractionService::class)->queue($user, $text);
+        } finally {
+            Carbon::setTestNow();
+        }
+        Queue::assertPushed(ExtractCareerSource::class, 1);
+        $this->assertFalse(app(UniqueLock::class)->acquire($job));
+
+        $this->app->instance(LlmProvider::class, new FakeLlmProvider([['facts' => []]]));
+        Carbon::setTestNow($source->fresh()->next_attempt_at->addSecond());
+        try {
+            app(CareerExtractionService::class)->extract($user, $text);
+        } finally {
+            Carbon::setTestNow();
+        }
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->fresh()->extraction_status);
+        $this->assertNull($source->fresh()->next_attempt_at);
+        $this->assertNull($source->fresh()->dispatch_recovery_at);
+    }
+
+    public function test_stale_career_attempt_cannot_persist_after_recovery_reclaims_it(): void
+    {
+        $user = $this->user('career-stale-attempt-fenced@example.test');
+        $sourceText = 'Synthetic stale Career attempt.';
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $sourceText,
+            'content_hash' => hash('sha256', $sourceText),
+            'extraction_status' => CareerSource::STATUS_PENDING,
+        ]);
+        $replacementToken = (string) \Illuminate\Support\Str::uuid();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldReceive('generateStructured')->once()->andReturnUsing(function () use ($source, $replacementToken): LlmResponse {
+            CareerSource::query()->whereKey($source->id)->update([
+                'extraction_status' => CareerSource::STATUS_RUNNING,
+                'active_run_token' => $replacementToken,
+            ]);
+
+            return new LlmResponse(['facts' => []], 'fake', 'fake-structured', 1, 1, 1, 'stale-request', 1);
+        });
+        $this->app->instance(LlmProvider::class, $provider);
+
+        $job = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $job->handle(app(CareerExtractionService::class));
+        $job->assertNotFailed()->assertNotReleased();
+
+        $this->assertSame(CareerSource::STATUS_RUNNING, $source->fresh()->extraction_status);
+        $this->assertSame($replacementToken, $source->fresh()->active_run_token);
+        $this->assertDatabaseCount('career_facts', 0);
+        $this->assertDatabaseHas('llm_runs', [
+            'career_source_id' => $source->id,
+            'status' => 'FAILED',
+            'error_category' => 'ATTEMPT_SUPERSEDED',
+        ]);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+    }
+
+    public function test_career_worker_cannot_claim_pending_source_before_retry_deadline(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('career-retry-deadline-claim@example.test');
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $text = 'Synthetic career retry deadline claim.';
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $text,
+            'content_hash' => hash('sha256', $text),
+            'extraction_status' => CareerSource::STATUS_PENDING,
+        ]);
+        PendingJobRecovery::reserve($source, 60);
+        $deadline = $source->fresh()->next_attempt_at;
+
+        $result = app(CareerExtractionService::class)->extract($user, $text);
+
+        $this->assertSame(CareerSource::STATUS_PENDING, $result->fresh()->extraction_status);
+        $this->assertEquals($deadline, $result->fresh()->next_attempt_at);
+        $this->assertDatabaseCount('llm_runs', 0);
+    }
+
+    public function test_stale_career_running_source_is_recovered_but_fresh_work_is_held(): void
+    {
+        Queue::fake();
+        $user = $this->user('career-running-recovery@example.test');
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $staleText = 'Synthetic stale career source.';
+        $freshText = 'Synthetic fresh career source.';
+        $stale = CareerSource::query()->create([
+            'owner_id' => $user->id, 'career_profile_id' => $profile->id, 'kind' => 'PASTED_TEXT',
+            'source_text' => $staleText, 'content_hash' => hash('sha256', $staleText), 'extraction_status' => CareerSource::STATUS_RUNNING,
+        ]);
+        $fresh = CareerSource::query()->create([
+            'owner_id' => $user->id, 'career_profile_id' => $profile->id, 'kind' => 'PASTED_TEXT',
+            'source_text' => $freshText, 'content_hash' => hash('sha256', $freshText), 'extraction_status' => CareerSource::STATUS_RUNNING,
+        ]);
+        \DB::table('career_sources')->where('id', $stale->id)->update(['updated_at' => now()->subMinutes(10)]);
+        $staleJob = new ExtractCareerSource((string) $user->id, (string) $stale->id);
+        $freshJob = new ExtractCareerSource((string) $user->id, (string) $fresh->id);
+        $this->assertTrue(app(UniqueLock::class)->acquire($staleJob));
+        $this->assertTrue(app(UniqueLock::class)->acquire($freshJob));
+
+        app(CareerExtractionService::class)->queue($user, $staleText);
+        app(CareerExtractionService::class)->queue($user, $freshText);
+
+        $this->assertSame(CareerSource::STATUS_PENDING, $stale->fresh()->extraction_status);
+        $this->assertSame(CareerSource::STATUS_RUNNING, $fresh->fresh()->extraction_status);
+        Queue::assertPushed(ExtractCareerSource::class, 1);
+    }
+
+    public function test_legacy_pending_career_uses_latest_retry_timestamp_for_lock_window(): void
+    {
+        Queue::fake();
+        $user = $this->user('legacy-career-recovery@example.test');
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $text = 'Synthetic legacy delayed career source.';
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $text,
+            'content_hash' => hash('sha256', $text),
+            'extraction_status' => CareerSource::STATUS_PENDING,
+        ]);
+        $legacyCreatedAt = now()->subDays(4);
+        $legacyRetryAt = now()->subMinutes(5);
+        \DB::table('career_sources')->where('id', $source->id)->update([
+            'created_at' => $legacyCreatedAt,
+            'updated_at' => $legacyRetryAt,
+        ]);
+        $job = new ExtractCareerSource((string) $user->id, (string) $source->id);
+        $this->assertTrue(app(UniqueLock::class)->acquire($job));
+
+        app(CareerExtractionService::class)->queue($user, $text);
+        Queue::assertNothingPushed();
+
+        Carbon::setTestNow($legacyRetryAt->copy()->addSeconds(LlmProviderException::UNIQUE_LOCK_SECONDS + 1));
+        try {
+            app(CareerExtractionService::class)->queue($user, $text);
+            app(CareerExtractionService::class)->queue($user, $text);
+        } finally {
+            Carbon::setTestNow();
+        }
+        Queue::assertPushed(ExtractCareerSource::class, 1);
+        $this->assertFalse(app(UniqueLock::class)->acquire($job));
+    }
 
     public function test_extraction_keeps_untrusted_source_separate_and_creates_pending_evidence_only(): void
     {
@@ -56,6 +258,86 @@ class CareerCoreTest extends TestCase
         $this->assertDatabaseHas('llm_runs', ['owner_id' => $user->id, 'status' => 'COMPLETED', 'provider' => 'fake', 'model' => 'fake-structured']);
         $this->assertFalse(\Schema::hasColumn('llm_runs', 'source_text'));
         $this->assertFalse(\Schema::hasColumn('llm_runs', 'api_key'));
+    }
+
+    public function test_queued_retryable_extraction_does_not_record_an_incident_without_log_context(): void
+    {
+        Queue::fake();
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::TRANSPORT);
+            }
+        });
+        $user = $this->user('queued-retry-context@example.test');
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andThrow(new \RuntimeException('log context unavailable'));
+
+        try {
+            app(CareerExtractionService::class)->extract($user, 'Synthetic queued source.');
+            $this->fail('The retryable provider failure must be rethrown to the queue job.');
+        } catch (LlmProviderException) {
+            $this->addToAssertionCount(1);
+        } finally {
+            $queueContext->finish();
+        }
+
+        $this->assertDatabaseHas('career_sources', ['owner_id' => $user->id, 'extraction_status' => CareerSource::STATUS_RUNNING]);
+        app(CareerExtractionService::class)->queue($user, 'Synthetic queued source.');
+        Queue::assertNothingPushed();
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+    }
+
+    public function test_queued_terminal_extraction_stays_owned_until_job_finalizes(): void
+    {
+        Queue::fake();
+        $user = $this->user('queued-terminal-career@example.test');
+        $sourceText = 'Synthetic terminal provider failure.';
+        $profile = app(CareerFactService::class)->profileFor($user);
+        $source = CareerSource::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'kind' => 'PASTED_TEXT',
+            'source_text' => $sourceText,
+            'content_hash' => hash('sha256', $sourceText),
+            'extraction_status' => CareerSource::STATUS_PENDING,
+        ]);
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
+            }
+        });
+        $service = app(CareerExtractionService::class);
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andReturnUsing(function () use ($service, $user, $sourceText): void {
+            $service->queue($user, $sourceText);
+        });
+
+        try {
+            $job = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+            $job->handle($service);
+            $job->assertFailedWith(LlmProviderException::class)->assertNotReleased();
+        } finally {
+            $queueContext->finish();
+        }
+
+        Queue::assertNothingPushed();
+        $this->assertDatabaseHas('career_sources', [
+            'id' => $source->id,
+            'extraction_status' => CareerSource::STATUS_FAILED,
+            'error_code' => 'PROVIDER_ERROR',
+            'active_run_token' => null,
+        ]);
+        $this->assertDatabaseHas('llm_runs', [
+            'career_source_id' => $source->id,
+            'status' => 'FAILED',
+            'error_category' => LlmProviderException::NOT_CONFIGURED,
+        ]);
     }
 
     public function test_authenticated_user_can_start_extraction_through_the_api(): void
@@ -99,7 +381,13 @@ class CareerCoreTest extends TestCase
                 $this->addToAssertionCount(1);
             }
             $this->assertDatabaseMissing('career_facts', ['owner_id' => $user->id]);
-            $this->assertDatabaseHas('career_sources', ['owner_id' => $user->id, 'extraction_status' => 'FAILED', 'error_code' => 'SCHEMA_INVALID']);
+            $this->assertDatabaseHas('career_sources', [
+                'owner_id' => $user->id,
+                'extraction_status' => 'FAILED',
+                'error_code' => 'SCHEMA_INVALID',
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+            ]);
         }
     }
 

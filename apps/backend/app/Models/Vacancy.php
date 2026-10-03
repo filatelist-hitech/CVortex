@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\AI\Exceptions\LlmProviderException;
+use App\Queue\PendingJobRecovery;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,11 +19,21 @@ class Vacancy extends Model
 
     public const STATUS_FAILED = 'FAILED';
 
-    public const ANALYSIS_JOB_UNIQUE_FOR_SECONDS = 600;
+    public const ANALYSIS_JOB_UNIQUE_FOR_SECONDS = LlmProviderException::UNIQUE_LOCK_SECONDS;
 
     protected $fillable = [
         'owner_id', 'source_type', 'source_url', 'title', 'company', 'analysis_status', 'error_code',
     ];
+
+    protected $hidden = ['next_attempt_at', 'dispatch_recovery_at', 'active_run_token'];
+
+    protected function casts(): array
+    {
+        return [
+            'next_attempt_at' => 'immutable_datetime',
+            'dispatch_recovery_at' => 'immutable_datetime',
+        ];
+    }
 
     public function analysisRunIsStale(): bool
     {
@@ -29,11 +41,6 @@ class Vacancy extends Model
             return false;
         }
 
-        $connection = (string) config('queue.default', 'redis');
-        $retryAfter = (int) config('queue.connections.'.$connection.'.retry_after', 90);
-        $workerTimeout = (int) config('horizon.defaults.supervisor-1.timeout', config('horizon.defaults.timeout', 60));
-        $staleAfter = max(180, $retryAfter * 2, $workerTimeout * 2, self::ANALYSIS_JOB_UNIQUE_FOR_SECONDS + 30);
-
-        return $this->updated_at->lte(now()->subSeconds($staleAfter));
+        return PendingJobRecovery::runIsStale($this->updated_at);
     }
 }

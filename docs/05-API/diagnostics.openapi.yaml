@@ -66,7 +66,7 @@ paths:
   /diagnostics/incidents:
     get:
       summary: List grouped incidents
-      description: Admin only; newest last_seen_at first, 25 per page.
+      description: Admin only; open/highest severity, then newest last_seen_at by default; 25 per page.
       parameters:
         - { name: severity, in: query, schema: { type: string, enum: [WARNING, ERROR, CRITICAL] } }
         - { name: status, in: query, schema: { type: string, enum: [OPEN, RESOLVED, IGNORED] } }
@@ -74,6 +74,7 @@ paths:
         - { name: component, in: query, schema: { type: string, maxLength: 96 } }
         - { name: environment, in: query, schema: { type: string, maxLength: 32 } }
         - { name: error_code, in: query, schema: { type: string, maxLength: 96 } }
+        - { name: provider, in: query, description: Exact provider of the latest retained occurrence, schema: { type: string, maxLength: 64 } }
         - { name: from, in: query, schema: { type: string, format: date } }
         - { name: to, in: query, schema: { type: string, format: date } }
         - { name: search, in: query, description: Exact request/job/LLM/application ID or error code, schema: { type: string, maxLength: 128 } }
@@ -82,6 +83,8 @@ paths:
         - { name: llm_run_id, in: query, schema: { type: string, maxLength: 26 } }
         - { name: application_id, in: query, schema: { type: string, maxLength: 26 } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: sort, in: query, schema: { type: string, enum: [priority, last_seen, first_seen, occurrences, severity], default: priority } }
+        - { name: hours, in: query, schema: { type: string, enum: ['24', '168', '720'] }, description: Relative last-seen window in hours. }
       responses:
         '200':
           description: Laravel paginator in data
@@ -119,7 +122,7 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
     patch:
       summary: Change incident lifecycle status
-      description: Admin only; action is audited.
+      description: Admin only; effective status changes are audited. Repeating the current status is a no-op and creates no audit event.
       requestBody:
         required: true
         content:
@@ -176,6 +179,8 @@ components:
         retryable: { type: boolean, description: True only for explicitly retryable failure categories. }
         impact: { type: string, maxLength: 255 }
         recovery_action: { type: string, maxLength: 255 }
+        latest_operation: { type: [string, 'null'], description: Safe operation from the latest retained occurrence; list response only. }
+        latest_provider: { type: [string, 'null'], description: Safe provider from the latest retained occurrence; list response only. }
         exception_class: { type: [string, 'null'] }
         occurrence_count: { type: integer }
         first_seen_at: { type: string, format: date-time }
@@ -196,6 +201,7 @@ components:
         connection: { type: [string, 'null'] }
         attempt: { type: [integer, 'null'] }
         error_ref: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        retry_after_seconds: { type: [integer, 'null'], minimum: 0, maximum: 86400, description: Validated provider retry delay when known; null means no delay was recorded. }
         safe_stack: { type: [string, 'null'] }
         created_at: { type: string, format: date-time }
   responses:

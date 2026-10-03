@@ -16,18 +16,24 @@ use App\Models\Vacancy;
 use App\Models\VacancyAnalysis;
 use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
+use App\Queue\PendingJobRecovery;
+use App\Queue\QueueExecutionContext;
 use App\Services\CareerFactService;
 use App\Services\DatabaseOwnerContext;
 use App\Services\TrustedCareerQuery;
 use App\Services\VacancyAnalysisService;
 use App\Services\VacancyIngestionService;
 use App\Services\VacancyMatchingService;
+use App\Services\VacancyReanalysisService;
 use App\Services\VacancyRequirementValidator;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use LogicException;
 use Tests\TestCase;
 
@@ -138,6 +144,8 @@ class VacancyCoreTest extends TestCase
 
         app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
 
+        $this->assertNull($result['vacancy']->fresh()->next_attempt_at);
+        $this->assertNull($result['vacancy']->fresh()->dispatch_recovery_at);
         $this->assertDatabaseCount('vacancy_requirements', 2);
         $this->assertDatabaseHas('vacancy_requirements', ['label' => 'Laravel', 'importance' => 'MANDATORY']);
         $this->assertDatabaseHas('vacancy_requirements', ['label' => 'Symfony', 'importance' => 'PREFERRED']);
@@ -1746,6 +1754,9 @@ class VacancyCoreTest extends TestCase
         $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', null);
         $result['vacancy']->forceFill(['analysis_status' => 'RUNNING'])->save();
         \DB::table('vacancies')->where('id', $result['vacancy']->id)->update(['updated_at' => now()->subMinutes(20)]);
+        $staleJob = new AnalyzeVacancy((string) $user->id, (string) $result['snapshot']->id);
+        app(UniqueLock::class)->release($staleJob);
+        $this->assertTrue(app(UniqueLock::class)->acquire($staleJob));
 
         $this->actingAs($user)->getJson('/api/v1/vacancies/'.$result['vacancy']->id)
             ->assertOk()->assertJsonPath('data.analysis_run_stale', true);
@@ -1755,6 +1766,269 @@ class VacancyCoreTest extends TestCase
         $this->actingAs($user)->postJson('/api/v1/vacancies/'.$result['vacancy']->id.'/reanalyze')->assertAccepted();
         $this->assertSame('PENDING', $result['vacancy']->fresh()->analysis_status);
         Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $queued): bool => $queued->snapshotId === (string) $result['snapshot']->id);
+        Queue::assertPushed(AnalyzeVacancy::class, 2);
+    }
+
+    public function test_vacancy_retry_deadline_preserves_delay_and_orphan_recovery_reserves_once(): void
+    {
+        Queue::fake();
+        $user = $this->user('vacancy-orphan-recovery@example.test');
+        $text = 'Synthetic delayed vacancy source.';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_RUNNING,
+        ]);
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+        $job->withFakeQueueInteractions();
+        $service = \Mockery::mock(VacancyAnalysisService::class);
+        $service->shouldReceive('analyze')->once()->withArgs(function (User $calledUser, VacancySnapshot $calledSnapshot, string $runToken) use ($user, $snapshot, $vacancy): bool {
+            $this->assertSame((string) $user->id, (string) $calledUser->id);
+            $this->assertSame((string) $snapshot->id, (string) $calledSnapshot->id);
+            $vacancy->forceFill(['active_run_token' => $runToken])->save();
+
+            return true;
+        })->andThrow(
+            new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 60),
+        );
+
+        $job->handle($service, app(DatabaseOwnerContext::class));
+
+        $job->assertReleased(60);
+        $vacancy->refresh();
+        $this->assertSame(Vacancy::STATUS_PENDING, $vacancy->analysis_status);
+        $this->assertGreaterThanOrEqual(now()->addSeconds(59)->timestamp, $vacancy->next_attempt_at->timestamp);
+        $this->assertGreaterThanOrEqual($vacancy->next_attempt_at->timestamp + PendingJobRecovery::recoveryWindowSeconds(), $vacancy->dispatch_recovery_at->timestamp);
+        $this->assertArrayNotHasKey('next_attempt_at', $vacancy->toArray());
+        $this->assertArrayNotHasKey('dispatch_recovery_at', $vacancy->toArray());
+
+        app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        Queue::assertNothingPushed();
+
+        $this->assertTrue(app(UniqueLock::class)->acquire($job));
+        Carbon::setTestNow($vacancy->dispatch_recovery_at->addSecond());
+        try {
+            app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+            app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        } finally {
+            Carbon::setTestNow();
+        }
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
+        $this->assertFalse(app(UniqueLock::class)->acquire($job));
+    }
+
+    public function test_vacancy_worker_cannot_claim_pending_analysis_before_retry_deadline(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('vacancy-retry-deadline-claim@example.test');
+        $result = app(VacancyIngestionService::class)->queue($user, 'Synthetic retry deadline requirement.', null);
+        PendingJobRecovery::reserve($result['vacancy'], 60);
+        $deadline = $result['vacancy']->fresh()->next_attempt_at;
+
+        try {
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->fail('A duplicate worker claimed analysis before its retry deadline.');
+        } catch (SafeVacancyException) {
+            // The duplicate job must not reach the provider before the deadline.
+        }
+
+        $vacancy = $result['vacancy']->fresh();
+        $this->assertSame(Vacancy::STATUS_PENDING, $vacancy->analysis_status);
+        $this->assertEquals($deadline, $vacancy->next_attempt_at);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
+    }
+
+    public function test_duplicate_vacancy_job_before_retry_deadline_is_a_noop(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('vacancy-early-duplicate-job@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $text = 'Synthetic early duplicate retry deadline.';
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        PendingJobRecovery::reserve($vacancy, 60);
+        $deadline = $vacancy->fresh()->next_attempt_at;
+        $recoveryAt = $vacancy->fresh()->dispatch_recovery_at;
+        $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+
+        $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+
+        $job->assertNotFailed()->assertNotReleased();
+        $this->assertSame(Vacancy::STATUS_PENDING, $vacancy->fresh()->analysis_status);
+        $this->assertEquals($deadline, $vacancy->fresh()->next_attempt_at);
+        $this->assertEquals($recoveryAt, $vacancy->fresh()->dispatch_recovery_at);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_concurrent_duplicate_vacancy_job_while_current_analysis_runs_is_a_noop(): void
+    {
+        Queue::fake();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldNotReceive('generateStructured');
+        $this->app->instance(LlmProvider::class, $provider);
+        $user = $this->user('vacancy-running-duplicate-job@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_RUNNING,
+        ]);
+        $text = 'Synthetic concurrent duplicate analysis.';
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+
+        $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+
+        $job->assertNotFailed()->assertNotReleased();
+        $this->assertSame(Vacancy::STATUS_RUNNING, $vacancy->fresh()->analysis_status);
+        $this->assertNull($vacancy->fresh()->next_attempt_at);
+        $this->assertNull($vacancy->fresh()->dispatch_recovery_at);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_vacancy_job_does_not_swallow_safe_exception_after_claim_failure(): void
+    {
+        $user = $this->user('vacancy-safe-exception-propagates@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'title' => 'Synthetic vacancy',
+            'analysis_status' => Vacancy::STATUS_FAILED,
+        ]);
+        $text = 'Synthetic rejected vacancy claim.';
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now(),
+        );
+        $service = \Mockery::mock(VacancyAnalysisService::class);
+        $service->shouldReceive('analyze')->once()->andThrow(new SafeVacancyException);
+        $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+
+        $this->expectException(SafeVacancyException::class);
+        $job->handle($service, app(DatabaseOwnerContext::class));
+    }
+
+    public function test_stale_vacancy_attempt_cannot_persist_after_recovery_reclaims_it(): void
+    {
+        Queue::fake();
+        $user = $this->user('vacancy-stale-attempt-fenced@example.test');
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, 'Laravel is required.', null, hash('sha256', 'Laravel is required.'), now());
+        $replacementToken = (string) Str::uuid();
+        $provider = \Mockery::mock(LlmProvider::class);
+        $provider->shouldReceive('generateStructured')->once()->andReturnUsing(function () use ($vacancy, $replacementToken): LlmResponse {
+            Vacancy::query()->whereKey($vacancy->id)->update([
+                'analysis_status' => Vacancy::STATUS_RUNNING,
+                'active_run_token' => $replacementToken,
+            ]);
+
+            return new LlmResponse(['requirements' => []], 'fake', 'fake-structured', 1, 1, 1, 'stale-request', 1);
+        });
+        $this->app->instance(LlmProvider::class, $provider);
+
+        $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+        $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+        $job->assertNotFailed()->assertNotReleased();
+
+        $this->assertSame(Vacancy::STATUS_RUNNING, $vacancy->fresh()->analysis_status);
+        $this->assertSame($replacementToken, $vacancy->fresh()->active_run_token);
+        $this->assertDatabaseCount('vacancy_requirements', 0);
+        $this->assertDatabaseCount('vacancy_analyses', 0);
+        $this->assertDatabaseHas('vacancy_llm_runs', [
+            'vacancy_snapshot_id' => $snapshot->id,
+            'status' => 'FAILED',
+            'error_category' => 'ATTEMPT_SUPERSEDED',
+        ]);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+    }
+
+    public function test_legacy_pending_vacancy_keeps_its_original_unique_lock_window(): void
+    {
+        Queue::fake();
+        $user = $this->user('legacy-vacancy-recovery@example.test');
+        $text = 'Synthetic legacy pending vacancy.';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $snapshot = VacancySnapshot::record(
+            (string) $user->id,
+            (string) $vacancy->id,
+            1,
+            $text,
+            null,
+            hash('sha256', $text),
+            now()->subDays(4),
+        );
+        $legacyDispatchAt = now()->subMinutes(5);
+        \DB::table('vacancy_snapshots')->where('id', $snapshot->id)->update(['created_at' => now()->subDays(4)]);
+        \DB::table('vacancies')->where('id', $vacancy->id)->update([
+            'created_at' => now()->subDays(4),
+            'updated_at' => $legacyDispatchAt,
+        ]);
+        $job = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+        $this->assertTrue(app(UniqueLock::class)->acquire($job));
+
+        app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        Queue::assertNothingPushed();
+
+        Carbon::setTestNow($legacyDispatchAt->addSeconds(LlmProviderException::UNIQUE_LOCK_SECONDS + 1));
+        try {
+            app(VacancyReanalysisService::class)->queue($user, (string) $vacancy->id);
+        } finally {
+            Carbon::setTestNow();
+        }
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
     }
 
     public function test_duplicate_import_reclaims_stale_running_analysis(): void
@@ -1773,12 +2047,15 @@ class VacancyCoreTest extends TestCase
         \DB::table('vacancies')->where('id', $vacancy->id)->update(['updated_at' => now()->subMinutes(20)]);
         $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, $source, $sourceUrl,
             hash('sha256', $service->canonicalText($source)), now()->subHour());
+        $staleJob = new AnalyzeVacancy((string) $user->id, (string) $snapshot->id);
+        $this->assertTrue(app(UniqueLock::class)->acquire($staleJob));
 
         $duplicate = $service->queue($user, $source, $sourceUrl);
 
         $this->assertTrue($duplicate['duplicate']);
         $this->assertSame('PENDING', $duplicate['vacancy']->fresh()->analysis_status);
         Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $queued): bool => $queued->snapshotId === (string) $snapshot->id);
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
     }
 
     public function test_recent_running_analysis_is_not_reclaimed(): void
@@ -2294,6 +2571,8 @@ class VacancyCoreTest extends TestCase
             'owner_id' => $user->id,
             'analysis_status' => 'FAILED',
             'error_code' => 'PROVIDER_ERROR',
+            'next_attempt_at' => null,
+            'dispatch_recovery_at' => null,
         ]);
         $this->assertDatabaseHas('vacancy_snapshots', ['id' => $snapshotId, 'raw_text' => $rawText]);
         $this->actingAs($user)->getJson('/api/v1/vacancies')
@@ -2308,6 +2587,87 @@ class VacancyCoreTest extends TestCase
         $this->assertDatabaseCount('vacancy_snapshots', 1);
         Queue::assertPushed(AnalyzeVacancy::class, fn (AnalyzeVacancy $job): bool => $job->ownerId === (string) $user->id && $job->snapshotId === $snapshotId
         );
+    }
+
+    public function test_queued_retryable_vacancy_analysis_does_not_record_an_incident_without_log_context(): void
+    {
+        Queue::fake();
+        $user = $this->user('queued-vacancy-retry-context@example.test');
+        $sourceUrl = 'https://jobs.example.test/queued-vacancy-retry-context';
+        $result = app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', $sourceUrl);
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::TRANSPORT);
+            }
+        });
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andThrow(new \RuntimeException('log context unavailable'));
+
+        try {
+            app(VacancyAnalysisService::class)->analyze($user, $result['snapshot']);
+            $this->fail('The retryable provider failure must be rethrown to the queue job.');
+        } catch (LlmProviderException) {
+            $this->addToAssertionCount(1);
+        } finally {
+            $queueContext->finish();
+        }
+
+        $this->assertDatabaseHas('vacancies', ['id' => $result['vacancy']->id, 'analysis_status' => Vacancy::STATUS_RUNNING]);
+        app(VacancyIngestionService::class)->queue($user, 'Laravel is required.', $sourceUrl);
+        Queue::assertPushed(AnalyzeVacancy::class, 1);
+        $this->assertDatabaseCount('diagnostic_incidents', 0);
+    }
+
+    public function test_queued_terminal_vacancy_analysis_stays_owned_until_job_finalizes(): void
+    {
+        Queue::fake();
+        $user = $this->user('queued-terminal-vacancy@example.test');
+        $sourceUrl = 'https://jobs.example.test/queued-terminal-vacancy';
+        $sourceText = 'Laravel is required.';
+        $vacancy = Vacancy::query()->create([
+            'owner_id' => $user->id,
+            'source_type' => 'PASTED_TEXT',
+            'source_url' => $sourceUrl,
+            'analysis_status' => Vacancy::STATUS_PENDING,
+        ]);
+        $snapshot = VacancySnapshot::record((string) $user->id, (string) $vacancy->id, 1, $sourceText, $sourceUrl, hash('sha256', $sourceText), now());
+        $this->app->instance(LlmProvider::class, new class implements LlmProvider
+        {
+            public function generateStructured(LlmRequest $request): LlmResponse
+            {
+                throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
+            }
+        });
+        $ingestion = app(VacancyIngestionService::class);
+        $queueContext = app(QueueExecutionContext::class);
+        $queueContext->begin();
+        Log::shouldReceive('shareContext')->once()->andReturnUsing(function () use ($ingestion, $user, $sourceText, $sourceUrl): void {
+            $ingestion->queue($user, $sourceText, $sourceUrl);
+        });
+
+        try {
+            $job = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+            $job->handle(app(VacancyAnalysisService::class), app(DatabaseOwnerContext::class));
+            $job->assertFailedWith(LlmProviderException::class)->assertNotReleased();
+        } finally {
+            $queueContext->finish();
+        }
+
+        Queue::assertNothingPushed();
+        $this->assertDatabaseHas('vacancies', [
+            'id' => $vacancy->id,
+            'analysis_status' => Vacancy::STATUS_FAILED,
+            'error_code' => 'PROVIDER_ERROR',
+            'active_run_token' => null,
+        ]);
+        $this->assertDatabaseHas('vacancy_llm_runs', [
+            'vacancy_snapshot_id' => $snapshot->id,
+            'status' => 'FAILED',
+            'error_category' => LlmProviderException::NOT_CONFIGURED,
+        ]);
     }
 
     public function test_all_five_recommendation_classes_follow_explainable_policy(): void

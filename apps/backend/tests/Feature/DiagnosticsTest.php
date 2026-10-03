@@ -10,11 +10,13 @@ use App\Diagnostics\Redactor;
 use App\Diagnostics\StructuredLogs;
 use App\Jobs\AnalyzeVacancy;
 use App\Jobs\ExtractCareerSource;
+use App\Logging\SanitizingLogManager;
 use App\Models\CareerProfile;
 use App\Models\CareerSource;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use App\Queue\QueueExecutionContext;
 use App\Services\AuditLogger;
 use App\Services\CareerExtractionService;
 use App\Services\DatabaseOwnerContext;
@@ -23,6 +25,7 @@ use App\Services\VacancyAnalysisService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
@@ -40,6 +43,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use Mockery;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger as MonologLogger;
@@ -88,6 +92,16 @@ class DiagnosticsTest extends TestCase
             DiagnosticsSyncFailJob::dispatch();
             throw new \LogicException('The sync test job did not fail as expected.');
         });
+        Route::post('/oauth/_diagnostics-test/failure', function () {
+            report(new \RuntimeException('SQLSTATE[08006] select SECRET_CANARY from oauth_clients'));
+
+            return response()->json(['error' => 'server_error'], 500);
+        })->name('oauth.diagnostics-test.failure');
+        Route::post('/oauth/_diagnostics-test/auth-rejected', function () {
+            report(OAuthServerException::invalidRequest('client_id'));
+
+            return response()->json(['error' => 'invalid_request'], 400);
+        })->name('oauth.diagnostics-test.auth-rejected');
     }
 
     public function test_internal_error_is_safe_correlated_and_grouped(): void
@@ -104,6 +118,57 @@ class DiagnosticsTest extends TestCase
         $this->assertSame(2, DB::table('diagnostic_incidents')->first()->occurrence_count);
         $this->assertDatabaseCount('diagnostic_occurrences', 2);
         $this->assertStringNotContainsString('SECRET_CANARY', json_encode(DB::table('diagnostic_occurrences')->get()));
+    }
+
+    public function test_unexpected_oauth_server_failure_is_recorded_without_exposing_internal_details(): void
+    {
+        $response = $this->withHeader('X-Request-ID', 'req_oauth_server_failure')
+            ->postJson('/oauth/_diagnostics-test/failure')
+            ->assertStatus(500)
+            ->assertJsonPath('error', 'server_error');
+
+        $this->assertStringNotContainsString('SECRET_CANARY', $response->getContent());
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'INTERNAL_ERROR', 'component' => 'mcp']);
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'request_id' => 'req_oauth_server_failure',
+            'operation' => 'oauth.diagnostics-test.failure',
+        ]);
+    }
+
+    public function test_expected_oauth_authentication_error_is_not_recorded_as_incident(): void
+    {
+        $this->withHeader('X-Request-ID', 'req_oauth_auth_rejected')
+            ->postJson('/oauth/_diagnostics-test/auth-rejected')
+            ->assertBadRequest()
+            ->assertJsonPath('error', 'invalid_request');
+
+        $this->assertDatabaseMissing('diagnostic_incidents', ['component' => 'mcp']);
+        $this->assertDatabaseMissing('diagnostic_occurrences', ['request_id' => 'req_oauth_auth_rejected']);
+    }
+
+    public function test_failed_jobs_command_reports_database_outage_with_safe_reference(): void
+    {
+        DB::connection()->beforeExecuting(static function (string $query, array $bindings, $connection): void {
+            if (str_starts_with(strtolower(ltrim($query)), 'select')
+                && str_contains($query, 'diagnostic_occurrences')
+                && str_contains($query, 'job_id')) {
+                throw new QueryException(
+                    $connection->getName(),
+                    $query,
+                    $bindings,
+                    new \PDOException('password=SECRET_CANARY'),
+                );
+            }
+        });
+
+        $this->artisan('diagnostics:failed-jobs')
+            ->expectsOutputToContain('Failed-jobs lookup failed. Reference: cli_')
+            ->doesntExpectOutputToContain('secret_token')
+            ->doesntExpectOutputToContain('SECRET_CANARY')
+            ->assertExitCode(1);
+
+        $this->assertDatabaseHas('diagnostic_incidents', ['error_code' => 'CLI_COMMAND_FAILED', 'component' => 'console']);
+        $this->assertDatabaseHas('diagnostic_occurrences', ['operation' => 'diagnostics:failed-jobs']);
     }
 
     public function test_recent_reference_ids_remain_searchable_after_repeated_failures(): void
@@ -138,6 +203,18 @@ class DiagnosticsTest extends TestCase
         $this->assertSame('primary operation failure', $original->getMessage());
     }
 
+    public function test_logged_api_exception_is_not_logged_again_when_incident_storage_fails(): void
+    {
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('database unavailable'));
+        Log::spy();
+
+        $this->getJson('/api/v1/_diagnostics-test/fail')
+            ->assertStatus(500)
+            ->assertJsonPath('error.code', 'INTERNAL_ERROR');
+
+        Log::shouldHaveReceived('log')->once()->withArgs(fn ($level, $message): bool => $message === 'diagnostics.incident');
+    }
+
     public function test_readiness_probe_preserves_dependency_failure_when_diagnostics_also_fail(): void
     {
         DB::shouldReceive('select')->once()->andThrow(new \RuntimeException('postgres unavailable'));
@@ -160,7 +237,21 @@ class DiagnosticsTest extends TestCase
                 && ($context['component'] ?? null) === 'postgresql'
                 && ($context['operation'] ?? null) === 'readiness_database',
         ));
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
 
+    public function test_readiness_database_outage_is_recorded_as_critical_after_diagnostic_storage_failure(): void
+    {
+        $exception = new \RuntimeException('postgres unavailable');
+        DB::shouldReceive('select')->once()->andThrow($exception);
+        DB::shouldReceive('purge')->once();
+        DB::shouldReceive('transaction')->once()->andThrow(new \RuntimeException('postgres remains unavailable'));
+        Log::shouldReceive('sharedContext')->once()->andReturn([]);
+        Log::shouldReceive('log')->once()->withArgs(fn ($level, $message, $context): bool => $level === 'critical'
+            && $message === 'diagnostics.incident'
+            && $context['component'] === 'postgresql'
+            && $context['operation'] === 'readiness_database'
+        );
         $this->assertFalse(app(DependencyProbe::class)->ready());
     }
 
@@ -179,6 +270,28 @@ class DiagnosticsTest extends TestCase
         ));
 
         $this->assertFalse(app(DependencyProbe::class)->ready());
+    }
+
+    public function test_readiness_redis_outage_is_recorded_as_critical(): void
+    {
+        $exception = new \RuntimeException('redis unavailable');
+        Redis::shouldReceive('connection')->once()->andThrow($exception);
+
+        $this->assertFalse(app(DependencyProbe::class)->ready());
+        $this->assertDatabaseHas('diagnostic_incidents', [
+            'error_code' => 'DEPENDENCY_UNAVAILABLE', 'component' => 'redis', 'severity' => 'CRITICAL',
+        ]);
+    }
+
+    public function test_unique_job_locks_cover_all_bounded_provider_retry_delays(): void
+    {
+        $minimumLifetime = (LlmProviderException::MAX_RETRY_ATTEMPTS - 1)
+            * LlmProviderException::MAX_RETRY_AFTER_SECONDS
+            + LlmProviderException::UNIQUE_LOCK_BUFFER_SECONDS;
+
+        $this->assertGreaterThanOrEqual($minimumLifetime, (new ExtractCareerSource('owner', 'source'))->uniqueFor);
+        $this->assertGreaterThanOrEqual($minimumLifetime, (new AnalyzeVacancy('owner', 'snapshot'))->uniqueFor);
+        $this->assertSame((new AnalyzeVacancy('owner', 'snapshot'))->uniqueFor, Vacancy::ANALYSIS_JOB_UNIQUE_FOR_SECONDS);
     }
 
     public function test_request_id_middleware_keeps_http_response_working_when_log_context_fails(): void
@@ -318,6 +431,49 @@ class DiagnosticsTest extends TestCase
         }
     }
 
+    public function test_every_selectable_non_null_log_channel_uses_the_redaction_tap(): void
+    {
+        $channels = config('logging.channels');
+        foreach ($channels as $name => $channel) {
+            if (in_array($name, ['stack', 'null'], true)) {
+                continue;
+            }
+
+            $this->assertContains(StructuredLogs::class, $channel['tap'] ?? [], "Log channel [{$name}] must redact its records.");
+        }
+
+        foreach ($channels['stack']['channels'] as $name) {
+            if ($name === 'null') {
+                continue;
+            }
+
+            $this->assertContains(StructuredLogs::class, $channels[$name]['tap'] ?? [], "Stack member [{$name}] must redact its records.");
+        }
+    }
+
+    public function test_emergency_fallback_sanitizes_messages_context_and_exceptions(): void
+    {
+        $path = storage_path('logs/emergency-fallback-test.log');
+        @unlink($path);
+        config(['logging.channels.emergency.path' => $path]);
+        config(['logging.channels.broken' => ['driver' => 'unsupported']]);
+
+        try {
+            $this->assertInstanceOf(SanitizingLogManager::class, app('log'));
+            Log::channel('broken')->error('Authorization: Bearer SECRET_CANARY', [
+                'password' => 'SECRET_CANARY',
+                'exception' => new \RuntimeException('Candidate text SECRET_CANARY'),
+            ]);
+
+            $record = file_get_contents($path);
+            $this->assertIsString($record);
+            $this->assertStringNotContainsString('SECRET_CANARY', $record);
+            $this->assertStringContainsString('[REDACTED]', $record);
+        } finally {
+            @unlink($path);
+        }
+    }
+
     public function test_structured_logger_redacts_escaped_json_secret_values(): void
     {
         $handler = new TestHandler;
@@ -404,6 +560,65 @@ class DiagnosticsTest extends TestCase
         $this->assertLessThanOrEqual(12, count(explode("\n", $record->context['safe_stack'])));
     }
 
+    public function test_safe_stack_removes_absolute_paths_from_anonymous_class_names(): void
+    {
+        $anonymous = new class
+        {
+            public function fail(): void
+            {
+                throw new \RuntimeException('Safe failure.');
+            }
+        };
+
+        $safeStack = '';
+        try {
+            $anonymous->fail();
+        } catch (\RuntimeException $exception) {
+            $safeStack = Redactor::stack($exception);
+        }
+
+        $this->assertStringContainsString('class@anonymous', $safeStack);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $safeStack);
+        $this->assertStringNotContainsString("\0", $safeStack);
+    }
+
+    public function test_anonymous_throwable_is_safely_named_in_stack_logs_and_incidents(): void
+    {
+        Log::spy();
+        $exception = new class('Safe failure.') extends \RuntimeException {};
+        try {
+            throw $exception;
+        } catch (\Throwable $thrown) {
+            $exception = $thrown;
+        }
+
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'anonymous_throwable', exception: $exception);
+
+        $incident = DB::table('diagnostic_incidents')->where('component', 'anonymous_throwable')->sole();
+        $this->assertStringContainsString('@anonymous', $incident->exception_class);
+        $this->assertStringNotContainsString("\0", $incident->exception_class);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $incident->exception_class);
+        $this->assertStringContainsString('@anonymous', DB::table('diagnostic_occurrences')->where('incident_id', $incident->id)->value('safe_stack'));
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), DB::table('diagnostic_occurrences')->where('incident_id', $incident->id)->value('safe_stack'));
+        $this->assertStringNotContainsString("\0", DB::table('diagnostic_occurrences')->where('incident_id', $incident->id)->value('safe_stack'));
+        $handler = new TestHandler;
+        $monolog = new MonologLogger('test');
+        $monolog->pushHandler($handler);
+        $logger = new Logger($monolog);
+        (new StructuredLogs)($logger);
+        $logger->error('unsafe initial message', ['exception' => $exception]);
+        $structuredRecord = $handler->getRecords()[0];
+        $this->assertSame($incident->exception_class, $structuredRecord->message);
+        $this->assertStringNotContainsString(dirname(__DIR__, 2), $structuredRecord->context['safe_stack']);
+        $this->assertStringNotContainsString("\0", $structuredRecord->context['safe_stack']);
+        Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context): bool {
+            return $message === 'diagnostics.incident'
+                && str_contains($context['exception_class'] ?? '', '@anonymous')
+                && ! str_contains(json_encode($context), dirname(__DIR__, 2))
+                && ! str_contains(json_encode($context), "\0");
+        });
+    }
+
     public function test_incident_stderr_keeps_only_sanitized_exception_frames(): void
     {
         Log::spy();
@@ -485,6 +700,10 @@ class DiagnosticsTest extends TestCase
             $this->assertSame($retryable, $entry['retryable']);
             $this->assertSame('ERROR', $entry['severity']);
             $this->assertSame($code, ErrorCatalog::providerFailureCode(new LlmProviderException($category)));
+            $this->assertSame(
+                $retryable ? ['Retry-After' => '42'] : [],
+                ErrorCatalog::responseHeaders(new LlmProviderException($category, retryAfterSeconds: 42)),
+            );
         }
     }
 
@@ -615,15 +834,142 @@ class DiagnosticsTest extends TestCase
             'application_id' => $applicationId,
             'user_id' => $user->id,
             'llm_run_id' => (string) Str::ulid(),
+            'operation' => 'application_draft_generation', 'provider' => 'openai',
         ]);
         $incidentId = DB::table('diagnostic_incidents')->value('id');
 
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?application_id='.$applicationId)
-            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId);
+            ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId)
+            ->assertJsonPath('data.data.0.latest_operation', 'application_draft_generation')
+            ->assertJsonPath('data.data.0.latest_provider', 'openai');
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?search='.$applicationId)
             ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $incidentId);
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$incidentId)
             ->assertOk()->assertJsonPath('data.occurrences.0.application_id', $applicationId);
+    }
+
+    public function test_incident_list_prioritizes_active_severity_and_supports_relative_time_filter(): void
+    {
+        $admin = $this->user('admin');
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('INTERNAL_ERROR', 'Old resolved.', 'old');
+        $recorder->record('INTERNAL_ERROR', 'Open warning.', 'warning', 'WARNING');
+        $recorder->record('INTERNAL_ERROR', 'Open critical.', 'critical', 'CRITICAL');
+        DB::table('diagnostic_incidents')->where('component', 'old')->update([
+            'status' => 'RESOLVED', 'severity' => 'CRITICAL', 'last_seen_at' => now()->subHours(25),
+        ]);
+        DB::table('diagnostic_incidents')->where('component', 'warning')->update(['last_seen_at' => now()->subMinute()]);
+
+        $response = $this->as($admin)->getJson('/api/v1/diagnostics/incidents')->assertOk();
+        $this->assertSame(['critical', 'warning', 'old'], array_column($response->json('data.data'), 'component'));
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?hours=24')->assertOk()
+            ->assertJsonPath('data.total', 2);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?sort=last_seen')->assertOk()
+            ->assertJsonPath('data.data.0.component', 'critical');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?sort=invalid')->assertUnprocessable();
+    }
+
+    public function test_provider_filter_matches_latest_provider_and_combines_with_other_filters(): void
+    {
+        $admin = $this->user('admin');
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('LLM_PROVIDER_UNAVAILABLE', 'Provider failed.', 'vacancy', 'ERROR', context: [
+            'provider' => 'old-provider', 'request_id' => 'req_provider_match',
+        ]);
+        $recorder->record('LLM_PROVIDER_UNAVAILABLE', 'Provider failed.', 'vacancy', 'ERROR', context: [
+            'provider' => 'openai', 'request_id' => 'req_provider_match',
+        ]);
+        $id = DB::table('diagnostic_incidents')->value('id');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai')->assertOk()
+            ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $id)
+            ->assertJsonPath('data.data.0.latest_provider', 'openai');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=missing')->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=old-provider')->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&severity=ERROR&status=OPEN&hours=24&search=req_provider_match')
+            ->assertOk()->assertJsonPath('data.total', 1);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&status=RESOLVED')->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&from='.now()->addDay()->toDateString())
+            ->assertOk()->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider='.str_repeat('a', 65))->assertUnprocessable();
+    }
+
+    public function test_tied_occurrence_timestamps_use_descending_id_for_every_latest_view(): void
+    {
+        $admin = $this->user('admin');
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42));
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'tied-occurrences', exception: new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42));
+        $id = DB::table('diagnostic_incidents')->where('component', 'tied-occurrences')->value('id');
+        $ids = DB::table('diagnostic_occurrences')->where('incident_id', $id)->orderBy('id')->pluck('id');
+        $this->assertCount(2, $ids);
+        $timestamp = now()->subMinute()->startOfSecond();
+        DB::table('diagnostic_occurrences')->where('id', $ids[0])->update([
+            'created_at' => $timestamp, 'provider' => 'older', 'request_id' => 'req_older',
+            'llm_run_id' => (string) Str::ulid(), 'application_id' => (string) Str::ulid(),
+            'attempt' => 1, 'retry_after_seconds' => 5,
+        ]);
+        $latestRun = (string) Str::ulid();
+        $latestApplication = (string) Str::ulid();
+        DB::table('diagnostic_occurrences')->where('id', $ids[1])->update([
+            'created_at' => $timestamp, 'provider' => 'newer', 'request_id' => 'req_newer',
+            'llm_run_id' => $latestRun, 'application_id' => $latestApplication,
+            'attempt' => 2, 'retry_after_seconds' => 42,
+        ]);
+
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=newer')->assertOk()
+            ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.latest_provider', 'newer');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=older')->assertOk()
+            ->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.id', $ids[1])
+            ->assertJsonPath('data.occurrences.0.provider', 'newer')
+            ->assertJsonPath('data.occurrences.0.request_id', 'req_newer')
+            ->assertJsonPath('data.occurrences.0.llm_run_id', $latestRun)
+            ->assertJsonPath('data.occurrences.0.application_id', $latestApplication)
+            ->assertJsonPath('data.occurrences.0.attempt', 2)
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42)
+            ->assertJsonPath('data.occurrences.1.id', $ids[0]);
+    }
+
+    public function test_provider_retry_delay_is_bounded_and_exposed_only_when_valid(): void
+    {
+        $admin = $this->user('admin');
+        foreach ([42, null, -1, 86401] as $delay) {
+            app(IncidentRecorder::class)->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'component_'.($delay ?? 'missing'), exception: new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: $delay));
+            $id = DB::table('diagnostic_incidents')->where('component', 'component_'.($delay ?? 'missing'))->value('id');
+            $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+                ->assertJsonPath('data.occurrences.0.retry_after_seconds', $delay === 42 ? 42 : null);
+        }
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Provider temporarily unavailable.', 'temporary-delay', exception: new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41));
+        $id = DB::table('diagnostic_incidents')->where('component', 'temporary-delay')->value('id');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 41);
+    }
+
+    public function test_repeated_status_transition_is_a_no_op_for_audit(): void
+    {
+        $admin = $this->user('admin');
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'api');
+        $id = DB::table('diagnostic_incidents')->value('id');
+        foreach (['RESOLVED', 'RESOLVED', 'IGNORED', 'IGNORED', 'OPEN', 'OPEN'] as $status) {
+            $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => $status])
+                ->assertOk()->assertJsonPath('data.incident.status', $status);
+        }
+        $this->assertSame(3, DB::table('audit_events')->where('event_type', 'diagnostics.incident.status_changed')->count());
+    }
+
+    public function test_status_transition_rolls_back_when_audit_write_fails(): void
+    {
+        $admin = $this->user('admin');
+        app(IncidentRecorder::class)->record('INTERNAL_ERROR', 'Safe failure.', 'api');
+        $id = DB::table('diagnostic_incidents')->value('id');
+        $audit = Mockery::mock(AuditLogger::class);
+        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('audit unavailable'));
+        $this->app->instance(AuditLogger::class, $audit);
+
+        $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertStatus(500);
+        $this->assertSame('OPEN', DB::table('diagnostic_incidents')->where('id', $id)->value('status'));
+        $this->assertSame(0, DB::table('audit_events')->where('subject_id', $id)->count());
     }
 
     public function test_browser_report_ignores_untrusted_details_and_requires_auth(): void
@@ -691,8 +1037,7 @@ class DiagnosticsTest extends TestCase
         $analysisFailure = new LlmProviderException(LlmProviderException::INVALID_CONFIGURATION);
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysis = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
-        $analysisService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisService->shouldReceive('analyze')->once()->andThrow($analysisFailure);
+        $analysisService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisFailure);
         $analysis->handle($analysisService, app(DatabaseOwnerContext::class));
         $analysis->assertFailedWith(LlmProviderException::class);
         $this->assertDatabaseHas('vacancies', [
@@ -703,13 +1048,19 @@ class DiagnosticsTest extends TestCase
         $analysisRateLimit = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 37);
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysisRetry = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
-        $analysisRetryService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisRetryService->shouldReceive('analyze')->once()->andThrow($analysisRateLimit);
+        $analysisRetryService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisRateLimit);
         $analysisRetry->handle($analysisRetryService, app(DatabaseOwnerContext::class));
         $analysisRetry->assertReleased(37)->assertNotFailed();
         $this->assertDatabaseHas('vacancies', [
             'id' => $vacancy->id, 'analysis_status' => Vacancy::STATUS_PENDING, 'error_code' => null,
         ]);
+
+        $analysisTemporary = new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41);
+        Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
+        $analysisTemporaryJob = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
+        $analysisTemporaryService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisTemporary);
+        $analysisTemporaryJob->handle($analysisTemporaryService, app(DatabaseOwnerContext::class));
+        $analysisTemporaryJob->assertReleased(41)->assertNotFailed();
 
         $profile = CareerProfile::query()->create(['owner_id' => $user->id]);
         $source = CareerSource::query()->create([
@@ -719,8 +1070,7 @@ class DiagnosticsTest extends TestCase
         $careerFailure = new LlmProviderException(LlmProviderException::NOT_CONFIGURED);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $career = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $careerService = Mockery::mock(CareerExtractionService::class);
-        $careerService->shouldReceive('extract')->once()->andThrow($careerFailure);
+        $careerService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerFailure);
         $career->handle($careerService);
         $career->assertFailedWith(LlmProviderException::class);
         $this->assertDatabaseHas('career_sources', [
@@ -731,8 +1081,7 @@ class DiagnosticsTest extends TestCase
         $retryableFailure = new LlmProviderException(LlmProviderException::TRANSPORT);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $retryableJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $retryableService = Mockery::mock(CareerExtractionService::class);
-        $retryableService->shouldReceive('extract')->once()->andThrow($retryableFailure);
+        $retryableService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $retryableFailure);
         $retryableJob->handle($retryableService);
         $retryableJob->assertReleased(5)->assertNotFailed();
         $this->assertDatabaseHas('career_sources', [
@@ -742,19 +1091,24 @@ class DiagnosticsTest extends TestCase
         $careerRateLimit = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 37);
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $careerRateLimitJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $careerRateLimitService = Mockery::mock(CareerExtractionService::class);
-        $careerRateLimitService->shouldReceive('extract')->once()->andThrow($careerRateLimit);
+        $careerRateLimitService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerRateLimit);
         $careerRateLimitJob->handle($careerRateLimitService);
         $careerRateLimitJob->assertReleased(37)->assertNotFailed();
         $this->assertDatabaseHas('career_sources', [
             'id' => $source->id, 'extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null,
         ]);
 
+        $careerTemporary = new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41);
+        CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
+        $careerTemporaryJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
+        $careerTemporaryService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerTemporary);
+        $careerTemporaryJob->handle($careerTemporaryService);
+        $careerTemporaryJob->assertReleased(41)->assertNotFailed();
+
         CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $careerFinalJob = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
         $careerFinalJob->job->attempts = 3;
-        $careerFinalService = Mockery::mock(CareerExtractionService::class);
-        $careerFinalService->shouldReceive('extract')->once()->andThrow($careerRateLimit);
+        $careerFinalService = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, $careerRateLimit);
         $careerFinalJob->handle($careerFinalService);
         $careerFinalJob->assertFailedWith(LlmProviderException::class)->assertNotReleased();
         $this->assertDatabaseHas('career_sources', [
@@ -764,8 +1118,7 @@ class DiagnosticsTest extends TestCase
         Vacancy::query()->whereKey($vacancy->id)->update(['analysis_status' => Vacancy::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR']);
         $analysisFinalJob = (new AnalyzeVacancy((string) $user->id, (string) $snapshot->id))->withFakeQueueInteractions();
         $analysisFinalJob->job->attempts = 3;
-        $analysisFinalService = Mockery::mock(VacancyAnalysisService::class);
-        $analysisFinalService->shouldReceive('analyze')->once()->andThrow($analysisRateLimit);
+        $analysisFinalService = $this->failingQueueService(VacancyAnalysisService::class, 'analyze', $vacancy, $analysisRateLimit);
         $analysisFinalJob->handle($analysisFinalService, app(DatabaseOwnerContext::class));
         $analysisFinalJob->assertFailedWith(LlmProviderException::class)->assertNotReleased();
         $this->assertDatabaseHas('vacancies', [
@@ -812,8 +1165,7 @@ class DiagnosticsTest extends TestCase
         });
 
         $retry = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
-        $failedAttempt = Mockery::mock(CareerExtractionService::class);
-        $failedAttempt->shouldReceive('extract')->once()->andThrow(new LlmProviderException(
+        $failedAttempt = $this->failingQueueService(CareerExtractionService::class, 'extract', $source, new LlmProviderException(
             LlmProviderException::TRANSPORT,
             providerName: 'openai',
             retryAfterSeconds: 37,
@@ -826,8 +1178,14 @@ class DiagnosticsTest extends TestCase
 
         $success = (new ExtractCareerSource((string) $user->id, (string) $source->id))->withFakeQueueInteractions();
         $successfulAttempt = Mockery::mock(CareerExtractionService::class);
-        $successfulAttempt->shouldReceive('extract')->once()->andReturnUsing(function () use ($source): CareerSource {
-            CareerSource::query()->whereKey($source->id)->update(['extraction_status' => CareerSource::STATUS_COMPLETED]);
+        $successfulAttempt->shouldReceive('extract')->once()->withArgs(function (User $calledUser, string $sourceText, string $runToken) use ($source): bool {
+            CareerSource::query()->whereKey($source->id)->update([
+                'extraction_status' => CareerSource::STATUS_COMPLETED,
+                'active_run_token' => null,
+            ]);
+
+            return true;
+        })->andReturnUsing(function () use ($source): CareerSource {
 
             return $source->fresh();
         });
@@ -864,6 +1222,78 @@ class DiagnosticsTest extends TestCase
             'queue' => 'analysis-high', 'connection' => 'sync',
         ]);
         Log::shouldHaveReceived('log')->once()->withArgs(fn ($level, $message, $context): bool => $message === 'diagnostics.incident' && $context['queue'] === 'analysis-high' && $context['connection'] === 'sync');
+    }
+
+    public function test_queue_execution_state_survives_log_context_setup_failure_and_clears_after_exception(): void
+    {
+        $context = app(QueueExecutionContext::class);
+        $job = Mockery::mock(Job::class);
+        $job->shouldReceive('payload')->andReturn(['cvortex' => []]);
+        $job->shouldReceive('getJobId')->andReturn('job_context_test');
+        $job->shouldReceive('attempts')->andReturn(2);
+        Log::shouldReceive('flushSharedContext')->andThrow(new \RuntimeException('log context unavailable'));
+
+        Event::dispatch(new JobProcessing('redis', $job));
+        $this->assertTrue($context->isProcessing());
+
+        Event::dispatch(new JobExceptionOccurred('redis', $job, new \RuntimeException('retryable failure')));
+        $this->assertFalse($context->isProcessing());
+    }
+
+    public function test_retrying_queue_exception_is_not_recorded_as_a_console_incident_after_context_cleanup(): void
+    {
+        $context = app(QueueExecutionContext::class);
+        $job = Mockery::mock(Job::class);
+        $job->shouldReceive('payload')->andReturn(['cvortex' => []]);
+        $job->shouldReceive('getJobId')->andReturn('job_retry_report');
+        $job->shouldReceive('attempts')->andReturn(1);
+        $exception = new \RuntimeException('retryable queue failure');
+        Log::shouldReceive('sharedContext')->andReturn([]);
+        Log::shouldReceive('withoutContext')->twice()->andReturnSelf();
+        Log::shouldReceive('flushSharedContext')->twice()->andThrow(new \RuntimeException('log context unavailable'));
+        Log::shouldReceive('error')->once();
+
+        Event::dispatch(new JobProcessing('redis', $job));
+        $this->assertTrue($context->isProcessing());
+        Event::dispatch(new JobExceptionOccurred('redis', $job, $exception));
+        $this->assertFalse($context->isProcessing());
+        $this->assertTrue($context->isQueueException($exception));
+
+        report($exception);
+
+        $this->assertDatabaseMissing('diagnostic_incidents', ['component' => 'console', 'error_code' => 'INTERNAL_ERROR']);
+    }
+
+    public function test_sync_queue_restores_request_and_parent_job_log_context(): void
+    {
+        Log::flushSharedContext();
+        Log::shareContext(['request_id' => 'req_outer', 'user_id' => 'user_outer']);
+
+        $outerJob = Mockery::mock(Job::class);
+        $outerJob->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_outer', 'user_id' => 'user_outer']]);
+        $outerJob->shouldReceive('getJobId')->andReturn('job_outer');
+        $outerJob->shouldReceive('attempts')->andReturn(1);
+
+        $innerJob = Mockery::mock(Job::class);
+        $innerJob->shouldReceive('payload')->andReturn(['cvortex' => ['request_id' => 'req_inner', 'user_id' => 'user_inner']]);
+        $innerJob->shouldReceive('getJobId')->andReturn('job_inner');
+        $innerJob->shouldReceive('attempts')->andReturn(1);
+
+        Event::dispatch(new JobProcessing('sync', $outerJob));
+        $this->assertEqualsCanonicalizing([
+            'request_id' => 'req_outer', 'job_id' => 'job_outer', 'user_id' => 'user_outer', 'attempt' => 1,
+        ], Log::sharedContext());
+        Event::dispatch(new JobProcessing('sync', $innerJob));
+        $this->assertEqualsCanonicalizing([
+            'request_id' => 'req_inner', 'job_id' => 'job_inner', 'user_id' => 'user_inner', 'attempt' => 1,
+        ], Log::sharedContext());
+
+        Event::dispatch(new JobProcessed('sync', $innerJob));
+        $this->assertEqualsCanonicalizing([
+            'request_id' => 'req_outer', 'job_id' => 'job_outer', 'user_id' => 'user_outer', 'attempt' => 1,
+        ], Log::sharedContext());
+        Event::dispatch(new JobProcessed('sync', $outerJob));
+        $this->assertSame(['request_id' => 'req_outer', 'user_id' => 'user_outer'], Log::sharedContext());
     }
 
     public function test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request(): void
@@ -988,6 +1418,22 @@ class DiagnosticsTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         return $this->actingAs($user, 'web')->withSession(['auth_generation' => $user->fresh()->auth_generation]);
+    }
+
+    private function failingQueueService(string $serviceClass, string $method, Vacancy|CareerSource $aggregate, \Throwable $failure): object
+    {
+        $service = Mockery::mock($serviceClass);
+        $service->shouldReceive($method)->once()->withArgs(function (...$arguments) use ($aggregate): bool {
+            $runToken = $arguments[2] ?? null;
+            if (! is_string($runToken)) {
+                return false;
+            }
+            $aggregate->forceFill(['active_run_token' => $runToken])->save();
+
+            return true;
+        })->andThrow($failure);
+
+        return $service;
     }
 }
 

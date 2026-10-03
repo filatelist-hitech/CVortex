@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\VacancyAttemptSupersededException;
 use App\Models\CareerFact;
 use App\Models\Claim;
 use App\Models\User;
@@ -44,7 +45,7 @@ class VacancyMatchingService
         return hash('sha256', implode("\n", $values));
     }
 
-    public function analyze(User $user, Vacancy $vacancy, VacancySnapshot $snapshot): VacancyAnalysis
+    public function analyze(User $user, Vacancy $vacancy, VacancySnapshot $snapshot, ?string $runToken = null): VacancyAnalysis
     {
         $context = $this->career->forMatching($user);
         $signature = $this->signatureForContext($context);
@@ -54,7 +55,18 @@ class VacancyMatchingService
             ->orderBy('created_at')
             ->get();
 
-        return DB::transaction(function () use ($user, $vacancy, $snapshot, $context, $signature, $requirements): VacancyAnalysis {
+        return DB::transaction(function () use ($user, $vacancy, $snapshot, $context, $signature, $requirements, $runToken): VacancyAnalysis {
+            if ($runToken !== null) {
+                $currentVacancy = Vacancy::query()->whereKey($vacancy->id)->where('owner_id', $user->id)
+                    ->lockForUpdate()->first();
+                if ($currentVacancy === null || $currentVacancy->analysis_status !== Vacancy::STATUS_RUNNING
+                    || $currentVacancy->active_run_token !== $runToken
+                    || VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
+                        ->where('version', '>', $snapshot->version)->exists()) {
+                    throw new VacancyAttemptSupersededException;
+                }
+            }
+
             $analysis = VacancyAnalysis::query()->firstOrCreate(
                 ['vacancy_snapshot_id' => $snapshot->id, 'career_signature' => $signature],
                 [

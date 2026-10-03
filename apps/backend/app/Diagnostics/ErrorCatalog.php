@@ -78,7 +78,8 @@ final class ErrorCatalog
     /** @return array<string, string> */
     public static function responseHeaders(Throwable $exception): array
     {
-        if ($exception instanceof LlmProviderException && $exception->isRetryable()) {
+        if ($exception instanceof LlmProviderException
+            && self::incidentDetails(self::providerFailureCode($exception))['retryable']) {
             $retryAfterSeconds = ProviderRetryAfter::boundedSeconds($exception->retryAfterSeconds);
             if ($retryAfterSeconds !== null) {
                 return ['Retry-After' => (string) $retryAfterSeconds];
@@ -102,7 +103,7 @@ final class ErrorCatalog
                 'retryable' => true,
                 'message' => 'The analysis provider is rate limited. Wait briefly, then retry.',
                 'impact' => 'The LLM-backed operation did not complete.',
-                'recovery_action' => 'Wait for the retry delay, then retry the operation.',
+                'recovery_action' => 'Wait until provider capacity returns, then retry the operation.',
             ],
             'LLM_PROVIDER_CONFIGURATION' => [
                 'retryable' => false,
@@ -139,6 +140,12 @@ final class ErrorCatalog
                 'message' => 'Too many requests. Please wait and try again.',
                 'impact' => 'The request was temporarily throttled.',
                 'recovery_action' => 'Wait for Retry-After, then retry the request.',
+            ],
+            'FRONTEND_RUNTIME_ERROR' => [
+                'retryable' => false,
+                'message' => 'The browser reported a failure. Its root cause was not captured.',
+                'impact' => 'The affected browser operation may not have completed.',
+                'recovery_action' => 'Check the affected route and occurrence reference. Review browser logs if the failure repeats.',
             ],
             default => [
                 'retryable' => false,

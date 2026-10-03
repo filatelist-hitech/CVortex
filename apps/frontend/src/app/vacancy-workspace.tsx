@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { api } from "./access-shell";
+import { ApiError, api } from "./access-shell";
 
 type VacancySummary = {
   id: string;
@@ -80,6 +80,46 @@ type DraftItem = {
   approvals: Array<{ action: string; revision_number: number; content_hash: string; validation_result: string; created_at: string }>;
 };
 type Preparation = { id: string; vacancy_id: string; status: "DRAFT" | "APPROVED"; stale: boolean; items: DraftItem[] };
+
+function formatRetryWait(seconds: number): string {
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours} hour${hours === 1 ? "" : "s"}${minutes > 0 ? ` ${minutes} minute${minutes === 1 ? "" : "s"}` : ""}`;
+  }
+  if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  }
+  return `${seconds} second${seconds === 1 ? "" : "s"}`;
+}
+
+const APPLICATION_DRAFT_RETRY_KEY = "cvortex.application-draft.retry-until";
+
+function activeRetryDeadline(value: string | null): number | null {
+  if (value === null) return null;
+  const until = Number(value);
+  const now = Date.now();
+  return Number.isSafeInteger(until) && until > now && until <= now + 86_400_000 ? until : null;
+}
+
+function readSavedRetryDeadline(): number | null {
+  try {
+    const saved = window.localStorage.getItem(APPLICATION_DRAFT_RETRY_KEY);
+    if (saved === null) return null;
+    const until = activeRetryDeadline(saved);
+    if (until !== null) return until;
+    window.localStorage.removeItem(APPLICATION_DRAFT_RETRY_KEY);
+  } catch {
+    // Browser storage may be disabled; the in-memory cooldown still applies for this mount.
+  }
+  return null;
+}
+
+function retryCooldown(caught: unknown): { until: number; seconds: number } | null {
+  if (!(caught instanceof ApiError) || caught.retryAfterSeconds === null || caught.retryAfterSeconds <= 0) return null;
+  return { until: Date.now() + caught.retryAfterSeconds * 1000, seconds: caught.retryAfterSeconds };
+}
 
 const dimensionNames: Record<string, string> = {
   TECHNICAL: "Technical",
@@ -243,13 +283,75 @@ export default function VacancyWorkspace() {
   </section>;
 }
 
-function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
+export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
   const [preparation, setPreparation] = useState<Preparation | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [retryAfterUntil, setRetryAfterUntil] = useState<number | null>(null);
+  const [retrySecondsRemaining, setRetrySecondsRemaining] = useState(0);
+  const [retryCooldownReady, setRetryCooldownReady] = useState(false);
   const requestVersion = useRef(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const savedUntil = readSavedRetryDeadline();
+      if (savedUntil !== null) {
+        setRetryAfterUntil(savedUntil);
+        setRetrySecondsRemaining(Math.max(0, Math.ceil((savedUntil - Date.now()) / 1000)));
+      }
+      setRetryCooldownReady(true);
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    const syncSavedCooldown = (event: StorageEvent) => {
+      if (event.key !== APPLICATION_DRAFT_RETRY_KEY && event.key !== null) return;
+      const now = Date.now();
+      const savedUntil = readSavedRetryDeadline();
+      const eventUntil = event.key === APPLICATION_DRAFT_RETRY_KEY ? activeRetryDeadline(event.newValue) : null;
+      const memoryUntil = retryAfterUntil;
+      const until = Math.max(savedUntil ?? 0, eventUntil ?? 0, memoryUntil && memoryUntil > now ? memoryUntil : 0) || null;
+      if (until !== null && until !== savedUntil) {
+        try { window.localStorage.setItem(APPLICATION_DRAFT_RETRY_KEY, String(until)); } catch { /* Keep the active mount protected without storage. */ }
+      }
+      setRetryAfterUntil(until);
+      setRetrySecondsRemaining(until === null ? 0 : Math.max(0, Math.ceil((until - now) / 1000)));
+    };
+    window.addEventListener("storage", syncSavedCooldown);
+    return () => window.removeEventListener("storage", syncSavedCooldown);
+  }, [retryAfterUntil]);
+
+  useEffect(() => {
+    if (retryAfterUntil === null) return;
+    let timeout: ReturnType<typeof setTimeout>;
+    const updateRemaining = () => {
+      const remaining = Math.max(0, Math.ceil((retryAfterUntil - Date.now()) / 1000));
+      setRetrySecondsRemaining(remaining);
+      if (remaining === 0) {
+        try { window.localStorage.removeItem(APPLICATION_DRAFT_RETRY_KEY); } catch { /* Keep expiry functional without storage. */ }
+        setRetryAfterUntil(null);
+        return;
+      }
+      timeout = setTimeout(updateRemaining, remaining > 60 ? 60_000 : 1_000);
+    };
+    updateRemaining();
+    return () => clearTimeout(timeout);
+  }, [retryAfterUntil]);
+
+  function pauseProviderActions(caught: unknown) {
+    const cooldown = retryCooldown(caught);
+    if (!cooldown) return;
+    const savedUntil = readSavedRetryDeadline();
+    const now = cooldown.until - cooldown.seconds * 1000;
+    const until = Math.max(cooldown.until, retryAfterUntil && retryAfterUntil > now ? retryAfterUntil : 0, savedUntil ?? 0);
+    const seconds = Math.max(0, Math.ceil((until - now) / 1000));
+    try { window.localStorage.setItem(APPLICATION_DRAFT_RETRY_KEY, String(until)); } catch { /* Keep the active mount protected without storage. */ }
+    setRetryAfterUntil(until);
+    setRetrySecondsRemaining(seconds);
+  }
 
   const refresh = useCallback(async (id: string, version = requestVersion.current, preserveEdits = false) => {
     const result = await api(`/api/v1/applications/preparations/${id}`);
@@ -278,7 +380,7 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
   }, [refresh, vacancyId]);
 
   async function generate() {
-    if (!preparation || preparation.stale) return;
+    if (!preparation || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0) return;
     const version = requestVersion.current;
     setBusy("generate");
     setError("");
@@ -289,12 +391,15 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
         setEdits(Object.fromEntries((result.data as Preparation).items.map((item) => [item.id, item.content])));
       }
     } catch (caught) {
-      if (version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Draft generation failed.");
+      if (version === requestVersion.current) {
+        setError(caught instanceof Error ? caught.message : "Draft generation failed.");
+        pauseProviderActions(caught);
+      }
     } finally { if (version === requestVersion.current) setBusy(""); }
   }
 
   async function act(item: DraftItem, action: "accept" | "edit" | "reject" | "approve") {
-    if (!preparation || preparation.stale || busy) return;
+    if (!preparation || preparation.stale || busy || (action !== "reject" && (!retryCooldownReady || retrySecondsRemaining > 0))) return;
     const version = requestVersion.current;
     setBusy(item.id);
     setError("");
@@ -310,7 +415,10 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
         setEdits(Object.fromEntries((result.data as Preparation).items.map((draft) => [draft.id, draft.content])));
       }
     } catch (caught) {
-      if (version === requestVersion.current) setError(caught instanceof Error ? caught.message : "Draft review action failed.");
+      if (version === requestVersion.current) {
+        setError(caught instanceof Error ? caught.message : "Draft review action failed.");
+        if (action !== "reject") pauseProviderActions(caught);
+      }
       if (version === requestVersion.current) await refresh(preparation.id, version, true).catch(() => undefined);
     } finally { if (version === requestVersion.current) setBusy(""); }
   }
@@ -322,8 +430,9 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
     {loading && <p className="loading" role="status">Loading saved preparation…</p>}
     {error && <div className="alert error" role="alert"><span>{error}</span></div>}
     {preparation?.stale && <p className="stale-callout" role="status"><strong>Preparation is stale.</strong><span>Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing.</span></p>}
+    {retrySecondsRemaining > 0 && <p role="status">Wait at least {formatRetryWait(retrySecondsRemaining)} before retrying a provider-backed action.</p>}
     {preparation && !loading && <>
-      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
+      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
       {preparation.items.map((item) => <article className="application-draft-item" key={item.id}>
         <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`} · Revision {item.revision_number}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
         {item.before && <p><strong>Before</strong><br />{item.before}</p>}
@@ -335,11 +444,11 @@ function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string;
         {item.approvals.length > 0 && <details><summary>Approval history</summary><ul>{item.approvals.map((approval, index) => <li key={`${item.id}-approval-${index}`}>{approval.action} · revision {approval.revision_number} · {approval.validation_result} · {approval.content_hash.slice(0, 12)}</li>)}</ul></details>}
         <div className="actions">
           {item.status !== "REJECTED" && item.status !== "APPROVED" && <>
-            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) === item.content} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
-            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0 || (edits[item.id] ?? item.content) === item.content} onClick={() => void act(item, "edit")}>Save edit and revalidate</button>
+            <button type="button" className="secondary" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0 || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "accept")}>{item.kind === "COVER_DRAFT" ? "Accept draft" : "Accept recommendation"}</button>
             <button type="button" className="danger" disabled={Boolean(busy) || preparation.stale || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "reject")}>Reject</button>
           </>}
-          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || item.validation_result !== "PASS" || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
+          {item.status === "ACCEPTED" && <button type="button" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0 || item.validation_result !== "PASS" || (edits[item.id] ?? item.content) !== item.content} onClick={() => void act(item, "approve")}>Explicitly approve content</button>}
           {item.status === "APPROVED" && <span className="confirmed-badge">Approved draft · not submitted</span>}
         </div>
       </article>)}

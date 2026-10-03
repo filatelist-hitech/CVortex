@@ -7,6 +7,8 @@ use App\Jobs\AnalyzeVacancy;
 use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
+use App\Queue\PendingJobRecovery;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
@@ -45,16 +47,30 @@ class VacancyIngestionService
                         ->orderByDesc('id')
                         ->first();
                     if ($current !== null && hash_equals((string) $current->content_hash, $contentHash)) {
-                        if ($vacancy->analysisRunIsStale()) {
+                        $staleRunning = $vacancy->analysisRunIsStale();
+                        $failed = $vacancy->analysis_status === Vacancy::STATUS_FAILED;
+                        $orphanedPending = $vacancy->analysis_status === Vacancy::STATUS_PENDING
+                            && PendingJobRecovery::recoveryIsDue($vacancy, $current->created_at);
+                        $recover = $staleRunning || $failed || $orphanedPending;
+                        if ($recover) {
                             $vacancy->forceFill([
                                 'analysis_status' => Vacancy::STATUS_PENDING,
                                 'error_code' => null,
+                                'active_run_token' => null,
                             ])->save();
+                            PendingJobRecovery::reserve($vacancy);
                         }
 
-                        return ['vacancy' => $vacancy, 'snapshot' => $current, 'duplicate' => true];
+                        return [
+                            'vacancy' => $vacancy,
+                            'snapshot' => $current,
+                            'duplicate' => true,
+                            'dispatch' => $recover,
+                            'release_lock' => $recover,
+                        ];
                     }
                 }
+                $dispatch = true;
                 if ($vacancy === null) {
                     $vacancy = Vacancy::query()->create([
                         'owner_id' => $user->id,
@@ -68,6 +84,7 @@ class VacancyIngestionService
                     $vacancy->forceFill([
                         'analysis_status' => Vacancy::STATUS_PENDING,
                         'error_code' => null,
+                        'active_run_token' => null,
                         'title' => $this->deterministicTitle($sourceText) ?? $vacancy->title,
                         'company' => $this->deterministicCompany($sourceText) ?? $vacancy->company,
                     ])->save();
@@ -84,8 +101,15 @@ class VacancyIngestionService
                     $contentHash,
                     now(),
                 );
+                PendingJobRecovery::reserve($vacancy);
 
-                return ['vacancy' => $vacancy, 'snapshot' => $snapshot, 'duplicate' => false];
+                return [
+                    'vacancy' => $vacancy,
+                    'snapshot' => $snapshot,
+                    'duplicate' => false,
+                    'dispatch' => $dispatch,
+                    'release_lock' => false,
+                ];
             });
         } catch (QueryException) {
             $vacancy = $sourceUrl === null ? null : Vacancy::query()
@@ -105,10 +129,15 @@ class VacancyIngestionService
                 'vacancy' => $vacancy,
                 'snapshot' => $existing,
                 'duplicate' => true,
+                'dispatch' => false,
+                'release_lock' => false,
             ];
         }
 
-        if (! $result['duplicate'] || in_array($result['vacancy']->analysis_status, [Vacancy::STATUS_PENDING, Vacancy::STATUS_FAILED], true)) {
+        if ($result['dispatch']) {
+            if ($result['release_lock']) {
+                app(UniqueLock::class)->release(new AnalyzeVacancy((string) $user->id, (string) $result['snapshot']->id));
+            }
             AnalyzeVacancy::dispatch((string) $user->id, (string) $result['snapshot']->id)->afterCommit();
         }
 

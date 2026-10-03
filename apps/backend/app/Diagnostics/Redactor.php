@@ -47,7 +47,7 @@ final class Redactor
             return '[TRUNCATED]';
         }
         if ($value instanceof Throwable) {
-            return $value::class;
+            return self::safeExceptionClass($value);
         }
         if (is_array($value)) {
             $safe = [];
@@ -69,13 +69,17 @@ final class Redactor
 
     public static function stack(Throwable $exception): string
     {
-        $origin = basename($exception->getFile() ?: 'runtime').':'.$exception->getLine().' '.$exception::class.' (throw site)';
+        $origin = basename($exception->getFile() ?: 'runtime').':'.$exception->getLine().' '.self::safeExceptionClass($exception).' (throw site)';
         $applicationFrames = [];
         $frameworkFrames = [];
         foreach (array_slice($exception->getTrace(), 0, 50) as $frame) {
             $file = str_replace('\\', '/', (string) ($frame['file'] ?? ''));
+            $class = (string) ($frame['class'] ?? '');
+            if (str_contains($class, "\0")) {
+                $class = explode("\0", $class, 2)[0];
+            }
             $rendered = basename($file !== '' ? $file : 'runtime').':'.(int) ($frame['line'] ?? 0).' '.
-                self::frameFunction((string) ($frame['class'] ?? '').($frame['type'] ?? '').$frame['function']);
+                self::frameFunction($class.($frame['type'] ?? '').$frame['function']);
             if (str_contains($file, '/app/') || str_contains($file, '/routes/')) {
                 $applicationFrames[] = '[app] '.$rendered;
             } else {
@@ -88,6 +92,11 @@ final class Redactor
         }
 
         return implode("\n", [$origin, ...$frames]);
+    }
+
+    public static function safeExceptionClass(Throwable $exception): string
+    {
+        return explode("\0", $exception::class, 2)[0];
     }
 
     public static function frameFunction(string $value): string

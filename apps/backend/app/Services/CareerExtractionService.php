@@ -10,6 +10,7 @@ use App\AI\Exceptions\LlmProviderException;
 use App\AI\RuntimeSkillRegistry;
 use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
+use App\Exceptions\CareerAttemptSupersededException;
 use App\Exceptions\SafeCareerException;
 use App\Jobs\ExtractCareerSource;
 use App\Models\CareerFact;
@@ -17,9 +18,13 @@ use App\Models\CareerFactType;
 use App\Models\CareerSource;
 use App\Models\LlmRun;
 use App\Models\User;
+use App\Queue\PendingJobRecovery;
+use App\Queue\QueueExecutionContext;
+use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 class CareerExtractionService
@@ -31,10 +36,11 @@ class CareerExtractionService
         private readonly CareerSemanticValidator $semantics,
     ) {}
 
-    public function extract(User $user, string $sourceText): CareerSource
+    public function extract(User $user, string $sourceText, ?string $runToken = null): CareerSource
     {
+        $runToken ??= (string) Str::uuid();
         try {
-            return $this->performExtraction($user, $sourceText);
+            return $this->performExtraction($user, $sourceText, $runToken);
         } catch (CareerOutputException|LlmProviderException $exception) {
             throw $exception;
         } catch (QueryException) {
@@ -48,27 +54,59 @@ class CareerExtractionService
         $profile = $this->facts->profileFor($user);
 
         try {
-            $source = CareerSource::query()->firstOrCreate(
-                ['owner_id' => $user->id, 'content_hash' => hash('sha256', $sourceText)],
-                [
-                    'career_profile_id' => $profile->id,
-                    'kind' => 'PASTED_TEXT',
-                    'source_text' => $sourceText,
-                    'extraction_status' => CareerSource::STATUS_PENDING,
-                ],
-            );
+            $result = DB::transaction(function () use ($user, $sourceText, $profile): array {
+                $source = CareerSource::query()->firstOrCreate(
+                    ['owner_id' => $user->id, 'content_hash' => hash('sha256', $sourceText)],
+                    [
+                        'career_profile_id' => $profile->id,
+                        'kind' => 'PASTED_TEXT',
+                        'source_text' => $sourceText,
+                        'extraction_status' => CareerSource::STATUS_PENDING,
+                    ],
+                );
+                $created = $source->wasRecentlyCreated;
+                $source = CareerSource::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($source->id);
+                $dispatch = false;
+                $releaseLock = false;
+
+                if ($created) {
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                } elseif ($source->extraction_status === CareerSource::STATUS_FAILED) {
+                    $source->forceFill(['extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null, 'active_run_token' => null])->save();
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                    $releaseLock = true;
+                } elseif ($source->extractionRunIsStale()) {
+                    $source->forceFill(['extraction_status' => CareerSource::STATUS_PENDING, 'error_code' => null, 'active_run_token' => null])->save();
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                    $releaseLock = true;
+                } elseif ($source->extraction_status === CareerSource::STATUS_PENDING
+                    && PendingJobRecovery::recoveryIsDue($source)) {
+                    PendingJobRecovery::reserve($source);
+                    $dispatch = true;
+                    $releaseLock = true;
+                }
+
+                return ['source' => $source, 'dispatch' => $dispatch, 'release_lock' => $releaseLock];
+            });
         } catch (QueryException) {
             throw new SafeCareerException;
         }
 
-        if (in_array($source->extraction_status, [CareerSource::STATUS_PENDING, CareerSource::STATUS_FAILED], true)) {
+        $source = $result['source'];
+        if ($result['dispatch']) {
+            if ($result['release_lock']) {
+                app(UniqueLock::class)->release(new ExtractCareerSource((string) $user->id, (string) $source->id));
+            }
             ExtractCareerSource::dispatch((string) $user->id, (string) $source->id)->afterCommit();
         }
 
         return $source;
     }
 
-    private function performExtraction(User $user, string $sourceText): CareerSource
+    private function performExtraction(User $user, string $sourceText, string $runToken): CareerSource
     {
         $sourceText = trim($sourceText);
         $hash = hash('sha256', $sourceText);
@@ -89,13 +127,22 @@ class CareerExtractionService
 
         $claimed = CareerSource::query()->whereKey($source->id)
             ->whereIn('extraction_status', [CareerSource::STATUS_PENDING, CareerSource::STATUS_FAILED])
-            ->update(['extraction_status' => CareerSource::STATUS_RUNNING, 'error_code' => null, 'updated_at' => now()]);
+            ->where(fn ($query) => $query->whereNull('next_attempt_at')->orWhere('next_attempt_at', '<=', now()))
+            ->update([
+                'extraction_status' => CareerSource::STATUS_RUNNING,
+                'error_code' => null,
+                'next_attempt_at' => null,
+                'dispatch_recovery_at' => null,
+                'active_run_token' => $runToken,
+                'updated_at' => now(),
+            ]);
         if ($claimed === 0) {
             return $source->fresh();
         }
         $source->refresh();
         try {
             $skill = $this->skills->careerFactExtraction();
+            $this->assertCurrentAttempt($source, $runToken);
             $retryCount = LlmRun::query()->where('career_source_id', $source->id)->count();
             $run = LlmRun::query()->create([
                 'owner_id' => $user->id,
@@ -109,7 +156,18 @@ class CareerExtractionService
                 'retry_count' => $retryCount,
             ]);
         } catch (Throwable $exception) {
-            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SETUP_ERROR'])->save();
+            $updated = CareerSource::query()->whereKey($source->id)->where('extraction_status', CareerSource::STATUS_RUNNING)
+                ->where('active_run_token', $runToken)->update([
+                    'extraction_status' => CareerSource::STATUS_FAILED,
+                    'error_code' => 'SETUP_ERROR',
+                    'next_attempt_at' => null,
+                    'dispatch_recovery_at' => null,
+                    'active_run_token' => null,
+                    'updated_at' => now(),
+                ]);
+            if ($updated !== 1) {
+                throw new CareerAttemptSupersededException;
+            }
             if ($exception instanceof QueryException) {
                 throw new SafeCareerException;
             }
@@ -126,39 +184,70 @@ class CareerExtractionService
             ));
             $candidates = $this->validateOutput($response->output, $sourceText);
 
-            DB::transaction(function () use ($candidates, $source, $user, $profile, $run, $response, $skill): void {
-                CareerFact::query()->where('career_source_id', $source->id)->where('status', CareerFact::STATUS_PENDING)->delete();
-                foreach ($candidates as $candidate) {
-                    CareerFact::query()->create([
-                        'owner_id' => $user->id,
-                        'career_profile_id' => $profile->id,
-                        'career_source_id' => $source->id,
-                        'provenance_type' => CareerFact::PROVENANCE_EXTRACTION,
-                        'fact_type' => $candidate['fact_type'],
-                        'assertion_original' => $candidate['assertion'],
-                        'source_excerpt' => $candidate['source_excerpt'],
-                        'extracted_by' => $skill->id.'@'.$skill->version,
-                        'extraction_confidence' => $candidate['confidence'],
-                        'candidate_hash' => hash('sha256', $candidate['fact_type']."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
-                        'status' => CareerFact::STATUS_PENDING,
-                    ]);
-                }
-                $source->forceFill(['extraction_status' => CareerSource::STATUS_COMPLETED, 'error_code' => null])->save();
-                $run->forceFill([
-                    'provider' => $response->provider,
-                    'model' => $response->model,
-                    'provider_request_id' => $response->providerRequestId,
-                    'status' => 'COMPLETED',
-                    'input_tokens' => $response->inputTokens,
-                    'output_tokens' => $response->outputTokens,
-                    'latency_ms' => $response->latencyMs,
-                    'estimated_cost_micros' => $response->estimatedCostMicros,
-                    'validation_result' => 'PASS',
-                    'error_category' => null,
-                ])->save();
-            });
+            try {
+                DB::transaction(function () use ($candidates, $source, $user, $profile, $run, $response, $skill, $runToken): void {
+                    $currentSource = $this->lockCurrentAttempt($source, $runToken);
+                    CareerFact::query()->where('career_source_id', $source->id)->where('status', CareerFact::STATUS_PENDING)->delete();
+                    foreach ($candidates as $candidate) {
+                        CareerFact::query()->create([
+                            'owner_id' => $user->id,
+                            'career_profile_id' => $profile->id,
+                            'career_source_id' => $source->id,
+                            'provenance_type' => CareerFact::PROVENANCE_EXTRACTION,
+                            'fact_type' => $candidate['fact_type'],
+                            'assertion_original' => $candidate['assertion'],
+                            'source_excerpt' => $candidate['source_excerpt'],
+                            'extracted_by' => $skill->id.'@'.$skill->version,
+                            'extraction_confidence' => $candidate['confidence'],
+                            'candidate_hash' => hash('sha256', $candidate['fact_type']."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
+                            'status' => CareerFact::STATUS_PENDING,
+                        ]);
+                    }
+                    $currentSource->forceFill([
+                        'extraction_status' => CareerSource::STATUS_COMPLETED,
+                        'error_code' => null,
+                        'next_attempt_at' => null,
+                        'dispatch_recovery_at' => null,
+                        'active_run_token' => null,
+                    ])->save();
+                    $run->forceFill([
+                        'provider' => $response->provider,
+                        'model' => $response->model,
+                        'provider_request_id' => $response->providerRequestId,
+                        'status' => 'COMPLETED',
+                        'input_tokens' => $response->inputTokens,
+                        'output_tokens' => $response->outputTokens,
+                        'latency_ms' => $response->latencyMs,
+                        'estimated_cost_micros' => $response->estimatedCostMicros,
+                        'validation_result' => 'PASS',
+                        'error_category' => null,
+                    ])->save();
+                });
+            } catch (CareerAttemptSupersededException $exception) {
+                $this->markRunSuperseded($run);
+                throw $exception;
+            }
         } catch (CareerOutputException $exception) {
-            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'SCHEMA_INVALID'])->save();
+            try {
+                DB::transaction(function () use ($source, $runToken, $run, $exception): void {
+                    $currentSource = $this->lockCurrentAttempt($source, $runToken);
+                    $currentSource->forceFill([
+                        'extraction_status' => CareerSource::STATUS_FAILED,
+                        'error_code' => 'SCHEMA_INVALID',
+                        'next_attempt_at' => null,
+                        'dispatch_recovery_at' => null,
+                        'active_run_token' => null,
+                    ])->save();
+                    $run->forceFill([
+                        'status' => 'FAILED',
+                        'validation_result' => $exception->category,
+                        'error_category' => $exception->category,
+                    ])->save();
+                });
+            } catch (CareerAttemptSupersededException $superseded) {
+                $this->markRunSuperseded($run);
+                throw $superseded;
+            }
             $failureMetadata = [
                 'provider' => $response->provider,
                 'model' => $response->model,
@@ -168,35 +257,47 @@ class CareerExtractionService
                 'latency_ms' => $response->latencyMs,
                 'estimated_cost_micros' => $response->estimatedCostMicros,
             ];
-            $run->forceFill([
-                'status' => 'FAILED',
-                'validation_result' => $exception->category,
-                'error_category' => $exception->category,
-            ])->forceFill($failureMetadata)->save();
+            $run->forceFill($failureMetadata)->save();
             app(IncidentRecorder::class)->record('LLM_OUTPUT_INVALID', ErrorCatalog::incidentDetails('LLM_OUTPUT_INVALID')['message'], 'career', 'ERROR', $exception, [
                 'llm_run_id' => $run->id, 'user_id' => $user->id, 'operation' => 'career_text_extraction',
             ]);
             throw $exception;
         } catch (LlmProviderException $exception) {
-            $source->forceFill(['extraction_status' => CareerSource::STATUS_FAILED, 'error_code' => 'PROVIDER_ERROR'])->save();
-            $run->forceFill([
-                'provider' => $exception->providerName,
-                'model' => $exception->resolvedModel,
-                'provider_request_id' => $exception->providerRequestId,
-                'status' => 'FAILED',
-                'input_tokens' => $exception->inputTokens,
-                'output_tokens' => $exception->outputTokens,
-                'latency_ms' => $exception->latencyMs,
-                'estimated_cost_micros' => $exception->estimatedCostMicros,
-                'validation_result' => 'NOT_VALIDATED',
-                'error_category' => $exception->category,
-            ])->save();
+            $queueExecution = app(QueueExecutionContext::class);
             try {
-                $shared = Log::sharedContext();
-            } catch (Throwable) {
-                $shared = [];
+                DB::transaction(function () use ($source, $runToken, $exception, $queueExecution, $run): void {
+                    $currentSource = $this->lockCurrentAttempt($source, $runToken);
+                    if (! $queueExecution->isProcessing()) {
+                        $currentSource->forceFill([
+                            'extraction_status' => CareerSource::STATUS_FAILED,
+                            'error_code' => 'PROVIDER_ERROR',
+                            'next_attempt_at' => null,
+                            'dispatch_recovery_at' => null,
+                            'active_run_token' => null,
+                        ])->save();
+                    } else {
+                        // The job owns both retryable and terminal finalization.
+                        // Keep RUNNING and fenced until it publishes PENDING or FAILED.
+                        $currentSource->forceFill(['updated_at' => now()])->save();
+                    }
+                    $run->forceFill([
+                        'provider' => $exception->providerName,
+                        'model' => $exception->resolvedModel,
+                        'provider_request_id' => $exception->providerRequestId,
+                        'status' => 'FAILED',
+                        'input_tokens' => $exception->inputTokens,
+                        'output_tokens' => $exception->outputTokens,
+                        'latency_ms' => $exception->latencyMs,
+                        'estimated_cost_micros' => $exception->estimatedCostMicros,
+                        'validation_result' => 'NOT_VALIDATED',
+                        'error_category' => $exception->category,
+                    ])->save();
+                });
+            } catch (CareerAttemptSupersededException $superseded) {
+                $this->markRunSuperseded($run);
+                throw $superseded;
             }
-            if (isset($shared['job_id'])) {
+            if ($queueExecution->isProcessing()) {
                 try {
                     Log::shareContext(['llm_run_id' => $run->id]);
                 } catch (Throwable) {
@@ -213,6 +314,32 @@ class CareerExtractionService
         }
 
         return $source->fresh();
+    }
+
+    private function assertCurrentAttempt(CareerSource $source, string $runToken): void
+    {
+        DB::transaction(fn () => $this->lockCurrentAttempt($source, $runToken));
+    }
+
+    private function lockCurrentAttempt(CareerSource $source, string $runToken): CareerSource
+    {
+        $current = CareerSource::query()->whereKey($source->id)->where('owner_id', $source->owner_id)
+            ->where('extraction_status', CareerSource::STATUS_RUNNING)->where('active_run_token', $runToken)
+            ->lockForUpdate()->first();
+        if ($current === null) {
+            throw new CareerAttemptSupersededException;
+        }
+
+        return $current;
+    }
+
+    private function markRunSuperseded(LlmRun $run): void
+    {
+        $run->forceFill([
+            'status' => 'FAILED',
+            'validation_result' => 'NOT_VALIDATED',
+            'error_category' => 'ATTEMPT_SUPERSEDED',
+        ])->save();
     }
 
     /** @param array<string, mixed> $output

@@ -27,15 +27,24 @@ Artisan::command('diagnostics:prune', function (): int {
     return 0;
 })->purpose('Apply diagnostic retention without deleting active incidents');
 
-Artisan::command('diagnostics:failed-jobs', function (): void {
-    $events = DB::table('diagnostic_occurrences as occurrence')
-        ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
-        ->whereNotNull('occurrence.job_id')
-        ->orderByDesc('occurrence.created_at')->limit(25)
-        ->get(['occurrence.created_at', 'occurrence.job_id', 'occurrence.request_id', 'occurrence.operation']);
-    $this->table(['Time', 'Job ID', 'Request ID', 'Job class'], $events->map(fn ($event): array => [
-        $event->created_at, $event->job_id, $event->request_id, $event->operation,
-    ])->all());
+Artisan::command('diagnostics:failed-jobs', function (): int {
+    try {
+        $events = DB::table('diagnostic_occurrences as occurrence')
+            ->join('diagnostic_incidents as incident', 'incident.id', '=', 'occurrence.incident_id')
+            ->whereNotNull('occurrence.job_id')
+            ->orderByDesc('occurrence.created_at')->limit(25)
+            ->get(['occurrence.created_at', 'occurrence.job_id', 'occurrence.request_id', 'occurrence.operation']);
+        $this->table(['Time', 'Job ID', 'Request ID', 'Job class'], $events->map(fn ($event): array => [
+            $event->created_at, $event->job_id, $event->request_id, $event->operation,
+        ])->all());
+    } catch (Throwable $exception) {
+        $reference = app(ConsoleFailureReporter::class)->report($exception, 'diagnostics:failed-jobs');
+        $this->error('Failed-jobs lookup failed. Reference: '.$reference);
+
+        return 1;
+    }
+
+    return 0;
 })->purpose('List recent sanitized final queue failures');
 
 Schedule::command('diagnostics:prune')->daily();

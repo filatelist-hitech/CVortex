@@ -43,4 +43,65 @@ class OpenAiResponsesProviderTest extends TestCase
             }
         }
     }
+
+    public function test_retry_after_header_is_numeric_bounded_or_absent(): void
+    {
+        config([
+            'ai.providers.openai.api_key' => 'test-key',
+            'ai.providers.openai.base_url' => 'https://api.openai.com/v1',
+            'ai.providers.openai.timeout_seconds' => 2,
+        ]);
+        $request = new LlmRequest('trusted', 'untrusted', ['type' => 'object'], new ModelPolicy('test', true));
+        $model = new ResolvedModel('test', 'openai', 'test-model');
+        $provider = app(OpenAiResponsesProvider::class);
+        Http::fakeSequence('*/responses')
+            ->push([], 429, ['Retry-After' => '42'])
+            ->push([], 429, ['Retry-After' => '999999'])
+            ->push([], 429, ['Retry-After' => 'later'])
+            ->push([], 429);
+
+        foreach ([42, 86400, null, null] as $expected) {
+            try {
+                $provider->generateResolved($request, $model);
+                $this->fail('A rate-limited response must throw.');
+            } catch (LlmProviderException $exception) {
+                $this->assertSame(LlmProviderException::RATE_LIMITED, $exception->category);
+                $this->assertSame($expected, $exception->retryAfterSeconds);
+            }
+        }
+    }
+
+    public function test_temporary_provider_responses_preserve_bounded_retry_after(): void
+    {
+        config([
+            'ai.providers.openai.api_key' => 'test-key',
+            'ai.providers.openai.base_url' => 'https://api.openai.com/v1',
+            'ai.providers.openai.timeout_seconds' => 2,
+        ]);
+        $request = new LlmRequest('trusted', 'untrusted', ['type' => 'object'], new ModelPolicy('test', true));
+        $model = new ResolvedModel('test', 'openai', 'test-model');
+        $provider = app(OpenAiResponsesProvider::class);
+        Http::fakeSequence('*/responses')
+            ->push([], 408, ['Retry-After' => '41'])
+            ->push([], 425, ['Retry-After' => '37'])
+            ->push([], 503, ['Retry-After' => '999999'])
+            ->push([], 503, ['Retry-After' => 'later'])
+            ->push([], 400, ['Retry-After' => '42']);
+
+        foreach ([
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, 41],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, 37],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, 86400],
+            [LlmProviderException::TEMPORARY_UNAVAILABLE, null],
+            [LlmProviderException::INVALID_CONFIGURATION, null],
+        ] as [$category, $expectedDelay]) {
+            try {
+                $provider->generateResolved($request, $model);
+                $this->fail('An unsuccessful provider response must throw.');
+            } catch (LlmProviderException $exception) {
+                $this->assertSame($category, $exception->category);
+                $this->assertSame($expectedDelay, $exception->retryAfterSeconds);
+            }
+        }
+    }
 }

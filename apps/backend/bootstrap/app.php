@@ -5,6 +5,7 @@ use App\Diagnostics\IncidentRecorder;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsureRequestId;
 use App\Http\Middleware\SetDatabaseOwnerContext;
+use App\Queue\QueueExecutionContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $recordConsoleException = static function (Throwable $exception): void {
             if (! app()->runningInConsole()) {
                 return;
+            }
+
+            $queueContext = app(QueueExecutionContext::class);
+            if ($queueContext->isProcessing() || $queueContext->isQueueException($exception)) {
+                return; // Queue failures are handled by the queue failure policy, not as CLI incidents.
             }
 
             try {
@@ -75,7 +81,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     return true;
                 }
 
-                if ($request->is('mcp/v1') && $exception instanceof OAuthServerException) {
+                $isMcpOAuthRequest = $request->is('oauth/*') || $request->is('mcp/v1');
+                if ($isMcpOAuthRequest && $exception instanceof OAuthServerException && $exception->getHttpStatusCode() < 500) {
                     try {
                         Log::notice('mcp.oauth_authentication_rejected', [
                             'request_id' => $request->attributes->get('request_id'),
@@ -88,13 +95,17 @@ return Application::configure(basePath: dirname(__DIR__))
                     return false;
                 }
 
-                if ($request->is('api/v1/*')) {
+                $isDiagnosticsHttpSurface = $request->is('api/v1/*')
+                    || $isMcpOAuthRequest
+                    || $request->is('.well-known/*');
+                if ($isDiagnosticsHttpSurface) {
                     $entry = ErrorCatalog::classify($exception);
                     if ($entry['status'] < 500) {
                         return true;
                     }
+                    $component = $request->is('api/v1/*') ? (string) ($request->segment(3) ?? 'api') : 'mcp';
                     $recorded = app(IncidentRecorder::class)->record($entry['code'], $entry['message'],
-                        (string) ($request->segment(3) ?? 'api'), $entry['severity'], $exception, [
+                        $component, $entry['severity'], $exception, [
                             'request_id' => $request->attributes->get('request_id'),
                             'user_id' => $request->user()?->id,
                             'route' => $request->route()?->getName(),

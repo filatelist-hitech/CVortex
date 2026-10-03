@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\AI\Exceptions\LlmProviderException;
 use App\Diagnostics\IncidentRecorder;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -62,6 +63,69 @@ class DiagnosticsPostgresTest extends TestCase
         $this->assertDatabaseMissing('audit_events', [
             'event_type' => 'diagnostics.incident.status_changed', 'subject_id' => $incidentId,
         ]);
+    }
+
+    public function test_runtime_provider_filter_retry_delay_and_noop_status_audit(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('PostgreSQL runtime-role boundary only.');
+        }
+        $admin = $this->user('admin');
+        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $reference = 'req_'.Str::ulid();
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'vacancy', exception: $exception, context: [
+            'provider' => 'openai', 'request_id' => $reference,
+        ]);
+        $id = DB::table('diagnostic_occurrences')->where('request_id', $reference)->value('incident_id');
+        $this->assertNotNull($id);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=openai&search='.$reference)
+            ->assertOk()->assertJsonPath('data.total', 1);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42);
+        app(IncidentRecorder::class)->record('LLM_PROVIDER_UNAVAILABLE', 'Temporarily unavailable.', 'temporary-delay', exception: new LlmProviderException(LlmProviderException::TEMPORARY_UNAVAILABLE, retryAfterSeconds: 41));
+        $temporaryId = DB::table('diagnostic_incidents')->where('component', 'temporary-delay')->value('id');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$temporaryId)->assertOk()
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 41);
+        $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk();
+        $this->as($admin)->patchJson('/api/v1/diagnostics/incidents/'.$id, ['status' => 'RESOLVED'])->assertOk();
+        $this->assertSame(1, DB::table('audit_events')->where('subject_id', $id)->count());
+    }
+
+    public function test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('PostgreSQL runtime-role boundary only.');
+        }
+        $admin = $this->user('admin');
+        $reference = 'req_'.Str::ulid();
+        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $recorder = app(IncidentRecorder::class);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'timestamp-tie', exception: $exception);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'timestamp-tie', exception: $exception);
+        $id = DB::table('diagnostic_incidents')->where('component', 'timestamp-tie')->value('id');
+        $ids = DB::table('diagnostic_occurrences')->where('incident_id', $id)->orderBy('id')->pluck('id');
+        $this->assertCount(2, $ids);
+        $timestamp = now()->subMinute()->startOfSecond();
+        DB::table('diagnostic_occurrences')->where('id', $ids[0])->update([
+            'created_at' => $timestamp, 'provider' => 'older', 'request_id' => 'req_older',
+            'attempt' => 1, 'retry_after_seconds' => 5,
+        ]);
+        DB::table('diagnostic_occurrences')->where('id', $ids[1])->update([
+            'created_at' => $timestamp, 'provider' => 'newer', 'request_id' => $reference,
+            'llm_run_id' => (string) Str::ulid(), 'application_id' => (string) Str::ulid(),
+            'attempt' => 2, 'retry_after_seconds' => 42,
+        ]);
+
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=newer&search='.$reference)->assertOk()
+            ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.latest_provider', 'newer');
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=older')->assertOk()
+            ->assertJsonPath('data.total', 0);
+        $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
+            ->assertJsonPath('data.occurrences.0.id', $ids[1])
+            ->assertJsonPath('data.occurrences.0.provider', 'newer')
+            ->assertJsonPath('data.occurrences.0.request_id', $reference)
+            ->assertJsonPath('data.occurrences.0.attempt', 2)
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42);
     }
 
     private function user(string $role): User
