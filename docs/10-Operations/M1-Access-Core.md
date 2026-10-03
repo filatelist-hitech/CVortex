@@ -1,37 +1,37 @@
 ---
-title: M1.1 Access Core Operations
+title: Управление доступом M1.1
 status: implemented
 owner: project
 created: 2026-09-12
-updated: 2026-09-13
+updated: 2026-10-03
 tags: [access, auth, invitations, security]
 related: ["[[../03-ADR/ADR-0007-multi-user-ownership|ADR-0007]]", "[[../03-ADR/ADR-0008-invite-only-access|ADR-0008]]"]
 canonical_auth_decision: "[[../03-ADR/ADR-0019-sanctum-stateful-first-party-auth|ADR-0019]]"
 ---
 
-# M1.1 Access Core Operations
+# Управление доступом M1.1
 
-## First-party access model
+## Как пользователь входит в приложение
 
-`Next.js → same-origin Nginx → Laravel → Sanctum stateful session` is the only M1.1 web authentication path. No JWT, bearer token, OAuth or browser-persistent auth material is used. The frontend requests `/sanctum/csrf-cookie`, then sends the decoded `XSRF-TOKEN` as `X-XSRF-TOKEN` for state-changing calls.
+При входе через браузер запрос проходит через `Next.js → Nginx → Laravel`. Sanctum хранит авторизацию в сессии на том же веб-адресе. Для такого входа не используются JWT, bearer-токены или OAuth, а браузер не сохраняет постоянные ключи доступа. Сначала интерфейс запрашивает `/sanctum/csrf-cookie`, затем при изменении данных передаёт декодированное значение cookie `XSRF-TOKEN` в заголовке `X-XSRF-TOKEN`.
 
-`SANCTUM_STATEFUL_DOMAINS` includes `__SANCTUM_CURRENT_REQUEST_HOST__`; this preserves the same-origin model for a configured local port and for a future deployment host without turning arbitrary cross-origin requests into stateful ones.
+В `SANCTUM_STATEFUL_DOMAINS` включено значение `__SANCTUM_CURRENT_REQUEST_HOST__`. Это позволяет сохранить вход через тот же источник при любом локальном порте и на будущем адресе развёртывания, не разрешая произвольные межсайтовые запросы с сессионной авторизацией.
 
-Users have ULID public IDs, a lowercase-trimmed email identity, an Argon/bcrypt framework-managed password hash, `admin|user` role and `ACTIVE|DISABLED` status. Email validity uses the shared Laravel `email:rfc` boundary, while comparison remains exactly `trim` plus Unicode lowercase; no speculative provider/DNS assertion is made.
+У каждого пользователя есть публичный идентификатор ULID, адрес электронной почты в нижнем регистре без пробелов по краям, хэш пароля, созданный Argon или bcrypt, роль `admin` либо `user` и состояние `ACTIVE` либо `DISABLED`. Laravel 13 проверяет адрес правилом `email:rfc`; для сравнения система убирает пробелы по краям и переводит буквы Unicode в нижний регистр. Проверки существования домена или почтового сервера нет.
 
-An authenticated request checks `ACTIVE`; disabling also deletes that user's database-backed sessions. `admin` never bypasses private-resource ownership. Future private policies must compare the session-derived user ID with the trusted server-side owner relationship and use `404` for foreign resources.
+Каждый запрос от вошедшего пользователя проверяет, что его состояние — `ACTIVE`. При отключении учётной записи её сессии в базе удаляются. Роль `admin` не даёт обходить проверку владельца личных данных. Любое новое закрытое API должно сверять идентификатор пользователя из сессии с владельцем записи на стороне сервера и отвечать `404`, если запись принадлежит другому человеку.
 
-## Operator commands
+## Команды оператора
 
-Run commands inside the backend container. Password entry for bootstrap is hidden and is never echoed or persisted in audit/log metadata.
+Выполняйте команды внутри контейнера `backend` (сервера приложения). При создании первого администратора ввод пароля скрыт: пароль не выводится на экран и не попадает в журнал аудита.
 
 ```bash
 docker compose exec backend php artisan user:bootstrap-admin admin@example.test
 ```
 
-The command fails without side effects if any admin exists.
+Если администратор уже есть, команда завершится без изменений.
 
-Replace `INVITATION_ULID` and `USER_ULID` below with the identifiers reported by CVortex; the uppercase words are placeholders, not literal IDs.
+В командах ниже замените `INVITATION_ULID` и `USER_ULID` на идентификаторы, показанные CVortex. Это обозначения для подстановки, а не готовые значения.
 
 ```bash
 docker compose exec backend php artisan invitation:create --email=person@example.test --expires=7
@@ -41,28 +41,38 @@ docker compose exec backend php artisan user:disable USER_ULID
 docker compose exec backend php artisan user:enable USER_ULID
 ```
 
-`invitation:create` prints the invitation ULID for a later `invitation:revoke` call and prints the one-time registration URL on a separate line. Invitation expiry is 7 days by default, constrained to 1–30 days. Tokens are 32 random bytes represented as hex, HMAC-SHA-256 protected at rest, printed only once and expected in `/register#token=<value>`. The `/register` Client Component reads the fragment into transient in-memory state, immediately removes it with `history.replaceState`, and submits it only in the registration body; it never copies the token to a query string, persistent browser storage or a referrer-bearing navigation.
+Команда `invitation:create` показывает идентификатор приглашения, который понадобится для его отзыва, и отдельно выдаёт одноразовую ссылку для регистрации. По умолчанию приглашение действует 7 дней; срок можно задать от 1 до 30 дней. Токен состоит из 32 случайных байтов в шестнадцатеричной записи. В базе он хранится в защищённом виде с помощью HMAC-SHA-256, а оператор видит его только один раз. Токен находится после `#` в ссылке, например `/register#token=<value>`.
 
-## Data and audit
+Страница `/register` читает токен из фрагмента адреса, временно хранит его только в памяти браузера и сразу удаляет из адресной строки через `history.replaceState`. При регистрации токен передаётся только в теле запроса. Он не попадает в строку запроса, постоянное хранилище браузера или адрес страницы, который может быть передан следующему сайту.
 
-The shared email identity boundary validates input with Laravel 13 RFC email validation, then applies the existing trim-plus-Unicode-lowercase canonical comparison. CLI and HTTP paths use the same service rules.
+## Данные и аудит
 
-Invitation consumption locks its row in one transaction, verifies status/target email/unique email, creates the user, consumes the one allowed use and appends audit events. A concurrent unique-email conflict is translated from the database exception into the same HTTP `422` validation response as the pre-check, after the transaction is rolled back. Audit events are application append-only: `AuditEventQueryBuilder` permits inserts used by `AuditLogger`, but rejects model mutation and query-level `update()`, `delete()`, `forceDelete()`, `truncate()`, `upsert()`, `updateOrInsert()`, increment/decrement and touch operations. This is not database-level immutability: raw `DB` access can still mutate the table and is outside the M1.1 supported application boundary. Audit events contain actor type (`USER`, `OPERATOR`, `SYSTEM`), optional user actor, subject and key-based recursively redacted metadata. Passwords, invitation tokens, session IDs and CSRF/auth tokens are excluded when they occur in protected keys; arbitrary values under benign keys are not content-inspected.
+Проверка адреса и нормализация регистра одинаковы для веб-запросов и команд из терминала.
 
-The first-admin command acquires a fixed PostgreSQL transaction-level advisory lock, then re-checks for an existing admin inside the transaction before inserting. This serializes only the bootstrap invariant, releases automatically at transaction end, and avoids distributed-lock infrastructure. SQLite test runs skip the PostgreSQL-specific lock because their single-process test database has no equivalent; the real Docker PostgreSQL concurrency harness covers the database boundary. The same harness also runs the distinct two-independent-invitations/one-normalized-email case: one registration succeeds, one loses at the database `UNIQUE` boundary, one User and one invitation consumption are committed, and the losing invitation remains unused with no losing audit state. The same-origin HTTP harness uses a unique test email and removes only its invitation, user, sessions and related audit rows in its exit trap, so it does not accumulate application data.
+При регистрации система блокирует запись приглашения и в одной транзакции проверяет его состояние, адрес получателя и уникальность электронной почты. Затем создаёт учётную запись, отмечает приглашение использованным и записывает событие аудита. Если две регистрации одновременно используют один нормализованный адрес, одна пройдёт, а вторая получит тот же ответ HTTP `422`, что и при предварительной проверке. Неудачная попытка целиком откатывается.
 
-Login abuse limiting is centralized in the named Laravel `login` limiter. Project defaults are 5 attempts per 60 seconds, configurable through `AUTH_LOGIN_RATE_LIMIT_ATTEMPTS` and `AUTH_LOGIN_RATE_LIMIT_DECAY_SECONDS`; these are CVortex operating defaults, not values mandated by Laravel. The limiter key is the normalized email plus source IP, so distinct identities do not share a bucket. Laravel returns `429` when the configured limit is exceeded.
+Код приложения может добавлять события аудита, но не должен менять или удалять их обычными методами моделей и запросов. `AuditEventQueryBuilder` разрешает вставку через `AuditLogger`, но блокирует `update()`, `delete()`, `forceDelete()`, `truncate()`, `upsert()`, `updateOrInsert()`, `increment()`, `decrement()` и `touch()`. Это ограничение действует на уровне приложения. Сама база данных не неизменяема: прямое обращение через `DB` всё ещё может изменить таблицу и не относится к поддерживаемому способу работы.
 
-This implementation configuration follows accepted ADR-0019 and current Laravel 13 Sanctum SPA documentation: stateful API middleware, CSRF cookie bootstrap and cookie sessions. PostgreSQL row locking serializes one-time invitation consumption, while the fixed transaction-level advisory lock serializes admin status transitions. Invitation creation commits its business row and required audit event atomically. The executable validation is split between focused regressions and `scripts/test-access-core-postgres-concurrency.sh`, which creates and removes an isolated temporary PostgreSQL database for simultaneous bootstrap, invitation-consumption and admin-disable attempts. Validation counts are intentionally not hard-coded here because they change with the test matrix.
+В событии аудита сохраняются тип действующего лица (`USER`, `OPERATOR`, `SYSTEM`), при необходимости его идентификатор, объект действия и метаданные. Система удаляет пароли, токены приглашения, идентификаторы сессий и CSRF- или авторизационные токены, если они записаны в поля с защищёнными именами. Значения под другими именами не проверяются по содержимому.
 
-## M1.1 readiness record
+Команда создания первого администратора берёт специальную блокировку PostgreSQL на время транзакции. Она повторно проверяет, что администратора ещё нет, и только после этого создаёт запись. Блокировка защищает только это условие, снимается вместе с завершением транзакции и не требует отдельной распределённой системы. Тесты на SQLite пропускают эту проверку: в однопроцессной тестовой базе нет аналога блокировки PostgreSQL. Поведение базы проверяет отдельный параллельный сценарий на PostgreSQL.
 
-Final local validation for PR #23 review fixes: complete backend PHPUnit suite — 40 tests / 180 assertions; Vitest — 2 tests / 2 assertions. Pint — 48 files; Larastan — no errors. PostgreSQL concurrency — PASS for bootstrap, single-invitation registration, independent-invitation same-normalized-email registration and concurrent admin disable. Same-origin auth — PASS (204/201/204/200/204/401); production frontend build — PASS; migrations up/down/re-up — PASS. Frontend lint and typecheck also pass. The ordinary compose frontend build remains the known `NODE_ENV=development`/`/_global-error` environment failure documented below.
+Этот сценарий также проверяет два разных приглашения на один и тот же нормализованный адрес. Одна регистрация проходит, вторая упирается в ограничение `UNIQUE`. В базе остаются один пользователь и одно использованное приглашение; проигравшее приглашение остаётся неиспользованным, а связанные с неудачной попыткой события аудита не сохраняются. Проверка HTTP-входа использует уникальный тестовый адрес и при завершении удаляет только созданные ею приглашение, учётную запись, сессии и события аудита. Тест не накапливает пользовательские данные.
 
-The compose development container sets a non-standard `NODE_ENV=development`, which can reproduce the historical frontend `/_global-error` `useContext(null)` failure during `next build`. The required production command passes with `NODE_ENV=production`; no product-code root cause is asserted for the development-environment failure. Compose missing-variable warnings reproduce on the baseline and remain pre-existing environment noise.
+Laravel ограничивает частоту входа общим лимитером `login`. Настройка CVortex по умолчанию разрешает 5 попыток за 60 секунд. Её можно изменить через `AUTH_LOGIN_RATE_LIMIT_ATTEMPTS` и `AUTH_LOGIN_RATE_LIMIT_DECAY_SECONDS`; эти числа выбраны проектом, а не заданы Laravel. Счётчик учитывает нормализованный адрес и IP-адрес источника, поэтому разные адреса не используют общий лимит. При превышении лимита сервер отвечает `429`.
 
-The frontend package-manager metadata mismatch and absent `pnpm-lock.yaml` are tracked separately as pre-existing repository debt and are outside M1.1 scope.
+Вход через браузер соответствует ADR-0019 и схеме Sanctum для одностраничного приложения: используются сессионные cookie и проверка CSRF-токена. PostgreSQL блокирует приглашение, пока его используют; отдельная блокировка на время транзакции защищает создание администратора и смену его статуса. Приглашение и обязательная запись аудита сохраняются вместе.
 
-### Password hash driver migration
+Проверка на реальном PostgreSQL выполняется сценарием `scripts/test-access-core-postgres-concurrency.sh`. Он создаёт и затем удаляет отдельную временную базу, проверяет одновременное создание администратора, использование приглашения и отключение администратора.
 
-Changing `HASH_DRIVER` is a staged migration, not a one-line environment flip. During the migration, set `HASH_VERIFY=false` so Laravel can verify existing hashes produced by the previous driver; successful active-user logins are rehashed with the new driver and current work factors. After all accounts have migrated, restore `HASH_VERIFY=true` and restart the backend. Never change the driver with verification enabled while old hashes remain.
+## Результаты проверки M1.1
+
+Ниже — исторические результаты локальной проверки исправлений по замечаниям PR #23. Полный набор PHPUnit прошёл: 40 тестов и 180 проверок. Vitest: 2 теста и 2 проверки. Pint проверил 48 файлов, Larastan не нашёл ошибок. Сценарий PostgreSQL подтвердил корректную работу при одновременном создании администратора, использовании одного приглашения, регистрации по двум приглашениям на общий адрес и отключении администратора. Проверка авторизации через тот же веб-адрес вернула HTTP-статусы `204/201/204/200/204/401`. Также прошли production-сборка веб-интерфейса, применение, откат и повторное применение миграций, проверка правил кода и проверка типов.
+
+Обычная сборка веб-интерфейса в Compose всё ещё может завершиться ошибкой `useContext(null)` при предварительном рендеринге `/_global-error` с `NODE_ENV=development`. Сборка с `NODE_ENV=production` проходит, но причина сбоя в режиме разработки не установлена. Предупреждения Compose о незаданных переменных есть и в исходной версии проекта; это известные предупреждения конфигурации.
+
+Несовпадение настроек пакетного менеджера веб-интерфейса и отсутствие `pnpm-lock.yaml` учтены отдельно как ранее возникшая проблема репозитория. К M1.1 они не относятся.
+
+### Смена алгоритма хэширования паролей
+
+Смена `HASH_DRIVER` требует поэтапного перехода. На это время задайте `HASH_VERIFY=false`, чтобы Laravel мог проверять старые хэши. После успешного входа пароль активной учётной записи будет сохранён с новым алгоритмом и его текущими параметрами. Когда все учётные записи перейдут на новый алгоритм, верните `HASH_VERIFY=true` и перезапустите сервер приложения. Не включайте новую проверку, пока в базе ещё есть хэши старого формата.

@@ -1,104 +1,104 @@
 ---
-title: CVortex Process Map
+title: Карта процессов CVortex
 status: active
 owner: project
 created: 2026-10-03
 updated: 2026-10-03
 tags: [process-map, preview, operations, provenance]
 related:
-  - "[[Documentation-Map|Documentation Map]]"
-  - "[[User-Guide|User Guide]]"
-  - "[[../01-Product/Roadmap|Product Roadmap]]"
-  - "[[../04-Data/M1-2-Career-Core|Career Core]]"
-  - "[[../04-Data/M1-3-Vacancy-Core|Vacancy Core]]"
-  - "[[../04-Data/M1-4-Application-Draft|Application Draft]]"
-  - "[[../10-Operations/Local-Development|Local Development]]"
-  - "[[Error-Center-User-Guide|Error Center guide]]"
+  - "[[Documentation-Map|Карта документации]]"
+  - "[[User-Guide|Руководство пользователя]]"
+  - "[[../01-Product/Roadmap|План развития]]"
+  - "[[../04-Data/M1-2-Career-Core|Факты о карьере]]"
+  - "[[../04-Data/M1-3-Vacancy-Core|Работа с вакансиями]]"
+  - "[[../04-Data/M1-4-Application-Draft|Черновик отклика]]"
+  - "[[../10-Operations/Local-Development|Локальная установка]]"
+  - "[[Error-Center-User-Guide|Разбор ошибок]]"
 ---
 
-# CVortex Process Map
+# Карта процессов CVortex
 
-This page maps the product and operator paths available in the current Preview. M1.1–M1.3 are implemented; M1.4 is implemented in `stage`. Preview 0.1 still awaits recorded real-user end-to-end acceptance and feedback, so this map is not evidence that the Preview gate has passed.
+Здесь показано, как устроены действия пользователя и оператора в текущей предварительной версии. M1.1–M1.3 реализованы; реализация M1.4 находится в `stage`. Проверка Preview 0.1 с реальными пользователями и сбор отзывов ещё впереди — эта карта не означает, что проверка уже пройдена.
 
-The diagrams show the current implementation. Provider-backed extraction and draft generation need an operator-configured AI provider; manual Career Fact entry and deterministic matching remain available without one. Vacancy URLs are stored as metadata and are never fetched.
+Для извлечения фактов, анализа вакансии и подготовки черновиков оператор должен подключить сервис ИИ. Факты о карьере можно добавлять вручную. Требования вакансии система сопоставляет с фактами по заданным правилам. Ссылка на вакансию сохраняется для справки; страницу по ней CVortex не загружает.
 
-## Preview 0.1 user workflow — implemented, acceptance pending
+## Сценарий пользователя в Preview 0.1 — реализован, проверка ожидается
 
-Career input can be entered manually as a confirmed fact or pasted as source text. Extraction creates pending candidates; a person must confirm or edit them before they can support Claims. Vacancy analysis and draft preparation use provider-backed extraction/generation and deterministic validation. Approval is explicit and ends inside CVortex.
+Пользователь может добавить факт вручную или вставить текст о карьере. Если он вставит текст, CVortex предложит факты, которые нужно проверить: подтвердить, исправить или отклонить. Затем можно вставить вакансию, посмотреть её требования и совпадения с опытом, открыть подготовку отклика и проверить черновики. Утверждение отмечает решение пользователя внутри CVortex; работодателю материалы не отправляются.
 
 ```mermaid
 flowchart TD
-  Invite[Receive invitation] --> SignIn[Sign in]
-  SignIn --> CareerInput{Career input}
-  CareerInput -->|Manual entry| ManualFact[Add confirmed fact]
-  CareerInput -->|Pasted text and configured provider| Source[Save career source]
-  Source --> Extract[Extract fact candidates]
-  Extract --> FactReview[Confirm, edit, reject, or leave pending]
-  ManualFact --> Confirmed[Confirmed Career Facts and Claims]
+  Invite[Получить приглашение] --> SignIn[Войти в CVortex]
+  SignIn --> CareerInput{Как добавить сведения о карьере?}
+  CareerInput -->|Вручную| ManualFact[Добавить подтверждённый факт]
+  CareerInput -->|Вставить текст при настроенном ИИ| Source[Сохранить исходный текст]
+  Source --> Extract[Предложить факты]
+  Extract --> FactReview[Проверить: подтвердить, изменить, отклонить или оставить]
+  ManualFact --> Confirmed[Подтверждённые факты и утверждения]
   FactReview --> Confirmed
-  Confirmed --> Vacancy[Paste vacancy text]
-  Vacancy --> Requirements[Extract vacancy requirements]
-  Requirements --> Match[Match evidence and recommend priority]
-  Match --> Preparation[Open application preparation]
-  Preparation --> Drafts[Resume recommendations and short/standard cover drafts]
-  Drafts --> Guard[Truth Guard]
-  Guard --> Decision[Accept, edit and revalidate, or reject]
-  Decision -->|Accepted and PASS| Approval[Explicit user approval]
-  Approval --> Stop([STOP before submission])
+  Confirmed --> Vacancy[Вставить текст вакансии]
+  Vacancy --> Requirements[Выделить требования]
+  Requirements --> Match[Сопоставить требования и факты]
+  Match --> Preparation[Открыть подготовку отклика]
+  Preparation --> Drafts[Рекомендации по резюме и два черновика письма]
+  Drafts --> Guard[Проверить достоверность]
+  Guard --> Decision[Принять, изменить с перепроверкой или отклонить]
+  Decision -->|Принято и PASS| Approval[Явно утвердить]
+  Approval --> Stop([Остановиться до отправки])
 ```
 
-The optional vacancy URL is metadata only. Truth Guard blocks unsupported factual content; editing requires revalidation. Approval records user intent but does not create a document package or send anything to an employer.
+Ссылка на вакансию необязательна: CVortex её сохраняет, но не загружает страницу. Проверка достоверности отклоняет неподтверждённые сведения; после изменения текста её нужно пройти заново. Утверждённый черновик остаётся в CVortex: его нельзя скачать отдельным файлом или отправить работодателю.
 
-## Truth and provenance
+## Откуда берутся сведения и чему можно доверять
 
-Pasted career text is treated as untrusted source material. Manual facts keep manual provenance. Extracted candidates remain pending until a person reviews them. A Claim can support matching or generated wording only while its evidence points to confirmed, same-owner Career Facts with valid provenance.
+Вставленный текст о карьере — исходный материал, а не проверенный факт. При ручном вводе факт сразу получает соответствующую отметку происхождения. Предложенные системой факты остаются неподтверждёнными, пока человек их не проверит. Утверждение о кандидате можно использовать при сопоставлении и в черновике, только если оно опирается на подтверждённый факт того же пользователя и связано с надёжным источником.
 
 ```mermaid
 flowchart LR
-  Source[Career source or manual entry] --> Fact[Career Fact]
-  Fact --> Evidence[Evidence and provenance]
-  Evidence --> Claim[Claim]
-  Claim --> Use[Matching or generated content]
-  Use --> Guard[Truth Guard]
-  Guard --> Approval[User review and explicit approval]
+  Source[Источник или ручной ввод] --> Fact[Факт о карьере]
+  Fact --> Evidence[Подтверждение и происхождение]
+  Evidence --> Claim[Утверждение о кандидате]
+  Claim --> Use[Сопоставление или черновик]
+  Use --> Guard[Проверка достоверности]
+  Guard --> Approval[Проверка и явное одобрение человеком]
 ```
 
-The source-to-fact relationship is preserved for review. A pending fact is not trusted evidence; only valid Claims grounded in confirmed facts can cross into candidate-facing matching or drafts.
+Связь исходного текста с фактом сохраняется для проверки. Неподтверждённые сведения не служат доказательством и не должны попадать в текст о кандидате.
 
-## Local runtime
+## Локальный запуск
 
-For a fresh checkout, the operator prepares local settings, validates Compose configuration, starts the services, applies migrations, checks dependency readiness, and then opens the configured application URL.
+В новой копии репозитория оператор сначала подготавливает настройки, затем проверяет конфигурацию Compose, запускает службы и применяет миграции. После успешной проверки готовности можно открыть приложение.
 
 ```mermaid
 flowchart LR
-  Init[make init] --> Config[Compose config check]
+  Init[make init] --> Config[Проверить конфигурацию Compose]
   Config --> Up[make up]
   Up --> Migrate[make migrate]
-  Migrate --> Ready[Readiness: /api/v1/health/ready]
-  Ready --> Browser[Open APP_URL in browser]
+  Migrate --> Ready[Проверить готовность: /api/v1/health/ready]
+  Ready --> Browser[Открыть APP_URL в браузере]
 ```
 
-Use the readiness command and recovery steps in [Local Development](../10-Operations/Local-Development.md). The command derives Nginx's published address from Compose, so the configured port is honored. A PostgreSQL container can be healthy while application readiness fails if the configured database is absent from the existing volume; inspect the current volume configuration without removing it.
+Команды проверки и восстановления приведены в инструкции [«Локальная установка»](../10-Operations/Local-Development.md). Адрес Nginx команда получает из Compose, поэтому учитывает настроенный порт. Контейнер PostgreSQL может быть исправен, а приложение — не готово, если в существующем томе нет базы из `POSTGRES_DB`. Проверяйте настройки и содержимое тома, не удаляя его.
 
-## Diagnostics
+## Разбор ошибок
 
-A safe user-facing error may include a stable error code and Reference ID. An administrator can search for a recorded incident, inspect its suggested cause and recommended action, verify the outcome separately, then mark it resolved or ignored. Error Center provides bounded diagnostics; it does not guarantee a root cause or confirm that application data changed.
+В сообщении об ошибке могут быть код и `Reference ID` — идентификатор для поиска записи о сбое. В панели диагностики администратор увидит сохранённые сведения и рекомендуемое действие. Он должен отдельно проверить результат операции, а затем отметить запись как разобранную или отложенную. Диагностика не всегда находит первопричину и не подтверждает, изменились ли данные.
 
 ```mermaid
 flowchart LR
-  Error[Safe user-facing error] --> Reference[Error code and Reference ID]
-  Reference --> Center[Admin Error Center]
-  Center --> Action[Suggested cause and action]
-  Action --> Verify[Verify operation outcome]
-  Verify --> Status{Incident status}
-  Status -->|Cause fixed and outcome checked| Resolve[Resolve]
-  Status -->|Accepted for now| Ignore[Ignore]
+  Error[Безопасное сообщение об ошибке] --> Reference[Код ошибки и Reference ID]
+  Reference --> Center[Панель диагностики администратора]
+  Center --> Action[Предложенная причина и действие]
+  Action --> Verify[Отдельно проверить результат]
+  Verify --> Status{Что делать с записью?}
+  Status -->|Причина устранена, результат проверен| Resolve[Отметить как разобранную]
+  Status -->|Решено пока не разбирать| Ignore[Отложить]
 ```
 
-Users should share the code and Reference ID with an administrator, not passwords, API keys or full career/vacancy text. See the [Error Center guide](Error-Center-User-Guide.md) for user and admin steps.
+Передавайте администратору код и `Reference ID`, но не пароль, ключ API и полный текст резюме или вакансии. Подробные шаги для пользователя и администратора приведены в [инструкции по разбору ошибок](Error-Center-User-Guide.md).
 
-## Planned after Preview: M2+
+## Что запланировано после Preview: M2 и далее
 
-M2 has not started and remains gated on Preview 0.1 real-user validation. The roadmap describes a future traceable application package with structured resume versions, DOCX/PDF generation, private downloads and a manual `Mark as applied` action. Those processes are not implemented today. CVortex does not submit applications automatically; future submission remains a user action outside the current workflow.
+M2 ещё не начат: сначала нужно завершить проверку Preview 0.1. В плане развития указаны пакет материалов для отклика, версии резюме, создание DOCX/PDF, защищённое скачивание и отметка «Отклик отправлен». Пока этих возможностей нет. CVortex не отправляет отклики автоматически; в будущем пользователь сможет вручную отметить, что сам отправил отклик.
 
-See the [Product Roadmap](../01-Product/Roadmap.md) for the canonical planned scope. Do not treat roadmap items as available product behavior.
+Подробный состав будущих этапов приведён в [плане развития](../01-Product/Roadmap.md). Упоминание функции в плане не означает, что она уже доступна.

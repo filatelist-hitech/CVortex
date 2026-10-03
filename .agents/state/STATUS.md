@@ -639,3 +639,9 @@ Validation: Markdown render/fence checks passed for 55 `README.md`/`docs` files;
 Reworked the README as a human-readable landing page with current M1/Preview status, available capabilities, a compact user flow, local quick start and focused documentation links. Added `docs/00-Home/Process-Map.md` with separate Preview, provenance, local runtime and diagnostics diagrams; M2 package work is clearly marked as planned and gated on Preview 0.1 evidence. Linked the map from the Documentation Map. `NEXT.md` and `BLOCKERS.md` remain unchanged; no Preview E2E or M2 work started.
 
 Validation: Markdown rendered for 12 changed documents; 19 fenced blocks balanced; 40 relative Markdown and 76 Obsidian links resolved; all 12 shell snippets passed `sh -n`/`bash -n`; all five Mermaid diagrams rendered to SVG using the locally installed Mermaid 11.15.0 and Chrome; `git diff --check` passed. Reused the prior runtime evidence that local readiness returns 503 due to the configured database being absent from the existing PostgreSQL volume. Runtime, database and volume were not changed.
+
+### User and operator documentation language pass — 2026-10-03
+
+Reworked the Russian prose across the README, user guides, process map, documentation map and local operator instructions. Translated the remaining operator pages for logging/diagnostics and MCP validation. Exact interface labels, commands, API names, status values and technical identifiers remain unchanged; internal technical references remain outside this language pass. No application code or runtime configuration changed.
+
+Validation: Markdown rendered for 11 user/operator documents; 42 relative Markdown targets and heading anchors plus 72 Obsidian links resolved; all 15 shell snippets passed `bash -n`; all five Mermaid diagrams rendered in the locally available Mermaid/Chrome toolchain; and `git diff --check` passed. `NEXT.md` and `BLOCKERS.md` were not changed by this pass.

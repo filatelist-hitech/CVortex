@@ -1,18 +1,18 @@
 ---
-title: M0 Runbook
+title: Операционная инструкция M0
 status: active
 owner: project
 created: 2026-09-12
 updated: 2026-10-03
 tags: [operations, runbook, m0, health]
 related:
-  - "[[Local-Development]]"
-  - "[[../02-Architecture/M0-Runtime|M0 Runtime]]"
+  - "[[Local-Development|Локальная установка]]"
+  - "[[../02-Architecture/M0-Runtime|Схема локального запуска M0]]"
 ---
 
-# M0 Runbook
+# Операционная инструкция M0
 
-## Fast diagnosis
+## Быстрая проверка
 
 ```sh
 docker compose ps
@@ -23,18 +23,18 @@ make logs SERVICE=backend
 make logs SERVICE=horizon
 ```
 
-Expected healthy bodies are `{"status":"live"}` and `{"status":"ready"}`. Liveness confirms the Nginx/FastCGI/Laravel request path. Readiness additionally checks PostgreSQL and Redis with short timeouts. A dependency failure returns 503 and only `{"status":"not_ready"}`.
+В исправном состоянии `/live` возвращает `{"status":"live"}`, а `/ready` — `{"status":"ready"}`. Первая проверка подтверждает, что запрос проходит через Nginx и Laravel. Вторая дополнительно проверяет PostgreSQL и Redis с коротким тайм-аутом. Если какая-то зависимость недоступна, `/ready` возвращает HTTP 503 и `{"status":"not_ready"}`.
 
-## Common recovery
+## Что делать при сбое
 
-- **Port bind fails:** another process owns the configured host port (8080 by default). Set a free `CVORTEX_PORT` and matching `APP_URL` in root `.env`, then run `make up` again. Do not stop an unrelated process blindly.
-- **Readiness is 503:** inspect `docker compose ps`, then PostgreSQL, Redis and backend logs. Restore the failed dependency and retry readiness; backend restart is normally unnecessary.
-- **PostgreSQL is healthy but readiness is 503:** verify that `POSTGRES_DB` in the ignored root `.env` names a database present in the existing PostgreSQL volume. The PostgreSQL healthcheck confirms only that the server accepts connections; it does not prove that the selected database exists or that the application runtime role can connect. Follow the non-destructive database-name recovery in [Local Development](Local-Development.md).
-- **Horizon is not running:** check Redis health and `make logs SERVICE=horizon`; after Redis returns, confirm with `docker compose exec horizon php artisan horizon:status`.
-- **Dependencies are absent/corrupt:** run `make init` again. It reuses root `.env` and restores locked container dependencies.
-- **A clean service restart is needed:** use `make restart`, which preserves persistent volumes and recreates services in dependency-safe order.
+- **Не удаётся занять порт.** Настроенный порт занят другим процессом. По умолчанию используется 8080. Укажите свободный `CVORTEX_PORT` и соответствующий ему `APP_URL` в корневом `.env`, затем запустите `make up`. Не останавливайте неизвестный процесс наугад.
+- **Проверка готовности возвращает 503.** Посмотрите `docker compose ps`, затем журналы PostgreSQL, Redis и службы `backend` (сервера приложения): `make logs SERVICE=postgres`, `make logs SERVICE=redis`, `make logs SERVICE=backend`. Восстановите работу недоступной службы и проверьте `/ready` ещё раз. Обычно перезапуск сервера приложения не нужен.
+- **PostgreSQL исправен, но приложение не готово.** Убедитесь, что `POSTGRES_DB` в локальном `.env` указывает на базу, существующую в подключённом томе PostgreSQL. Проверка контейнера подтверждает только доступность сервера: она не доказывает, что нужная база есть и роль приложения может к ней подключиться. Безопасный порядок проверки описан в разделе [«Локальная установка»](Local-Development.md).
+- **Не работает Horizon.** Проверьте Redis и журнал командой `make logs SERVICE=horizon`. После восстановления Redis выполните `docker compose exec horizon php artisan horizon:status`.
+- **Не хватает зависимостей или они повреждены.** Повторно выполните `make init`: команда восстановит зависимости, зафиксированные в репозитории, и использует существующий `.env`.
+- **Нужно перезапустить службы.** Выполните `make restart`. Команда пересоздаст контейнеры в нужном порядке, не удаляя постоянные тома.
 
-## Quality and build validation
+## Проверка качества и сборки
 
 ```sh
 docker compose --env-file .env.example config --quiet
@@ -43,8 +43,8 @@ make test
 docker compose build frontend
 ```
 
-The CI workflow performs the same deterministic quality baseline. Dependency failure/recovery and named-volume persistence are runtime acceptance checks and remain manual M0 validation.
+CI выполняет те же автоматические проверки качества. Восстановление после отказа зависимостей и сохранность данных в именованных томах проверяются отдельно вручную — это часть приёмки M0.
 
-## Persistence boundaries
+## Где хранятся данные
 
-Normal `make down` does not remove volumes. PostgreSQL and `storage/app/private` are durable across down/up; Redis state is deliberately disposable. Never use volume-removal commands unless local data destruction is explicitly intended and approved.
+Обычная команда `make down` не удаляет тома. База PostgreSQL и закрытые файлы из `storage/app/private` сохраняются после остановки и запуска. Данные Redis, напротив, намеренно не сохраняются. Не запускайте команды удаления томов, если не хотите безвозвратно удалить локальные данные.

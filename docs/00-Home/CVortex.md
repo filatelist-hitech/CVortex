@@ -7,32 +7,32 @@ updated: 2026-10-03
 tags: [cvortex, home, product]
 related:
   - "[[Documentation-Map]]"
-  - "[[User-Guide|User Guide]]"
-  - "[[../01-Product/Vision|Vision]]"
-  - "[[../01-Product/Principles|Principles]]"
-  - "[[../01-Product/Scope|Scope]]"
-  - "[[../01-Product/Glossary|Glossary]]"
+  - "[[User-Guide|Руководство пользователя]]"
+  - "[[../01-Product/Vision|Видение продукта]]"
+  - "[[../01-Product/Principles|Принципы]]"
+  - "[[../01-Product/Scope|Объём продукта]]"
+  - "[[../01-Product/Glossary|Словарь терминов]]"
 ---
 
 # CVortex
 
-**Your career, in context.**
+**Ваша карьера — в контексте.**
 
-CVortex is a personal Job Search OS for preparing truthful, relevant application drafts from confirmed career evidence and vacancy context.
+CVortex — личный помощник в поиске работы. Он сопоставляет подтверждённые факты о вашей карьере с требованиями вакансии и помогает подготовить материалы отклика.
 
-## Current product
+## Что доступно сейчас
 
-The local Preview supports invite-only access, confirmed Career Facts, pasted-text Career extraction for human review, pasted vacancy analysis, explainable fit and gap summaries, resume recommendations, and short/standard cover drafts with Truth Guard review. AI-backed actions require a configured provider; the default is disabled. The optional vacancy URL is metadata and is not fetched.
+В локальной предварительной версии можно войти по приглашению, добавлять факты о карьере вручную или извлекать их из вставленного текста, разбирать текст вакансии и готовить рекомендации по резюме и черновики сопроводительных писем. Извлечённые факты нужно подтвердить. Черновики проходят проверку достоверности. Для извлечения, анализа вакансий и подготовки черновиков нужен настроенный сервис ИИ; по умолчанию он выключен. Ссылка на вакансию сохраняется как справочная запись — CVortex не загружает страницу.
 
-M1.4 is implemented in `stage`; Preview 0.1 real-user validation and feedback are still pending. File import/export, DOCX/PDF rendering, Employer Memory, interview workflows, outcome analytics and automatic submission are not available in the current interface.
+Реализация M1.4 уже находится в `stage`, но Preview 0.1 ещё не проверен на реальных пользователях и отзывы не собраны. Работа над M2 не началась. Пока нельзя импортировать или экспортировать файлы, создавать DOCX/PDF, вести историю общения с работодателями, готовиться к собеседованиям или анализировать результаты поиска. Автоматической отправки откликов тоже нет.
 
-Start with the [[User-Guide|User Guide]]. Operators can use [[../10-Operations/Local-Development|Local Development]] and [[../10-Operations/M1-Access-Core|Access Core]]. The [[Documentation-Map]] separates user instructions from developer and architecture references.
+Начните с [[User-Guide|руководства пользователя]]. Администратору пригодятся инструкции [[../10-Operations/Local-Development|по локальной установке]] и [[../10-Operations/M1-Access-Core|по доступу и приглашениям]]. Остальные материалы собраны в [[Documentation-Map|карте документации]].
 
-## Product principles
+## Основные правила
 
-- Candidate-facing statements must trace back through Claims to confirmed Career Facts.
-- Extracted facts remain pending until a person confirms them.
-- Vacancy, recruiter and other imported text is untrusted data.
-- Human approval stays in CVortex; the system does not submit applications or contact employers.
+- Каждое утверждение о кандидате должно подтверждаться проверенным фактом о его карьере.
+- Предложенные системой факты остаются неподтверждёнными, пока человек их не проверит.
+- Текст вакансий, писем рекрутера и других внешних источников считается недоверенным вводом.
+- Окончательное решение принимает человек. CVortex не отправляет отклики и не связывается с работодателями.
 
-The [Product Vision](../01-Product/Vision.md), [Principles](../01-Product/Principles.md), [Scope](../01-Product/Scope.md), [Glossary](../01-Product/Glossary.md) and [Roadmap](../01-Product/Roadmap.md) describe intent, terminology and delivery status.
+Подробнее о замысле, правилах, границах и планах развития — в документах [«Видение продукта»](../01-Product/Vision.md), [«Принципы»](../01-Product/Principles.md), [«Объём продукта»](../01-Product/Scope.md), [«Словарь терминов»](../01-Product/Glossary.md) и [«План развития»](../01-Product/Roadmap.md).

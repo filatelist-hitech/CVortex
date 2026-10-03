@@ -1,40 +1,40 @@
 # CVortex
 
-**Your career, in context.**
+**Карьера — в контексте.**
 
-CVortex is a personal Job Search OS for preparing truthful, relevant application drafts from confirmed career facts and vacancy context.
+CVortex помогает искать работу и готовить отклики на основе подтверждённых фактов о вашей карьере. Система сопоставляет ваш опыт с требованиями вакансии, а каждое утверждение в черновике можно проверить по источнику.
 
-## Current status
+## Текущее состояние
 
-M1.1–M1.3 are implemented. The M1.4 application-draft implementation is in `stage`, but Preview 0.1 still awaits recorded real-user end-to-end acceptance and feedback. M2 has not started and remains gated on that evidence.
+Этапы M1.1–M1.3 реализованы. Реализация M1.4 находится в `stage`. Проверка Preview 0.1 с реальными пользователями и сбор отзывов ещё не завершены. M2 пока не начат.
 
-## What works today
+## Что уже работает
 
-- Invite-only sign-in and a private, owner-scoped career workspace.
-- Add confirmed Career Facts manually without AI, or paste career text for provider-assisted extraction into facts that remain pending until reviewed.
-- Paste vacancy text, inspect extracted requirements, compare them with confirmed evidence across seven dimensions, and review an explainable priority recommendation.
-- Prepare resume recommendations and short or standard cover-letter drafts; review, edit, accept or reject them, then explicitly approve content that passes Truth Guard.
+- Вход по приглашению и отдельное рабочее пространство для каждого пользователя.
+- Факты о карьере можно добавлять вручную — для этого ИИ не нужен. Можно также вставить текст и получить кандидатов в факты; подтвердить их должен человек.
+- Текст вакансии можно вставить в CVortex: система выделит требования, сопоставит их с подтверждённым опытом по семи направлениям и объяснит рекомендацию по приоритету.
+- После анализа вакансии можно получить рекомендации по резюме и два черновика сопроводительного письма — краткий и стандартный. Черновики можно изменить, принять или отклонить. Утвердить можно только принятую версию, прошедшую проверку достоверности.
 
-AI-backed extraction, vacancy analysis and draft generation require a configured provider. New installations default to `AI_PROVIDER=none`. A vacancy URL is metadata only; CVortex does not fetch the page.
+Извлечение фактов, анализ вакансии и подготовка черновиков требуют подключённого сервиса ИИ. В новой установке он выключен: `AI_PROVIDER=none`. Ссылка на вакансию сохраняется только как справочная информация — CVortex не открывает её и не загружает страницу.
 
-## Preview workflow
+## Как проходит работа
 
 ```mermaid
 flowchart LR
-  SignIn[Invite and sign in] --> Facts[Confirm career facts]
-  Facts --> Vacancy[Paste vacancy text]
-  Vacancy --> Match[Review match and gaps]
-  Match --> Drafts[Prepare and review drafts]
-  Drafts --> Guard[Truth Guard]
-  Guard --> Approval[Explicit user approval]
-  Approval --> Stop([Stop before submission])
+  Invite[Получить приглашение и войти] --> Facts[Подтвердить факты о карьере]
+  Facts --> Vacancy[Вставить текст вакансии]
+  Vacancy --> Match[Посмотреть совпадения и пробелы]
+  Match --> Drafts[Подготовить и проверить черновики]
+  Drafts --> Guard[Проверить достоверность]
+  Guard --> Approval[Явно утвердить материал]
+  Approval --> Stop([Остановиться до отправки])
 ```
 
-The full [Process Map](docs/00-Home/Process-Map.md) covers provenance, local startup and diagnostics.
+Полная [карта процессов](docs/00-Home/Process-Map.md) показывает происхождение данных, запуск локальной версии и разбор ошибок.
 
-## Run locally
+## Запуск на своём компьютере
 
-Requirements: Git, Make, Docker with Compose, and a running Docker engine. From a fresh checkout:
+Нужны Git, Make, Docker с Compose и запущенный Docker Engine. В терминале выполните:
 
 ```sh
 git clone https://github.com/filatelist-hitech/CVortex.git
@@ -47,20 +47,20 @@ health_authority="$(docker compose port nginx 80)"
 curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-After readiness succeeds, open the `APP_URL` value in the ignored root `.env` (default: `http://localhost:8080`). See [Local Development](docs/10-Operations/Local-Development.md) for setup and troubleshooting. To create the first administrator and invite a user, follow [Access Core](docs/10-Operations/M1-Access-Core.md).
+Когда проверка готовности завершится успешно, откройте адрес `APP_URL` из локального файла `.env` (по умолчанию `http://localhost:8080`). Подробности установки и устранения проблем — в разделе [Локальная установка](docs/10-Operations/Local-Development.md). Как создать администратора и пригласить человека — в инструкции [Первый вход и управление доступом](docs/10-Operations/M1-Access-Core.md).
 
-## Documentation
+## Документация
 
-- [User Guide](docs/00-Home/User-Guide.md) — sign-in, Career Facts, vacancies and application drafts.
-- [Process Map](docs/00-Home/Process-Map.md) — the current Preview workflow and supporting processes.
-- [Error Center guide](docs/00-Home/Error-Center-User-Guide.md) — what users and administrators do when an operation fails.
-- [Documentation Map](docs/00-Home/Documentation-Map.md) — user, operator, product and technical references.
-- [Product Roadmap](docs/01-Product/Roadmap.md) — implementation status and future milestones.
+- [Руководство пользователя](docs/00-Home/User-Guide.md) — вход, факты о карьере, вакансии и черновики.
+- [Карта процессов](docs/00-Home/Process-Map.md) — Preview, происхождение данных, локальный запуск и диагностика.
+- [Разбор ошибок](docs/00-Home/Error-Center-User-Guide.md) — что делать пользователю и администратору.
+- [Карта документации](docs/00-Home/Documentation-Map.md) — остальные пользовательские и технические материалы.
+- [План развития](docs/01-Product/Roadmap.md) — выполненные этапы и дальнейшие планы.
 
-## Current boundaries
+## Чего пока нет
 
-The Preview does not generate DOCX/PDF application packages or submit applications. Inbound MCP is disabled by default and read-only when enabled. Career, vacancy and draft data can contain sensitive personal information; do not commit real career data or credentials.
+CVortex пока не создаёт готовые файлы DOCX/PDF и не отправляет отклики работодателям. Подключение MCP выключено по умолчанию; если его включить, инструменты смогут только читать данные. В фактах о карьере, вакансиях и черновиках могут быть личные сведения — не добавляйте их в Git вместе с паролями и ключами.
 
-## Contributing
+## Как внести вклад
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository workflow.
+Порядок работы с репозиторием описан в [CONTRIBUTING.md](CONTRIBUTING.md).
