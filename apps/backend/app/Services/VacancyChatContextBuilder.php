@@ -30,6 +30,10 @@ class VacancyChatContextBuilder
         'ну', 'об', 'однако', 'они', 'оно', 'от', 'очень', 'по', 'под', 'при', 'про', 'со', 'так', 'также',
         'там', 'те', 'тем', 'то', 'того', 'тоже', 'той', 'только', 'том', 'ту', 'ты', 'уже', 'хотя', 'чего',
         'чей', 'чем', 'что', 'чтобы', 'эта', 'эти', 'это',
+        // Common vacancy language is not evidence that a Career Fact is relevant.
+        'candidate', 'candidates', 'developer', 'developers', 'experience', 'job', 'position', 'positions',
+        'required', 'requirement', 'requirements', 'responsibilities', 'responsibility', 'role', 'roles', 'team',
+        'teams', 'work', 'working', 'year', 'years',
     ];
 
     public function __construct(private readonly TrustedCareerQuery $career, private readonly VacancyMatchingService $matching) {}

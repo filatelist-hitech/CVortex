@@ -101,6 +101,10 @@ class VacancyAnalysisDraftService
         foreach ($requirements as &$requirement) {
             if ($requirement['importance'] === 'UNCERTAIN') {
                 $position = strpos($snapshot->raw_text, $requirement['source_excerpt']);
+                $nextPosition = $position === false ? false : strpos($snapshot->raw_text, $requirement['source_excerpt'], $position + 1);
+                if ($nextPosition !== false) {
+                    continue;
+                }
                 $prefix = substr($snapshot->raw_text, 0, $position === false ? 0 : $position);
                 preg_match_all('/(?:^|\n)\s*(Наши пожелания к кандидату|Требования|Requirements|Must-have|Будет плюсом|Будет плюс|Nice-to-have|Твои будущие задачи|Обязанности|Responsibilities|Почему[^\n]*|Benefits)\s*:?\s*$/miu', $prefix, $headings);
                 $heading = mb_strtolower((string) end($headings[1]));

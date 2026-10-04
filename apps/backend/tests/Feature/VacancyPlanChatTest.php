@@ -248,6 +248,20 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('worked with teams and managers', json_encode($context['input']));
     }
 
+    public function test_context_does_not_select_a_confirmed_fact_for_generic_vacancy_language(): void
+    {
+        [$user, $vacancy] = $this->fixture('generic-vacancy-words', 'PHP developer. Experience required.');
+        app(CareerFactService::class)->createManual($user, 'experience', '10 years of medical sales experience.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('medical sales', json_encode($context['input']));
+    }
+
     public function test_context_does_not_select_a_confirmed_fact_for_only_numeric_overlap(): void
     {
         [$user, $vacancy] = $this->fixture('numeric-overlap', 'The platform team expects 10 engineers in 2020, with production PHP.');
@@ -407,6 +421,18 @@ class VacancyPlanChatTest extends TestCase
             'source_excerpt' => $label, 'confidence' => 1], ['PHP', 'Python', 'Java']);
         $saved = app(VacancyAnalysisDraftService::class)->save($user, $vacancy->id, $snapshot->id, 'headings', $analysis);
         $this->assertSame(['MANDATORY', 'PREFERRED', 'UNCERTAIN'], array_column($saved['requirements'], 'importance'));
+    }
+
+    public function test_repeated_source_excerpt_under_conflicting_headings_remains_uncertain(): void
+    {
+        [$user, $vacancy, $snapshot] = $this->fixture('repeated-heading-excerpt', "Nice-to-have:\nKubernetes\nRequirements:\nKubernetes");
+        $analysis = $this->analysis();
+        $analysis['requirements'] = [['dimension' => 'TECHNICAL', 'importance' => 'UNCERTAIN', 'label' => 'Kubernetes',
+            'normalized_value' => null, 'source_excerpt' => 'Kubernetes', 'confidence' => 1]];
+
+        $saved = app(VacancyAnalysisDraftService::class)->save($user, $vacancy->id, $snapshot->id, 'repeated-heading-excerpt', $analysis);
+
+        $this->assertSame(['UNCERTAIN'], array_column($saved['requirements'], 'importance'));
     }
 
     private function fixture(string $name, string $rawText = 'Engineer. PHP is required.'): array
