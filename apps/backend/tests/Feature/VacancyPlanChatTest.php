@@ -150,6 +150,48 @@ class VacancyPlanChatTest extends TestCase
         Http::assertNotSent(fn ($request): bool => str_ends_with($request->url(), '/responses'));
     }
 
+    public function test_active_chat_cancellation_persists_interrupted_state_and_skips_inference(): void
+    {
+        [$user, $vacancy] = $this->fixture('cancel-chat');
+        $service = app(VacancyChatService::class);
+        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'cancel-request', 'Hello', false);
+
+        $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/cancel', [
+            'client_request_id' => 'cancel-request',
+        ])->assertOk()->assertJsonPath('cancelled', true);
+
+        $events = iterator_to_array($service->stream($user, $turn));
+        $this->assertSame('USER_CANCELLED', end($events)['code']);
+        $this->assertSame([], $this->provider->streamCalls);
+        $this->assertSame('INTERRUPTED', $turn['assistant']->fresh()->status);
+        $this->assertSame('USER_CANCELLED', $turn['assistant']->fresh()->error_code);
+        $this->assertSame('INTERRUPTED', $turn['thread']->fresh()->status);
+        $this->assertSame('INTERRUPTED', VacancyLlmRun::query()->findOrFail($turn['assistant']->run_id)->status);
+    }
+
+    public function test_cancelling_during_stream_keeps_partial_output_and_does_not_complete_the_run(): void
+    {
+        [$user, $vacancy] = $this->fixture('cancel-active-chat');
+        $service = app(VacancyChatService::class);
+        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'cancel-active-request', 'Hello', false);
+        $events = $service->stream($user, $turn);
+
+        $this->assertSame('started', $events->current()['type']);
+        $events->next();
+        $this->assertSame('delta', $events->current()['type']);
+        $this->assertSame('Hello', $turn['assistant']->fresh()->content);
+        $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/cancel', [
+            'client_request_id' => 'cancel-active-request',
+        ])->assertOk()->assertJsonPath('cancelled', true);
+
+        $events->next();
+        $this->assertSame('error', $events->current()['type']);
+        $this->assertSame('USER_CANCELLED', $events->current()['code']);
+        $this->assertSame('Hello', $turn['assistant']->fresh()->content);
+        $this->assertSame('INTERRUPTED', $turn['assistant']->fresh()->status);
+        $this->assertSame('INTERRUPTED', VacancyLlmRun::query()->findOrFail($turn['assistant']->run_id)->status);
+    }
+
     public function test_context_is_confirmed_only_owned_relevant_bounded_and_marks_untrusted_data(): void
     {
         [$user, $vacancy] = $this->fixture('context');
@@ -170,6 +212,20 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('secret from another user', json_encode($context['input']));
         $this->assertStringNotContainsString('Underwater', json_encode($context['input']));
         $this->assertLessThan(50000, strlen(json_encode($context['input'])));
+    }
+
+    public function test_context_does_not_select_a_confirmed_fact_for_only_common_words(): void
+    {
+        [$user, $vacancy] = $this->fixture('common-word-fact', 'PHP engineer is required for a role with a growing team.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'I worked with teams and managers for many years.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('worked with teams and managers', json_encode($context['input']));
     }
 
     public function test_interrupted_stream_is_persisted_and_cannot_be_saved(): void
@@ -221,6 +277,7 @@ class VacancyPlanChatTest extends TestCase
         $this->actingAs($other)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/messages', [
             'connection_id' => $this->connection->id, 'model' => 'model', 'client_request_id' => 'foreign', 'content' => 'hello',
         ])->assertNotFound();
+        $this->actingAs($other)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/cancel', ['client_request_id' => 'owner'])->assertNotFound();
         $this->actingAs($other)->postJson('/api/v1/vacancy-analysis-drafts/'.$draft['id'].'/approve')->assertNotFound();
         $this->assertDatabaseCount('vacancy_chat_messages', 0);
     }

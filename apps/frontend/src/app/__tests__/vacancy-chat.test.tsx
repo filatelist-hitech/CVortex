@@ -9,6 +9,7 @@ let messages: { id: string; role: string; status: string; content: string; error
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); mocks.api.mockReset(); messages = []; });
 function setup() {
   mocks.api.mockImplementation(async (path: string, options?: RequestInit) => {
+    if (path.endsWith("/chat/cancel")) return { cancelled: true };
     if (options?.method === "POST") return { data: { id: "draft", status: "DRAFT" } };
     if (path.endsWith("/analysis-drafts")) return { data: [] };
     return { data: { id: "thread", status: "COMPLETED", messages, model: null, connection_id: null } };
@@ -45,6 +46,29 @@ describe("vacancy chat", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select connected plan" })); fireEvent.click(screen.getByRole("button", { name: "Analyze vacancy" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Streaming connection lost");
     expect(screen.queryByRole("button", { name: "Save analysis" })).not.toBeInTheDocument();
+  });
+  it("cancels the active request after persisting its interrupted state", async () => {
+    let streamController: ReadableStreamDefaultController<Uint8Array>;
+    const fetchMock = vi.fn().mockImplementation((_url: string, options: RequestInit) => Promise.resolve({
+      ok: true,
+      body: new ReadableStream<Uint8Array>({ start(controller) {
+        streamController = controller;
+        options.signal?.addEventListener("abort", () => controller.error(new DOMException("Aborted", "AbortError")));
+      } }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    setup(); await waitFor(() => expect(mocks.api).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("button", { name: "Select connected plan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze vacancy" }));
+    await act(async () => { streamController.enqueue(new TextEncoder().encode('data: {"type":"started","message_id":"assistant"}\n\n')); });
+    const cancelButton = await screen.findByRole("button", { name: "Cancel generation" });
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true));
+    expect(mocks.api).toHaveBeenCalledWith("/api/v1/vacancies/vacancy/chat/cancel", expect.objectContaining({
+      method: "POST", body: expect.stringMatching(/^\{"client_request_id":"[^"]+"\}$/),
+    }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("partial answer is saved as interrupted");
   });
   it("shows actionable usage-limit errors without an API-key fallback", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: { code: "subscription_sharing_usage_limit_exceeded" } }) }));

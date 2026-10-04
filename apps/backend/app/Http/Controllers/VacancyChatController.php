@@ -47,8 +47,18 @@ class VacancyChatController extends Controller
                     ob_flush();
                 }
                 flush();
+                if (connection_aborted()) {
+                    break;
+                }
             }
         }, 200, ['Content-Type' => 'text/event-stream', 'Cache-Control' => 'no-store', 'X-Accel-Buffering' => 'no']);
+    }
+
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        $args = $request->validate(['client_request_id' => ['required', 'string', 'max:128', 'regex:/\A[A-Za-z0-9_-]+\z/D']]);
+
+        return response()->json(['cancelled' => $this->chat->cancel($this->user($request), $id, $args['client_request_id'])]);
     }
 
     public function drafts(Request $request, string $id): JsonResponse

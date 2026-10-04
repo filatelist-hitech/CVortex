@@ -90,6 +90,28 @@ class VacancyChatService
         });
     }
 
+    public function cancel(User $user, string $vacancyId, string $requestId): bool
+    {
+        return $this->owners->run((string) $user->id, fn (): bool => DB::transaction(function () use ($user, $vacancyId, $requestId): bool {
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+            $thread = VacancyChatThread::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->lockForUpdate()->firstOrFail();
+            $userMessage = VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)
+                ->where('role', 'user')->where('client_request_id', $requestId)->firstOrFail();
+            $assistant = VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)
+                ->where('run_id', $userMessage->run_id)->where('role', 'assistant')->lockForUpdate()->firstOrFail();
+            if ($assistant->status !== 'STREAMING') {
+                return false;
+            }
+
+            $assistant->forceFill(['status' => 'INTERRUPTED', 'error_code' => 'USER_CANCELLED'])->save();
+            $thread->forceFill(['status' => 'INTERRUPTED'])->save();
+            VacancyLlmRun::query()->where('owner_id', $user->id)->whereKey($assistant->run_id)->where('status', 'RUNNING')
+                ->update(['status' => 'INTERRUPTED', 'error_category' => 'USER_CANCELLED']);
+
+            return true;
+        }));
+    }
+
     /** @param array{thread: VacancyChatThread, assistant: VacancyChatMessage, context: array<string, mixed>, instructions: string} $turn
      * @return Generator<int, array<string, mixed>>
      */
@@ -104,15 +126,29 @@ class VacancyChatService
             yield ['type' => 'started', 'message_id' => $turn['assistant']->id];
             $skill = $this->skills->vacancyPlanChat();
             $this->policies->resolveSelected(new ModelPolicy($skill->modelPolicy, false), $turn['thread']->model);
-            foreach ($this->provider->stream($user, $turn['thread']->connection_id, $turn['thread']->model, $turn['instructions'], $turn['context']['input']) as $event) {
-                if ($event['type'] === 'delta') {
-                    $text .= $event['text'];
-                    // Persist partial output so reload/disconnect never claims a completed result.
-                    $this->owners->run((string) $user->id, fn () => VacancyChatMessage::query()->where('owner_id', $user->id)->whereKey($turn['assistant']->id)->where('status', 'STREAMING')->update(['content' => $text]));
-                    yield $event;
-                } elseif ($event['type'] === 'completed') {
-                    $requestId = $event['request_id'] ?? null;
-                    $success = true;
+            $state = $this->assistantState($user, $turn['assistant']);
+            if ($state['status'] !== 'STREAMING') {
+                $error = $state['error_code'] ?? 'STREAM_INTERRUPTED';
+            } else {
+                foreach ($this->provider->stream($user, $turn['thread']->connection_id, $turn['thread']->model, $turn['instructions'], $turn['context']['input']) as $event) {
+                    $state = $this->assistantState($user, $turn['assistant']);
+                    if ($state['status'] !== 'STREAMING') {
+                        $error = $state['error_code'] ?? 'STREAM_INTERRUPTED';
+                        break;
+                    }
+                    if ($event['type'] === 'delta') {
+                        $text .= $event['text'];
+                        // Persist partial output so reload/disconnect never claims a completed result.
+                        $changed = $this->owners->run((string) $user->id, fn () => VacancyChatMessage::query()->where('owner_id', $user->id)->whereKey($turn['assistant']->id)->where('status', 'STREAMING')->update(['content' => $text]));
+                        if ($changed === 0) {
+                            $error = 'USER_CANCELLED';
+                            break;
+                        }
+                        yield $event;
+                    } elseif ($event['type'] === 'completed') {
+                        $requestId = $event['request_id'] ?? null;
+                        $success = true;
+                    }
                 }
             }
         } catch (PlanException $exception) {
@@ -136,5 +172,13 @@ class VacancyChatService
             }));
         }
         yield $success ? ['type' => 'completed', 'message_id' => $turn['assistant']->id] : ['type' => 'error', 'code' => $error];
+    }
+
+    /** @return array{status: string|null, error_code: string|null} */
+    private function assistantState(User $user, VacancyChatMessage $assistant): array
+    {
+        return $this->owners->run((string) $user->id, fn (): array => VacancyChatMessage::query()
+            ->where('owner_id', $user->id)->whereKey($assistant->id)->first(['status', 'error_code'])?->only(['status', 'error_code'])
+            ?? ['status' => null, 'error_code' => null]);
     }
 }

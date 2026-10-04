@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./access-shell";
 import ChatGptConnectionPanel from "./chatgpt-connection";
 
@@ -40,6 +40,7 @@ const errors: Record<string, string> = {
   subscription_sharing_unsupported_capability: "This request uses a capability unavailable on the plan route. Contact your operator.",
   model_not_found: "Model unavailable. Refresh connection and choose another model.",
   PROVIDER_UNAVAILABLE: "Provider unavailable. Retry later.",
+  USER_CANCELLED: "Generation cancelled. The partial answer is saved as interrupted.",
   STREAM_INTERRUPTED: "Streaming connection lost. The saved partial answer remains interrupted; it cannot be saved as analysis.",
 };
 
@@ -50,8 +51,12 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
   const [content, setContent] = useState("");
   const [live, setLive] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cancelRequestId, setCancelRequestId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
+  const abortController = useRef<AbortController | null>(null);
+  const intentionalAbort = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -70,13 +75,19 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
   async function send(analyze = false) {
     if (!configuration.id || !configuration.model) return;
     setBusy(true); setLive(""); setError("");
+    setCancelRequestId(null); setCancelling(false);
+    intentionalAbort.current = false;
     let completed = false;
+    const clientRequestId = crypto.randomUUID();
+    const controller = new AbortController();
+    abortController.current = controller;
     try {
       const csrf = decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
       const response = await fetch(`/api/v1/vacancies/${vacancyId}/chat/messages`, {
         method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-XSRF-TOKEN": csrf },
-        body: JSON.stringify({ connection_id: configuration.id, model: configuration.model, client_request_id: crypto.randomUUID(), content, analyze }),
+        body: JSON.stringify({ connection_id: configuration.id, model: configuration.model, client_request_id: clientRequestId, content, analyze }),
+        signal: controller.signal,
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
@@ -96,6 +107,7 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
             const frame = buffer.slice(0, position); buffer = buffer.slice(position + 2);
             if (!frame.startsWith("data: ")) continue;
             const event = JSON.parse(frame.slice(6));
+            if (event.type === "started") setCancelRequestId(clientRequestId);
             if (event.type === "delta") setLive((text) => text + event.text);
             if (event.type === "completed") completed = true;
             if (event.type === "error") throw new Error(errors[event.code] ?? `Chat failed (${event.code}). Refresh connection or contact your operator.`);
@@ -104,10 +116,35 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
       } finally { await reader.cancel(); reader.releaseLock(); }
       if (!completed) throw new Error(errors.STREAM_INTERRUPTED);
       setContent("");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : errors.STREAM_INTERRUPTED); }
+    } catch (cause) {
+      if (!intentionalAbort.current && !(cause instanceof Error && cause.name === "AbortError")) {
+        setError(cause instanceof Error ? cause.message : errors.STREAM_INTERRUPTED);
+      }
+    }
     finally {
+      intentionalAbort.current = false;
+      if (abortController.current === controller) abortController.current = null;
+      setCancelRequestId(null); setCancelling(false);
       setBusy(false);
       try { await refresh(); setLive(""); } catch { setError("Chat status could not be refreshed. Reload to retrieve saved messages."); }
+    }
+  }
+
+  async function cancel() {
+    const requestId = cancelRequestId;
+    const controller = abortController.current;
+    if (!requestId || !controller || cancelling) return;
+    setCancelling(true); setError("");
+    try {
+      const result = await api(`/api/v1/vacancies/${vacancyId}/chat/cancel`, {
+        method: "POST", body: JSON.stringify({ client_request_id: requestId }),
+      });
+      intentionalAbort.current = true;
+      controller.abort();
+      setError(result?.cancelled ? "Generation cancelled. The partial answer is saved as interrupted." : "Generation finished before cancellation; saved messages were refreshed.");
+    } catch (cause) {
+      setError(cause instanceof Error ? `Cancellation failed: ${cause.message}` : "Cancellation failed. The stream is still active.");
+      setCancelling(false);
     }
   }
 
@@ -142,7 +179,9 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
         {analysis && message.status === "COMPLETED" && <button type="button" disabled={busy || saving !== null} onClick={() => void save(message)}>Save analysis</button>}
       </article>;
     })}</div>
-    {busy && <div role="status"><strong>Streaming</strong><pre className="source-copy">{live}</pre></div>}
+    {busy && <div role="status"><strong>Streaming</strong><pre className="source-copy">{live}</pre>
+      <button type="button" className="secondary" disabled={!cancelRequestId || cancelling} onClick={() => void cancel()}>{cancelling ? "Cancelling…" : "Cancel generation"}</button>
+    </div>}
     <form onSubmit={(event) => { event.preventDefault(); void send(); }}><label>Message<textarea value={content} maxLength={4000} onChange={(event) => setContent(event.target.value)} /></label>
       <button disabled={busy || !configuration.id || !configuration.model || !content.trim()}>Send</button>
       <button type="button" disabled={busy || !configuration.id || !configuration.model} onClick={() => void send(true)}>Analyze vacancy</button>

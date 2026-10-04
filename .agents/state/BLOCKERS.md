@@ -16,4 +16,4 @@ Other-account/deployment eligibility and exact Figma parity were not verified.
 
 ### ChatGPT plan pre-merge review — 2026-10-04
 
-`PLAN-MODEL-01` and `PG-EVIDENCE-01` have local implementations and passing targeted validation; independent re-review is still pending before any merge decision. `CHAT-ARCH-01` and `CHAT-CTX-01` remain unresolved follow-ups and were not changed in this fix block. No commit, push or merge was performed.
+`PLAN-MODEL-01` and `PG-EVIDENCE-01` passed independent re-review. The current-head Codex findings for common-word Career Fact selection and active stream cancellation are fixed and validated; PR #42 awaits fresh exact-head review before any merge decision. `CHAT-ARCH-01` and `CHAT-CTX-01` remain non-blocking follow-ups. No merge was performed.

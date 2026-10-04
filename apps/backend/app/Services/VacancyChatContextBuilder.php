@@ -14,6 +14,24 @@ use Illuminate\Support\Facades\DB;
 
 class VacancyChatContextBuilder
 {
+    private const NON_DISCRIMINATIVE_TERMS = [
+        'about', 'after', 'all', 'also', 'am', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'been', 'before',
+        'being', 'between', 'both', 'but', 'by', 'can', 'could', 'did', 'do', 'does', 'doing', 'down', 'during',
+        'each', 'few', 'for', 'from', 'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here', 'hers',
+        'him', 'his', 'how', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'me', 'more', 'most', 'my',
+        'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'our', 'ours', 'out', 'over',
+        'own', 'same', 'she', 'should', 'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them',
+        'then', 'there', 'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up',
+        'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'will',
+        'with', 'would', 'you', 'your', 'без', 'более', 'бы', 'был', 'была', 'были', 'было', 'быть', 'вам',
+        'вас', 'весь', 'во', 'вот', 'все', 'всего', 'всех', 'вы', 'где', 'даже', 'для', 'до', 'его', 'ее',
+        'если', 'есть', 'еще', 'же', 'за', 'здесь', 'из', 'или', 'им', 'их', 'как', 'когда', 'кто', 'ли',
+        'либо', 'мне', 'может', 'мы', 'на', 'над', 'надо', 'наш', 'него', 'нее', 'нет', 'ни', 'них', 'но',
+        'ну', 'об', 'однако', 'они', 'оно', 'от', 'очень', 'по', 'под', 'при', 'про', 'со', 'так', 'также',
+        'там', 'те', 'тем', 'то', 'того', 'тоже', 'той', 'только', 'том', 'ту', 'ты', 'уже', 'хотя', 'чего',
+        'чей', 'чем', 'что', 'чтобы', 'эта', 'эти', 'это',
+    ];
+
     public function __construct(private readonly TrustedCareerQuery $career, private readonly VacancyMatchingService $matching) {}
 
     /** @return array{snapshot: VacancySnapshot, career_signature: string, input: list<array{role: string, content: string}>} */
@@ -90,6 +108,6 @@ class VacancyChatContextBuilder
     {
         preg_match_all('/[\p{L}\p{N}+#.]{2,}/u', mb_strtolower($text), $matches);
 
-        return array_values(array_unique($matches[0]));
+        return array_values(array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS));
     }
 }
