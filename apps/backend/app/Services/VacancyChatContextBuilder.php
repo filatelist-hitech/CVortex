@@ -40,9 +40,11 @@ class VacancyChatContextBuilder
         abort_unless((string) $thread->owner_id === (string) $user->id, 404);
         $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($thread instanceof Vacancy ? $thread->id : $thread->vacancy_id);
         $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->latest('version')->firstOrFail();
+        $careerContext = $this->career->forMatching($user);
+        $careerSignature = $this->matching->careerSignatureForContext($careerContext);
         $terms = $this->terms($snapshot->raw_text.' '.$turn);
         $ranked = [];
-        foreach ($this->career->forMatching($user)['facts'] as $fact) {
+        foreach ($careerContext['facts'] as $fact) {
             $score = count(array_intersect($terms, $this->terms($fact->approvedAssertion())));
             if ($score > 0) {
                 $ranked[] = ['fact' => $fact, 'score' => $score];
@@ -73,7 +75,7 @@ class VacancyChatContextBuilder
             $history[] = ['role' => $message->role, 'content' => $message->content];
         }
         $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
-            ->forCareerSignature($this->matching->careerSignature($user))->deterministicLatest()->first();
+            ->forCareerSignature($careerSignature)->deterministicLatest()->first();
         $employer = [];
         if (is_string($vacancy->company) && trim($vacancy->company) !== '') {
             $employer = DB::table('application_claim_usages as usage')
@@ -98,7 +100,7 @@ class VacancyChatContextBuilder
                 ->limit(20)->get(['dimension', 'importance', 'label'])->toArray(),
         ];
 
-        return ['snapshot' => $snapshot, 'career_signature' => $this->matching->careerSignature($user),
+        return ['snapshot' => $snapshot, 'career_signature' => $careerSignature,
             'input' => [['role' => 'user', 'content' => json_encode($context, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)],
                 ...array_reverse($history), ['role' => 'user', 'content' => $turn]]];
     }
@@ -108,6 +110,8 @@ class VacancyChatContextBuilder
     {
         preg_match_all('/[\p{L}\p{N}+#.]{2,}/u', mb_strtolower($text), $matches);
 
-        return array_values(array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS));
+        $terms = array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS);
+
+        return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1));
     }
 }

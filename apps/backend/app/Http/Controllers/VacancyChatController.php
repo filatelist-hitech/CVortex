@@ -24,16 +24,27 @@ class VacancyChatController extends Controller
         return response()->json(['data' => $this->chat->show($this->user($request), $id)])->header('Cache-Control', 'no-store');
     }
 
+    public function preview(Request $request, string $id): JsonResponse
+    {
+        $args = $request->validate(['content' => ['nullable', 'string', 'max:4000'], 'analyze' => ['sometimes', 'boolean']]);
+
+        return response()->json(['data' => $this->chat->preview(
+            $this->user($request), $id, $args['content'] ?? null, $args['analyze'] ?? false,
+        )])->header('Cache-Control', 'no-store');
+    }
+
     public function send(Request $request, string $id): StreamedResponse|JsonResponse
     {
         $args = $request->validate([
             'connection_id' => ['required', 'ulid'], 'model' => ['required', 'string', 'max:128', 'regex:/\A[A-Za-z0-9._:-]+\z/D'],
             'client_request_id' => ['required', 'string', 'max:128', 'regex:/\A[A-Za-z0-9_-]+\z/D'],
             'content' => ['nullable', 'string', 'max:4000'], 'analyze' => ['sometimes', 'boolean'],
+            'context_preview_hash' => ['required', 'string', 'size:64', 'regex:/\A[a-f0-9]{64}\z/D'],
         ]);
         $user = $this->user($request);
         try {
-            $turn = $this->chat->begin($user, $id, $args['connection_id'], $args['model'], $args['client_request_id'], $args['content'] ?? null, $args['analyze'] ?? false);
+            $turn = $this->chat->begin($user, $id, $args['connection_id'], $args['model'], $args['client_request_id'],
+                $args['content'] ?? null, $args['analyze'] ?? false, $args['context_preview_hash']);
         } catch (PlanException $exception) {
             return response()->json(['error' => ['code' => $exception->errorCode, 'retryable' => false]], $exception->httpStatus);
         } catch (ModelSelectionException $exception) {

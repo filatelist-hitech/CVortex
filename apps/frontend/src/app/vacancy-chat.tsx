@@ -10,6 +10,7 @@ type Requirement = { dimension: string; importance: string; label: string; sourc
 type Match = { requirement_index: number; career_fact_ids: string[] };
 type Analysis = { matches?: Match[]; proposed_matches?: Match[]; requirements: Requirement[]; gaps: string[]; risks: string[]; questions: string[]; recommendations: string[] };
 type Draft = Analysis & { id: string; status: string; origin: string; source_channel: string };
+type ContextPreview = { key: string; hash: string; input: { role: string; content: string }[] };
 
 function structured(text: string): Analysis | null {
   try {
@@ -49,6 +50,8 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [configuration, setConfiguration] = useState({ id: "", model: "" });
   const [content, setContent] = useState("");
+  const [contextPreview, setContextPreview] = useState<ContextPreview | null>(null);
+  const [previewing, setPreviewing] = useState(false);
   const [live, setLive] = useState("");
   const [busy, setBusy] = useState(false);
   const [cancelRequestId, setCancelRequestId] = useState<string | null>(null);
@@ -57,23 +60,66 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
   const [saving, setSaving] = useState<string | null>(null);
   const abortController = useRef<AbortController | null>(null);
   const intentionalAbort = useRef(false);
+  const mounted = useRef(false);
+  const currentVacancyId = useRef<string | null>(null);
+  const activeTurn = useRef<{ requestId: string; vacancyId: string; controller: AbortController } | null>(null);
 
   useEffect(() => {
     let active = true;
+    mounted.current = true;
+    currentVacancyId.current = vacancyId;
     Promise.all([api(`/api/v1/vacancies/${vacancyId}/chat`), api(`/api/v1/vacancies/${vacancyId}/analysis-drafts`)])
       .then(([chat, saved]) => { if (active) { setThread(chat.data); setDrafts(saved.data); } })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Chat could not be loaded."); });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      mounted.current = false;
+      if (currentVacancyId.current === vacancyId) currentVacancyId.current = null;
+      const turn = activeTurn.current;
+      if (turn?.vacancyId === vacancyId) {
+        activeTurn.current = null;
+        intentionalAbort.current = true;
+        turn.controller.abort();
+        void api(`/api/v1/vacancies/${turn.vacancyId}/chat/cancel`, {
+          method: "POST", body: JSON.stringify({ client_request_id: turn.requestId }), keepalive: true,
+        }).catch(() => {});
+      }
+    };
   }, [vacancyId]);
 
   async function refresh() {
     const [chat, saved] = await Promise.all([api(`/api/v1/vacancies/${vacancyId}/chat`), api(`/api/v1/vacancies/${vacancyId}/analysis-drafts`)]);
+    if (currentVacancyId.current !== vacancyId) return;
     setThread(chat.data);
     setDrafts(saved.data);
   }
 
+  function previewKey(message: string, analyze: boolean): string {
+    return JSON.stringify([message, analyze]);
+  }
+
+  async function previewContext(analyze = false) {
+    const message = content;
+    const key = previewKey(message, analyze);
+    setPreviewing(true); setError(""); setContextPreview(null);
+    try {
+      const response = await api(`/api/v1/vacancies/${vacancyId}/chat/context-preview`, {
+        method: "POST", body: JSON.stringify({ content: message, analyze }),
+      });
+      if (mounted.current && currentVacancyId.current === vacancyId && previewKey(content, analyze) === key) {
+        setContextPreview({ key, hash: response.data.preview_hash, input: response.data.input });
+      }
+    } catch (cause) {
+      if (mounted.current && currentVacancyId.current === vacancyId) setError(cause instanceof Error ? cause.message : "Context preview could not be loaded.");
+    } finally {
+      if (mounted.current && currentVacancyId.current === vacancyId) setPreviewing(false);
+    }
+  }
+
   async function send(analyze = false) {
-    if (!configuration.id || !configuration.model) return;
+    const key = previewKey(content, analyze);
+    const preview = contextPreview;
+    if (!configuration.id || !configuration.model || preview?.key !== key) return;
     setBusy(true); setLive(""); setError("");
     setCancelRequestId(null); setCancelling(false);
     intentionalAbort.current = false;
@@ -81,16 +127,24 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
     const clientRequestId = crypto.randomUUID();
     const controller = new AbortController();
     abortController.current = controller;
+    const turn = { requestId: clientRequestId, vacancyId, controller };
+    activeTurn.current = turn;
+    const isCurrent = () => mounted.current && currentVacancyId.current === vacancyId && activeTurn.current === turn;
     try {
       const csrf = decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
       const response = await fetch(`/api/v1/vacancies/${vacancyId}/chat/messages`, {
         method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-XSRF-TOKEN": csrf },
-        body: JSON.stringify({ connection_id: configuration.id, model: configuration.model, client_request_id: clientRequestId, content, analyze }),
+        body: JSON.stringify({ connection_id: configuration.id, model: configuration.model, client_request_id: clientRequestId,
+          content, analyze, context_preview_hash: preview.hash }),
         signal: controller.signal,
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
+        if (response.status === 422 && body?.errors?.context_preview_hash) {
+          if (isCurrent()) setContextPreview(null);
+          throw new Error("Career or vacancy context changed after preview. Preview it again before sending.");
+        }
         throw new Error(errors[body?.error?.code] ?? body?.message ?? "Chat request failed. Refresh the chat before retrying.");
       }
       if (!response.body) throw new Error(errors.STREAM_INTERRUPTED);
@@ -107,6 +161,7 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
             const frame = buffer.slice(0, position); buffer = buffer.slice(position + 2);
             if (!frame.startsWith("data: ")) continue;
             const event = JSON.parse(frame.slice(6));
+            if (!isCurrent()) continue;
             if (event.type === "started") setCancelRequestId(clientRequestId);
             if (event.type === "delta") setLive((text) => text + event.text);
             if (event.type === "completed") completed = true;
@@ -115,36 +170,44 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
         }
       } finally { await reader.cancel(); reader.releaseLock(); }
       if (!completed) throw new Error(errors.STREAM_INTERRUPTED);
-      setContent("");
+      if (isCurrent()) { setContent(""); setContextPreview(null); }
     } catch (cause) {
-      if (!intentionalAbort.current && !(cause instanceof Error && cause.name === "AbortError")) {
+      if (isCurrent() && !intentionalAbort.current && !(cause instanceof Error && cause.name === "AbortError")) {
         setError(cause instanceof Error ? cause.message : errors.STREAM_INTERRUPTED);
       }
     }
     finally {
-      intentionalAbort.current = false;
       if (abortController.current === controller) abortController.current = null;
-      setCancelRequestId(null); setCancelling(false);
-      setBusy(false);
-      try { await refresh(); setLive(""); } catch { setError("Chat status could not be refreshed. Reload to retrieve saved messages."); }
+      if (isCurrent()) {
+        intentionalAbort.current = false;
+        try { await refresh(); setLive(""); } catch { if (isCurrent()) setError("Chat status could not be refreshed. Reload to retrieve saved messages."); }
+        if (isCurrent()) {
+          activeTurn.current = null;
+          setCancelRequestId(null); setCancelling(false); setBusy(false);
+        }
+      }
     }
   }
 
   async function cancel() {
     const requestId = cancelRequestId;
-    const controller = abortController.current;
-    if (!requestId || !controller || cancelling) return;
+    const turn = activeTurn.current;
+    const controller = turn?.controller;
+    if (!requestId || !turn || !controller || cancelling) return;
     setCancelling(true); setError("");
     try {
       const result = await api(`/api/v1/vacancies/${vacancyId}/chat/cancel`, {
         method: "POST", body: JSON.stringify({ client_request_id: requestId }),
       });
+      if (!mounted.current || activeTurn.current !== turn) return;
       intentionalAbort.current = true;
       controller.abort();
       setError(result?.cancelled ? "Generation cancelled. The partial answer is saved as interrupted." : "Generation finished before cancellation; saved messages were refreshed.");
     } catch (cause) {
-      setError(cause instanceof Error ? `Cancellation failed: ${cause.message}` : "Cancellation failed. The stream is still active.");
-      setCancelling(false);
+      if (mounted.current && activeTurn.current === turn) {
+        setError(cause instanceof Error ? `Cancellation failed: ${cause.message}` : "Cancellation failed. The stream is still active.");
+        setCancelling(false);
+      }
     }
   }
 
@@ -182,10 +245,13 @@ export default function VacancyChat({ vacancyId, onApproved }: { vacancyId: stri
     {busy && <div role="status"><strong>Streaming</strong><pre className="source-copy">{live}</pre>
       <button type="button" className="secondary" disabled={!cancelRequestId || cancelling} onClick={() => void cancel()}>{cancelling ? "Cancelling…" : "Cancel generation"}</button>
     </div>}
-    <form onSubmit={(event) => { event.preventDefault(); void send(); }}><label>Message<textarea value={content} maxLength={4000} onChange={(event) => setContent(event.target.value)} /></label>
-      <button disabled={busy || !configuration.id || !configuration.model || !content.trim()}>Send</button>
-      <button type="button" disabled={busy || !configuration.id || !configuration.model} onClick={() => void send(true)}>Analyze vacancy</button>
+    <form onSubmit={(event) => { event.preventDefault(); void send(); }}><label>Message<textarea value={content} maxLength={4000} onChange={(event) => { setContent(event.target.value); setContextPreview(null); }} /></label>
+      <button type="button" className="secondary" disabled={busy || previewing || !configuration.id || !configuration.model || !content.trim()} onClick={() => void previewContext(false)}>{previewing ? "Preparing preview…" : "Preview context"}</button>
+      <button disabled={busy || !configuration.id || !configuration.model || !content.trim() || contextPreview?.key !== previewKey(content, false)}>Send</button>
+      <button type="button" className="secondary" disabled={busy || previewing || !configuration.id || !configuration.model} onClick={() => void previewContext(true)}>{previewing ? "Preparing preview…" : "Preview analysis context"}</button>
+      <button type="button" disabled={busy || !configuration.id || !configuration.model || contextPreview?.key !== previewKey(content, true)} onClick={() => void send(true)}>Analyze vacancy</button>
     </form>
+    {contextPreview && <details open><summary>Exact context that will be sent to OpenAI</summary><pre className="source-copy">{JSON.stringify(contextPreview.input, null, 2)}</pre></details>}
     <button type="button" className="secondary" disabled={busy} onClick={() => void refresh().catch(() => setError("Refresh failed."))}>Reload chat</button>
     {error && <p role="alert" className="error">{error}</p>}
     {drafts.length > 0 && <section aria-label="Saved analysis drafts"><h3>Analysis drafts</h3>{drafts.map((draft) => <article className="panel" key={draft.id}><strong>{draft.status} · {draft.origin} · {draft.source_channel}</strong><AnalysisView analysis={draft} />

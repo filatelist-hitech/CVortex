@@ -140,6 +140,8 @@ class VacancyAnalysisDraftService
     public function approve(User $user, string $id): array
     {
         return $this->owners->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $id): array {
+            // Career writers take the same owner-row lock before changing confirmed facts or claims.
+            User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
             $draft = VacancyAnalysisDraft::query()->where('owner_id', $user->id)->findOrFail($id);
             $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($draft->vacancy_id);
             $draft = VacancyAnalysisDraft::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($id);
@@ -168,6 +170,10 @@ class VacancyAnalysisDraftService
                 }
             }
             $analysis = $this->matching->analyze($user, $vacancy, $snapshot);
+            if (! hash_equals($draft->career_signature, $analysis->career_signature)
+                || ! hash_equals($draft->career_signature, $this->matching->careerSignature($user))) {
+                throw ValidationException::withMessages(['draft' => 'Career evidence changed during approval. Refresh and review the draft again.']);
+            }
             $draft->forceFill(['status' => 'APPROVED', 'approved_at' => now(), 'approved_analysis_id' => $analysis->id])->save();
             $vacancy->forceFill(['analysis_status' => 'COMPLETED', 'error_code' => null, 'active_run_token' => null, 'next_attempt_at' => null, 'dispatch_recovery_at' => null])->save();
 

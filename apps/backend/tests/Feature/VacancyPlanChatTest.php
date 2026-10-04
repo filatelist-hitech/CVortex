@@ -6,13 +6,16 @@ use App\AI\Contracts\StreamingProvider;
 use App\AI\Providers\OpenAiChatGptPlanProvider;
 use App\Models\ChatGptConnection;
 use App\Models\User;
+use App\Models\Vacancy;
 use App\Models\VacancyAnalysisDraft;
 use App\Models\VacancyLlmRun;
 use App\Services\CareerFactService;
+use App\Services\TrustedCareerQuery;
 use App\Services\VacancyAnalysisDraftService;
 use App\Services\VacancyChatContextBuilder;
 use App\Services\VacancyChatService;
 use App\Services\VacancyIngestionService;
+use App\Services\VacancyMatchingService;
 use Generator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -44,7 +47,7 @@ class VacancyPlanChatTest extends TestCase
         $analysis = $this->analysis([$fact->id]);
         $this->provider->text = json_encode($analysis);
         $service = app(VacancyChatService::class);
-        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'first-turn', null, true);
+        $turn = $this->beginTurn($user, $vacancy, 'first-turn', null, true);
         $result = iterator_to_array($service->stream($user, $turn));
         $this->assertSame('completed', end($result)['type']);
         $saved = $service->show($user, $vacancy->id);
@@ -75,16 +78,32 @@ class VacancyPlanChatTest extends TestCase
     {
         [$user, $vacancy] = $this->fixture('unknown-model');
         $this->provider->catalog = [];
+        $preview = app(VacancyChatService::class)->preview($user, $vacancy->id, 'Hello', false);
 
         $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/messages', [
             'connection_id' => $this->connection->id, 'model' => 'valid-looking-model_2026',
-            'client_request_id' => 'manual-bypass', 'content' => 'Hello',
+            'client_request_id' => 'manual-bypass', 'content' => 'Hello', 'context_preview_hash' => $preview['preview_hash'],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'MODEL_NOT_AVAILABLE');
 
         $this->assertDatabaseCount('vacancy_chat_threads', 0);
         $this->assertDatabaseCount('vacancy_chat_messages', 0);
         $this->assertDatabaseCount('vacancy_llm_runs', 0);
         $this->assertSame([], $this->provider->streamCalls);
+    }
+
+    public function test_chat_api_requires_a_context_preview_fingerprint_before_catalog_or_persistence(): void
+    {
+        [$user, $vacancy] = $this->fixture('missing-context-preview');
+
+        $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/messages', [
+            'connection_id' => $this->connection->id, 'model' => 'account-model',
+            'client_request_id' => 'missing-preview', 'content' => 'Hello',
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_FAILED');
+
+        $this->assertSame([], $this->provider->catalogCalls);
+        $this->assertSame([], $this->provider->streamCalls);
+        $this->assertDatabaseCount('vacancy_chat_messages', 0);
+        $this->assertDatabaseCount('vacancy_llm_runs', 0);
     }
 
     public function test_account_catalogs_are_connection_scoped_and_cannot_cross_authorize_a_model(): void
@@ -106,7 +125,7 @@ class VacancyPlanChatTest extends TestCase
             ->assertOk()->assertJsonPath('data.0.slug', 'shared-visible-model');
         $this->actingAs($other)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/messages', [
             'connection_id' => $otherConnection->id, 'model' => 'shared-visible-model',
-            'client_request_id' => 'cross-account-catalog', 'content' => 'Hello',
+            'client_request_id' => 'cross-account-catalog', 'content' => 'Hello', 'context_preview_hash' => str_repeat('0', 64),
         ])->assertUnprocessable()->assertJsonPath('error.code', 'MODEL_NOT_AVAILABLE');
 
         $this->assertDatabaseCount('vacancy_chat_messages', 0);
@@ -120,10 +139,11 @@ class VacancyPlanChatTest extends TestCase
     {
         [$user, $vacancy] = $this->fixture('policy-rejection');
         config(['ai.model_policies.user_selected_chatgpt_plan.selection' => 'fixed']);
+        $preview = app(VacancyChatService::class)->preview($user, $vacancy->id, 'Hello', false);
 
         $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/messages', [
             'connection_id' => $this->connection->id, 'model' => 'account-model',
-            'client_request_id' => 'policy-rejection', 'content' => 'Hello',
+            'client_request_id' => 'policy-rejection', 'content' => 'Hello', 'context_preview_hash' => $preview['preview_hash'],
         ])->assertUnprocessable()->assertJsonPath('error.code', 'MODEL_NOT_ALLOWED');
 
         $this->assertSame([], $this->provider->catalogCalls);
@@ -141,7 +161,7 @@ class VacancyPlanChatTest extends TestCase
             ->push(['models' => []]);
 
         $service = app(VacancyChatService::class);
-        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'stale-model-turn', 'Hello', false);
+        $turn = $this->beginTurn($user, $vacancy, 'stale-model-turn', 'Hello', false);
         $events = iterator_to_array($service->stream($user, $turn));
 
         $this->assertSame('MODEL_NOT_AVAILABLE', end($events)['code']);
@@ -154,7 +174,7 @@ class VacancyPlanChatTest extends TestCase
     {
         [$user, $vacancy] = $this->fixture('cancel-chat');
         $service = app(VacancyChatService::class);
-        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'cancel-request', 'Hello', false);
+        $turn = $this->beginTurn($user, $vacancy, 'cancel-request', 'Hello', false);
 
         $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/cancel', [
             'client_request_id' => 'cancel-request',
@@ -173,7 +193,7 @@ class VacancyPlanChatTest extends TestCase
     {
         [$user, $vacancy] = $this->fixture('cancel-active-chat');
         $service = app(VacancyChatService::class);
-        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'cancel-active-request', 'Hello', false);
+        $turn = $this->beginTurn($user, $vacancy, 'cancel-active-request', 'Hello', false);
         $events = $service->stream($user, $turn);
 
         $this->assertSame('started', $events->current()['type']);
@@ -228,11 +248,78 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('worked with teams and managers', json_encode($context['input']));
     }
 
+    public function test_context_does_not_select_a_confirmed_fact_for_only_numeric_overlap(): void
+    {
+        [$user, $vacancy] = $this->fixture('numeric-overlap', 'The platform team expects 10 engineers in 2020, with production PHP.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'I supported 10 teams during 2020.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('supported 10 teams', json_encode($context['input']));
+    }
+
+    public function test_context_signature_uses_the_same_career_snapshot_as_selected_facts(): void
+    {
+        [$user, $vacancy] = $this->fixture('career-snapshot-signature', 'Engineer. PHP is required.');
+        $fact = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+        $realCareerQuery = app(TrustedCareerQuery::class);
+        $matching = app(VacancyMatchingService::class);
+        $expectedSignature = null;
+        $careerQuery = \Mockery::mock(TrustedCareerQuery::class);
+        $careerQuery->shouldReceive('forMatching')->once()->with($user)->andReturnUsing(function () use ($realCareerQuery, $matching, $user, $fact, &$expectedSignature): array {
+            $snapshot = $realCareerQuery->forMatching($user);
+            $expectedSignature = $matching->careerSignatureForContext($snapshot);
+            app(CareerFactService::class)->deprecate($user, $fact);
+
+            return $snapshot;
+        });
+        $context = (new VacancyChatContextBuilder($careerQuery, $matching))->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$fact->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertNotNull($expectedSignature);
+        $this->assertSame($expectedSignature, $context['career_signature']);
+        $this->assertNotSame($matching->careerSignature($user), $context['career_signature']);
+        $this->assertSame('DEPRECATED', $fact->fresh()->status);
+    }
+
+    public function test_preview_is_the_exact_bounded_provider_input_and_stale_preview_is_rejected(): void
+    {
+        [$user, $vacancy] = $this->fixture('context-preview', 'Engineer. PHP is required.');
+        $fact = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $response = $this->actingAs($user)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/context-preview', ['content' => 'What should I emphasize?'])
+            ->assertOk()->assertJsonPath('data.input.0.role', 'user');
+        $this->assertStringStartsWith('no-store', (string) $response->headers->get('Cache-Control'));
+        $preview = $response->json('data');
+        $payload = json_encode($preview['input'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $this->assertStringContainsString('Production PHP development.', $payload);
+        $this->assertStringContainsString('UNTRUSTED DATA', $payload);
+        $this->assertStringContainsString('What should I emphasize?', $payload);
+
+        $service = app(VacancyChatService::class);
+        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'preview-exact', 'What should I emphasize?', false, $preview['preview_hash']);
+        $this->assertSame($preview['input'], $turn['context']['input']);
+        iterator_to_array($service->stream($user, $turn));
+        $this->assertSame($preview['input'], $this->provider->inputs[0]);
+
+        $stale = $service->preview($user, $vacancy->id, 'Another question', false);
+        app(CareerFactService::class)->deprecate($user, $fact);
+        $this->invalid(fn () => $service->begin($user, $vacancy->id, $this->connection->id, 'account-model',
+            'preview-stale', 'Another question', false, $stale['preview_hash']));
+        $this->assertSame([], array_slice($this->provider->streamCalls, 1));
+        $this->assertDatabaseMissing('vacancy_chat_messages', ['client_request_id' => 'preview-stale']);
+    }
+
     public function test_interrupted_stream_is_persisted_and_cannot_be_saved(): void
     {
         [$user, $vacancy] = $this->fixture('interrupt');
         $this->provider->interrupt = true;
-        $turn = app(VacancyChatService::class)->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'interrupted-turn', 'hello', false);
+        $turn = $this->beginTurn($user, $vacancy, 'interrupted-turn', 'hello', false);
         $events = iterator_to_array(app(VacancyChatService::class)->stream($user, $turn));
         $this->assertSame('error', end($events)['type']);
         $this->assertSame('INTERRUPTED', $turn['assistant']->fresh()->status);
@@ -276,6 +363,7 @@ class VacancyPlanChatTest extends TestCase
         $this->actingAs($other)->getJson('/api/v1/vacancies/'.$vacancy->id.'/analysis-drafts')->assertNotFound();
         $this->actingAs($other)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/messages', [
             'connection_id' => $this->connection->id, 'model' => 'model', 'client_request_id' => 'foreign', 'content' => 'hello',
+            'context_preview_hash' => str_repeat('0', 64),
         ])->assertNotFound();
         $this->actingAs($other)->postJson('/api/v1/vacancies/'.$vacancy->id.'/chat/cancel', ['client_request_id' => 'owner'])->assertNotFound();
         $this->actingAs($other)->postJson('/api/v1/vacancy-analysis-drafts/'.$draft['id'].'/approve')->assertNotFound();
@@ -286,10 +374,10 @@ class VacancyPlanChatTest extends TestCase
     {
         [$user, $vacancy] = $this->fixture('runs');
         $service = app(VacancyChatService::class);
-        $turn = $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'one-turn', 'hello', false);
-        $this->invalid(fn () => $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'concurrent-turn', 'hello', false));
+        $turn = $this->beginTurn($user, $vacancy, 'one-turn', 'hello', false);
+        $this->invalid(fn () => $this->beginTurn($user, $vacancy, 'concurrent-turn', 'hello', false));
         iterator_to_array($service->stream($user, $turn));
-        $this->invalid(fn () => $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'one-turn', 'hello', false));
+        $this->invalid(fn () => $this->beginTurn($user, $vacancy, 'one-turn', 'hello', false));
         $this->assertDatabaseMissing('vacancy_llm_runs', ['workflow' => 'vacancy_requirement_extraction']);
         $this->assertSame('FAILED', $vacancy->fresh()->analysis_status);
     }
@@ -333,6 +421,14 @@ class VacancyPlanChatTest extends TestCase
         return [$user, $queued['vacancy'], $queued['snapshot']];
     }
 
+    private function beginTurn(User $user, Vacancy $vacancy, string $requestId, ?string $content, bool $analyze): array
+    {
+        $service = app(VacancyChatService::class);
+        $preview = $service->preview($user, $vacancy->id, $content, $analyze);
+
+        return $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', $requestId, $content, $analyze, $preview['preview_hash']);
+    }
+
     private function user(string $name): User
     {
         return User::query()->create(['email' => $name.'@example.test', 'password' => 'synthetic-long-password'])->fresh();
@@ -372,6 +468,9 @@ class VacancyChatFakeProvider implements StreamingProvider
     /** @var list<array{user_id: string, connection_id: string, model: string}> */
     public array $streamCalls = [];
 
+    /** @var list<list<array{role: string, content: string}>> */
+    public array $inputs = [];
+
     public function models(User $user, string $connectionId): array
     {
         $this->catalogCalls[] = ['user_id' => (string) $user->id, 'connection_id' => $connectionId];
@@ -382,6 +481,7 @@ class VacancyChatFakeProvider implements StreamingProvider
     public function stream(User $user, string $connectionId, string $model, string $instructions, array $input): Generator
     {
         $this->streamCalls[] = ['user_id' => (string) $user->id, 'connection_id' => $connectionId, 'model' => $model];
+        $this->inputs[] = $input;
         yield ['type' => 'delta', 'text' => $this->text];
         if (! $this->interrupt) {
             yield ['type' => 'completed', 'request_id' => 'request-fixture'];

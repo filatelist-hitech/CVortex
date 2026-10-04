@@ -51,17 +51,30 @@ class VacancyChatService
         });
     }
 
-    /** @return array{thread: VacancyChatThread, assistant: VacancyChatMessage, context: array<string, mixed>, instructions: string} */
-    public function begin(User $user, string $vacancyId, string $connectionId, string $model, string $requestId, ?string $content, bool $analyze): array
+    /** @return array{input: list<array{role: string, content: string}>, preview_hash: string} */
+    public function preview(User $user, string $vacancyId, ?string $content, bool $analyze): array
     {
-        return $this->owners->run((string) $user->id, function () use ($user, $vacancyId, $connectionId, $model, $requestId, $content, $analyze): array {
+        return $this->owners->run((string) $user->id, function () use ($user, $vacancyId, $content, $analyze): array {
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+            $thread = VacancyChatThread::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->first() ?? $vacancy;
+            $turn = $this->turnText($content, $analyze);
+            $context = $this->context->build($user, $thread, $turn);
+
+            return ['input' => $context['input'], 'preview_hash' => $this->previewHash($context['input'])];
+        });
+    }
+
+    /** @return array{thread: VacancyChatThread, assistant: VacancyChatMessage, context: array<string, mixed>, instructions: string} */
+    public function begin(User $user, string $vacancyId, string $connectionId, string $model, string $requestId, ?string $content, bool $analyze, string $previewHash): array
+    {
+        return $this->owners->run((string) $user->id, function () use ($user, $vacancyId, $connectionId, $model, $requestId, $content, $analyze, $previewHash): array {
             $this->connections->accessToken($user, $connectionId);
             $skill = $this->skills->vacancyPlanChat();
             $resolved = $this->policies->resolveSelected(new ModelPolicy($skill->modelPolicy, false), $model);
             $this->policies->assertAvailable($resolved, $this->provider->models($user, $connectionId));
             $thread = $this->open($user, $vacancyId);
 
-            return DB::transaction(function () use ($user, $thread, $connectionId, $model, $requestId, $content, $analyze, $skill, $resolved): array {
+            return DB::transaction(function () use ($user, $thread, $connectionId, $model, $requestId, $content, $analyze, $previewHash, $skill, $resolved): array {
                 $thread = VacancyChatThread::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($thread->id);
                 if ($thread->status === 'STREAMING') {
                     throw ValidationException::withMessages(['thread' => 'A turn is already streaming. Refresh after completion.']);
@@ -69,11 +82,11 @@ class VacancyChatService
                 if (VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)->where('client_request_id', $requestId)->exists()) {
                     throw ValidationException::withMessages(['client_request_id' => 'This turn was already submitted. Reload its saved result.']);
                 }
-                $turn = $analyze ? file_get_contents(rtrim((string) config('ai.asset_root'), '/').'/skills/vacancy-plan-chat/v1/analyze.prompt.md') : $content;
-                if (! is_string($turn) || trim($turn) === '') {
-                    throw ValidationException::withMessages(['content' => 'Enter a message.']);
-                }
+                $turn = $this->turnText($content, $analyze);
                 $context = $this->context->build($user, $thread, $turn);
+                if (! hash_equals($this->previewHash($context['input']), $previewHash)) {
+                    throw ValidationException::withMessages(['context_preview_hash' => 'The vacancy or career context changed after preview. Review the current context before sending.']);
+                }
                 $run = VacancyLlmRun::query()->create(['owner_id' => $user->id, 'vacancy_snapshot_id' => $context['snapshot']->id,
                     'workflow' => 'vacancy_plan_chat', 'skill_id' => $skill->id, 'skill_version' => $skill->version,
                     'prompt_version' => $skill->promptVersion, 'model_policy' => $skill->modelPolicy, 'provider' => $resolved->provider,
@@ -88,6 +101,22 @@ class VacancyChatService
                     'instructions' => $skill->trustedInstructions."\nOutput schema:\n".json_encode($skill->outputSchema, JSON_THROW_ON_ERROR)];
             });
         });
+    }
+
+    private function turnText(?string $content, bool $analyze): string
+    {
+        $turn = $analyze ? file_get_contents(rtrim((string) config('ai.asset_root'), '/').'/skills/vacancy-plan-chat/v1/analyze.prompt.md') : $content;
+        if (! is_string($turn) || trim($turn) === '') {
+            throw ValidationException::withMessages(['content' => 'Enter a message.']);
+        }
+
+        return $turn;
+    }
+
+    /** @param list<array{role: string, content: string}> $input */
+    private function previewHash(array $input): string
+    {
+        return hash('sha256', json_encode($input, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     public function cancel(User $user, string $vacancyId, string $requestId): bool

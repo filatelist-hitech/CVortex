@@ -54,6 +54,7 @@ Route::prefix('v1')->group(function (): void {
                 Route::middleware('throttle:chatgpt')->group(function (): void {
                     $chat = VacancyChatController::class;
                     Route::get('/vacancies/{id}/chat', [$chat, 'show']);
+                    Route::post('/vacancies/{id}/chat/context-preview', [$chat, 'preview']);
                     Route::post('/vacancies/{id}/chat/messages', [$chat, 'send']);
                     Route::post('/vacancies/{id}/chat/cancel', [$chat, 'cancel']);
                     Route::get('/vacancies/{id}/analysis-drafts', [$chat, 'drafts']);

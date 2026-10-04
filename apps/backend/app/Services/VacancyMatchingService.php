@@ -27,11 +27,11 @@ class VacancyMatchingService
     {
         $context = $this->career->forMatching($user);
 
-        return $this->signatureForContext($context);
+        return $this->careerSignatureForContext($context);
     }
 
     /** @param array{facts: list<CareerFact>, claims: list<Claim>} $context */
-    private function signatureForContext(array $context): string
+    public function careerSignatureForContext(array $context): string
     {
         $values = [];
         foreach ($context['facts'] as $fact) {
@@ -48,7 +48,7 @@ class VacancyMatchingService
     public function analyze(User $user, Vacancy $vacancy, VacancySnapshot $snapshot, ?string $runToken = null): VacancyAnalysis
     {
         $context = $this->career->forMatching($user);
-        $signature = $this->signatureForContext($context);
+        $signature = $this->careerSignatureForContext($context);
         $requirements = VacancyRequirement::query()
             ->where('owner_id', $user->id)
             ->where('vacancy_snapshot_id', $snapshot->id)

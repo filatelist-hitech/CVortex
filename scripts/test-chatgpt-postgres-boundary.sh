@@ -9,7 +9,8 @@ created=false
 cleanup() {
   docker compose exec -T backend rm -f "$counter" || true
   rm -f "${log_prefix}.refresh-a" "${log_prefix}.refresh-b" "${log_prefix}.draft-a" \
-    "${log_prefix}.draft-b" "${log_prefix}.approval-a" "${log_prefix}.approval-b"
+    "${log_prefix}.draft-b" "${log_prefix}.approval-a" "${log_prefix}.approval-b" \
+    "${log_prefix}.career-approval" "${log_prefix}.career-mutation"
   if [[ "$created" == true ]]; then
     docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
       -c "DROP DATABASE \"$test_db\" WITH (FORCE)" >/dev/null
@@ -36,7 +37,7 @@ wait_pg_state() {
   until [[ "$(docker compose exec -T postgres psql -U "$pg_user" -d "$test_db" -Atqc \
     "SELECT count(*) FROM pg_stat_activity WHERE application_name = '$app_name' AND wait_event_type = '$event_type' AND ('$event' = '' OR wait_event = '$event')")" -gt 0 ]]; do
     if (( SECONDS >= deadline )); then
-      echo "approval boundary did not reach PostgreSQL state $app_name/$event_type/$event" >&2
+      echo "database boundary did not reach PostgreSQL state $app_name/$event_type/$event" >&2
       exit 1
     fi
     sleep 0.1
@@ -88,6 +89,18 @@ worker approval-verify
 worker approval repeat
 worker approval-verify
 printf '%s\n' 'Normal, repeated and overlapping PostgreSQL approval: PASS'
+
+worker career-race-setup
+worker approval-career-race >"${log_prefix}.career-approval" 2>&1 &
+approval_pid=$!
+wait_pg_state cvortex-chatgpt-career-approval Timeout PgSleep
+worker deprecate-career-race-fact >"${log_prefix}.career-mutation" 2>&1 &
+mutation_pid=$!
+wait_pg_state cvortex-chatgpt-career-mutation Lock ''
+wait_worker "$approval_pid" "${log_prefix}.career-approval" 'approval concurrent with Career Fact deprecation'
+wait_worker "$mutation_pid" "${log_prefix}.career-mutation" 'serialized Career Fact deprecation'
+worker career-race-verify
+printf '%s\n' 'PostgreSQL approval/Career Fact mutation serialization: PASS'
 
 docker compose run --rm --no-deps -e DB_DATABASE="$test_db" migration php artisan migrate:rollback --step=3 --force >/dev/null
 docker compose run --rm --no-deps -e DB_DATABASE="$test_db" migration php artisan migrate --force >/dev/null

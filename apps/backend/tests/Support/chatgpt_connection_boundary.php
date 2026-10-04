@@ -161,6 +161,58 @@ SQL);
     assert(DB::transactionLevel() === 0);
     assert((int) DB::selectOne('SELECT 1 AS value')->value === 1);
     echo 'APPROVAL status=APPROVED analysis='.$analysisId." transaction=clean\n";
+} elseif ($mode === 'career-race-setup') {
+    $owner = User::query()->where('email', 'chatgpt-owner@example.test')->firstOrFail();
+    $owners->run($owner->id, function () use ($owner): void {
+        $queued = app(VacancyIngestionService::class)->queue($owner, 'Engineer. PHP is required.', null);
+        $queued['vacancy']->update(['analysis_status' => 'FAILED']);
+        $snapshot = VacancySnapshot::query()->where('vacancy_id', $queued['vacancy']->id)->firstOrFail();
+        $draft = app(VacancyAnalysisDraftService::class)->save($owner, $queued['vacancy']->id, $snapshot->id, 'career-race-draft', [
+            'requirements' => [['dimension' => 'TECHNICAL', 'importance' => 'MANDATORY', 'label' => 'PHP',
+                'normalized_value' => 'PHP', 'source_excerpt' => 'PHP is required.', 'confidence' => 1]],
+            'matches' => [], 'gaps' => [], 'risks' => [], 'questions' => [], 'recommendations' => [],
+        ]);
+        assert($draft['status'] === 'DRAFT');
+    });
+    echo "Career mutation approval race fixture: PASS\n";
+} elseif ($mode === 'approval-career-race') {
+    $owner = User::query()->where('email', 'chatgpt-owner@example.test')->firstOrFail();
+    DB::selectOne("SELECT set_config('application_name', 'cvortex-chatgpt-career-approval', false)");
+    $owners->run($owner->id, function () use ($owner): void {
+        $draft = VacancyAnalysisDraft::query()->where('status', 'DRAFT')->latest()->firstOrFail();
+        $result = app(VacancyAnalysisDraftService::class)->approve($owner, $draft->id);
+        assert($result['status'] === 'APPROVED');
+        echo 'CAREER_APPROVAL analysis='.$result['approved_analysis_id']." transaction=clean\n";
+    });
+    assert(DB::transactionLevel() === 0);
+    assert((int) DB::selectOne('SELECT 1 AS value')->value === 1);
+} elseif ($mode === 'deprecate-career-race-fact') {
+    $owner = User::query()->where('email', 'chatgpt-owner@example.test')->firstOrFail();
+    DB::selectOne("SELECT set_config('application_name', 'cvortex-chatgpt-career-mutation', false)");
+    $owners->run($owner->id, function () use ($owner): void {
+        $fact = CareerFact::query()->where('owner_id', $owner->id)->where('status', 'CONFIRMED')->firstOrFail();
+        app(CareerFactService::class)->deprecate($owner, $fact);
+        assert($fact->fresh()->status === 'DEPRECATED');
+    });
+    assert(DB::transactionLevel() === 0);
+    assert((int) DB::selectOne('SELECT 1 AS value')->value === 1);
+    echo "Concurrent Career Fact deprecation: PASS\n";
+} elseif ($mode === 'career-race-verify') {
+    $owner = User::query()->where('email', 'chatgpt-owner@example.test')->firstOrFail();
+    $owners->run($owner->id, function () use ($owner): void {
+        $draft = VacancyAnalysisDraft::query()->where('client_request_id', 'career-race-draft')->firstOrFail();
+        $fact = CareerFact::query()->where('owner_id', $owner->id)->where('status', 'DEPRECATED')->firstOrFail();
+        $analysis = VacancyAnalysis::query()->where('owner_id', $owner->id)->where('vacancy_snapshot_id', $draft->vacancy_snapshot_id)->sole();
+        assert($draft->status === 'APPROVED' && $draft->approved_analysis_id === $analysis->id);
+        assert($analysis->career_signature === $draft->career_signature);
+        $dimensionIds = VacancyMatchDimension::query()->where('owner_id', $owner->id)->where('vacancy_analysis_id', $analysis->id)->select('id');
+        assert(VacancyMatchEvidence::query()->where('owner_id', $owner->id)->where('career_fact_id', $fact->id)
+            ->whereIn('vacancy_match_dimension_id', $dimensionIds)->count() === 1);
+        assert(VacancyAnalysis::query()->where('owner_id', $owner->id)->where('vacancy_snapshot_id', $draft->vacancy_snapshot_id)->count() === 1);
+    });
+    assert(DB::transactionLevel() === 0);
+    assert((int) DB::selectOne('SELECT 1 AS value')->value === 1);
+    echo "Career approval serialized before mutation; matching uses one signed confirmed-fact state: PASS\n";
 } elseif ($mode === 'approval-verify') {
     $owner = User::query()->where('email', 'chatgpt-owner@example.test')->firstOrFail();
     $owners->run($owner->id, function () use ($owner): void {
