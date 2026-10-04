@@ -449,6 +449,19 @@ class VacancyPlanChatTest extends TestCase
         $this->assertSame(['UNCERTAIN'], array_column($saved['requirements'], 'importance'));
     }
 
+    public function test_approval_rejects_a_draft_when_the_vacancy_source_exceeds_the_chat_context_limit(): void
+    {
+        $source = str_repeat('x', 25001)."\nPHP is required.";
+        [$user, $vacancy, $snapshot] = $this->fixture('truncated-source', $source);
+        $draft = app(VacancyAnalysisDraftService::class)->save($user, $vacancy->id, $snapshot->id, 'truncated-source', $this->analysis());
+
+        $this->invalid(fn () => app(VacancyAnalysisDraftService::class)->approve($user, $draft['id']));
+
+        $this->assertDatabaseHas('vacancy_analysis_drafts', ['id' => $draft['id'], 'status' => 'DRAFT']);
+        $this->assertDatabaseCount('vacancy_requirements', 0);
+        $this->assertSame('FAILED', $vacancy->fresh()->analysis_status);
+    }
+
     private function fixture(string $name, string $rawText = 'Engineer. PHP is required.'): array
     {
         $user = $this->user($name);

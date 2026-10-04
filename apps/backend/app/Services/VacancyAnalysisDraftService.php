@@ -157,6 +157,9 @@ class VacancyAnalysisDraftService
                 || in_array($vacancy->analysis_status, ['RUNNING', 'PENDING'], true)) {
                 throw ValidationException::withMessages(['draft' => 'Source/evidence changed or API analysis is active. Refresh and analyze again.']);
             }
+            if (mb_strlen($snapshot->raw_text) > VacancyChatContextBuilder::MAX_SOURCE_CHARACTERS) {
+                throw ValidationException::withMessages(['draft' => 'This source exceeds the chat context limit. Shorten the vacancy before approving the draft.']);
+            }
             $resource = $this->resource($user, $draft);
             $validated = $this->validate($user, ['requirements' => $resource['requirements'], 'matches' => $draft->proposed_matches,
                 'gaps' => $draft->gaps, 'risks' => $draft->risks, 'questions' => $draft->questions, 'recommendations' => $draft->recommendations], $snapshot);

@@ -797,4 +797,10 @@ Fixed two more exact-head findings in `79b3681d7e71ba53a0b353d439b010f179d0d9ed`
 
 ### PR #42 current review remediation — 2026-10-04
 
+### PR #42 source-truncation review remediation — 2026-10-04
+
+The live exact-head review exposed one new unresolved P1: chat context includes only the first 25,000 characters while vacancy ingestion accepts 50,000, so approval could promote a draft built from an incomplete source. The shared 25,000-character limit is now a named context invariant, and approval rejects oversized snapshots before canonical requirements or analysis completion. Regression covers a 25,001-character source and preserves the DRAFT/FAILED state. Live intake found one new unresolved thread, despite the user report mentioning two; no second current thread was present to address.
+
+Validation: `VacancyPlanChatTest.php` 23 / 131, targeted Pint, `make lint` (Pint 212 files, PHPStan 135 files, ESLint and TypeScript), and `git diff --check` passed. No push or thread resolution has been performed for this remediation yet.
+
 Locally fixed the two new unresolved findings on exact PR head `427678f`: Russian generic vacancy terms and inflected forms are excluded from Career Fact relevance scoring, with a regression covering an unrelated medical-sales fact; `docs/05-API/chatgpt-plan.openapi.yaml` now documents `POST /vacancies/{id}/chat/context-preview`, its exact `preview_hash`, and the required `context_preview_hash` on streaming sends. Targeted `VacancyPlanChatTest.php` passed 22 / 127; Pint, PHPStan, frontend lint/typecheck, OpenAPI contract assertions and `git diff --check` passed. Full `make test` reached 338 tests but has the existing unrelated DiagnosticsTest baseline failure: 2 errors for missing inline/worker log context keys and 1 failure for the stack log file. Changes are local; no push, reply or thread resolution has been performed yet.
