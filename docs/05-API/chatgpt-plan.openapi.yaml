@@ -523,6 +523,79 @@
         }
       }
     },
+    "/vacancies/{id}/chat/cancel": {
+      "post": {
+        "summary": "Persistently cancel an active owned chat turn",
+        "responses": {
+          "200": {
+            "description": "Cancellation result; false means the turn was already terminal or not active.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "cancelled"
+                  ],
+                  "properties": {
+                    "cancelled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "404": {
+            "description": "Missing or foreign resource; non-enumerating"
+          },
+          "422": {
+            "description": "Schema/source/evidence invalid"
+          },
+          "429": {
+            "description": "Application/provider usage limit"
+          },
+          "503": {
+            "description": "Provider unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$",
+              "minLength": 26,
+              "maxLength": 26
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "client_request_id"
+                ],
+                "properties": {
+                  "client_request_id": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/vacancies/{id}/analysis-drafts": {
       "get": {
         "summary": "List latest 20 owned drafts",

@@ -269,7 +269,9 @@ class McpGatewayTest extends TestCase
                 ->assertBadRequest()->assertJsonPath('error', 'invalid_target');
         }
         $login = $this->get('/oauth/authorize?'.http_build_query($authorization))->assertOk()
-            ->assertViewIs('mcp.login')->assertSee('Войдите в CVortex');
+            ->assertViewIs('mcp.login')
+            ->assertSee('Войдите в CVortex')
+            ->assertSee('создание неутверждённых vacancy-analysis drafts');
         $this->assertSame($origin.'/', $login->viewData('loginUrl'));
         $this->assertSame($authorization, (function (string $url): array {
             parse_str((string) parse_url($url, PHP_URL_QUERY), $parameters);
