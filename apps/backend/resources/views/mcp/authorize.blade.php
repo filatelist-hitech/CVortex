@@ -18,7 +18,7 @@
 <main>
     <h1>Authorize {{ $client->name }}?</h1>
     <p>Signed in as {{ $user->email }}.</p>
-    <p>This client can read bounded CVortex vacancy and career/application context. It cannot approve or send applications or confirm Career Facts.</p>
+    <p>This client can read bounded CVortex vacancy and career/application context and, with the separate draft-write permission, create unapproved vacancy-analysis drafts. Drafts do not approve analyses or change Career Facts. This client cannot send applications.</p>
     <ul>
         @foreach ($scopes as $scope)
             <li>{{ $scope->description }}</li>

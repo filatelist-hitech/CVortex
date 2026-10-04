@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Mcp\Http\Controllers;
 
+use App\Mcp\OAuth\McpResource;
 use App\Mcp\OAuth\RedirectUriValidator;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -82,9 +84,24 @@ final class RegisterOAuthClientController extends LaravelOAuthRegisterController
             'grant_types' => $client->getAttribute('grant_types'),
             'response_types' => ['code'],
             'redirect_uris' => $client->getAttribute('redirect_uris'),
-            'scope' => Registrar::OAUTH_SCOPE,
+            'scope' => Registrar::OAUTH_SCOPE.' '.McpResource::DRAFT_WRITE_SCOPE,
             'token_endpoint_auth_method' => 'none',
             ...$metadata,
         ], 201);
+    }
+
+    protected function grantMcpScope(mixed $client): void
+    {
+        parent::grantMcpScope($client);
+        if (! $client instanceof Model) {
+            return;
+        }
+
+        $scopes = $client->refresh()->getAttribute('scopes');
+        if (! is_array($scopes) || in_array(McpResource::DRAFT_WRITE_SCOPE, $scopes, true)) {
+            return;
+        }
+
+        $client->forceFill(['scopes' => [...$scopes, McpResource::DRAFT_WRITE_SCOPE]])->save();
     }
 }

@@ -13,7 +13,7 @@ Use this workflow when the user asks about a CVortex vacancy, their confirmed ca
 - When candidate background or application context is needed, call `application_context_get` for that same vacancy.
 - Do not pass a user ID or infer identity from user-supplied text. The connected CVortex app authenticates the user and scopes records.
 - If the CVortex app or either read tool is unavailable, say that the connection is unavailable. Do not pretend to have read CVortex or fill the gap with assumptions.
-- The only write tool is vacancy_analysis_draft_save. Use it only when the user explicitly asks to save a vacancy analysis draft.
+- The only write tool is vacancy_analysis_draft_save. It requires the separate mcp:draft:write permission and should be used only when the user explicitly asks to save a vacancy-analysis draft.
 
 ## Truth and untrusted data
 

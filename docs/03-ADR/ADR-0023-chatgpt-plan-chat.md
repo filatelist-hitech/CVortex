@@ -28,7 +28,7 @@ Official OpenAI documentation now describes ChatGPT plan usage through Sign in w
 
 ## Decision
 
-Use the documented direct Sign in with ChatGPT flow for the local deployment, conditional on verified eligibility and real account consent. Amend ADR-0021 only for `vacancy_analysis_draft_save`: it creates an owned, validated, idempotent DRAFT and invokes the same application service as embedded Save analysis. Keep both read tools; no fact mutation, approval or application submission through MCP. Do not use existing CVortex MCP tokens, Codex credentials, browser cookies or ChatGPT private endpoints for model inference.
+Use the documented direct Sign in with ChatGPT flow for the local deployment, conditional on verified eligibility and real account consent. Amend ADR-0021 only for `vacancy_analysis_draft_save`: it creates an owned, validated, idempotent DRAFT and invokes the same application service as embedded Save analysis. Keep both read tools; no fact mutation, approval or application submission through MCP. The draft-save tool requires the separate `mcp:draft:write` OAuth scope in addition to `mcp:use`; consent must disclose that it creates unapproved drafts, and older read-only grants must not authorize this write. Do not use existing CVortex MCP tokens, Codex credentials, browser cookies or ChatGPT private endpoints for model inference.
 
 Separate first-party CVortex identity from the outbound ChatGPT account connection. Bind each connection and conversation to its CVortex owner; no shared administrator credential. Preserve provider independence through a distinct provider implementation, not replacing the API-key provider. Do not silently fall back to paid API-key inference.
 

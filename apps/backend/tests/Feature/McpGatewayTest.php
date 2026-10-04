@@ -77,7 +77,10 @@ class McpGatewayTest extends TestCase
         foreach ($tools as $tool) {
             $this->assertFalse($tool['inputSchema']['additionalProperties']);
             $this->assertFalse($tool['outputSchema']['additionalProperties']);
-            $this->assertSame(['mcp:use'], $tool['securitySchemes'][0]['scopes']);
+            $expectedScopes = $tool['name'] === 'vacancy_analysis_draft_save'
+                ? ['mcp:use', McpResource::DRAFT_WRITE_SCOPE]
+                : ['mcp:use'];
+            $this->assertSame($expectedScopes, $tool['securitySchemes'][0]['scopes']);
             $this->assertSame($tool['name'] !== 'vacancy_analysis_draft_save', $tool['annotations']['readOnlyHint']);
             $this->assertFalse($tool['annotations']['destructiveHint']);
             $this->assertTrue($tool['annotations']['idempotentHint']);
@@ -92,26 +95,32 @@ class McpGatewayTest extends TestCase
         $before = CareerFact::query()->get()->toArray();
         $analysis = ['requirements' => [], 'matches' => [], 'gaps' => [], 'risks' => [], 'questions' => [], 'recommendations' => ['Review the current evidence.']];
         $args = ['vacancy_id' => $vacancyId, 'snapshot_id' => $snapshot->id, 'client_request_id' => 'external-request', 'analysis' => $analysis];
-        $first = $this->mcpRequest($user, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk()->json('result.structuredContent');
+        $legacyGrant = $this->mcpRequest($user, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
+        $this->assertTrue($legacyGrant->json('result.isError'));
+        $this->assertSame('FORBIDDEN', $legacyGrant->json('result.content.0.text'));
+        $this->assertDatabaseCount('vacancy_analysis_drafts', 0);
+        $writeGrant = $this->token($user, ['mcp:use', McpResource::DRAFT_WRITE_SCOPE])['access_token'];
+        $first = $this->mcpRequestWithToken($writeGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk()->json('result.structuredContent');
         $this->assertSame('DRAFT', $first['status']);
         $this->assertSame($vacancyId, $first['vacancy_id']);
-        $again = $this->mcpRequest($user, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk()->json('result.structuredContent');
+        $again = $this->mcpRequestWithToken($writeGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk()->json('result.structuredContent');
         $this->assertSame($first['id'], $again['id']);
         $this->assertDatabaseCount('vacancy_analysis_drafts', 1);
         $this->assertSame($before, CareerFact::query()->get()->toArray());
         $this->assertSame($snapshot->raw_text, $snapshot->fresh()->raw_text);
         $args['analysis']['user_id'] = $user->id;
-        $invalid = $this->mcpRequest($user, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
+        $invalid = $this->mcpRequestWithToken($writeGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
         $this->assertTrue($invalid->json('result.isError'));
         $this->assertStringContainsString('VALIDATION_FAILED', $invalid->json('result.content.0.text'));
         $args['client_request_id'] = 'another-request';
         unset($args['analysis']['user_id']);
         $args['snapshot_id'] = str_repeat('0', 26);
-        $stale = $this->mcpRequest($user, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
+        $stale = $this->mcpRequestWithToken($writeGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
         $this->assertTrue($stale->json('result.isError'));
         $other = $this->user('mcp-analysis-other@example.test');
         $args['snapshot_id'] = $snapshot->id;
-        $foreign = $this->mcpRequest($other, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
+        $foreignGrant = $this->token($other, ['mcp:use', McpResource::DRAFT_WRITE_SCOPE])['access_token'];
+        $foreign = $this->mcpRequestWithToken($foreignGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
         $this->assertStringContainsString('NOT_FOUND', $foreign->json('result.content.0.text'));
         $this->assertDatabaseCount('vacancy_analysis_drafts', 1);
     }
@@ -216,7 +225,7 @@ class McpGatewayTest extends TestCase
             ->assertJsonPath('registration_endpoint', 'http://127.0.0.1:8080/oauth/register')
             ->assertJsonPath('grant_types_supported', ['authorization_code', 'refresh_token'])
             ->assertJsonPath('response_types_supported', ['code'])
-            ->assertJsonPath('scopes_supported', ['mcp:use'])
+            ->assertJsonPath('scopes_supported', ['mcp:use', McpResource::DRAFT_WRITE_SCOPE])
             ->assertJsonPath('code_challenge_methods_supported', ['S256'])
             ->assertJsonPath('token_endpoint_auth_methods_supported', ['none'])
             ->assertJsonPath('authorization_response_iss_parameter_supported', true)
@@ -240,7 +249,7 @@ class McpGatewayTest extends TestCase
         [$user, $vacancyId] = $this->vacancy('mcp-tunnel-flow@example.test');
         $callback = 'https://chatgpt.com/connector/oauth/tunnel-test';
         $clientId = $this->postJson('/oauth/register', $this->oauthRegistration($callback))
-            ->assertCreated()->json('client_id');
+            ->assertCreated()->assertJsonPath('scope', 'mcp:use '.McpResource::DRAFT_WRITE_SCOPE)->json('client_id');
         $this->getJson('/.well-known/oauth-protected-resource/mcp/v1')->assertOk()
             ->assertJsonPath('resource', $resource)
             ->assertJsonPath('authorization_servers', [$origin]);
@@ -251,7 +260,7 @@ class McpGatewayTest extends TestCase
         $verifier = str_repeat('a', 64);
         $authorization = [
             'response_type' => 'code', 'client_id' => $clientId, 'redirect_uri' => $callback,
-            'scope' => 'mcp:use', 'state' => 'tunnel-test-state', 'resource' => $resource,
+            'scope' => 'mcp:use '.McpResource::DRAFT_WRITE_SCOPE, 'state' => 'tunnel-test-state', 'resource' => $resource,
             'code_challenge' => rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '='),
             'code_challenge_method' => 'S256',
         ];
@@ -271,7 +280,7 @@ class McpGatewayTest extends TestCase
         $this->assertStringContainsString('no-store', (string) $login->headers->get('Cache-Control'));
         $this->getJson('/oauth/authorize?'.http_build_query($authorization))->assertUnauthorized();
         $this->actingAs($user, 'web')->get('/oauth/authorize?'.http_build_query($authorization))
-            ->assertOk()->assertSee('Authorize')->assertDontSee('submit application drafts');
+            ->assertOk()->assertSee('Authorize')->assertSee('separate draft-write permission');
         $authToken = session('authToken');
         $approval = $this->post('/oauth/authorize', [
             '_token' => session()->token(), 'client_id' => $clientId, 'state' => $authorization['state'], 'auth_token' => $authToken,
@@ -291,6 +300,7 @@ class McpGatewayTest extends TestCase
         $parsed = (new Parser(new JoseEncoder))->parse($issued['access_token']);
         $this->assertSame($resource, $parsed->claims()->get('resource'));
         $this->assertSame($origin, $parsed->claims()->get('iss'));
+        $this->assertSame(['mcp:use', McpResource::DRAFT_WRITE_SCOPE], $parsed->claims()->get('scopes'));
         $tools = $this->mcpRequestWithToken($issued['access_token'], ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])
             ->assertOk()->json('result.tools');
         $this->assertSame(['vacancy_get', 'application_context_get', 'vacancy_analysis_draft_save'], array_column($tools, 'name'));
@@ -367,7 +377,7 @@ class McpGatewayTest extends TestCase
             $this->postJson('/oauth/register', $this->oauthRegistration($redirectUri))
                 ->assertCreated()
                 ->assertJsonPath('redirect_uris.0', $redirectUri)
-                ->assertJsonPath('scope', 'mcp:use')
+                ->assertJsonPath('scope', 'mcp:use '.McpResource::DRAFT_WRITE_SCOPE)
                 ->assertJsonPath('token_endpoint_auth_method', 'none');
         }
 
@@ -521,7 +531,9 @@ class McpGatewayTest extends TestCase
 
         $response = $view->toResponse(request());
         $this->assertStringContainsString('Authorize ChatGPT test?', $response->getContent());
-        $this->assertStringContainsString('It cannot approve or send applications', $response->getContent());
+        $this->assertStringContainsString('create unapproved vacancy-analysis drafts', $response->getContent());
+        $this->assertStringContainsString('separate draft-write permission', $response->getContent());
+        $this->assertStringContainsString('This client cannot send applications', $response->getContent());
     }
 
     public function test_oauth_issuer_is_added_to_success_and_error_redirects_only_for_approved_callbacks(): void

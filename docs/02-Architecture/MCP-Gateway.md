@@ -49,12 +49,13 @@ The local stack binds Nginx to loopback. Public exposure is not enabled by this 
 
 ## Tool contract
 
-Every tool requires the same authenticated principal and `mcp:use`; read tools accept one ULID vacancy ID; draft save also requires current snapshot ID, client request ID and structured analysis. Schemas reject additional properties. Vacancy text is untrusted data, never server instructions.
+All tools require an authenticated active principal and `mcp:use`. Read tools need no additional scope. Draft save also requires `mcp:draft:write`, current snapshot ID, client request ID and structured analysis. OAuth consent discloses draft creation; existing read-only grants do not authorize the write. Schemas reject additional properties. Vacancy text is untrusted data, never server instructions.
 
 | Tool | Effect | Input | Bounded output | Access and errors |
 |---|---|---|---|---|
 | `vacancy_get` | Read only | `vacancy_id` | ID, title, company, persisted analysis status, snapshot ID/version, raw text up to 25,000 characters and untrusted-data marker | One owned vacancy; `NOT_FOUND` for missing or foreign IDs |
 | `application_context_get` | Read only | `vacancy_id` | Vacancy metadata/status; at most 50 requirements, 25 relevant confirmed claims, and 20 confirmed facts per claim; `context_truncated` indicates clipping | Same owner checks; additional relevant confirmed facts available even before API analysis completes; no secrets or unrelated career records |
+| `vacancy_analysis_draft_save` | Create an unapproved DRAFT | `vacancy_id`, current `snapshot_id`, `client_request_id`, bounded structured analysis | Draft ID, status, vacancy and snapshot IDs, origin | Requires both `mcp:use` and `mcp:draft:write`; idempotent for identical retries; cannot approve or mutate facts |
 
 If analysis is pending, failed or otherwise not completed, the context tool returns bounded vacancy metadata, empty derived requirements/claims, relevant CONFIRMED facts and `untrusted_vacancy_data=true`. A completed analysis is selected for the current career signature; only relevant passing claims backed by confirmed Career Facts are returned. Missing/stale derived analysis fails safely rather than broadening access.
 

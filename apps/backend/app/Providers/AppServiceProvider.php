@@ -14,6 +14,7 @@ use App\Jobs\ExtractCareerSource;
 use App\Logging\SanitizingLogManager;
 use App\Mcp\Http\AddMcpOAuthIssuer;
 use App\Mcp\Http\RequireMcpOAuthResource;
+use App\Mcp\OAuth\McpResource;
 use App\Mcp\OAuth\ResourceAccessToken;
 use App\Queue\QueueExecutionContext;
 use App\Services\EmailNormalizer;
@@ -60,6 +61,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('mcp.enabled')) {
+            $scopes = Passport::$scopes;
+            $scopes[McpResource::DRAFT_WRITE_SCOPE] = 'Create an unapproved vacancy analysis draft';
+            Passport::tokensCan($scopes);
+        }
+
         Queue::createPayloadUsing(function (): array {
             if (! app()->bound('request')) {
                 return [];

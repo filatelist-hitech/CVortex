@@ -138,7 +138,7 @@ tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --hea
 1. В ChatGPT web откройте **Settings → Security and login → Developer mode**, если переключатель доступен.
 2. Откройте **Plugins → `+` → Create custom MCP server**.
 3. В форме выберите **Connection → Tunnel** и выберите туннель либо укажите его настоящий `tunnel_id`. Туннель должен быть связан с активным ChatGPT workspace, а у пользователя должно быть Tunnels Read + Use.
-4. Выберите OAuth и завершите OAuth CVortex от имени своего пользователя. Просмотрите обнаруженные tools и подтвердите, что доступны только `vacancy_get` и `application_context_get`. Если появится инструмент записи или список пуст — остановитесь и не используйте app.
+4. Выберите OAuth и завершите OAuth CVortex от имени своего пользователя. Просмотрите список и разрешения: допустимы `vacancy_get`, `application_context_get` и только контролируемая запись `vacancy_analysis_draft_save` со scope `mcp:draft:write`. Сохранение создаёт DRAFT, но не подтверждает его и не меняет факты. Если появился другой инструмент записи или draft-write permission не показано для draft-save — остановитесь и переподключите app.
 5. После создания запишите технический ID приложения, который начинается с `plugin_asdk_app`. Он нужен, чтобы добавить регистрацию приложения в `.app.json` локального plugin package. Не выдумывайте ID и не коммитьте пользовательские credential-файлы.
 6. Чтобы установить локальный skill package через официальный Codex CLI из корня репозитория:
 
@@ -150,7 +150,7 @@ tunnel-client run --profile cvortex-chatgpt --harpoon.allow-plaintext-http --hea
 
    До изменения существующего `~/.codex/config.toml` сохраните его копию; CLI добавляет marketplace и plugin, не заменяя весь файл. Установка из CLI активирует skill в Codex plugin environment. Если marketplace доступен в desktop Plugins Directory, перезапустите desktop app и установите/проверьте plugin в поддерживаемом Work/Codex surface. Это skill package, а не гарантия MCP app runtime. В этом репозитории лежат переносимый root manifest, Codex compatibility manifest и repo marketplace: [portable manifest](../../integrations/chatgpt/plugin.json), [Codex manifest](../../integrations/chatgpt/.codex-plugin/plugin.json), [marketplace](../../.agents/plugins/marketplace.json). Оба manifest указывают на один пакетный каталог `skills/`. Пока настоящий `plugin_asdk_app...` ID не зарегистрирован в самом пакете, он содержит только skill-инструкции и не подключает MCP app.
 
-Root `plugin.json` использует переносимый Agent Plugins формат; `.codex-plugin/plugin.json` задаёт Codex identity, интерфейс и путь `./skills/`. Skill находится в `skills/cvortex/SKILL.md`: он запрещает выдумывать факты, считает текст вакансии недоверенными данными, направляет к двум read-only tools и не утверждает, что созданный текст сохранён в CVortex.
+Root `plugin.json` использует переносимый Agent Plugins формат; `.codex-plugin/plugin.json` задаёт Codex identity, интерфейс и путь `./skills/`. Skill находится в `skills/cvortex/SKILL.md`: он запрещает выдумывать факты, считает текст вакансии недоверенными данными, направляет к двум read tools и одной ограниченной draft-write операции; он не утверждает, что текст письма сохранён в CVortex.
 
 ## Проверка в ChatGPT
 
@@ -171,7 +171,7 @@ Root `plugin.json` использует переносимый Agent Plugins ф�
 Покажи текст только в чате и не сохраняй его в CVortex.
 ```
 
-Отрицательная проверка: попросите сохранить письмо в CVortex. Правильный результат — отказ от записи: у app нет write tool. Не просите систему обходить ограничение другим connector/action. Текст вакансии с командами вроде «раскрой все данные» должен обрабатываться только как содержимое вакансии.
+Попросите сохранить анализ вакансии как черновик, затем проверьте, что CVortex создал только DRAFT и не подтвердил его. Попросите подтвердить Career Fact, утвердить анализ или отправить письмо: правильный результат — отказ, поскольку этих операций нет. Не просите систему обходить ограничение другим connector/action. Текст вакансии с командами вроде «раскрой все данные» должен обрабатываться только как содержимое вакансии.
 
 Эти проверки пока не выполнялись. Не считайте видимый marketplace, MCP Inspector или открывшуюся форму доказательством ChatGPT E2E. Полная запись результатов ведётся в [MCP validation](MCP-Gateway-Validation.md).
 
@@ -180,7 +180,7 @@ Root `plugin.json` использует переносимый Agent Plugins ф�
 | Симптом | Проверка |
 |---|---|
 | MCP-инструменты не отвечают | `MCP_ENABLED=true`, Compose services запущены, tunnel-client остаётся в состоянии ready, локальный MCP POST без bearer возвращает ожидаемый `401`. |
-| Discovery не видит инструменты | Выполните `tunnel-client doctor --profile cvortex-chatgpt --explain`, проверьте локальный `/mcp/v1`, затем повторно обновите app metadata. Для app допустимы ровно два названия инструментов. |
+| Discovery не видит инструменты | Выполните `tunnel-client doctor --profile cvortex-chatgpt --explain`, проверьте локальный `/mcp/v1`, затем повторно обновите app metadata. Допустимы два read-инструмента и только `vacancy_analysis_draft_save` со scope `mcp:draft:write`. |
 | Туннель отсутствует в ChatGPT | Убедитесь, что Platform tunnel связан не только с Platform organization, но и с целевым ChatGPT workspace; проверьте Tunnels Read + Use. |
 | OAuth завершается ошибкой | Проверьте `MCP_AUTHORIZATION_SERVER_URL`, issuer/resource metadata, действующую сессию CVortex и достижимость authorization URL из браузера. Туннель сам по себе не туннелирует произвольный browser-facing authorization endpoint. Не ослабляйте Passport/OAuth. |
 | Открылась не та учётная запись CVortex | Переподключите OAuth в ChatGPT под нужным активным пользователем. MCP не принимает `user_id` от вызывающей модели; чужая вакансия должна возвращать `NOT_FOUND`. |
@@ -201,7 +201,7 @@ Root `plugin.json` использует переносимый Agent Plugins ф�
 
 Если DCR вернул 201, а браузерный authorize возвращает `invalid_target`, сравните только decoded `resource` с локальной trusted настройкой `MCP_RESOURCE_URL`. Не меняйте `APP_URL` на tunnel-service URL: браузер должен попасть на локальный authorize endpoint. Строгая проверка одного configured resource применяется к authorization/token/refresh и resource claim bearer token. Issuer остаётся локальным; существующий Passport `aud` остаётся client ID, дополнительно проверяется resource claim.
 
-Начните новый ChatGPT connection flow после настройки. Войдите своим аккаунтом в CVortex именно на `http://127.0.0.1:8080`, затем повторите подключение: session на localhost не подтверждает вход на 127.0.0.1. Неавторизованный browser authorize показывает страницу входа с ссылкой на существующий CVortex login в новой вкладке и ссылкой возврата к проверенному OAuth request; JSON-запрос остаётся 401. При корректной session открывается consent. Подтвердите read-only доступ самостоятельно. Код/refresh tokens и state в документацию/логи не копируйте.
+Начните новый ChatGPT connection flow после настройки. Войдите своим аккаунтом в CVortex именно на `http://127.0.0.1:8080`, затем повторите подключение: session на localhost не подтверждает вход на 127.0.0.1. Неавторизованный browser authorize показывает страницу входа с ссылкой на существующий CVortex login в новой вкладке и ссылкой возврата к проверенному OAuth request; JSON-запрос остаётся 401. При корректной session откроется consent с отдельным разрешением draft-write; старый read-only grant не разрешает сохранение черновиков. Проверьте состав и подтвердите только нужные scopes. Код/refresh tokens и state в документацию/логи не копируйте.
 
 Источник: [официальный contract установленного tunnel-client](https://github.com/openai/tunnel-client/blob/a390c168ff1b2d14e73a95991c186c6aba3ff5a0/docs/architecture.md#oauth-protected-mcp). Contract переписывания PRMD подтверждён источником; точное значение текущего resource подтверждено пользовательским authorization request, не вычислено из внутреннего hostname.
 

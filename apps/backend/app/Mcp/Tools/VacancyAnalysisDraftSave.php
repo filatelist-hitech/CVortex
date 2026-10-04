@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\OAuth\McpResource;
 use App\Models\VacancyRequirement;
 use App\Services\VacancyAnalysisDraftService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -20,6 +21,7 @@ class VacancyAnalysisDraftSave extends BoundedTool
     {
         $tool = parent::toArray();
         $tool['annotations']['readOnlyHint'] = false;
+        $tool['securitySchemes'] = [['type' => 'oauth2', 'scopes' => ['mcp:use', McpResource::DRAFT_WRITE_SCOPE]]];
 
         return $tool;
     }
@@ -58,6 +60,10 @@ class VacancyAnalysisDraftSave extends BoundedTool
     {
         try {
             $user = $this->principal($request);
+            if (! $user->tokenCan(McpResource::DRAFT_WRITE_SCOPE)) {
+                return $this->error('FORBIDDEN');
+            }
+
             $args = $request->validate(['vacancy_id' => ['required', 'ulid'], 'snapshot_id' => ['required', 'ulid'],
                 'client_request_id' => ['required', 'string', 'max:128'], 'analysis' => ['required', 'array']]);
             if (count($request->all()) !== 4) {
