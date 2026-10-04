@@ -34,6 +34,8 @@ class VacancyGet extends BoundedTool
             'id' => $schema->string()->required(), 'title' => $schema->string()->required(),
             'company' => $schema->string()->required(), 'analysis_status' => $schema->string()->required(),
             'untrusted_data' => $schema->boolean()->required(),
+            'snapshot_id' => $schema->string()->required(), 'snapshot_version' => $schema->integer()->required(),
+            'raw_text' => $schema->string()->required(), 'source_truncated' => $schema->boolean()->required(),
         ];
     }
 

@@ -10,8 +10,10 @@ ChatGPT read-only integration has user-reported OAuth and both-tool E2E evidence
 remediation needs its own bounded task. Do not advance Preview/M2 automatically.
 The canonical product task above remains unchanged.
 
-Current explicit user override: chat inside CVortex. Architecture proposal and
-bounded capability-proof packet: `.agents/tasks/chatgpt-plan-chat.md`. Start with
-outbound ChatGPT plan-usage eligibility/sign-in/inference evidence, not an MCP
-write expansion. ADR proposal and actual account capability remain unverified.
-This does not complete or advance Preview/M2.
+Completed explicit user override: .agents/tasks/chatgpt-plan-chat.md, PASS on
+2026-10-04 for local plan OAuth/inference, persisted vacancy chat and controlled
+MCP structured draft save. Evidence: .agents/evidence/chatgpt-plan-chat-2026-10-04.md.
+The next bounded user action is review of the saved live analysis drafts. The
+canonical Preview 0.1 validation task above remains the next project task; no
+Preview/M2 transition or API-key quota remediation is authorized by this block.
+STOP: no automatic continuation to another feature.

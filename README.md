@@ -64,3 +64,11 @@ CVortex пока не создаёт файлы DOCX/PDF и не отправл�
 ## Как внести вклад
 
 Порядок работы с репозиторием описан в [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### Local ChatGPT plan vacancy chat
+
+[ChatGPT Plan Chat](docs/10-Operations/ChatGPT-Plan-Chat.md) documents the separate
+Sign in with ChatGPT billing/authentication path, vacancy streaming/history and
+reviewable structured drafts. [MCP Gateway](docs/02-Architecture/MCP-Gateway.md)
+retains two read tools and adds one controlled analysis-draft save. MCP is an
+external adapter, not an inference provider. The existing API-key path remains.

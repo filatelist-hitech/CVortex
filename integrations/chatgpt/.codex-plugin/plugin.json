@@ -1,7 +1,7 @@
 {
   "name": "cvortex-read-only",
   "version": "0.1.0",
-  "description": "Truth-first job search workflows using the connected CVortex read-only MCP app.",
+  "description": "Truth-first job search workflows using the connected CVortex MCP app with controlled analysis drafts.",
   "author": {
     "name": "CVortex"
   },

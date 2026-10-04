@@ -136,3 +136,7 @@ Final `make test` PASS: backend 301 tests / 2329 assertions / 11 skipped, fronte
 ## User-reported ChatGPT read E2E — 2026-10-03
 
 The user confirmed successful OAuth authorization and supplied ChatGPT outputs from sequential vacancy_get/application_context_get calls against two actual vacancies. Both returned bounded read-only context; a placeholder ID was correctly rejected. Evidence level: user-provided ChatGPT transcript, not independent agent invocation. Both analysis statuses were FAILED with empty requirements/confirmed_claims. This confirms transport/auth/tool access, not successful vacancy analysis or substantive confirmed-career matching. Separate runtime metadata shows LLM_PROVIDER_UNAVAILABLE from OpenAI AnalyzeVacancy; no provider remediation is included in this integration delivery.
+
+## ChatGPT plan / controlled draft extension — 2026-10-04
+
+[ADR-0023](../03-ADR/ADR-0023-chatgpt-plan-chat.md) defines a distinct OAuth plan provider and one controlled MCP vacancy-analysis draft save. See [ChatGPT Plan Chat](../10-Operations/ChatGPT-Plan-Chat.md) for implemented context budgets, credentials, errors and user flow, and [MCP architecture](../02-Architecture/MCP-Gateway.md) for the adapter contract. API-key billing remains independent; MCP is not inference.

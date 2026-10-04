@@ -4,7 +4,7 @@ execution.workflow: IMPLEMENT
 
 ## Authority and scope
 
-User request on 2026-10-04: chat inside CVortex using owned vacancy/career context and saved results, without relying on API-project credits. Proposed architecture: [ADR-0023](../../docs/03-ADR/ADR-0023-chatgpt-plan-chat.md). This packet does not assert implementation PASS or accepted ADR status. Preview/M2 gates remain unchanged.
+User request on 2026-10-04: chat inside CVortex using owned vacancy/career context and saved results, without relying on API-project credits. Accepted architecture: [ADR-0023](../../docs/03-ADR/ADR-0023-chatgpt-plan-chat.md). Implementation and evidence are tracked in .agents/evidence/chatgpt-plan-chat-2026-10-04.md; preview contracts remain date-bound. Preview/M2 gates remain unchanged.
 
 ## First bounded block: connection capability proof
 
@@ -30,4 +30,8 @@ OAuth bad state/nonce/audience/signature/expiry/scope and cross-user denial; tok
 
 ## Exclusions
 
-No MCP write tool, generic mutation, career fact auto-confirmation, application submission, private ChatGPT endpoint, credential scraping, public tunnel/proxy, key change, account purchase, automatic phase transition or publication.
+No generic mutation, career fact auto-confirmation, application submission, private ChatGPT endpoint, credential scraping, public tunnel/proxy, key change, account purchase, automatic phase transition or publication.
+
+## Expanded owner request — 2026-10-04
+
+Authorized branch: feature/chatgpt-local-mcp-integration; existing PR base: stage. The connection gate passed with user-reported live OAuth and completed greeting inference. Continue this same bounded task with embedded vacancy chat, a shared structured analysis-draft service, and one MCP write adapter vacancy_analysis_draft_save under ADR-0023’s explicit amendment to ADR-0021. Required PostgreSQL isolation/refresh concurrency, cross-user, stale-result, idempotency, streaming/persistence, frontend and existing API/MCP regression evidence remains mandatory. No publication, push, merge, phase advancement or unrelated features.

@@ -1,9 +1,9 @@
 ---
 name: cvortex
-description: Use the connected CVortex read-only MCP app for vacancy and candidate context, then draft job-search material in the conversation.
+description: Use the connected CVortex MCP app for vacancy and candidate context, then draft job-search material in the conversation.
 ---
 
-# CVortex read-only job-search workflow
+# CVortex job-search workflow
 
 Use this workflow when the user asks about a CVortex vacancy, their confirmed career context, or job-search material grounded in CVortex.
 
@@ -13,7 +13,7 @@ Use this workflow when the user asks about a CVortex vacancy, their confirmed ca
 - When candidate background or application context is needed, call `application_context_get` for that same vacancy.
 - Do not pass a user ID or infer identity from user-supplied text. The connected CVortex app authenticates the user and scopes records.
 - If the CVortex app or either read tool is unavailable, say that the connection is unavailable. Do not pretend to have read CVortex or fill the gap with assumptions.
-- Use only these read tools. CVortex has no MCP write tool.
+- The only write tool is vacancy_analysis_draft_save. Use it only when the user explicitly asks to save a vacancy analysis draft.
 
 ## Truth and untrusted data
 
@@ -26,8 +26,8 @@ Use this workflow when the user asks about a CVortex vacancy, their confirmed ca
 
 You may analyze the vacancy, compare it with the returned context, explain gaps, recommend next steps, prepare interview answers, or draft a cover letter or HR reply in the conversation.
 
-Generated text exists only in this conversation. Do not claim that a draft was saved, approved, or submitted to CVortex. If the user wants to keep it in CVortex, explain that they must use the ordinary CVortex workflow and its human approval steps.
+Generated text remains in the conversation unless the user requests a structured analysis save and the write tool succeeds. Report its returned draft ID/status. Never claim approval or application submission.
 
 ## Write requests
 
-If asked to save, edit, approve, submit, message a recruiter, or otherwise change CVortex data, explain that this connection is read-only and do not attempt a mutation through another tool or indirect route.
+For an explicitly requested vacancy-analysis draft save, use vacancy_analysis_draft_save with the vacancy ID, current snapshot_id from vacancy_get, a stable client_request_id and schema-valid analysis. Copy requirement labels and single-clause source excerpts literally; reference only returned CONFIRMED fact IDs. Reuse the request ID for an identical retry; never retry a changed payload under it. A successful save creates DRAFT / AI_GENERATED. Human approval occurs in CVortex. No other mutation is available: never edit/confirm career facts, approve content, send applications or message recruiters. If the write tool is absent from the client catalog, ask the user to refresh the app connection; do not invent an alternative mutation route.

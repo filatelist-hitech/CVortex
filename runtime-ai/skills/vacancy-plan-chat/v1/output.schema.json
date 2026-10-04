@@ -1,0 +1,131 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requirements",
+    "matches",
+    "gaps",
+    "risks",
+    "questions",
+    "recommendations"
+  ],
+  "properties": {
+    "requirements": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dimension",
+          "importance",
+          "label",
+          "normalized_value",
+          "source_excerpt",
+          "confidence"
+        ],
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "enum": [
+              "TECHNICAL",
+              "EXPERIENCE",
+              "DOMAIN",
+              "LANGUAGE",
+              "LOCATION",
+              "WORK_FORMAT",
+              "SALARY"
+            ]
+          },
+          "importance": {
+            "type": "string",
+            "enum": [
+              "MANDATORY",
+              "PREFERRED",
+              "UNCERTAIN"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "normalized_value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "source_excerpt": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "matches": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requirement_index",
+          "career_fact_ids"
+        ],
+        "properties": {
+          "requirement_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 49
+          },
+          "career_fact_ids": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
+            }
+          }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    },
+    "risks": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    },
+    "questions": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    }
+  }
+}

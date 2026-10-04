@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Home from "../page";
 import RegisterPage from "../register/page";
 
+// Vacancy chat has its own integration tests; isolate vacancy selection race fixtures.
+vi.mock("../vacancy-chat", () => ({ default: () => null }));
+
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 afterEach(() => {

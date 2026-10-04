@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\AI\Contracts\LlmProvider;
+use App\AI\Contracts\StreamingProvider;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\Providers\ConfiguredLlmProvider;
+use App\AI\Providers\OpenAiChatGptPlanProvider;
 use App\Diagnostics\ErrorCatalog;
 use App\Diagnostics\IncidentRecorder;
 use App\Jobs\AnalyzeVacancy;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton('log', fn ($app) => new SanitizingLogManager($app));
         $this->app->singleton(QueueExecutionContext::class);
+        $this->app->bind(StreamingProvider::class, OpenAiChatGptPlanProvider::class);
 
         if (! config('mcp.enabled')) {
             Passport::ignoreRoutes();
@@ -162,6 +165,7 @@ class AppServiceProvider extends ServiceProvider
             )->by('login:'.$request->ip().'|'.app(EmailNormalizer::class)->normalize((string) $request->input('email')));
         });
         RateLimiter::for('diagnostics-report', fn (Request $request): Limit => Limit::perMinute(10)->by((string) $request->user()?->id));
+        RateLimiter::for('chatgpt', fn (Request $request): Limit => Limit::perMinute(10)->by($request->user()?->id.'|'.$request->route()?->uri()));
 
         Route::pattern('id', '(?i:[0-9A-HJKMNP-TV-Z]{26})');
     }

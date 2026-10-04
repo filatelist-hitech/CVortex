@@ -1,0 +1,6 @@
+{
+  "id": "vacancy.plan-chat",
+  "version": "1.0.0",
+  "prompt_version": "1.0.0",
+  "default_model_policy": "user_selected_chatgpt_plan"
+}
