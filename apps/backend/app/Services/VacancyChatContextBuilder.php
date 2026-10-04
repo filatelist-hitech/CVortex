@@ -34,6 +34,11 @@ class VacancyChatContextBuilder
         'candidate', 'candidates', 'developer', 'developers', 'experience', 'job', 'position', 'positions',
         'required', 'requirement', 'requirements', 'responsibilities', 'responsibility', 'role', 'roles', 'team',
         'teams', 'work', 'working', 'year', 'years',
+        'опыт', 'опыта', 'опыту', 'опытом', 'опыте', 'опыты', 'опытов', 'опытам', 'опытами', 'опытах',
+        'работа', 'работы', 'работу', 'работой', 'работе', 'работ', 'работам', 'работами', 'работах',
+        'разработчик', 'разработчики', 'разработчика', 'разработчиков', 'разработчику', 'разработчиком',
+        'разработчикам', 'разработчиками', 'разработчиках',
+        'команда', 'команды', 'команду', 'командой', 'команде', 'команд', 'командам', 'командами', 'командах',
     ];
 
     public function __construct(private readonly TrustedCareerQuery $career, private readonly VacancyMatchingService $matching) {}

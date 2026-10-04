@@ -262,6 +262,20 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('medical sales', json_encode($context['input']));
     }
 
+    public function test_context_does_not_select_a_confirmed_fact_for_generic_russian_vacancy_language(): void
+    {
+        [$user, $vacancy] = $this->fixture('generic-russian-vacancy-words', 'PHP-разработчик. Опыт работы в команде.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Опыт работы в медицинских продажах.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Проанализируй эту вакансию');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('медицинских продажах', json_encode($context['input']));
+    }
+
     public function test_context_does_not_select_a_confirmed_fact_for_only_numeric_overlap(): void
     {
         [$user, $vacancy] = $this->fixture('numeric-overlap', 'The platform team expects 10 engineers in 2020, with production PHP.');
