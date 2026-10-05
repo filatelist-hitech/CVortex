@@ -112,6 +112,29 @@ class VacancyPlanChatTest extends TestCase
         $this->assertSame(['first question', 'first answer', 'second question', 'second answer'], array_column($history, 'content'));
     }
 
+    public function test_history_limits_after_discarding_incomplete_runs(): void
+    {
+        [$user, $vacancy] = $this->fixture('history-incomplete-runs');
+        $service = app(VacancyChatService::class);
+
+        $this->provider->text = 'completed answer';
+        $completedTurn = $this->beginTurn($user, $vacancy, 'completed-history-turn', 'completed question', false);
+        iterator_to_array($service->stream($user, $completedTurn));
+
+        for ($index = 0; $index < 24; $index++) {
+            $requestId = 'interrupted-history-turn-'.$index;
+            $interruptedTurn = $this->beginTurn($user, $vacancy, $requestId, 'interrupted question '.$index, false);
+            $this->assertTrue($service->cancel($user, $vacancy->id, $requestId));
+            $this->assertSame('INTERRUPTED', $interruptedTurn['assistant']->fresh()->status);
+        }
+
+        $preview = $service->preview($user, $vacancy->id, 'follow-up question', false);
+        $history = array_slice($preview['input'], 1, -1);
+
+        $this->assertSame(['user', 'assistant'], array_column($history, 'role'));
+        $this->assertSame(['completed question', 'completed answer'], array_column($history, 'content'));
+    }
+
     public function test_handcrafted_api_request_rejects_a_valid_slug_missing_from_the_owned_catalog(): void
     {
         [$user, $vacancy] = $this->fixture('unknown-model');

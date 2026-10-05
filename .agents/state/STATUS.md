@@ -854,3 +854,5 @@ Delivery: commit `38be35847e47c38ea2cbfee54b4672eeb520d2b8` is pushed to `origin
 ### PR #42 chronological history follow-up — 2026-10-05
 
 The fresh exact-head review identified that flattening the newest-first turn list and reversing the resulting messages inverted each user/assistant pair. The history builder now reverses complete turns before flattening, and a regression verifies chronological order across two completed turns. The fix is ready for the next exact-head validation cycle; no merge performed.
+
+The next exact-head review found that interrupted runs left completed user rows that consumed the pre-grouping history limit. History selection now identifies complete user/assistant runs first, limits those runs, and then loads their messages. A regression covers 24 interrupted user rows ahead of one completed pair. The fix is ready for validation; no merge performed.
