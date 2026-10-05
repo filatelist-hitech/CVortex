@@ -92,6 +92,26 @@ class VacancyPlanChatTest extends TestCase
         $this->assertLessThanOrEqual(12000, array_sum(array_map(static fn (array $message): int => mb_strlen($message['content']), $history)));
     }
 
+    public function test_history_preserves_chronological_order_across_completed_turns(): void
+    {
+        [$user, $vacancy] = $this->fixture('history-order');
+        $service = app(VacancyChatService::class);
+
+        $this->provider->text = 'first answer';
+        $firstTurn = $this->beginTurn($user, $vacancy, 'first-order-turn', 'first question', false);
+        iterator_to_array($service->stream($user, $firstTurn));
+
+        $this->provider->text = 'second answer';
+        $secondTurn = $this->beginTurn($user, $vacancy, 'second-order-turn', 'second question', false);
+        iterator_to_array($service->stream($user, $secondTurn));
+
+        $preview = $service->preview($user, $vacancy->id, 'follow-up question', false);
+        $history = array_slice($preview['input'], 1, -1);
+
+        $this->assertSame(['user', 'assistant', 'user', 'assistant'], array_column($history, 'role'));
+        $this->assertSame(['first question', 'first answer', 'second question', 'second answer'], array_column($history, 'content'));
+    }
+
     public function test_handcrafted_api_request_rejects_a_valid_slug_missing_from_the_owned_catalog(): void
     {
         [$user, $vacancy] = $this->fixture('unknown-model');

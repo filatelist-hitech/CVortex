@@ -117,7 +117,7 @@ class VacancyChatContextBuilder
                 break;
             }
         }
-        $history = array_reverse(array_merge([], ...$history));
+        $history = array_merge([], ...array_reverse($history));
         $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
             ->forCareerSignature($careerSignature)->deterministicLatest()->first();
         $employer = [];
@@ -146,7 +146,7 @@ class VacancyChatContextBuilder
 
         return ['snapshot' => $snapshot, 'career_signature' => $careerSignature,
             'input' => [['role' => 'user', 'content' => json_encode($context, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)],
-                ...array_reverse($history), ['role' => 'user', 'content' => $turn]]];
+                ...$history, ['role' => 'user', 'content' => $turn]]];
     }
 
     /** @param list<string> $overlap */

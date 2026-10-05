@@ -850,3 +850,7 @@ On live PR head `0b0b44d`, fixed both unresolved findings locally. Completed MCP
 Validation: targeted `VacancyPlanChatTest.php` plus `McpGatewayTest.php` passed (46 tests / 446 assertions); full `make test` passed (backend 346 tests / 2605 assertions / 11 skips, frontend 85 tests); final `make lint` passed (Pint 212 files, PHPStan 135 files with no errors, ESLint and TypeScript); `git diff --check` passed. No database or application data was modified. The five changed files remain local; push, fresh exact-head CI, reviewer replies and thread resolution are pending explicit delivery authorization.
 
 Delivery: commit `38be35847e47c38ea2cbfee54b4672eeb520d2b8` is pushed to `origin/feature/chatgpt-local-mcp-integration` and is the live PR #42 head. `Roadmap metadata` passed; `PR contract` and `m0-quality` are queued. The two current review threads remain unresolved until those exact-head checks complete; no merge performed.
+
+### PR #42 chronological history follow-up — 2026-10-05
+
+The fresh exact-head review identified that flattening the newest-first turn list and reversing the resulting messages inverted each user/assistant pair. The history builder now reverses complete turns before flattening, and a regression verifies chronological order across two completed turns. The fix is ready for the next exact-head validation cycle; no merge performed.
