@@ -29,3 +29,7 @@ Live intake on head `8a79258` found two current unresolved P2 threads: OAuth log
 ### PR #42 latest Codex reviewer remediation — 2026-10-05
 
 Live intake on head `d063352` found one new unresolved P2: the deprecation endpoint returned the original pre-lock Career Fact instance after persisting the transition. The transaction now returns its locked instance and a response regression passes locally. Remaining delivery steps are push, fresh exact-head checks, and reply/resolution for this fixed thread only.
+
+### PR #42 latest reviewer remediation — 2026-10-05
+
+Live intake on head `6ab01a6` found two still-open old fixed threads (`login` disclosure and chat cancel OpenAPI) and two new current findings: generic single-token Career Fact overlap and stale read-only MCP threat-model prose. The old fixes remain present; the new fixes pass local targeted tests and full lint. Reply/resolution for all four threads and the new exact-head remote checks remain delivery steps.

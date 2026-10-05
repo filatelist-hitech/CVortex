@@ -262,6 +262,22 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('medical sales', json_encode($context['input']));
     }
 
+    public function test_context_requires_substantive_overlap_for_generic_single_terms(): void
+    {
+        [$user, $vacancy] = $this->fixture('substantive-overlap', 'PHP production engineer.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Managed production of medical devices.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Led a team of engineers.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'PHP development and API design.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('medical devices', json_encode($context['input']));
+        $this->assertStringNotContainsString('team of engineers', json_encode($context['input']));
+    }
+
     public function test_context_does_not_select_a_confirmed_fact_for_generic_russian_vacancy_language(): void
     {
         [$user, $vacancy] = $this->fixture('generic-russian-vacancy-words', 'PHP-разработчик. Опыт работы в команде.');

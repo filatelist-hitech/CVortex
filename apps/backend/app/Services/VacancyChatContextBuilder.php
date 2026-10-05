@@ -16,6 +16,12 @@ class VacancyChatContextBuilder
 {
     public const MAX_SOURCE_CHARACTERS = 25000;
 
+    private const SINGLE_TOKEN_TECHNOLOGY_TERMS = [
+        'api', 'aws', 'c', 'c#', 'c++', 'css', 'gcp', 'git', 'go', 'html', 'java', 'js', 'kotlin',
+        'laravel', 'linux', 'mysql', 'node.js', 'php', 'postgresql', 'python', 'react', 'redis', 'ruby',
+        'rust', 'sql', 'swift', 'typescript', 'vue',
+    ];
+
     private const NON_DISCRIMINATIVE_TERMS = [
         'about', 'after', 'all', 'also', 'am', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'been', 'before',
         'being', 'between', 'both', 'but', 'by', 'can', 'could', 'did', 'do', 'does', 'doing', 'down', 'during',
@@ -56,8 +62,9 @@ class VacancyChatContextBuilder
         $terms = $this->terms($snapshot->raw_text.' '.$turn);
         $ranked = [];
         foreach ($careerContext['facts'] as $fact) {
-            $score = count(array_intersect($terms, $this->terms($fact->approvedAssertion())));
-            if ($score > 0) {
+            $overlap = array_values(array_intersect($terms, $this->terms($fact->approvedAssertion())));
+            $score = count($overlap);
+            if ($this->hasSubstantiveOverlap($overlap)) {
                 $ranked[] = ['fact' => $fact, 'score' => $score];
             }
         }
@@ -116,12 +123,22 @@ class VacancyChatContextBuilder
                 ...array_reverse($history), ['role' => 'user', 'content' => $turn]]];
     }
 
+    /** @param list<string> $overlap */
+    private function hasSubstantiveOverlap(array $overlap): bool
+    {
+        return count($overlap) >= 2
+            || (count($overlap) === 1 && in_array($overlap[0], self::SINGLE_TOKEN_TECHNOLOGY_TERMS, true));
+    }
+
     /** @return list<string> */
     private function terms(string $text): array
     {
         preg_match_all('/[\p{L}\p{N}+#.]{2,}/u', mb_strtolower($text), $matches);
 
-        $terms = array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS);
+        $terms = array_map(
+            static fn (string $term): string => trim($term, '.'),
+            array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS),
+        );
 
         return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1));
     }
