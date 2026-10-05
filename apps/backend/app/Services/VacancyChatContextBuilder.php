@@ -16,6 +16,10 @@ class VacancyChatContextBuilder
 {
     public const MAX_SOURCE_CHARACTERS = 25000;
 
+    private const MAX_HISTORY_CHARACTERS = 12000;
+
+    private const MAX_HISTORY_MESSAGES = 12;
+
     private const SINGLE_TOKEN_TECHNOLOGY_TERMS = [
         'api', 'aws', 'c', 'c#', 'c++', 'css', 'gcp', 'git', 'go', 'html', 'java', 'js', 'kotlin',
         'laravel', 'linux', 'mysql', 'node.js', 'php', 'postgresql', 'python', 'react', 'redis', 'ruby',
@@ -82,16 +86,38 @@ class VacancyChatContextBuilder
             $facts[] = ['id' => (string) $fact->id, 'statement' => $assertion, 'status' => 'CONFIRMED'];
         }
         $history = [];
-        $historyBudget = 12000;
-        foreach (($thread instanceof Vacancy ? collect() : VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)
-            ->where('status', 'COMPLETED')->orderByDesc('id')->limit(12)->get()) as $message) {
-            $size = mb_strlen($message->content);
-            if ($size > $historyBudget) {
+        $historyBudget = self::MAX_HISTORY_CHARACTERS;
+        $turns = $thread instanceof Vacancy
+            ? collect()
+            : VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)
+                ->where('status', 'COMPLETED')->whereNotNull('run_id')->orderByDesc('id')->limit(self::MAX_HISTORY_MESSAGES * 2)->get()
+                ->groupBy('run_id')->sortByDesc(static fn ($messages): string => (string) $messages->max('id'));
+
+        foreach ($turns as $messages) {
+            $userMessage = $messages->firstWhere('role', 'user');
+            $assistantMessage = $messages->firstWhere('role', 'assistant');
+            if ($userMessage === null || $assistantMessage === null) {
+                continue;
+            }
+
+            $userContent = (string) $userMessage->content;
+            $assistantContent = (string) $assistantMessage->content;
+            $userSize = mb_strlen($userContent);
+            if ($userSize >= $historyBudget) {
                 break;
             }
-            $historyBudget -= $size;
-            $history[] = ['role' => $message->role, 'content' => $message->content];
+
+            $assistantBudget = $historyBudget - $userSize;
+            $history[] = [
+                ['role' => 'user', 'content' => $userContent],
+                ['role' => 'assistant', 'content' => mb_substr($assistantContent, 0, $assistantBudget)],
+            ];
+            $historyBudget -= $userSize + min(mb_strlen($assistantContent), $assistantBudget);
+            if (mb_strlen($assistantContent) > $assistantBudget) {
+                break;
+            }
         }
+        $history = array_reverse(array_merge([], ...$history));
         $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
             ->forCareerSignature($careerSignature)->deterministicLatest()->first();
         $employer = [];

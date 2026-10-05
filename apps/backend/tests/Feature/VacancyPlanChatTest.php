@@ -74,6 +74,24 @@ class VacancyPlanChatTest extends TestCase
         $this->assertNotNull($draft->fresh()->approved_analysis_id);
     }
 
+    public function test_history_keeps_the_latest_user_and_assistant_turn_when_the_response_exceeds_the_budget(): void
+    {
+        [$user, $vacancy] = $this->fixture('history-budget');
+        $service = app(VacancyChatService::class);
+        $this->provider->text = str_repeat('A', 12001);
+        $turn = $this->beginTurn($user, $vacancy, 'history-turn', 'first question', false);
+        iterator_to_array($service->stream($user, $turn));
+
+        $preview = $service->preview($user, $vacancy->id, 'follow-up question', false);
+        $history = array_slice($preview['input'], 1, -1);
+
+        $this->assertSame(['user', 'assistant'], array_column($history, 'role'));
+        $this->assertSame('first question', $history[0]['content']);
+        $this->assertStringStartsWith(str_repeat('A', 100), $history[1]['content']);
+        $this->assertLessThan(12001, mb_strlen($history[1]['content']));
+        $this->assertLessThanOrEqual(12000, array_sum(array_map(static fn (array $message): int => mb_strlen($message['content']), $history)));
+    }
+
     public function test_handcrafted_api_request_rejects_a_valid_slug_missing_from_the_owned_catalog(): void
     {
         [$user, $vacancy] = $this->fixture('unknown-model');

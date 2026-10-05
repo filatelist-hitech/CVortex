@@ -542,6 +542,34 @@ class McpGatewayTest extends TestCase
         $this->assertTrue($context['context_truncated']);
     }
 
+    public function test_completed_context_returns_the_signature_of_the_fact_snapshot(): void
+    {
+        [$user, $vacancyId] = $this->vacancy('mcp-context-snapshot@example.test');
+        $snapshotSignature = str_repeat('b', 64);
+        $analysisSignature = str_repeat('a', 64);
+        $chatContext = \Mockery::mock(VacancyChatContextBuilder::class);
+        $chatContext->shouldReceive('build')->once()->andReturn([
+            'career_signature' => $snapshotSignature,
+            'input' => [['role' => 'user', 'content' => json_encode([
+                'confirmed_facts' => [['id' => 'snapshot-fact', 'statement' => 'Snapshot fact', 'status' => 'CONFIRMED']],
+                'vacancy' => ['source_truncated' => false],
+            ], JSON_THROW_ON_ERROR)]],
+        ]);
+        $builder = \Mockery::mock(ApplicationContextBuilder::class);
+        $builder->shouldReceive('build')->once()->andReturn([
+            'requirements' => [], 'claims' => [], 'career_signature' => $analysisSignature,
+        ]);
+        $this->app->instance(McpApplicationAdapter::class, new McpApplicationAdapter(
+            app(DatabaseOwnerContext::class), $builder, app(VacancyMatchingService::class), $chatContext,
+        ));
+
+        $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))
+            ->assertOk()->json('result.structuredContent');
+
+        $this->assertSame($snapshotSignature, $context['career_signature']);
+        $this->assertSame(['snapshot-fact'], array_column($context['confirmed_facts'], 'id'));
+    }
+
     public function test_oauth_consent_uses_the_cvortex_view(): void
     {
         $user = $this->user('mcp-consent@example.test');
