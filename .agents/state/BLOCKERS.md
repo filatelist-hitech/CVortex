@@ -45,3 +45,5 @@ After the single-letter fix, live review found one follow-up unresolved P1: trai
 ### PR #42 context-token and MCP-signature remediation — 2026-10-05
 
 Live intake on head `76ec21f` found two unresolved threads: duplicate normalized lexical tokens could select an unrelated private fact, and MCP draft saves were not bound to the read-time Career signature. Both are fixed locally with regressions and pass isolated SQLite tests plus lint/static checks. The persistent local PostgreSQL test harness remains unavailable to RefreshDatabase under its current non-owner runtime role; CI/remote checks and thread delivery remain pending.
+
+Delivery update: commit `c0f7a3a9259f60d14b4dc1ecd588843f9443a166` is pushed; both threads were answered and resolved, with live unresolved count zero. `PR contract` passed. `Roadmap metadata` and `m0-quality` remained pending at the last observation; no merge was performed.
