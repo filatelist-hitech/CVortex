@@ -303,6 +303,19 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('medical sales', json_encode($context['input']));
     }
 
+    public function test_context_deduplicates_terms_after_punctuation_normalization(): void
+    {
+        [$user, $vacancy] = $this->fixture('duplicate-normalized-terms', 'Production support. Deployed to production.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Managed production of medical devices.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([], $data['confirmed_facts']);
+        $this->assertStringNotContainsString('medical devices', json_encode($context['input']));
+    }
+
     public function test_context_does_not_select_a_confirmed_fact_for_generic_russian_vacancy_language(): void
     {
         [$user, $vacancy] = $this->fixture('generic-russian-vacancy-words', 'PHP-разработчик. Опыт работы в команде.');

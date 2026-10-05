@@ -135,10 +135,10 @@ class VacancyChatContextBuilder
     {
         preg_match_all('/[\p{L}\p{N}+#.]+/u', mb_strtolower($text), $matches);
 
-        $terms = array_map(
+        $terms = array_values(array_unique(array_map(
             static fn (string $term): string => trim($term, '.'),
-            array_unique($matches[0]),
-        );
+            $matches[0],
+        )));
         $terms = array_diff($terms, self::NON_DISCRIMINATIVE_TERMS);
 
         return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1

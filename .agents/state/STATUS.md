@@ -834,3 +834,9 @@ Validation: `VacancyPlanChatTest.php` passed (25 tests / 135 assertions); target
 Fixed the follow-up exact-head finding by normalizing and deduplicating punctuation-trimmed terms before applying the non-discriminative vocabulary filter. Added a regression proving sentence-final `developer.` and `experience.` cannot create a two-token generic overlap and transmit an unrelated Career Fact.
 
 Validation: `VacancyPlanChatTest.php` passed (26 tests / 137 assertions); targeted Pint and `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript). The follow-up is ready for commit, push, and reviewer-thread reply.
+
+### PR #42 context-token and MCP-signature remediation — 2026-10-05
+
+Fixed the two current exact-head findings on `76ec21f`: context terms are now normalized, deduplicated, and only then filtered before lexical overlap scoring; MCP `application_context_get` returns the read-time Career signature and `vacancy_analysis_draft_save` requires and verifies that signature before idempotency or persistence. The embedded chat save path passes its completed message signature. Added regressions for duplicate `production`/`production.` normalization and stale MCP context after Career Fact deprecation.
+
+Validation: isolated SQLite `VacancyPlanChatTest.php` plus `McpGatewayTest.php` passed (44 tests / 435 assertions); Pint passed (212 files); PHPStan passed (135 files); frontend ESLint and TypeScript passed; `git diff --check` passed. A direct persistent PostgreSQL RefreshDatabase run was not usable because the configured runtime role is not owner of the disposable test tables; no data or database was modified. Changes remain local pending commit, push, exact-head remote checks, and thread replies/resolution.

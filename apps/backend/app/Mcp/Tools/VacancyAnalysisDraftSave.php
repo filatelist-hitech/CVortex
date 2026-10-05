@@ -33,6 +33,7 @@ class VacancyAnalysisDraftSave extends BoundedTool
         return [
             'vacancy_id' => $schema->string()->pattern('^[0-9a-hjkmnp-tv-z]{26}$')->required(),
             'snapshot_id' => $schema->string()->pattern('^[0-9a-hjkmnp-tv-z]{26}$')->required(),
+            'career_signature' => $schema->string()->pattern('^[a-f0-9]{64}$')->required(),
             'client_request_id' => $schema->string()->pattern('^[A-Za-z0-9_-]{1,128}$')->required(),
             'analysis' => $schema->object([
                 'requirements' => $schema->array()->max(50)->items($schema->object([
@@ -65,11 +66,12 @@ class VacancyAnalysisDraftSave extends BoundedTool
             }
 
             $args = $request->validate(['vacancy_id' => ['required', 'ulid'], 'snapshot_id' => ['required', 'ulid'],
+                'career_signature' => ['required', 'string', 'size:64', 'regex:/\A[a-f0-9]{64}\z/'],
                 'client_request_id' => ['required', 'string', 'max:128'], 'analysis' => ['required', 'array']]);
-            if (count($request->all()) !== 4) {
+            if (count($request->all()) !== 5) {
                 return $this->error('VALIDATION_FAILED');
             }
-            $saved = $service->save($user, $args['vacancy_id'], $args['snapshot_id'], $args['client_request_id'], $args['analysis']);
+            $saved = $service->save($user, $args['vacancy_id'], $args['snapshot_id'], $args['client_request_id'], $args['analysis'], null, $args['career_signature']);
 
             return $this->success(['id' => $saved['id'], 'status' => $saved['status'], 'vacancy_id' => $saved['vacancy_id'],
                 'snapshot_id' => $saved['vacancy_snapshot_id'], 'origin' => $saved['origin']]);

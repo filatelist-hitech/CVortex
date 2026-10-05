@@ -41,3 +41,7 @@ Live intake on head `f4e2f92` found one new unresolved P2: the tokenizer dropped
 ### PR #42 punctuation-normalization remediation — 2026-10-05
 
 After the single-letter fix, live review found one follow-up unresolved P1: trailing punctuation was stripped after generic-term filtering, allowing sentence-final generic tokens through. The order and regression are fixed locally; commit, push, exact-head checks, and reply/resolution remain pending.
+
+### PR #42 context-token and MCP-signature remediation — 2026-10-05
+
+Live intake on head `76ec21f` found two unresolved threads: duplicate normalized lexical tokens could select an unrelated private fact, and MCP draft saves were not bound to the read-time Career signature. Both are fixed locally with regressions and pass isolated SQLite tests plus lint/static checks. The persistent local PostgreSQL test harness remains unavailable to RefreshDatabase under its current non-owner runtime role; CI/remote checks and thread delivery remain pending.

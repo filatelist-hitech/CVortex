@@ -51,6 +51,7 @@ class ApplicationContextGet extends BoundedTool
             'confirmed_facts' => $schema->array()->items($schema->object([
                 'id' => $schema->string()->required(), 'statement' => $schema->string()->required(), 'status' => $schema->string()->required(),
             ])->withoutAdditionalProperties())->required(),
+            'career_signature' => $schema->string()->pattern('^[a-f0-9]{64}$')->required(),
             'untrusted_vacancy_data' => $schema->boolean()->required(),
             'context_truncated' => $schema->boolean()->required(),
         ];

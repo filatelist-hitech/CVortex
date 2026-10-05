@@ -62,6 +62,7 @@ class McpApplicationAdapter
                     'requirements' => [],
                     'confirmed_claims' => [],
                     'confirmed_facts' => $facts,
+                    'career_signature' => $bounded['career_signature'],
                     'untrusted_vacancy_data' => true,
                     'context_truncated' => $sourceTruncated,
                 ];
@@ -84,6 +85,7 @@ class McpApplicationAdapter
             return [
                 'vacancy' => $this->vacancy($user, $vacancyId),
                 'confirmed_facts' => $facts,
+                'career_signature' => $context['career_signature'],
                 'requirements' => array_map(fn (array $item): array => [
                     'id' => $item['id'], 'dimension' => $item['dimension'],
                     'importance' => $item['importance'], 'label' => $item['label'],

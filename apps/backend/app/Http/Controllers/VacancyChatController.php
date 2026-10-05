@@ -91,7 +91,7 @@ class VacancyChatController extends Controller
             throw ValidationException::withMessages(['message_id' => 'This message has no structured analysis. Use Analyze vacancy.']);
         }
 
-        return response()->json(['data' => $this->drafts->save($user, $id, $message->vacancy_snapshot_id, $args['client_request_id'], $analysis, $message->id)]);
+        return response()->json(['data' => $this->drafts->save($user, $id, $message->vacancy_snapshot_id, $args['client_request_id'], $analysis, $message->id, $message->career_signature)]);
     }
 
     public function approve(Request $request, string $id): JsonResponse

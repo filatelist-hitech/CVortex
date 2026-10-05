@@ -94,7 +94,10 @@ class McpGatewayTest extends TestCase
         $snapshot = VacancySnapshot::query()->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
         $before = CareerFact::query()->get()->toArray();
         $analysis = ['requirements' => [], 'matches' => [], 'gaps' => [], 'risks' => [], 'questions' => [], 'recommendations' => ['Review the current evidence.']];
-        $args = ['vacancy_id' => $vacancyId, 'snapshot_id' => $snapshot->id, 'client_request_id' => 'external-request', 'analysis' => $analysis];
+        $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))
+            ->assertOk()->json('result.structuredContent');
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $context['career_signature']);
+        $args = ['vacancy_id' => $vacancyId, 'snapshot_id' => $snapshot->id, 'career_signature' => $context['career_signature'], 'client_request_id' => 'external-request', 'analysis' => $analysis];
         $legacyGrant = $this->mcpRequest($user, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
         $this->assertTrue($legacyGrant->json('result.isError'));
         $this->assertSame('FORBIDDEN', $legacyGrant->json('result.content.0.text'));
@@ -123,6 +126,24 @@ class McpGatewayTest extends TestCase
         $foreign = $this->mcpRequestWithToken($foreignGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
         $this->assertStringContainsString('NOT_FOUND', $foreign->json('result.content.0.text'));
         $this->assertDatabaseCount('vacancy_analysis_drafts', 1);
+    }
+
+    public function test_mcp_draft_save_rejects_a_stale_context_signature(): void
+    {
+        [$user, $vacancyId] = $this->vacancy('mcp-stale-career-signature@example.test');
+        $snapshot = VacancySnapshot::query()->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
+        $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))
+            ->assertOk()->json('result.structuredContent');
+        $fact = CareerFact::query()->where('owner_id', $user->id)->where('status', CareerFact::STATUS_CONFIRMED)->firstOrFail();
+        app(CareerFactService::class)->deprecate($user, $fact);
+        $analysis = ['requirements' => [], 'matches' => [], 'gaps' => [], 'risks' => [], 'questions' => [], 'recommendations' => []];
+        $args = ['vacancy_id' => $vacancyId, 'snapshot_id' => $snapshot->id, 'career_signature' => $context['career_signature'],
+            'client_request_id' => 'stale-career-signature', 'analysis' => $analysis];
+        $writeGrant = $this->token($user, ['mcp:use', McpResource::DRAFT_WRITE_SCOPE])['access_token'];
+        $response = $this->mcpRequestWithToken($writeGrant, $this->mcpCall('vacancy_analysis_draft_save', $args))->assertOk();
+        $this->assertTrue($response->json('result.isError'));
+        $this->assertStringContainsString('VALIDATION_FAILED', $response->json('result.content.0.text'));
+        $this->assertDatabaseCount('vacancy_analysis_drafts', 0);
     }
 
     public function test_mcp_calls_cannot_submit_a_draft_or_use_a_generic_write_tool(): void
@@ -506,6 +527,7 @@ class McpGatewayTest extends TestCase
                     'id' => 'fact-'.$j, 'statement' => 'Fact '.$j,
                 ], range(1, 25)),
             ], range(1, 30)),
+            'career_signature' => str_repeat('a', 64),
         ]);
         $adapter = new McpApplicationAdapter(
             app(DatabaseOwnerContext::class), $builder, app(VacancyMatchingService::class), app(VacancyChatContextBuilder::class),

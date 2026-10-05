@@ -23,12 +23,21 @@ class VacancyAnalysisDraftService
     /** @param array<string, mixed> $analysis
      * @return array<string, mixed>
      */
-    public function save(User $user, string $vacancyId, string $snapshotId, string $requestId, array $analysis, ?string $messageId = null): array
+    public function save(User $user, string $vacancyId, string $snapshotId, string $requestId, array $analysis, ?string $messageId = null,
+        ?string $careerSignature = null): array
     {
-        return $this->owners->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId, $snapshotId, $requestId, $analysis, $messageId): array {
+        return $this->owners->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId, $snapshotId, $requestId, $analysis, $messageId, $careerSignature): array {
             $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
             Validator::make(['client_request_id' => $requestId], ['client_request_id' => ['required', 'string', 'max:128', 'regex:/\A[A-Za-z0-9_-]+\z/D']])->validate();
-            $hash = hash('sha256', json_encode([$snapshotId, $analysis, $messageId], JSON_THROW_ON_ERROR));
+            $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
+            if ((string) $snapshot->id !== $snapshotId) {
+                throw ValidationException::withMessages(['snapshot_id' => 'The vacancy source changed. Analyze the current snapshot.']);
+            }
+            $signature = $this->matching->careerSignature($user);
+            if ($careerSignature !== null && ! hash_equals($careerSignature, $signature)) {
+                throw ValidationException::withMessages(['career_signature' => 'Career evidence changed. Read the current context before saving.']);
+            }
+            $hash = hash('sha256', json_encode([$snapshotId, $signature, $analysis, $messageId], JSON_THROW_ON_ERROR));
             $existing = VacancyAnalysisDraft::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->where('client_request_id', $requestId)->first();
             if ($existing !== null) {
                 if (! hash_equals($existing->payload_hash, $hash)) {
@@ -37,14 +46,9 @@ class VacancyAnalysisDraftService
 
                 return $this->resource($user, $existing);
             }
-            $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
-            if ((string) $snapshot->id !== $snapshotId) {
-                throw ValidationException::withMessages(['snapshot_id' => 'The vacancy source changed. Analyze the current snapshot.']);
-            }
             $requirements = $this->validate($user, $analysis, $snapshot);
             $message = null;
             $run = null;
-            $signature = $this->matching->careerSignature($user);
             if ($messageId !== null) {
                 $message = VacancyChatMessage::query()->where('owner_id', $user->id)->where('role', 'assistant')->where('status', 'COMPLETED')->findOrFail($messageId);
                 $run = VacancyLlmRun::query()->where('owner_id', $user->id)->findOrFail($message->run_id);
