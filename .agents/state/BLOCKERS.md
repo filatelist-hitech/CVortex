@@ -33,3 +33,7 @@ Live intake on head `d063352` found one new unresolved P2: the deprecation endpo
 ### PR #42 latest reviewer remediation — 2026-10-05
 
 Live intake on head `6ab01a6` found two still-open old fixed threads (`login` disclosure and chat cancel OpenAPI) and two new current findings: generic single-token Career Fact overlap and stale read-only MCP threat-model prose. The old fixes remain present; the new fixes pass local targeted tests and full lint. Reply/resolution for all four threads and the new exact-head remote checks remain delivery steps.
+
+### PR #42 single-letter technology remediation — 2026-10-05
+
+Live intake on head `f4e2f92` found one new unresolved P2: the tokenizer dropped single-letter `C` before the explicit technology allowlist could preserve it. The tokenization and regression are fixed locally; push, exact-head checks, and reply/resolution remain pending.

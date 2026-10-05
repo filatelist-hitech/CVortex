@@ -278,6 +278,18 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('team of engineers', json_encode($context['input']));
     }
 
+    public function test_context_keeps_single_letter_c_technology_overlap(): void
+    {
+        [$user, $vacancy] = $this->fixture('single-letter-technology', 'C developer.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'C programming.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
+    }
+
     public function test_context_does_not_select_a_confirmed_fact_for_generic_russian_vacancy_language(): void
     {
         [$user, $vacancy] = $this->fixture('generic-russian-vacancy-words', 'PHP-разработчик. Опыт работы в команде.');

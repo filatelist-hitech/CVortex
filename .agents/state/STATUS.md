@@ -822,3 +822,9 @@ Validation: `CareerCoreTest.php` and `CareerCoreRemediationTest.php` passed (40 
 Reworked Career Fact context selection so a single overlap is accepted only for an explicit technical token; otherwise at least two lexical terms must overlap. Tokenization now trims sentence-ending dots, preserving technical matches such as `PHP.` without allowing generic `production` or `engineer` matches to select private facts. Added regressions for both generic single terms and the technical-token path. Updated the security threat model to describe the actual MCP boundary: two reads plus the separately scoped unapproved draft save.
 
 Validation: `VacancyPlanChatTest.php` passed (24 tests / 134 assertions); targeted Pint and `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript); `git diff --check` passed. The two previously fixed but still-open old threads and the two new findings remain pending reply/resolution after the authorized push.
+
+### PR #42 single-letter technology remediation — 2026-10-05
+
+Fixed the current exact-head finding in Career Fact context tokenization: single-letter tokens are now retained only when they are explicit technical allowlist entries, so `C developer` can match a confirmed `C programming` fact without admitting arbitrary one-character noise. Added a regression for the `C` overlap.
+
+Validation: `VacancyPlanChatTest.php` passed (25 tests / 135 assertions); targeted Pint and `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript); `git diff --check` passed. Changes are ready for push and the reviewer-thread reply after commit.

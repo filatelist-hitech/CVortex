@@ -133,13 +133,14 @@ class VacancyChatContextBuilder
     /** @return list<string> */
     private function terms(string $text): array
     {
-        preg_match_all('/[\p{L}\p{N}+#.]{2,}/u', mb_strtolower($text), $matches);
+        preg_match_all('/[\p{L}\p{N}+#.]+/u', mb_strtolower($text), $matches);
 
         $terms = array_map(
             static fn (string $term): string => trim($term, '.'),
             array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS),
         );
 
-        return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1));
+        return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1
+            && (mb_strlen($term) >= 2 || in_array($term, self::SINGLE_TOKEN_TECHNOLOGY_TERMS, true))));
     }
 }
