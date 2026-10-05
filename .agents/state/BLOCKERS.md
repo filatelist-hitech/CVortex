@@ -37,3 +37,7 @@ Live intake on head `6ab01a6` found two still-open old fixed threads (`login` di
 ### PR #42 single-letter technology remediation — 2026-10-05
 
 Live intake on head `f4e2f92` found one new unresolved P2: the tokenizer dropped single-letter `C` before the explicit technology allowlist could preserve it. The tokenization and regression are fixed locally; push, exact-head checks, and reply/resolution remain pending.
+
+### PR #42 punctuation-normalization remediation — 2026-10-05
+
+After the single-letter fix, live review found one follow-up unresolved P1: trailing punctuation was stripped after generic-term filtering, allowing sentence-final generic tokens through. The order and regression are fixed locally; commit, push, exact-head checks, and reply/resolution remain pending.

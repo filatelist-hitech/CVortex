@@ -137,8 +137,9 @@ class VacancyChatContextBuilder
 
         $terms = array_map(
             static fn (string $term): string => trim($term, '.'),
-            array_diff(array_unique($matches[0]), self::NON_DISCRIMINATIVE_TERMS),
+            array_unique($matches[0]),
         );
+        $terms = array_diff($terms, self::NON_DISCRIMINATIVE_TERMS);
 
         return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1
             && (mb_strlen($term) >= 2 || in_array($term, self::SINGLE_TOKEN_TECHNOLOGY_TERMS, true))));

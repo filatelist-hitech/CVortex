@@ -828,3 +828,9 @@ Validation: `VacancyPlanChatTest.php` passed (24 tests / 134 assertions); target
 Fixed the current exact-head finding in Career Fact context tokenization: single-letter tokens are now retained only when they are explicit technical allowlist entries, so `C developer` can match a confirmed `C programming` fact without admitting arbitrary one-character noise. Added a regression for the `C` overlap.
 
 Validation: `VacancyPlanChatTest.php` passed (25 tests / 135 assertions); targeted Pint and `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript); `git diff --check` passed. Changes are ready for push and the reviewer-thread reply after commit.
+
+### PR #42 punctuation-normalization remediation — 2026-10-05
+
+Fixed the follow-up exact-head finding by normalizing and deduplicating punctuation-trimmed terms before applying the non-discriminative vocabulary filter. Added a regression proving sentence-final `developer.` and `experience.` cannot create a two-token generic overlap and transmit an unrelated Career Fact.
+
+Validation: `VacancyPlanChatTest.php` passed (26 tests / 137 assertions); targeted Pint and `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript). The follow-up is ready for commit, push, and reviewer-thread reply.
