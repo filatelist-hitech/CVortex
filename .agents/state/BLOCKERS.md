@@ -25,3 +25,7 @@ Live PR #42 head is now `427678f`; two fresh unresolved threads are pending remo
 ### PR #42 latest two-comment remediation — 2026-10-04
 
 Live intake on head `8a79258` found two current unresolved P2 threads: OAuth login under-disclosed the separate draft-write capability, and the OpenAPI contract omitted `POST /vacancies/{id}/chat/cancel`. Both are fixed locally and passed targeted regression, full lint, OpenAPI contract parsing and diff checks. The remaining delivery steps are the authorized push, fresh exact-head remote checks, and replies/resolution for only these two fixed threads.
+
+### PR #42 latest Codex reviewer remediation — 2026-10-05
+
+Live intake on head `d063352` found one new unresolved P2: the deprecation endpoint returned the original pre-lock Career Fact instance after persisting the transition. The transaction now returns its locked instance and a response regression passes locally. Remaining delivery steps are push, fresh exact-head checks, and reply/resolution for this fixed thread only.

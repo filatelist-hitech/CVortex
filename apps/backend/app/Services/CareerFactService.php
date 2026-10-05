@@ -130,7 +130,7 @@ class CareerFactService
             throw ValidationException::withMessages(['action' => 'Only confirmed facts may be deprecated.']);
         }
         try {
-            DB::transaction(function () use ($fact, $user): void {
+            $fact = DB::transaction(function () use ($fact, $user): CareerFact {
                 User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $fact = CareerFact::query()->whereKey($fact->id)->where('owner_id', $user->id)->lockForUpdate()->firstOrFail();
                 if ($fact->status !== CareerFact::STATUS_CONFIRMED) {
@@ -140,6 +140,8 @@ class CareerFactService
                 Claim::query()->whereIn('id', ClaimEvidence::query()->where('career_fact_id', $fact->id)->pluck('claim_id'))
                     ->update(['truth_status' => TruthGuard::BLOCK]);
                 $this->audit->record('career_fact.deprecated', 'USER', $user, CareerFact::class, $fact->id);
+
+                return $fact;
             });
         } catch (QueryException) {
             throw new SafeCareerException;

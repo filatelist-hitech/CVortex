@@ -505,7 +505,11 @@ class CareerCoreTest extends TestCase
         $this->assertSame(CareerFact::STATUS_REJECTED, $reject->fresh()->status);
         $this->assertDatabaseHas('claims', ['owner_id' => $user->id, 'statement' => 'Human-approved wording.', 'truth_status' => TruthGuard::PASS]);
         $this->assertStringNotContainsString('Original wording.', \DB::table('audit_events')->pluck('metadata')->map(fn ($value) => json_encode($value))->implode('|'));
-        $service->deprecate($user, $confirm->fresh());
+        $deprecateResponse = $this->actingAs($user)->patchJson('/api/v1/career/facts/'.$confirm->id.'/deprecate')
+            ->assertOk()
+            ->assertJsonPath('data.status', CareerFact::STATUS_DEPRECATED)
+            ->assertJsonPath('data.reviewed_by', $user->id);
+        $this->assertNotNull($deprecateResponse->json('data.reviewed_at'));
         $this->assertSame(CareerFact::STATUS_DEPRECATED, $confirm->fresh()->status);
         $this->assertDatabaseHas('claims', ['statement' => 'Confirmed wording.', 'truth_status' => TruthGuard::BLOCK]);
 

@@ -810,3 +810,9 @@ Locally fixed the two new unresolved findings on exact PR head `427678f`: Russia
 Fixed the two current unresolved P2 findings on exact PR head `8a79258`: OAuth login now discloses the separately gated creation of unapproved vacancy-analysis drafts, and `docs/05-API/chatgpt-plan.openapi.yaml` documents `POST /vacancies/{id}/chat/cancel`, including required `client_request_id` and the `{cancelled: boolean}` response. Added a login-view regression for the disclosure. Local self-review found no unrelated changes or ownership/security-scope changes.
 
 Validation: `McpGatewayTest.php` and `VacancyPlanChatTest.php` passed together (39 tests / 420 assertions); targeted Pint passed; `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript); OpenAPI cancel contract parsing and `git diff --check` passed. Changes are prepared for the authorized push; exact-head remote checks and thread replies remain delivery steps.
+
+### PR #42 latest Codex reviewer remediation — 2026-10-05
+
+Fixed the current exact-head finding in `CareerFactService::deprecate()`: the locked, persisted Career Fact is now returned from the transaction, so `PATCH /career/facts/{id}/deprecate` reports `DEPRECATED`, the reviewing owner, and the persisted review timestamp instead of stale pre-transaction state. Added an endpoint regression covering the response contract. Local self-review found no unrelated changes.
+
+Validation: `CareerCoreTest.php` and `CareerCoreRemediationTest.php` passed (40 tests / 347 assertions); targeted Pint passed; `make lint` passed (Pint 212 files, PHPStan 135 files, ESLint and TypeScript); `git diff --check` passed. Changes are ready for the authorized push; exact-head remote checks and the reviewer-thread reply remain delivery steps.
