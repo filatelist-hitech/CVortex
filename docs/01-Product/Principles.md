@@ -3,7 +3,7 @@ title: Principles
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags:
   - product
   - engineering
@@ -75,7 +75,7 @@ Markdown in Git is the canonical documentation format and also serves as the Obs
 
 ## 12. Design-system-driven UI
 
-Figma is the visual source of truth. UI implementation should follow the approved CVortex design system rather than developing a parallel visual language in code.
+Under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), Git-reviewed design documentation and executable references define interface intent; Git-held DTCG tokens remain the sole machine-value authority. Figma is optional. UI implementation follows the existing design system and selected Application Workspace direction; rendered output and screenshots require review rather than silently creating another authority.
 
 ## 13. Security-first handling of external content
 

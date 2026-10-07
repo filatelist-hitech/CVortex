@@ -3,7 +3,7 @@ title: Phase 05 Architecture Baseline
 status: accepted
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [architecture, baseline, phase-05]
 related:
   - "[[../03-ADR/INDEX|Architecture Decision Index]]"
@@ -50,7 +50,7 @@ The baseline is a modular Laravel application in an incremental monorepo, backed
 5. **API-first:** clients share the backend contract; business rules do not exist only in frontend code.
 6. **Deterministic before AI:** schemas, rules, state transitions and validators enforce what can be enforced deterministically.
 7. **Provider independence:** Provider, ModelPolicy, Skill, Agent, Workflow, Tool, Prompt and ContextBuilder remain separate. Provider/model mapping is mutable configuration.
-8. **Documentation and design:** Git Markdown is the durable knowledge source and Obsidian is an interface. Figma is the reviewed visual authority; Git-held DTCG tokens are the sole machine-readable token authority.
+8. **Documentation and design:** Git Markdown is the durable knowledge source and Obsidian is an interface. ADR-0024 defines Git-reviewed behavior and executable visual references; Figma is optional. Git-held DTCG tokens remain the sole machine-readable token authority under ADR-0014.
 
 ## Architectural boundaries accepted for Phase 06
 
@@ -70,7 +70,7 @@ The baseline is a modular Laravel application in an incremental monorepo, backed
 | `research/PHASE-04-SUMMARY.md` records the then-current missing-Phase-03 blocker. | Preserve it as historical research context; later verified state explicitly reconciles the sequence. No research history is rewritten. |
 | `research/RESEARCH-INDEX.md` repeated the obsolete blocker as current navigation state. | Update only the index status/navigation to the reconciled sequence and Phase 06 readiness; preserve all underlying research artifacts and conclusions. |
 
-No accepted ADR existed before Phase 05, so no accepted decision required supersession.
+No accepted ADR existed before Phase 05, so its original reconciliation required no supersession. On 2026-10-08, [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) explicitly superseded ADR-0013 for the selected Application Workspace direction and amended ADR-0014's Figma role; API/domain/data/security boundaries remain unchanged.
 
 ## Deferred, not blocking Phase 06
 

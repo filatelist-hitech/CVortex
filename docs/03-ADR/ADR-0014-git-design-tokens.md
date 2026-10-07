@@ -4,12 +4,16 @@ status: accepted
 decision_nature: RESEARCH_BACKED_DECISION
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [architecture, design, tokens, dtcg]
-related: [ADR-0006, ADR-0013]
+related: [ADR-0006, ADR-0013, ADR-0024]
 ---
 
 # ADR-0014 — Git-held DTCG Tokens as Machine-readable Canonical Source
+
+## Amendment — 2026-10-08
+
+[ADR-0024](ADR-0024-git-design-reference-workflow.md) supersedes ADR-0013 and replaces the Figma-role statements in the original evaluation below. This ADR remains accepted: Git-held DTCG tokens are the sole machine-readable authority, outputs are derived, synchronization is explicit and drift-detectable, and builds do not need Figma. Required visual references/review now follow the Git workflow; optional Figma representations are derived views with no canvas-parity gate. Historical options, comparison and consequences below describe the 2026-09-12 decision context.
 
 ## Context
 

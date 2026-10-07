@@ -1,15 +1,17 @@
 ---
 title: ADR-0013 — Figma as the Reviewed Visual Source of Truth
-status: accepted
+status: superseded
 decision_nature: OWNER_CONSTRAINT
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [architecture, design, figma, accessibility]
-related: [ADR-0014]
+related: [ADR-0014, ADR-0024]
 ---
 
 # ADR-0013 — Figma as the Reviewed Visual Source of Truth
+
+> Superseded on 2026-10-08 by [ADR-0024](ADR-0024-git-design-reference-workflow.md), following the owner-selected Concept B and confirmed Figma access constraint. The original decision below is retained as history; it is no longer a required visual authority or review gate.
 
 ## Context
 
@@ -78,4 +80,4 @@ None.
 
 ## Superseded By
 
-None.
+[ADR-0024 — Git-reviewed Design References for Application Workspace](ADR-0024-git-design-reference-workflow.md).

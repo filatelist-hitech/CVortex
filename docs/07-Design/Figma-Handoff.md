@@ -1,9 +1,9 @@
 ---
 title: CVortex Figma Bootstrap and Token Handoff
-status: completed
+status: superseded
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [design, figma, tokens, handoff, phase-07]
 related:
   - "[[Design-Foundation]]"
@@ -12,6 +12,8 @@ related:
 ---
 
 # CVortex Figma Bootstrap and Token Handoff
+
+> **Historical / superseded on 2026-10-08.** [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) replaces the mandatory Figma workflow. Use [Design Handoff](Design-Handoff.md) for current authority/review. The original file record, capability outcome and bootstrap instructions below are preserved as dated history; they are not current implementation requirements. Optional Figma work is outside the reconciliation task.
 
 ## Capability outcome
 

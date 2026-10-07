@@ -3,7 +3,7 @@ title: Карта документации
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-10-03
+updated: 2026-10-08
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
@@ -42,7 +42,10 @@ related:
 - [[../04-Data/M1-2-Career-Core|M1.2: факты о карьере]], [[../04-Data/M1-3-Vacancy-Core|M1.3: вакансии]] и [[../04-Data/M1-4-Application-Draft|M1.4: черновики отклика]]: структура данных, API и правила проверки.
 - [[../04-Data/Diagnostics|Модель диагностики]] и [[../05-API/diagnostics.openapi.yaml|контракт API диагностики]].
 - [[../06-AI/Phase-06-AI-Design|Проектирование работы с ИИ]], [[../08-Security/Threat-Model|модель угроз]] и [[../07-Design/Design-Foundation|основы дизайна]].
-- [[../07-Design/Figma-Handoff|Передача макетов из Figma]]: источник дизайна, порядок передачи и известные ограничения проверки.
+- [Application Workspace](../07-Design/Application-Workspace.md): выбранный Concept B, IA, evidence/AI/employer interaction и mobile navigation.
+- [Design Handoff](../07-Design/Design-Handoff.md): актуальный Git source-of-truth workflow, токены и visual review.
+- [Concept B Reconciliation](../07-Design/Concept-B-Reconciliation.md): traceable decision matrix, browser evidence, token ledger и bounded frontend roadmap.
+- [[../07-Design/Figma-Handoff|Исторический Figma handoff]]: superseded; dated capability/evidence record, вспомогательный инструмент.
 - [[../03-ADR/INDEX|Указатель архитектурных решений]]: список принятых архитектурных решений.
 
 ## Разделы документации
