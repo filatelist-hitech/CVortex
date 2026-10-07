@@ -3,7 +3,7 @@ title: Local ChatGPT Plan Vacancy Chat
 status: active
 owner: project
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-08
 tags: [operations, chatgpt, oauth, vacancies]
 related: [../03-ADR/ADR-0023-chatgpt-plan-chat.md, ../02-Architecture/MCP-Gateway.md]
 ---
@@ -42,4 +42,4 @@ OAuth attempts use encrypted expiring cache entries, state, nonce and S256 PKCE.
 
 ## Evidence boundary
 
-Mocked provider tests establish request contracts, model-policy/catalog enforcement, connection isolation and failure behavior; PostgreSQL harness establishes RLS, composite owner relations, token rotation serialization, draft idempotency and concurrent approval. Live browser verification is recorded separately in the task evidence. Neither a model appearing in the catalog nor a successful greeting proves vacancy/draft acceptance. Product Figma parity and an external client's refreshed tool cache must be verified separately.
+Mocked provider tests establish request contracts, model-policy/catalog enforcement, connection isolation and failure behavior; PostgreSQL harness establishes RLS, composite owner relations, token rotation serialization, draft idempotency and concurrent approval. Live browser verification is recorded separately in the task evidence. Neither a model appearing in the catalog nor a successful greeting proves vacancy/draft acceptance. Product visual/reference parity under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) and an external client's refreshed tool cache must be verified separately; Figma parity is no longer a required design gate.

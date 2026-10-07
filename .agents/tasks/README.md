@@ -32,6 +32,10 @@ Only the task named by `NEXT.md` is executable.
 
 M2–M6 implementation detail stays at roadmap level until the previous value checkpoint is validated. After Preview 0.1, the bounded M2 planning task may define the next implementation contract; do not pre-expand later milestones into giant execution specs.
 
+## Current bounded design override
+
+The owner-selected Concept B reconciliation changes NEXT to `application-workspace-reference-foundation.md` (B01): one token-derived normalized local reference and review manifest. It does not complete Preview 0.1 or authorize M2/backend/product implementation. Conditional later frontend outcomes live in `docs/07-Design/Concept-B-Reconciliation.md`, not executable task specs.
+
 ## Legacy phase specs
 
 The previous horizontal Phase 08–12 plan is preserved under `.agents/tasks/legacy/` as requirement inventory and historical evidence.

@@ -3,14 +3,14 @@ title: Error Center UX specification
 status: draft
 owner: project
 created: 2026-09-28
-updated: 2026-09-29
+updated: 2026-10-08
 tags: [design, diagnostics, accessibility]
-related: ["[[Design-Foundation]]", "[[Figma-Handoff]]", "[[../03-ADR/ADR-0022-local-diagnostics|ADR-0022]]"]
+related: ["[[Design-Foundation]]", "[[Design-Handoff]]", "[[../03-ADR/ADR-0022-local-diagnostics|ADR-0022]]"]
 ---
 
 # Error Center UX
 
-The admin task is to identify the failed operation, reason, impact, retry decision and next action without opening a trace. The design follows `Problem → Cause → Impact → Action → Correlation → Technical details`. Figma [CVortex Design System](https://www.figma.com/design/2D7jymN0KxoUMUodh6v8Hd) contains a draft `04 Error Center · draft` page with desktop and mobile incident detail patterns. The file previously had no screen, component or variable content. This proposal is not a human-reviewed Figma baseline; Git tokens remain authoritative for machine values.
+The admin task is to identify the failed operation, reason, impact, retry decision and next action without opening a trace. The design follows `Problem → Cause → Impact → Action → Correlation → Technical details`. Figma [CVortex Design System](https://www.figma.com/design/2D7jymN0KxoUMUodh6v8Hd) contains a draft `04 Error Center · draft` page with desktop and mobile incident detail patterns. The file previously had no screen, component or variable content. That dated canvas record is not a human-reviewed baseline. Under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), the saved specification and reviewed executable references/components define visual intent; Git tokens remain authoritative for machine values. Figma is optional.
 
 ## Data audit
 
@@ -58,7 +58,7 @@ Mobile:   Search
           Technical details at the end
 ```
 
-The one strong visual moment is the decision panel. Repeated equal-weight cards would bury the action. The design deliberately uses quiet dividers for context and occurrence rows. The Figma draft is an implementation proposal; visual comparison and human review are still needed before it becomes approved visual authority.
+The one strong visual moment is the decision panel. Repeated equal-weight cards would bury the action. The design deliberately uses quiet dividers for context and occurrence rows. The historical Figma draft remains an auxiliary proposal. Human visual review follows [Design Handoff](Design-Handoff.md); no Figma approval/parity gate remains.
 
 ## Visual evidence
 
@@ -68,9 +68,9 @@ The implementation was checked at 1440 px desktop, 820 px tablet and 390 px mobi
 - [Desktop detail](evidence/error-center-desktop-detail.png)
 - [Mobile detail](evidence/error-center-mobile-detail.png)
 
-The Figma draft was created before implementation. Figma's Starter-plan call limit prevented a final screenshot and alignment pass, so the saved design specification and browser screenshots record the finished presentation pending Figma review.
+The Figma draft was created before implementation. Figma's Starter-plan call limit prevented a final screenshot and alignment pass, so the saved specification and browser screenshots record the implemented presentation; their original evidence limits remain. The current review workflow is Design Handoff.
 
-Figma visual verification pending due tool/plan limitation.
+Historical Figma visual verification was unavailable due tool/plan limitation. This is no longer a required gate under ADR-0024; current human visual/accessibility review remains explicitly recorded rather than inferred from screenshots.
 
 Remediation browser evidence uses synthetic data and the production frontend build. List, filter disclosure and detail were exercised at every requested width; the run also covered exact-action retry, status success/failure, keyboard detail focus, search-plus-filter empty state and no horizontal overflow:
 
@@ -80,6 +80,10 @@ Remediation browser evidence uses synthetic data and the production frontend bui
 | 1280 px | [List](evidence/error-center-remediation-1280-list.png) | [Filters](evidence/error-center-remediation-1280-filters.png) | [Detail](evidence/error-center-remediation-1280-detail.png) |
 | 820 px | [List](evidence/error-center-remediation-820-list.png) | [Filters](evidence/error-center-remediation-820-filters.png) | [Detail](evidence/error-center-remediation-820-detail.png) |
 | 390 px | [List](evidence/error-center-remediation-390-list.png) | [Filters](evidence/error-center-remediation-390-filters.png) | [Detail](evidence/error-center-remediation-390-detail.png) |
+
+## Application Workspace reconciliation
+
+Keep decision-first diagnostics, admin-only `/diagnostics`, deterministic causes, safe correlation, exact-operation retry and existing keyboard/cooldown rules. Diagnostics is a Settings utility, not application context/provenance. User-facing operation failures remain inline in the selected workspace, with Problem → Cause → Impact → Action and a safe reference; no raw trace in the context inspector. Navigation placement can change only in a bounded shell task without weakening route/server authorization.
 
 ## Safe content rules
 

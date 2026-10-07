@@ -3,7 +3,7 @@ title: Glossary
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags:
   - product
   - glossary
@@ -33,6 +33,9 @@ This glossary defines product language for early project phases. Later architect
 | **Employer Memory** | Employer-specific context containing prior vacancies, applications, claims, conversations, salary expectations, work-format statements, interviews, and related history. |
 | **Employer Consistency Check** | Validation step that compares new employer-facing content with confirmed prior statements to the same employer and surfaces or blocks meaningful contradictions. |
 | **Vacancy** | Normalized job opportunity being evaluated by the user. |
+| **Opportunity** | UI working context for a saved Vacancy and its related preparation/Application when one exists. It is not a new persisted entity or lifecycle; a saved vacancy can have no Application yet. |
+| **Application Workspace** | Contextual presentation for one Opportunity: work surface, requirements/match/materials/employer/history sections and an optional evidence inspector. Current ApplicationPreparation is not a sent Application. |
+| **Employers** | Global UI destination for Company references plus the current owner's confirmed employer context. Imported company name alone does not establish a safe employer-memory association. |
 | **Vacancy Source** | Origin of vacancy data, such as pasted text, uploaded file, approved URL source, or a later browser integration. |
 | **Vacancy Snapshot** | Preserved source representation of a vacancy at a point in time so normalization does not erase the original input. |
 | **Vacancy Requirement** | Normalized responsibility, requirement, preference, constraint, or qualification extracted from a vacancy. |

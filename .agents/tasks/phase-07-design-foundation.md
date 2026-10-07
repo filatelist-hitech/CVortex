@@ -18,6 +18,8 @@ related:
 
 # CVortex — Phase 07: Design Foundation
 
+> Historical completed Phase 07 contract. On 2026-10-08, ADR-0024 superseded mandatory Figma authority/bootstrap and amended ADR-0014's Figma role. Use `docs/07-Design/Design-Handoff.md` and `application-workspace-reference-foundation.md` for the current bounded handoff. Original requirements below remain historical evidence, not authority to restart Figma work.
+
 ## Goal
 
 Создать design foundation CVortex, который станет visual/interaction baseline для последующего Repository Bootstrap и UI implementation, не реализуя business features и не создавая весь frontend application.

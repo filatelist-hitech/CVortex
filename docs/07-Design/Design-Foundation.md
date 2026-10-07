@@ -1,15 +1,17 @@
 ---
 title: CVortex Design Foundation
-status: completed
+status: accepted
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [design, tokens, accessibility, responsive, phase-07]
 related:
   - "[[../03-ADR/ADR-0013-figma-visual-source|ADR-0013]]"
   - "[[../03-ADR/ADR-0014-git-design-tokens|ADR-0014]]"
   - "[[../01-Product/Phase-06-Product-Design|Phase 06 Product Design]]"
-  - "[[Figma-Handoff]]"
+  - "[[Design-Handoff]]"
+  - "[[Application-Workspace]]"
+  - "[[../03-ADR/ADR-0024-git-design-reference-workflow|ADR-0024]]"
 ---
 
 # CVortex Design Foundation
@@ -18,9 +20,11 @@ related:
 
 **CVortex — Your career, in context.** uses a dark-first, clean technical visual system: deep navy surfaces, cyan/blue/violet accents, and Space Grotesk. The aim is dense, calm review work—not a neon dashboard having an existential crisis.
 
-Authority is deliberately split: [`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) is the sole canonical machine-readable token source (DTCG 2025.10, ADR-0014); reviewed Figma is the visual/component authority (ADR-0013). Frontend outputs are derived later. A design disagreement is resolved by review and a Git-token update, never by silently editing a second token master.
+The selected mental model is **Concept B / Application Workspace**. [Application Workspace](Application-Workspace.md) defines canonical IA, task/evidence/employer interaction and mobile levels. This Foundation remains the one brand/token/accessibility/component system.
 
-This foundation is documentation and tokens only. It does not authorize a frontend, components in code, product screens, or Phase 08.
+[`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) is the sole canonical machine-readable token source (DTCG 2025.10, ADR-0014). Under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), Git-reviewed behavior and executable references define visual intent; Figma is optional. [Design Handoff](Design-Handoff.md) controls reference lifecycle and human review. A disagreement is resolved by reviewing the affected specification/tokens/reference, never by silently editing a second master.
+
+This is an accepted specification, not evidence of production workspace implementation. The bounded reference foundation is the next task; production changes remain separately authorized.
 
 ## Principles and content hierarchy
 
@@ -34,7 +38,7 @@ This foundation is documentation and tokens only. It does not authorize a fronte
 
 ## Token model
 
-The token file contains primitive colors and semantic aliases, then typography, space, radius, shadow, motion, breakpoint and layer scales. Product/UI documentation and future code consume semantic roles (`surface.default`, `text.primary`, `state.blocked`), never literal color values. Primitives are reserved for token definition and reviewed Figma mapping.
+The token file contains primitive colors and semantic aliases, then typography, space, radius, shadow, motion, breakpoint and layer scales. Product/UI documentation and future code consume semantic roles (`surface.default`, `text.primary`, `state.blocked`), never literal color values. Primitives are reserved for token definitions and derived reference/tool mappings. Existing values remain unchanged in reconciliation. The [token ledger](Concept-B-Reconciliation.md#token-reconciliation-ledger) identifies proposed component aliases, no established obsolete tokens and prototype-only literals; new roles require a bounded canonical token update.
 
 ### Color and contrast
 
@@ -44,7 +48,7 @@ Normal text must meet WCAG AA contrast of **4.5:1** against its actual opaque ba
 
 ### Typography
 
-`font.family.brand` is `Space Grotesk` with system fallbacks; no self-hosting or distribution right is assumed. Phase 08 must confirm acquisition, licence and loading strategy before shipping a font file.
+`font.family.brand` is `Space Grotesk` with system fallbacks; no self-hosting or distribution right is assumed. The first production asset task must confirm acquisition, licence, language coverage and loading strategy before shipping a font file. The licensed research font is not automatically approved for production.
 
 `font.tracking` uses DTCG `dimension` values in `rem` (`-0.02rem`, `0rem`, `0.02rem`) and must be emitted directly as CSS `letter-spacing`; no implicit unit conversion is permitted.
 
@@ -63,13 +67,13 @@ Never use text below 12 px. Reduce display hierarchy on compact screens before r
 
 ### Iconography
 
-Use [Lucide](https://lucide.dev/) as the single upstream icon source. It supplies consistent SVG outlines under the ISC licence; Phase 07 installs no package or copied icon asset, and Phase 08 must pin the compatible package version before code consumption. Do not mix icon families or draw ad-hoc substitutes for an existing Lucide icon.
+Use [Lucide](https://lucide.dev/) as the single upstream icon source. It supplies consistent SVG outlines under the ISC licence; The foundation installs no package or copied icon asset; a bounded production component task must pin a compatible package before code consumption. Do not mix icon families or draw ad-hoc substitutes for an existing Lucide icon.
 
 - Use the 24 × 24 viewBox and 2 px stroke with round line caps/joins. Default rendered sizes are 16 px in dense table metadata, 20 px beside controls and body text, and 24 px for standalone icon buttons; use 32 px only for empty/error-state illustration accents.
 - Icons inherit semantic `currentColor`; do not give them literal colors, gradients, or a state meaning that is unavailable in accompanying text. Keep their visual weight at 2 px across sizes; do not mix filled and outline variants in one control group.
 - A decorative icon is `aria-hidden`, non-focusable, and has adjacent text that carries the meaning. An informative icon needs an accessible name through its labelled control or visible text; an icon-only button requires an explicit accessible name, tooltip on pointer/keyboard focus, and the normal 44 × 44 px touch target.
 - Status, approval, blocking and provenance icons always appear with their required text label and recovery/action copy. An icon alone never represents confirmation, risk, error, or a destructive action.
-- In Figma, name instances `Icon / Lucide / {Name} / {16|20|24|32}` and preserve the source viewBox/stroke rather than outlining, recolouring, or detaching vectors without a documented exception.
+- If optional Figma tooling is used, name instances `Icon / Lucide / {Name} / {16|20|24|32}` and preserve the source viewBox/stroke rather than outlining, recolouring, or detaching vectors without a documented exception.
 
 ### Layout, shape, motion and layers
 
@@ -81,7 +85,7 @@ Use [Lucide](https://lucide.dev/) as the single upstream icon source. It supplie
 
 ### Responsive PWA strategy
 
-Breakpoints express layout pressure, not named devices: **compact <480**, **tablet ≥768**, **desktop ≥1024**, **wide ≥1440**. Start from one-column, touch-safe mobile PWA composition. At tablet, permit two-column review summaries; at desktop, add persistent navigation and side-by-side evidence; at wide, cap reading measure and retain whitespace rather than stretching tables forever. Important state, approval controls and provenance remain present in every layout; secondary metadata may collapse into disclosure.
+[Application Workspace](Application-Workspace.md#responsive-transformation) refines pane collapse and list → workspace → evidence navigation. The old generic column guidance below is a foundation constraint, not permission to force three panes at 1024 px. Breakpoints express layout pressure, not named devices: **compact <480**, **tablet ≥768**, **desktop ≥1024**, **wide ≥1440**. Start from one-column, touch-safe mobile PWA composition. At tablet, permit two-column review summaries; at desktop, add persistent navigation and side-by-side evidence; at wide, cap reading measure and retain whitespace rather than stretching tables forever. Important state, approval controls and provenance remain present in every layout; secondary metadata may collapse into disclosure.
 
 Target touch controls at least 44×44 CSS px where practical. Desktop density may use compact rows, but must preserve keyboard targets, readable text, and a non-overlapping focus ring. Support 200% zoom/reflow without two-dimensional page scrolling except intrinsically wide data tables, which require an explicit horizontal-scroll affordance and retained headers.
 
@@ -109,12 +113,26 @@ This is a taxonomy, not a production component backlog. All components inherit t
 
 | Group | Foundation set | Requirements |
 | --- | --- | --- |
-| Primitives | Button, IconButton, Link, Input, Textarea, Select/Combobox, Checkbox, Radio, Switch, Badge/Status, Tooltip, Divider, Progress/Spinner/Skeleton | semantic native base where possible; labels, descriptions, errors, disabled/loading state, focus-visible |
+| Primitives | Button, IconButton, Link, Input, Textarea, Select/Combobox, Checkbox, Radio, Switch, Badge, Tooltip, Divider, Progress/Spinner/Skeleton | semantic native base where possible; labels, descriptions, errors, disabled/loading state, focus-visible |
 | Composition / navigation | App shell, top/sidebar navigation, breadcrumbs, tabs, responsive navigation | current location announced; no navigation depends only on icon or hover; command/search surface is deferred until workflow need is confirmed |
 | Data / review | Table/DataGrid, list/card, filter/search controls, diff/before-after, evidence disclosure, recommendation card, confidence/status without fake score, timeline/history, activity/audit | sortable/filterable controls expose state; tables have compact fallback; evidence and status retain labels |
 | Feedback | inline validation, alert/banner, toast, confirmation dialog, blocking error, empty/error/permission-denied/network-offline state | errors identify field/action and recovery; toast is not the sole record of a critical event; modal manages focus |
 
 Domain patterns compose those foundations: Career Fact review shows status, evidence and explicit confirm/reject; vacancy analysis separates raw source, normalized requirement and recommendation; match dimensions list confirmed evidence versus unknown/unconfirmed; resume/cover review uses diff plus provenance and approval; employer conflict and Truth Guard block expose contradiction/evidence and resolution; application timeline marks manual confirmation distinctly. No pattern may imply that an LLM, imported text, or confidence score confirmed a fact.
+
+### Workspace taxonomy extension
+
+Use PascalCase nouns and the existing primitive conventions. This is a scoped taxonomy, not authority to build every named abstraction or rename current screens.
+
+| Level | Names / responsibility | Boundary |
+| --- | --- | --- |
+| Primitive | Existing Button/IconButton/Link, form controls, Badge, Divider, Disclosure, Skeleton | Domain-free semantic/native behavior; use existing tokens. |
+| Component | StatusBadge, PriorityLabel, NextAction, DiffViewer, EvidencePopover | Compose primitives; status/priority/action remain separate. Short popovers never host blockers or approval. |
+| Pattern | WorkspaceShell, WorkspaceNavigation, ContextInspector, EvidencePanel, RecommendationReview, ActivityTimeline | Layout/interaction contracts, selected context, focus/recovery, provenance and exact approval; only factor when reuse justifies it. |
+| Feature component | OpportunityList, ApplicationHeader, RequirementItem, MatchDimension, EmployerMemorySummary | Real domain data/availability, owner/revision scope and exact state mapping. ApplicationHeader labels current vacancy/preparation honestly. |
+| Existing implementation | CareerWorkspace, VacancyWorkspace, ApplicationDraftPanel, VacancyChat, Diagnostics | Current code is the integration baseline; names in this taxonomy do not imply new files or replacement code. |
+
+All levels document normal/loading/empty/failed/stale/blocked and relevant approval/selection states. EmployerMemorySummary is deferred until confirmed association and its domain contract exist. RecommendationReview composes DiffViewer and EvidencePanel; a separate approval gate targets the exact revision. See [Workspace contract](Application-Workspace.md) and [handoff mapping](Design-Handoff.md).
 
 ## Accessibility acceptance baseline
 

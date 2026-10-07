@@ -3,7 +3,7 @@ title: Scope
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-10-03
+updated: 2026-10-08
 tags:
   - product
   - scope
@@ -82,7 +82,11 @@ Scope describes intended product behavior, not a feature-completion checklist. F
 - provider-independent runtime AI;
 - system-managed and BYOK LLM credentials with secure secret handling when the product slice requires them;
 - Git/Markdown/Obsidian documentation;
-- Figma-based design system and Git-held design tokens.
+- Git-reviewed design documentation/executable references and Git-held DTCG tokens; optional Figma tooling under ADR-0024.
+
+## Selected presentation direction — 2026-10-08
+
+[Application Workspace](../07-Design/Application-Workspace.md) is the selected Concept B direction. Global IA is Today / Opportunities / Career / Employers / Settings. Documents and Research become contextual content; Opportunity is a UI projection of Vacancy and any existing preparation/Application, not a new domain entity. This updates presentation intent only: full Employer Memory, conversations, interviews, package export and lifecycle remain conditional on their actual product slices.
 
 ## Explicitly out of scope for initial product behavior
 
@@ -109,7 +113,7 @@ Scope describes intended product behavior, not a feature-completion checklist. F
 The following are no longer pending conceptual questions:
 
 - runtime product AI Skills canonical location is `/runtime-ai/` (ADR-0018);
-- Figma is reviewed visual/component authority and Git-held DTCG tokens are machine-readable authority;
+- ADR-0024 replaces mandatory Figma visual authority with the Git design reference workflow; ADR-0014 retains Git-held DTCG machine-token authority;
 - strict Truth Guard, provider-independent AI, shared-schema ownership, API-first and deterministic document rendering are accepted ADR decisions.
 
 Exact dependency versions, provider/model mappings, pricing and implementation-level thresholds remain freshness-sensitive configuration.

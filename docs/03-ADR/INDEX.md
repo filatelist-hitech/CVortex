@@ -3,7 +3,7 @@ title: Architecture Decision Index
 status: accepted
 owner: project
 created: 2026-09-12
-updated: 2026-09-27
+updated: 2026-10-08
 tags: [architecture, adr, index, phase-05]
 related:
   - "[[../02-Architecture/Architecture-Baseline|Architecture Baseline]]"
@@ -42,7 +42,7 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0010](ADR-0010-provider-independent-llm.md) | Provider-independent LLM Boundary | accepted | OWNER_CONSTRAINT | 2026-09-12 | AI | — | — |
 | [ADR-0011](ADR-0011-logical-model-policy.md) | Logical Capability-based Model Policy | accepted | OWNER_CONSTRAINT | 2026-09-12 | AI / cost | — | — |
 | [ADR-0012](ADR-0012-git-markdown-obsidian.md) | Git Markdown Documentation with Obsidian as Interface | accepted | OWNER_CONSTRAINT | 2026-09-12 | Documentation | — | — |
-| [ADR-0013](ADR-0013-figma-visual-source.md) | Figma as the Reviewed Visual Source of Truth | accepted | OWNER_CONSTRAINT | 2026-09-12 | Design | — | — |
+| [ADR-0013](ADR-0013-figma-visual-source.md) | Figma as the Reviewed Visual Source of Truth | superseded | OWNER_CONSTRAINT | 2026-09-12 | Design | — | ADR-0024 |
 | [ADR-0014](ADR-0014-git-design-tokens.md) | Git-held DTCG Tokens as Machine-readable Canonical Source | accepted | RESEARCH_BACKED_DECISION | 2026-09-12 | Design tokens | — | — |
 | [ADR-0015](ADR-0015-file-storage-abstraction.md) | File Storage Abstraction with Local Initial Backend | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-12 | File storage | — | — |
 | [ADR-0016](ADR-0016-deterministic-document-rendering.md) | Deterministic DOCX-to-PDF Rendering Pipeline | accepted | OWNER_CONSTRAINT | 2026-09-12 | Documents | — | — |
@@ -52,6 +52,8 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0020](ADR-0020-inbound-mcp-gateway.md) | Inbound MCP Gateway as a bounded access channel | superseded | DERIVED_ARCHITECTURAL_DECISION | 2026-09-25 | AI / access | — | ADR-0021 |
 | [ADR-0021](ADR-0021-inbound-mcp-read-only.md) | Read-only inbound MCP surface | accepted | OWNER_CONSTRAINT | 2026-09-27 | AI / access | ADR-0020 | — |
 | [ADR-0022](ADR-0022-local-diagnostics.md) | Local structured diagnostics and grouped incidents | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-27 | Operations / security | — | — |
+| [ADR-0023](ADR-0023-chatgpt-plan-chat.md) | Local CVortex chat using ChatGPT plan usage | accepted | — | 2026-10-04 | AI / access | Amends ADR-0021 draft-write scope | — |
+| [ADR-0024](ADR-0024-git-design-reference-workflow.md) | Git-reviewed Design References for Application Workspace | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-07 | Design / workflow | ADR-0013; amends ADR-0014 Figma role | — |
 
 ## Freeze rule
 
