@@ -77,6 +77,21 @@ class VacancyCoreTest extends TestCase
         $this->assertDatabaseCount('vacancy_snapshots', 2);
     }
 
+    public function test_changed_import_without_company_marker_clears_previous_company(): void
+    {
+        Queue::fake();
+        $user = $this->user('company-refresh@example.test');
+        $service = app(VacancyIngestionService::class);
+        $url = 'https://jobs.example.test/company-refresh';
+
+        $first = $service->queue($user, "Backend Engineer\nCompany: Old Company\nPHP required.", $url);
+        $second = $service->queue($user, "Backend Engineer\nLaravel required.", $url);
+
+        $this->assertSame('Old Company', $first['vacancy']->company);
+        $this->assertNull($second['vacancy']->fresh()->company);
+        $this->assertSame(2, $second['snapshot']->version);
+    }
+
     public function test_historical_content_reappearance_creates_a_new_current_snapshot_version(): void
     {
         Queue::fake();

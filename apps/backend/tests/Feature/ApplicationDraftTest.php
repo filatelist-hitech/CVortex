@@ -30,7 +30,7 @@ class ApplicationDraftTest extends TestCase
     {
         Queue::fake();
         $user = $this->user('draft@example.test');
-        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $careerFact = app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
         $provider = new ApplicationDraftFakeProvider;
         $this->app->instance(LlmProvider::class, $provider);
         $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer at Example. Laravel is required.', null);
@@ -64,6 +64,11 @@ class ApplicationDraftTest extends TestCase
         $data = json_decode($context['input'][0]['content'], true);
         $this->assertTrue($data['employer_memory_available']);
         $this->assertNotEmpty($data['prior_approved_employer_statements']);
+        app(CareerFactService::class)->deprecate($user, $careerFact);
+        $revokedContext = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
+        $revokedData = json_decode($revokedContext['input'][0]['content'], true);
+        $this->assertFalse($revokedData['employer_memory_available']);
+        $this->assertSame([], $revokedData['prior_approved_employer_statements']);
         $queued['vacancy']->update(['company' => null]);
         $emptyContext = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
         $this->assertFalse(json_decode($emptyContext['input'][0]['content'], true)['employer_memory_available']);

@@ -13,6 +13,7 @@ use App\Models\VacancyRequirement;
 use App\Models\VacancySnapshot;
 use App\Services\CareerFactService;
 use App\Services\TrustedCareerQuery;
+use App\Services\TruthGuard;
 use App\Services\VacancyAnalysisDraftService;
 use App\Services\VacancyChatContextBuilder;
 use App\Services\VacancyChatService;
@@ -633,7 +634,7 @@ class VacancyPlanChatTest extends TestCase
 
             return $snapshot;
         });
-        $context = (new VacancyChatContextBuilder($careerQuery, $matching))->build($user, $thread, 'Analyze this role');
+        $context = (new VacancyChatContextBuilder($careerQuery, $matching, app(TruthGuard::class)))->build($user, $thread, 'Analyze this role');
         $data = json_decode($context['input'][0]['content'], true);
 
         $this->assertSame([$fact->id], array_column($data['confirmed_facts'], 'id'));
