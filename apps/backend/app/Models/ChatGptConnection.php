@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property string $client_id
+ * @property int $oauth_generation
  * @property string|null $subject
  * @property string|null $access_token
  * @property string|null $refresh_token
@@ -30,7 +31,8 @@ class ChatGptConnection extends Model
     {
         return [
             'access_token' => 'encrypted', 'refresh_token' => 'encrypted', 'id_token' => 'encrypted',
-            'scopes' => 'array', 'expires_at' => 'immutable_datetime', 'earliest_refresh_at' => 'immutable_datetime',
+            'oauth_generation' => 'integer', 'scopes' => 'array', 'expires_at' => 'immutable_datetime',
+            'earliest_refresh_at' => 'immutable_datetime',
         ];
     }
 }

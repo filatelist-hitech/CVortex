@@ -43,6 +43,7 @@ final class ConnectionService
         Cache::put('chatgpt:attempt:'.hash('sha256', $state), Crypt::encryptString(json_encode([
             'owner_id' => (string) $user->id, 'connection_id' => $connectionId,
             'client_id' => $connection?->client_id, 'nonce' => $nonce, 'verifier' => $verifier,
+            'generation' => $connection?->oauth_generation,
             'callback' => $callback, 'deadline' => time() + 600,
         ], JSON_THROW_ON_ERROR)), 600);
         $parameters = [
@@ -117,8 +118,13 @@ final class ConnectionService
                 ]);
                 $claims = $this->identity->verify($tokens['id_token'] ?? '', $clientId, $attempt['nonce']);
 
-                return DB::transaction(function () use ($user, $connection, $claims, $tokens): ChatGptConnection {
+                return DB::transaction(function () use ($user, $connection, $attempt, $claims, $tokens): ChatGptConnection {
                     $current = $this->owned($user, (string) $connection->id, true);
+                    if ($attempt['connection_id'] !== null
+                        && (($attempt['generation'] ?? null) === null
+                            || (int) $current->oauth_generation !== (int) $attempt['generation'])) {
+                        throw new PlanException('OAUTH_ATTEMPT_INVALIDATED');
+                    }
                     if ($current->subject !== null && ! hash_equals((string) $current->subject, $claims['sub'])) {
                         throw new PlanException('OAUTH_ACCOUNT_MISMATCH');
                     }
@@ -206,6 +212,7 @@ final class ConnectionService
             } catch (Throwable) {
                 $revoked = false;
             }
+            $connection->oauth_generation = (int) $connection->oauth_generation + 1;
             $this->clearTokens($connection, 'NOT_CONNECTED');
 
             return $revoked;

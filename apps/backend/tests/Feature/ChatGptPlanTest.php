@@ -268,6 +268,25 @@ class ChatGptPlanTest extends TestCase
         $this->assertNull($connection->fresh()->access_token);
     }
 
+    public function test_disconnect_invalidates_a_pending_reconnect_callback(): void
+    {
+        $user = $this->user('disconnect-pending');
+        $connection = $this->connection($user);
+        $parameters = $this->parameters($user, $connection->id);
+        $this->fakeOAuth($parameters);
+        Http::fake([config('chatgpt.discovery_url') => Http::response([], 503)]);
+
+        $this->assertFalse(app(ConnectionService::class)->disconnect($user, $connection->id));
+        $this->expectPlanError(
+            fn () => app(ConnectionService::class)->complete(['state' => $parameters['state'], 'code' => 'code']),
+            'OAUTH_ATTEMPT_INVALIDATED',
+        );
+        Http::assertSent(fn ($request): bool => $request->url() === config('chatgpt.token_url'));
+        $this->assertSame(1, $connection->fresh()->oauth_generation);
+        $this->assertSame('NOT_CONNECTED', $connection->fresh()->status);
+        $this->assertNull($connection->fresh()->access_token);
+    }
+
     private function user(string $name): User
     {
         return User::query()->create(['email' => $name.'@example.test', 'password' => 'long-fixture-password', 'role' => 'user', 'status' => 'ACTIVE'])->fresh();
