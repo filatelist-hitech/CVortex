@@ -165,7 +165,7 @@ class VacancyChatContextBuilder
                 'source_truncated' => mb_strlen($snapshot->raw_text) > self::MAX_SOURCE_CHARACTERS],
             'confirmed_facts' => $facts, 'facts_truncated' => $factsTruncated, 'fact_selection' => 'Bounded lexical relevance; absence is not absence of experience.',
             'selected_career_track' => null, 'career_track_available' => false,
-            'employer_memory_available' => false, 'prior_approved_employer_statements' => $employer,
+            'employer_memory_available' => $employer !== [], 'prior_approved_employer_statements' => $employer,
             'existing_analysis' => $analysis === null ? null : ['recommendation' => $analysis->recommendation, 'key_reasons' => array_slice((array) $analysis->key_reasons, 0, 8)],
             'normalized_requirements' => $requirements->take(20)->map(fn (VacancyRequirement $requirement): array => [
                 'dimension' => $requirement->dimension, 'importance' => $requirement->importance, 'label' => $requirement->label,
@@ -183,14 +183,19 @@ class VacancyChatContextBuilder
      */
     private function hasSubstantiveOverlap(array $overlap, iterable $requirements, string $factType, string $assertion): bool
     {
-        if ((in_array($factType, ['skill', 'technology_depth'], true) && $overlap !== [])
-            || array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []
-            || array_intersect($overlap, self::LANGUAGE_TERMS) !== []
-            || array_intersect($overlap, self::WORK_FORMAT_TERMS) !== []) {
+        if ((in_array($factType, ['skill', 'technology_depth'], true) && array_diff($overlap, self::LANGUAGE_TERMS, self::WORK_FORMAT_TERMS) !== [])
+            || array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []) {
             return true;
         }
 
         foreach ($requirements as $requirement) {
+            if (in_array($requirement->dimension, ['LANGUAGE', 'WORK_FORMAT'], true)) {
+                if ($this->matching->hasContextSubjectEvidence($requirement, $assertion)) {
+                    return true;
+                }
+
+                continue;
+            }
             if ($requirement->dimension === 'SALARY'
                 && $this->salaryRequirementMatches($requirement->normalized_value, $assertion)) {
                 return true;

@@ -3,7 +3,7 @@ title: CVortex MCP Gateway
 status: active
 owner: project
 created: 2026-09-25
-updated: 2026-10-04
+updated: 2026-10-07
 tags: [architecture, mcp, ai, security]
 related: [../03-ADR/ADR-0021-inbound-mcp-read-only.md, ../08-Security/Threat-Model.md]
 ---
@@ -55,7 +55,7 @@ All tools require an authenticated active principal and `mcp:use`. Read tools ne
 |---|---|---|---|---|
 | `vacancy_get` | Read only | `vacancy_id` | ID, title, company, persisted analysis status, snapshot ID/version, raw text up to 25,000 characters and untrusted-data marker | One owned vacancy; `NOT_FOUND` for missing or foreign IDs |
 | `application_context_get` | Read only | `vacancy_id` | Vacancy metadata/status; at most 50 requirements, 25 relevant confirmed claims, and 20 confirmed facts per claim; `context_truncated` indicates clipping | Same owner checks; additional relevant confirmed facts available even before API analysis completes; no secrets or unrelated career records |
-| `vacancy_analysis_draft_save` | Create an unapproved DRAFT | `vacancy_id`, current `snapshot_id`, `client_request_id`, bounded structured analysis | Draft ID, status, vacancy and snapshot IDs, origin | Requires both `mcp:use` and `mcp:draft:write`; idempotent for identical retries; cannot approve or mutate facts |
+| `vacancy_analysis_draft_save` | Create an unapproved DRAFT | `vacancy_id`, current `snapshot_id`, `career_signature`, `client_request_id`, bounded structured analysis | Draft ID, status, vacancy and snapshot IDs, origin | Requires both `mcp:use` and `mcp:draft:write`; idempotent for identical retries; cannot approve or mutate facts |
 
 If analysis is pending, failed or otherwise not completed, the context tool returns bounded vacancy metadata, empty derived requirements/claims, relevant CONFIRMED facts and `untrusted_vacancy_data=true`. A completed analysis is selected for the current career signature; only relevant passing claims backed by confirmed Career Facts are returned. Missing/stale derived analysis fails safely rather than broadening access.
 
@@ -75,7 +75,7 @@ For local transport and OAuth endpoints, `APP_URL=http://127.0.0.1:8080` remains
 
 ## Controlled draft write — 2026-10-04
 
-`vacancy_analysis_draft_save` accepts exactly vacancy_id, snapshot_id, client_request_id and analysis. Analysis contains requirements (maximum 50), matches (maximum 50, each up to 20 CONFIRMED fact IDs), and gaps/risks/questions/recommendations (maximum 30 strings of 1,000 characters each). Aggregate analysis is bounded to 64 KiB. Requirement fields use existing domain enums and literal supported source excerpts. Unknown fields, foreign/pending facts, stale snapshots and unsupported requirements fail validation. No user_id/provider/model credential field is accepted.
+`vacancy_analysis_draft_save` accepts exactly vacancy_id, snapshot_id, career_signature, client_request_id and analysis. Read the required career_signature from application_context_get; stale career evidence is rejected. Analysis contains requirements (maximum 50), matches (maximum 50, each up to 20 CONFIRMED fact IDs), and gaps/risks/questions/recommendations (maximum 30 strings of 1,000 characters each). Aggregate analysis is bounded to 64 KiB. Requirement fields use existing domain enums and literal supported source excerpts. Unknown fields, foreign/pending facts, stale snapshots and unsupported requirements fail validation. No user_id/provider/model credential field is accepted.
 
 VacancyAnalysisDraftService is shared with embedded Save analysis; no CVortex→MCP→CVortex loop exists. It locks the owned vacancy, checks source and evidence, persists normalized draft requirement rows and AI_GENERATED provenance (MCP / external_mcp). External model identity is unknown and stays null. The same client_request_id and payload return the original draft; a changed payload under that ID is rejected. Approval remains a first-party action and recomputes deterministic matching; proposed matches and notes are untrusted. Retry after human approval may return the existing APPROVED object without changing its status. The tool annotations are readOnly=false, destructive=false, idempotent=true, openWorld=false.
 

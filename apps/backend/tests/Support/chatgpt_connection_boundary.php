@@ -104,7 +104,7 @@ if ($mode === 'setup') {
             DB::selectOne('SELECT pg_sleep(3)');
         }
     });
-    $payload = app(McpApplicationAdapter::class)->vacancy($owner, $vacancy->id);
+    $payload = app(McpApplicationAdapter::class)->context($owner, $vacancy->id)['vacancy'];
     assert($payload['title'] === 'Old Engineer');
     assert($payload['company'] === 'Old Company');
     assert($payload['analysis_status'] === 'FAILED');

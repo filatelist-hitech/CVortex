@@ -429,6 +429,8 @@ class VacancyPlanChatTest extends TestCase
         ]);
         [$user, $vacancy, $snapshot] = $this->fixture('language-context', $source);
         $language = app(CareerFactService::class)->createManual($user, 'language', 'German C1');
+        $manufacturer = app(CareerFactService::class)->createManual($user, 'experience', 'Managed a project for a German manufacturer');
+        $monitoring = app(CareerFactService::class)->createManual($user, 'skill', 'Remote monitoring');
         $location = app(CareerFactService::class)->createManual($user, 'experience', 'Based in Berlin');
         $workFormat = app(CareerFactService::class)->createManual($user, 'experience', 'I work fully remote');
         $domain = app(CareerFactService::class)->createManual($user, 'experience', 'Five years in pharmaceutical sales');
@@ -460,6 +462,8 @@ class VacancyPlanChatTest extends TestCase
         ], array_column($data['confirmed_facts'], 'id'));
         $this->assertStringNotContainsString('medical devices', json_encode($context['input']));
         $this->assertNotContains($irrelevant->id, array_column($data['confirmed_facts'], 'id'));
+        $this->assertNotContains($manufacturer->id, array_column($data['confirmed_facts'], 'id'));
+        $this->assertNotContains($monitoring->id, array_column($data['confirmed_facts'], 'id'));
     }
 
     public function test_context_keeps_single_letter_c_technology_overlap(): void

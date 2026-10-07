@@ -15,6 +15,7 @@ use App\Mcp\Tools\VacancyAnalysisDraftSave;
 use App\Mcp\Tools\VacancyGet;
 use App\Models\CareerFact;
 use App\Models\User;
+use App\Models\VacancyAnalysis;
 use App\Models\VacancySnapshot;
 use App\Services\ApplicationContextBuilder;
 use App\Services\CareerFactService;
@@ -23,7 +24,6 @@ use App\Services\UserStatusService;
 use App\Services\VacancyAnalysisService;
 use App\Services\VacancyChatContextBuilder;
 use App\Services\VacancyIngestionService;
-use App\Services\VacancyMatchingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Auth;
@@ -533,6 +533,27 @@ class McpGatewayTest extends TestCase
         $this->assertSame($level, DB::transactionLevel());
     }
 
+    public function test_application_context_holds_owner_and_vacancy_locks_through_all_reads(): void
+    {
+        [$user, $vacancyId] = $this->vacancy('mcp-atomic-context@example.test');
+        $reads = [];
+        DB::listen(function ($query) use (&$reads): void {
+            if (preg_match('/^select.*(?:users|vacancies|vacancy_snapshots|career_facts|claims)/i', $query->sql)) {
+                $reads[] = [$query->sql, $query->connection->transactionLevel()];
+            }
+        });
+        $level = DB::transactionLevel();
+        $context = app(McpApplicationAdapter::class)->context($user, $vacancyId);
+        $this->assertSame($vacancyId, $context['vacancy']['id']);
+        $this->assertNotEmpty($reads);
+        foreach ($reads as [$sql, $transactionLevel]) {
+            $this->assertGreaterThan($level, $transactionLevel, $sql);
+        }
+        $this->assertStringContainsString('users', $reads[0][0]);
+        $this->assertStringContainsString('vacancies', $reads[1][0]);
+        $this->assertSame($level, DB::transactionLevel());
+    }
+
     public function test_context_marks_relevant_facts_omitted_by_item_or_character_budget(): void
     {
         foreach (['COMPLETED', 'FAILED'] as $status) {
@@ -579,7 +600,7 @@ class McpGatewayTest extends TestCase
             'career_signature' => str_repeat('a', 64),
         ]);
         $adapter = new McpApplicationAdapter(
-            app(DatabaseOwnerContext::class), $builder, app(VacancyMatchingService::class), app(VacancyChatContextBuilder::class),
+            app(DatabaseOwnerContext::class), $builder, app(VacancyChatContextBuilder::class),
         );
         $this->app->instance(McpApplicationAdapter::class, $adapter);
 
@@ -595,7 +616,8 @@ class McpGatewayTest extends TestCase
     {
         [$user, $vacancyId] = $this->vacancy('mcp-context-snapshot@example.test');
         $snapshotSignature = str_repeat('b', 64);
-        $analysisSignature = str_repeat('a', 64);
+        VacancyAnalysis::query()->where('vacancy_id', $vacancyId)->update(['career_signature' => $snapshotSignature]);
+        $analysisSignature = $snapshotSignature;
         $chatContext = \Mockery::mock(VacancyChatContextBuilder::class);
         $chatContext->shouldReceive('build')->once()->andReturn([
             'snapshot' => VacancySnapshot::query()->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail(),
@@ -610,7 +632,7 @@ class McpGatewayTest extends TestCase
             'requirements' => [], 'claims' => [], 'career_signature' => $analysisSignature,
         ]);
         $this->app->instance(McpApplicationAdapter::class, new McpApplicationAdapter(
-            app(DatabaseOwnerContext::class), $builder, app(VacancyMatchingService::class), $chatContext,
+            app(DatabaseOwnerContext::class), $builder, $chatContext,
         ));
 
         $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))
@@ -638,7 +660,7 @@ class McpGatewayTest extends TestCase
         $builder = \Mockery::mock(ApplicationContextBuilder::class);
         $builder->shouldReceive('build')->never();
         $this->app->instance(McpApplicationAdapter::class, new McpApplicationAdapter(
-            app(DatabaseOwnerContext::class), $builder, app(VacancyMatchingService::class), $chatContext,
+            app(DatabaseOwnerContext::class), $builder, $chatContext,
         ));
 
         $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))

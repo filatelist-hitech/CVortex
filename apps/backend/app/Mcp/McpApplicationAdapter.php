@@ -9,7 +9,6 @@ use App\Models\VacancySnapshot;
 use App\Services\ApplicationContextBuilder;
 use App\Services\DatabaseOwnerContext;
 use App\Services\VacancyChatContextBuilder;
-use App\Services\VacancyMatchingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -24,7 +23,6 @@ class McpApplicationAdapter
     public function __construct(
         private readonly DatabaseOwnerContext $ownerContext,
         private readonly ApplicationContextBuilder $contextBuilder,
-        private readonly VacancyMatchingService $matching,
         private readonly VacancyChatContextBuilder $chatContext,
     ) {}
 
@@ -43,8 +41,9 @@ class McpApplicationAdapter
     /** @return array<string, mixed> */
     public function context(User $user, string $vacancyId): array
     {
-        return $this->ownerContext->run((string) $user->id, function () use ($user, $vacancyId): array {
-            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+        return $this->ownerContext->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId): array {
+            User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
             $bounded = $this->chatContext->build($user, $vacancy, 'Analyze vacancy');
             $data = json_decode($bounded['input'][0]['content'], true);
             $facts = $data['confirmed_facts'];
@@ -64,7 +63,7 @@ class McpApplicationAdapter
             }
             $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
                 ->where('vacancy_snapshot_id', $snapshot->id)
-                ->forCareerSignature($this->matching->careerSignature($user))->deterministicLatest()->first();
+                ->forCareerSignature($bounded['career_signature'])->deterministicLatest()->first();
             if ($analysis === null) {
                 throw ValidationException::withMessages(['vacancy' => 'Reanalysis is required.']);
             }
@@ -97,7 +96,7 @@ class McpApplicationAdapter
                 'untrusted_vacancy_data' => true,
                 'context_truncated' => $truncated,
             ];
-        });
+        }));
     }
 
     /** @return array<string, mixed> */

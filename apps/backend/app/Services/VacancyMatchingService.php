@@ -260,6 +260,21 @@ class VacancyMatchingService
         ];
     }
 
+    public function hasContextSubjectEvidence(VacancyRequirement $requirement, string $assertion): bool
+    {
+        foreach ($this->candidateClauses($assertion) as $clause) {
+            $text = $this->normalize($clause);
+            if ($requirement->dimension === 'LANGUAGE' && $this->languageEvidenceAllowed($requirement, $text)) {
+                return true;
+            }
+            if ($requirement->dimension === 'WORK_FORMAT' && $this->candidateWorkFormatValues($text) !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @param list<CareerFact> $facts
      * @param  list<Claim>  $claims
      * @return array{type: string, id: string}|null
