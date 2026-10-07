@@ -21,19 +21,10 @@ class VacancyChatContextBuilder
     private const MAX_HISTORY_TURNS = 12;
 
     private const SINGLE_TOKEN_TECHNOLOGY_TERMS = [
-        'api', 'aws', 'c', 'c#', 'c++', 'css', 'gcp', 'git', 'go', 'html', 'java', 'js', 'kotlin',
-        'laravel', 'linux', 'mysql', 'node.js', 'php', 'postgresql', 'python', 'react', 'redis', 'ruby',
-        'rust', 'sql', 'swift', 'typescript', 'vue',
+        'api', 'aws', 'c', 'c#', 'c++', 'css', 'docker', 'gcp', 'git', 'go', 'html', 'java', 'js', 'kotlin',
+        'dotnet', 'kubernetes', 'laravel', 'linux', 'mysql', 'node.js', 'php', 'postgresql', 'python', 'react', 'redis', 'ruby',
+        'rust', 'sql', 'swift', 'symfony', 'typescript', 'vue',
     ];
-
-    private const LANGUAGE_TERMS = [
-        'arabic', 'chinese', 'czech', 'danish', 'dutch', 'english', 'finnish', 'french', 'german', 'greek',
-        'hebrew', 'hindi', 'hungarian', 'indonesian', 'italian', 'japanese', 'korean', 'mandarin', 'norwegian',
-        'polish', 'portuguese', 'romanian', 'russian', 'slovak', 'spanish', 'swedish', 'thai', 'turkish',
-        'ukrainian', 'vietnamese',
-    ];
-
-    private const WORK_FORMAT_TERMS = ['hybrid', 'office', 'onsite', 'remote'];
 
     private const NON_DISCRIMINATIVE_TERMS = [
         'about', 'after', 'all', 'also', 'am', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'been', 'before',
@@ -87,7 +78,7 @@ class VacancyChatContextBuilder
         foreach ($careerContext['facts'] as $fact) {
             $overlap = array_values(array_intersect($terms, $this->terms($fact->approvedAssertion())));
             $score = count($overlap);
-            if ($this->hasSubstantiveOverlap($overlap, $requirements, $fact->fact_type, $fact->approvedAssertion())) {
+            if ($this->hasSubstantiveOverlap($overlap, $requirements, $fact->approvedAssertion())) {
                 $ranked[] = ['fact' => $fact, 'score' => $score];
             }
         }
@@ -181,10 +172,9 @@ class VacancyChatContextBuilder
     /** @param list<string> $overlap
      * @param  iterable<VacancyRequirement>  $requirements
      */
-    private function hasSubstantiveOverlap(array $overlap, iterable $requirements, string $factType, string $assertion): bool
+    private function hasSubstantiveOverlap(array $overlap, iterable $requirements, string $assertion): bool
     {
-        if ((in_array($factType, ['skill', 'technology_depth'], true) && array_diff($overlap, self::LANGUAGE_TERMS, self::WORK_FORMAT_TERMS) !== [])
-            || array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []) {
+        if (array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []) {
             return true;
         }
 
@@ -239,10 +229,9 @@ class VacancyChatContextBuilder
     {
         preg_match_all('/[\p{L}\p{N}+#.]+/u', mb_strtolower($text), $matches);
 
-        $terms = array_values(array_unique(array_map(
-            static fn (string $term): string => trim($term, '.'),
-            $matches[0],
-        )));
+        $terms = array_values(array_unique(array_map(static function (string $term): string {
+            return mb_strtolower($term) === '.net' ? 'dotnet' : trim($term, '.');
+        }, $matches[0])));
         $terms = array_diff($terms, self::NON_DISCRIMINATIVE_TERMS);
 
         return array_values(array_filter($terms, fn (string $term): bool => preg_match('/\p{L}/u', $term) === 1

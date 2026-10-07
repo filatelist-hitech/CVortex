@@ -75,6 +75,9 @@ class VacancyChatService
             $thread = $this->open($user, $vacancyId);
 
             return DB::transaction(function () use ($user, $thread, $connectionId, $model, $requestId, $content, $analyze, $previewHash, $skill, $resolved): array {
+                // Career writers serialize on this row. Keep it locked until the captured context
+                // and its streaming messages are committed, so facts and claims cannot straddle updates.
+                User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $thread = VacancyChatThread::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($thread->id);
                 if ($thread->status === 'STREAMING') {
                     throw ValidationException::withMessages(['thread' => 'A turn is already streaming. Refresh after completion.']);

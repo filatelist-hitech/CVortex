@@ -1,5 +1,9 @@
 # CVortex Project State
 
+## PR #42 follow-up review findings — 2026-10-07 (second pass)
+
+Locally fixed the two new review findings on `feature/chatgpt-local-mcp-integration`: `VacancyChatService::begin` now holds the career owner-row lock from context capture through turn persistence, and chat fact selection accepts only recognized technical terms or validated requirement semantics. Added regressions for the owner-lock transaction boundary and for excluding a skill fact that overlaps only on generic production/support wording. Targeted `VacancyPlanChatTest` passed with SQLite in-memory (36 tests / 221 assertions); backend Pint and Larastan passed; `git diff --check` passed. PostgreSQL execution of the conditional `FOR UPDATE` assertion remains unverified. The fixes are local; publishing the branch and resolving the live PR threads remain pending explicit push authorization.
+
 ## Obsidian workspace ignore — 2026-10-07
 
 Completed explicit user override on `feature/chatgpt-local-mcp-integration`: `.gitignore` now ignores `.obsidian/` directories at any depth, including the repository root and the documentation vault. Validation: write preflight, `git check-ignore -v` for root/docs/nested workspace paths, and `git diff --check` passed. No Obsidian files were tracked. Canonical Preview/M2 authority is unchanged.

@@ -360,6 +360,7 @@ class VacancyPlanChatTest extends TestCase
     {
         [$user, $vacancy] = $this->fixture('substantive-overlap', 'PHP production support engineer.');
         app(CareerFactService::class)->createManual($user, 'experience', 'Managed production support for medical devices.');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Production support for medical devices.');
         app(CareerFactService::class)->createManual($user, 'experience', 'Led a team of engineers.');
         $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'PHP development and API design.');
         $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
@@ -370,6 +371,53 @@ class VacancyPlanChatTest extends TestCase
         $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
         $this->assertStringNotContainsString('medical devices', json_encode($context['input']));
         $this->assertStringNotContainsString('team of engineers', json_encode($context['input']));
+        $this->assertStringNotContainsString('Production support for medical devices', json_encode($context['input']));
+    }
+
+    public function test_begin_holds_the_career_owner_lock_from_context_capture_through_turn_persistence(): void
+    {
+        [$user, $vacancy] = $this->fixture('career-locked-chat', 'PHP engineer is required.');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $service = app(VacancyChatService::class);
+        $preview = $service->preview($user, $vacancy->id, 'What should I emphasize?', false);
+        $baselineTransactionLevel = DB::transactionLevel();
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $sql = strtolower($query->sql);
+            if (str_contains($sql, 'from users') || str_contains($sql, 'from "users"') || str_contains($sql, 'from `users`')
+                || str_contains($sql, 'career_facts')
+                || str_contains($sql, 'insert into vacancy_chat_messages') || str_contains($sql, 'insert into "vacancy_chat_messages"')) {
+                $queries[] = ['sql' => $sql, 'transaction_level' => DB::transactionLevel()];
+            }
+        });
+
+        $service->begin($user, $vacancy->id, $this->connection->id, 'account-model', 'career-locked-request',
+            'What should I emphasize?', false, $preview['preview_hash']);
+
+        $lockIndex = null;
+        $careerFactIndex = null;
+        $messageInsertIndexes = [];
+        foreach ($queries as $index => $query) {
+            if (str_contains($query['sql'], 'from users') || str_contains($query['sql'], 'from "users"') || str_contains($query['sql'], 'from `users`')) {
+                $lockIndex = $index;
+                if (DB::connection()->getDriverName() === 'pgsql') {
+                    $this->assertStringContainsString('for update', $query['sql']);
+                }
+            }
+            if (str_contains($query['sql'], 'career_facts')) {
+                $careerFactIndex ??= $index;
+                $this->assertGreaterThan($baselineTransactionLevel, $query['transaction_level']);
+            }
+            if (str_contains($query['sql'], 'insert into') && str_contains($query['sql'], 'vacancy_chat_messages')) {
+                $messageInsertIndexes[] = $index;
+                $this->assertGreaterThan($baselineTransactionLevel, $query['transaction_level']);
+            }
+        }
+
+        $this->assertNotNull($lockIndex);
+        $this->assertNotNull($careerFactIndex);
+        $this->assertLessThan($careerFactIndex, $lockIndex);
+        $this->assertCount(2, $messageInsertIndexes);
     }
 
     public function test_context_matches_technical_skills_outside_the_short_allowlist_when_extraction_is_unavailable(): void
