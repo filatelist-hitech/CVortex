@@ -3,7 +3,7 @@ title: MCP Gateway — current product and protocol research
 status: verified-current-docs
 owner: project
 created: 2026-09-25
-updated: 2026-10-03
+updated: 2026-10-07
 tags: [mcp, oauth, chatgpt, tunnel, security]
 related: [../../docs/03-ADR/ADR-0021-inbound-mcp-read-only.md, ../../docs/02-Architecture/MCP-Gateway.md]
 ---
@@ -49,16 +49,16 @@ Secure MCP Tunnel is the documented private path; it carries MCP traffic through
 
 ## CVortex architecture and validation gates
 
-The accepted [ADR-0021](../../docs/03-ADR/ADR-0021-inbound-mcp-read-only.md) defines exactly two inbound MCP tools: `vacancy_get` and `application_context_get`. MCP reads are independent of outbound `LlmProvider` and `OPENAI_API_KEY`. Draft creation, Truth Guard and Human Approval remain first-party CVortex workflows. Do not merge inbound MCP into the outbound Responses API path.
+The historical 2026-09-27 design below predates the explicit 2026-10-04 amendment in [ADR-0023](../../docs/03-ADR/ADR-0023-chatgpt-plan-chat.md). Current MCP exposes `vacancy_get` and `application_context_get`, plus the separately scoped `vacancy_analysis_draft_save`. That adapter uses the shared owner-bound draft service, requires `mcp:use` and `mcp:draft:write`, and can create only an unapproved `DRAFT` / `AI_GENERATED`; approval, Career Fact mutation and application submission remain unavailable through MCP. Inbound MCP remains separate from outbound Responses inference and `OPENAI_API_KEY` billing.
 
 | Gate | Evidence/status on 2026-09-27 |
 |---|---|
 | Official product/protocol contract | Rechecked above from official OpenAI and MCP docs |
-| Account entitlement and workspace role | **UNRESOLVED:** the Plus account can open the custom-MCP form and resolve the existing Platform tunnel. No app was created, no Developer Mode setting was confirmed and no MCP call was made. Official sources still conflict on Plus read-only entitlement. |
+| Account entitlement and workspace role | Official sources still conflict on Plus write entitlement. User-reported 2026-10-03 evidence records OAuth and both read calls; 2026-10-07 user-reported evidence records a successful non-empty bounded draft save. These reports do not establish general account/workspace eligibility or independently reproduced app discovery. |
 | Secure MCP Tunnel ID, runtime credential and permissions | A Platform tunnel record exists and lists a ChatGPT workspace; the ChatGPT form resolves that tunnel. OpenAI `tunnel-client` v0.0.15 was downloaded from the official release and its SHA-256 matched GitHub's published asset digest. A local `cvortex-chatgpt` profile was created with an environment-variable reference only. `doctor --explain` fails because `CONTROL_PLANE_API_KEY` is unset; no daemon is running. Runtime use permissions and successful control-plane authentication remain unverified. |
 | Local automated MCP/OAuth checks | See [validation evidence](../../docs/10-Operations/MCP-Gateway-Validation.md) |
 | Full Inspector login/consent/token/discovery against the current running local stack | **Not repeated in this pass:** an existing stored OAuth session completed live Streamable HTTP discovery and both read calls. A fresh DCR/login/consent/token exchange needs an authenticated local CVortex browser session; the current local page showed sign-in. |
-| Real ChatGPT discovery and tool calls | **BLOCKED_EXTERNAL:** the app form resolves the existing tunnel, but the runtime key is absent and `tunnel-client` is not running. The app draft is not submitted. No ChatGPT tool discovery, read, cover-letter generation or negative-mutation prompt was executed. Native ChatGPT Desktop use is also unverified; official Help Center currently describes custom MCP apps as web-only. |
+| Real ChatGPT discovery and tool calls | OAuth and both read calls, plus one non-empty bounded draft-save, are user-reported. Independent agent replay is not claimed for the external ChatGPT app. App discovery, cover-letter generation, negative mutation attempts, insufficient-scope write denial in ChatGPT, and native Desktop invocation remain unverified. See the dated evidence in [MCP validation](../../docs/10-Operations/MCP-Gateway-Validation.md). |
 
 This is not a public deployment authorization. Do not open router/firewall ports or add a public reverse proxy as a tunnel substitute. If Secure MCP Tunnel is unavailable, stop before external publication and obtain an explicit security/deployment decision.
 

@@ -1,23 +1,30 @@
 ---
-title: Проверка MCP Gateway только для чтения
-status: verified-local-external-blocked
+title: Проверка MCP Gateway
+status: verified-local-user-reported-external
 owner: project
 created: 2026-09-25
-updated: 2026-10-03
-tags: [operations, mcp, validation, read-only]
+updated: 2026-10-07
+tags: [operations, mcp, validation]
 related: [../02-Architecture/MCP-Gateway.md, ../03-ADR/ADR-0021-inbound-mcp-read-only.md]
 ---
 
-# Проверка MCP Gateway только для чтения
+# Проверка MCP Gateway
 
 ## Что разрешено
 
-Входящий MCP по умолчанию выключен. Если оператор его включит, будут доступны ровно два инструмента и только для чтения:
+Входящий MCP по умолчанию выключен. Если оператор его включит, доступны два инструмента чтения и одна ограниченная операция создания черновика:
 
 1. `vacancy_get`: получить сведения о вакансии;
-2. `application_context_get`: получить контекст подготовки отклика.
+2. `application_context_get`: получить контекст подготовки отклика;
+3. `vacancy_analysis_draft_save`: сохранить проверяемый owner-scoped черновик анализа.
 
-Пользователь определяется по проверенному OAuth bearer-токену. При чтении проверяется владелец записи и действуют правила изоляции PostgreSQL RLS. Возвращаемый объём данных ограничен; внешний сервис ИИ `LlmProvider` не вызывается. Подготовка отклика, Truth Guard и подтверждение пользователем остаются обычными сценариями CVortex.
+Пользователь определяется по проверенному OAuth bearer-токену. Проверяются владелец записи и правила изоляции PostgreSQL RLS. Draft-save дополнительно требует `mcp:draft:write` вместе с `mcp:use`, проходит общий валидатор и сохраняет только `DRAFT` / `AI_GENERATED`; инструмент не подтверждает анализ, не меняет Career Facts и не отправляет отклики. Контекст и объём каждого ответа ограничены. Входящие MCP-вызовы не вызывают внешний `LlmProvider`.
+
+## Текущее внешнее свидетельство — 2026-10-07
+
+Владелец сообщил об успешной OAuth-авторизации ChatGPT, вызовах обоих read tools и успешном сохранении непустого source-backed draft со статусом `DRAFT` / `AI_GENERATED`. Это **пользовательское внешнее свидетельство**, а не независимый повтор агентом. Агент ранее независимо выполнил оба read tools для указанной владельцем вакансии; PostgreSQL harness и локальные тесты независимо проверяют owner boundary, draft-save, stale-signature fencing и конкуренцию. ChatGPT app discovery, write denial для недостаточной scope, vacancy analysis/cover-letter generation и Desktop invocation не заявляются как независимо пройденные E2E.
+
+Подробные локальные и пользовательские результаты ниже остаются датированными записями. Их числа описывают проверки на тех HEAD и не являются результатом финального PR #42 HEAD.
 
 ## Результаты локальной проверки от 2026-09-27
 

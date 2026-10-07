@@ -1,5 +1,11 @@
 # CVortex Project State
 
+## PR #42 finalization — 2026-10-07
+
+Final self-review completed on feature head `63cfdfbd1317d4e6784c8e26cd8e45f44a74099b`. The bounded integration includes local ChatGPT plan OAuth/chat, exact context preview/fingerprint, bounded persisted history and cancellation, MCP reads plus `mcp:draft:write`-scoped unapproved draft-save, snapshot/career-signature fences, and human approval. No P0/P1 finding or unresolved review thread remains (live count 0). Truth-first, owner isolation, untrusted-source handling and OAuth lifecycle/concurrency controls were reviewed.
+
+Local finalization validation passed: `make test` (backend 366 tests / 2772 assertions / 11 PostgreSQL-only skips; frontend 85/85), `make lint` (Pint 213 files, PHPStan 135 files, ESLint, TypeScript), ChatGPT PostgreSQL boundary harness, vacancy PostgreSQL concurrency harness, MCP gateway toggle, OpenAPI YAML/path/schema assertions, Compose config, `git diff --check`, and PR contract. GitHub Governance, Quality, PR contract, and Roadmap metadata checks passed on exact head `63cfdfbd1317d4e6784c8e26cd8e45f44a74099b`. PR metadata/docs closeout is prepared; squash merge is pending final exact-head checks. Preview 0.1 and M2 authority are unchanged.
+
 ## PR #42 targeted review finding — 2026-10-07
 
 Fixed the unresolved technical-context finding on `feature/chatgpt-local-mcp-integration`: confirmed Career Facts now match `TECHNICAL` requirements through their normalized value or label, including technologies outside the prior fixed list. Added Terraform and Angular regressions. Added the Codex Cloud Review Budget to `.agents/policies/git-workflow.md`. Targeted `VacancyPlanChatTest` passed (1 test / 1 assertion); PHP syntax checks and `git diff --check` passed. No cloud review requested.
