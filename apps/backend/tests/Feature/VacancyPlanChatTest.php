@@ -325,8 +325,8 @@ class VacancyPlanChatTest extends TestCase
 
     public function test_context_requires_substantive_overlap_for_generic_single_terms(): void
     {
-        [$user, $vacancy] = $this->fixture('substantive-overlap', 'PHP production engineer.');
-        app(CareerFactService::class)->createManual($user, 'experience', 'Managed production of medical devices.');
+        [$user, $vacancy] = $this->fixture('substantive-overlap', 'PHP production support engineer.');
+        app(CareerFactService::class)->createManual($user, 'experience', 'Managed production support for medical devices.');
         app(CareerFactService::class)->createManual($user, 'experience', 'Led a team of engineers.');
         $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'PHP development and API design.');
         $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
@@ -493,6 +493,21 @@ class VacancyPlanChatTest extends TestCase
         app(CareerFactService::class)->createManual($user, 'skill', 'A new confirmed fact');
         $this->invalid(fn () => $service->approve($user, $first['id']));
         $this->invalid(fn () => $service->save($user, $vacancy->id, str_repeat('0', 26), 'stale-source', $this->analysis()));
+        $this->assertDatabaseCount('vacancy_analysis_drafts', 1);
+    }
+
+    public function test_draft_retry_returns_saved_result_after_career_context_changes(): void
+    {
+        [$user, $vacancy, $snapshot] = $this->fixture('draft-retry-context-change');
+        $service = app(VacancyAnalysisDraftService::class);
+        $signature = app(VacancyMatchingService::class)->careerSignature($user);
+        $analysis = $this->analysis();
+        $first = $service->save($user, $vacancy->id, $snapshot->id, 'retry-after-change', $analysis, null, $signature);
+        app(CareerFactService::class)->createManual($user, 'skill', 'A new confirmed fact');
+
+        $retry = $service->save($user, $vacancy->id, $snapshot->id, 'retry-after-change', $analysis, null, $signature);
+
+        $this->assertSame($first['id'], $retry['id']);
         $this->assertDatabaseCount('vacancy_analysis_drafts', 1);
     }
 

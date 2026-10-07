@@ -157,8 +157,7 @@ class VacancyChatContextBuilder
     /** @param list<string> $overlap */
     private function hasSubstantiveOverlap(array $overlap): bool
     {
-        return count($overlap) >= 2
-            || (count($overlap) === 1 && in_array($overlap[0], self::SINGLE_TOKEN_TECHNOLOGY_TERMS, true));
+        return array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== [];
     }
 
     /** @return list<string> */

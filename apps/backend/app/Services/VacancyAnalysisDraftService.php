@@ -29,6 +29,17 @@ class VacancyAnalysisDraftService
         return $this->owners->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId, $snapshotId, $requestId, $analysis, $messageId, $careerSignature): array {
             $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
             Validator::make(['client_request_id' => $requestId], ['client_request_id' => ['required', 'string', 'max:128', 'regex:/\A[A-Za-z0-9_-]+\z/D']])->validate();
+            $existing = VacancyAnalysisDraft::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
+                ->where('client_request_id', $requestId)->first();
+            if ($existing !== null) {
+                $originalSignature = $careerSignature ?? $existing->career_signature;
+                $hash = hash('sha256', json_encode([$snapshotId, $originalSignature, $analysis, $messageId], JSON_THROW_ON_ERROR));
+                if (! hash_equals($existing->payload_hash, $hash)) {
+                    throw ValidationException::withMessages(['client_request_id' => 'This request ID already saved a different result.']);
+                }
+
+                return $this->resource($user, $existing);
+            }
             $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
             if ((string) $snapshot->id !== $snapshotId) {
                 throw ValidationException::withMessages(['snapshot_id' => 'The vacancy source changed. Analyze the current snapshot.']);
@@ -38,14 +49,6 @@ class VacancyAnalysisDraftService
                 throw ValidationException::withMessages(['career_signature' => 'Career evidence changed. Read the current context before saving.']);
             }
             $hash = hash('sha256', json_encode([$snapshotId, $signature, $analysis, $messageId], JSON_THROW_ON_ERROR));
-            $existing = VacancyAnalysisDraft::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->where('client_request_id', $requestId)->first();
-            if ($existing !== null) {
-                if (! hash_equals($existing->payload_hash, $hash)) {
-                    throw ValidationException::withMessages(['client_request_id' => 'This request ID already saved a different result.']);
-                }
-
-                return $this->resource($user, $existing);
-            }
             $requirements = $this->validate($user, $analysis, $snapshot);
             $message = null;
             $run = null;
