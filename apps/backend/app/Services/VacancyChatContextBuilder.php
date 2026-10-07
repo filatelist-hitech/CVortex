@@ -176,6 +176,10 @@ class VacancyChatContextBuilder
         }
 
         foreach ($requirements as $requirement) {
+            if ($requirement->dimension === 'TECHNICAL'
+                && array_intersect($overlap, $this->terms($requirement->label.' '.(string) $requirement->normalized_value)) !== []) {
+                return true;
+            }
             if (in_array($requirement->dimension, ['DOMAIN', 'EXPERIENCE', 'LANGUAGE', 'LOCATION', 'WORK_FORMAT'], true)) {
                 if ($this->matching->hasContextSubjectEvidence($requirement, $assertion)) {
                     return true;

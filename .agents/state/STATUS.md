@@ -1,5 +1,9 @@
 # CVortex Project State
 
+## PR #42 targeted review finding — 2026-10-07
+
+Fixed the unresolved technical-context finding on `feature/chatgpt-local-mcp-integration`: confirmed Career Facts now match `TECHNICAL` requirements through their normalized value or label, including technologies outside the prior fixed list. Added Terraform and Angular regressions. Added the Codex Cloud Review Budget to `.agents/policies/git-workflow.md`. Targeted `VacancyPlanChatTest` passed (1 test / 1 assertion); PHP syntax checks and `git diff --check` passed. No cloud review requested.
+
 ## PR #42 follow-up review findings — 2026-10-07 (fourth pass)
 
 On the explicitly requested `feature/chatgpt-local-mcp-integration` override, fixed both open findings from live PR head `66754dd`: employer context now includes only approved usage text whose current owner-bound Claim still passes `TruthGuard` with confirmed provenance, and changed vacancy imports clear a previously parsed company when the new snapshot has no Company marker. Added regressions for deprecated backing facts and company metadata removal. `ApplicationDraftTest`, `VacancyPlanChatTest`, and `VacancyCoreTest` passed together (175 tests / 1191 assertions; 1 PostgreSQL-only skip); `composer analyse`, `composer lint` (213 files), PHP syntax checks, and `git diff --check` passed. PostgreSQL-specific execution was not run. Commit `ead965be7272d549d77c051a5294e1c9733543a4` is pushed to PR #42; both matching threads are replied to and resolved (live unresolved count 0). `PR contract` and `Roadmap metadata` pass; `m0-quality` is pending. Preview/M2 authority is unchanged.

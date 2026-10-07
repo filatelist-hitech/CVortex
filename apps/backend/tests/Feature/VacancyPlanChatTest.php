@@ -578,6 +578,28 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('conference in Berlin', json_encode($context['input']));
     }
 
+    public function test_context_matches_confirmed_facts_for_technical_requirements_outside_the_allowlist(): void
+    {
+        $source = 'Terraform and Angular are required.';
+        [$user, $vacancy, $snapshot] = $this->fixture('technical-context', $source);
+        $terraform = app(CareerFactService::class)->createManual($user, 'skill', 'Built infrastructure with Terraform.');
+        $angular = app(CareerFactService::class)->createManual($user, 'skill', 'Delivered frontend features using Angular.');
+        foreach ([['Terraform', 'terraform'], ['Angular', 'angular']] as [$label, $normalizedValue]) {
+            VacancyRequirement::query()->create([
+                'owner_id' => $user->id, 'vacancy_snapshot_id' => $snapshot->id, 'dimension' => 'TECHNICAL',
+                'importance' => 'MANDATORY', 'label' => $label, 'normalized_value' => $normalizedValue,
+                'source_excerpt' => $label.' is required.', 'confidence' => 1, 'extracted_by' => 'test',
+                'candidate_hash' => hash('sha256', $label),
+            ]);
+        }
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertEqualsCanonicalizing([$terraform->id, $angular->id], array_column($data['confirmed_facts'], 'id'));
+    }
+
     public function test_context_keeps_single_letter_c_technology_overlap(): void
     {
         [$user, $vacancy] = $this->fixture('single-letter-technology', 'C developer.');
