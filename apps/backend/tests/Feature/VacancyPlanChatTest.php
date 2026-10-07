@@ -519,7 +519,7 @@ class VacancyPlanChatTest extends TestCase
         $monitoring = app(CareerFactService::class)->createManual($user, 'skill', 'Remote monitoring');
         $location = app(CareerFactService::class)->createManual($user, 'experience', 'Based in Berlin');
         $workFormat = app(CareerFactService::class)->createManual($user, 'experience', 'I work fully remote');
-        $domain = app(CareerFactService::class)->createManual($user, 'experience', 'Five years in pharmaceutical sales');
+        $domain = app(CareerFactService::class)->createManual($user, 'experience', 'Five years in the pharmaceutical sales industry');
         $salary = app(CareerFactService::class)->createManual($user, 'experience', 'Expected salary is 100 000 RUB');
         $irrelevant = app(CareerFactService::class)->createManual($user, 'experience', 'Managed production support for medical devices.');
         $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'PHP development and API design.');
@@ -550,6 +550,32 @@ class VacancyPlanChatTest extends TestCase
         $this->assertNotContains($irrelevant->id, array_column($data['confirmed_facts'], 'id'));
         $this->assertNotContains($manufacturer->id, array_column($data['confirmed_facts'], 'id'));
         $this->assertNotContains($monitoring->id, array_column($data['confirmed_facts'], 'id'));
+    }
+
+    public function test_context_uses_structured_semantics_for_location_domain_and_experience(): void
+    {
+        $source = 'Berlin is required. Pharmaceutical sales industry experience, five years required.';
+        [$user, $vacancy, $snapshot] = $this->fixture('structured-context-semantics', $source);
+        $conference = app(CareerFactService::class)->createManual($user, 'experience', 'Presented at a pharmaceutical sales conference in Berlin.');
+        foreach ([
+            ['LOCATION', 'Berlin', 'berlin'],
+            ['DOMAIN', 'pharmaceutical sales', 'pharmaceutical sales'],
+            ['EXPERIENCE', '5 years pharmaceutical sales', 'years:5'],
+        ] as [$dimension, $label, $normalizedValue]) {
+            VacancyRequirement::query()->create([
+                'owner_id' => $user->id, 'vacancy_snapshot_id' => $snapshot->id, 'dimension' => $dimension,
+                'importance' => 'MANDATORY', 'label' => $label, 'normalized_value' => $normalizedValue,
+                'source_excerpt' => $source, 'confidence' => 1, 'extracted_by' => 'test',
+                'candidate_hash' => hash('sha256', $dimension.$label),
+            ]);
+        }
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertNotContains($conference->id, array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('conference in Berlin', json_encode($context['input']));
     }
 
     public function test_context_keeps_single_letter_c_technology_overlap(): void

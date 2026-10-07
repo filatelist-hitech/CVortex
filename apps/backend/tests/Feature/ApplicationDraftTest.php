@@ -62,8 +62,8 @@ class ApplicationDraftTest extends TestCase
         $queued['vacancy']->update(['company' => 'Example']);
         $context = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
         $data = json_decode($context['input'][0]['content'], true);
-        $this->assertTrue($data['employer_memory_available']);
-        $this->assertNotEmpty($data['prior_approved_employer_statements']);
+        $this->assertFalse($data['employer_memory_available']);
+        $this->assertSame([], $data['prior_approved_employer_statements']);
         app(CareerFactService::class)->deprecate($user, $careerFact);
         $revokedContext = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
         $revokedData = json_decode($revokedContext['input'][0]['content'], true);

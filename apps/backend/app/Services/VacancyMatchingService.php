@@ -270,6 +270,25 @@ class VacancyMatchingService
             if ($requirement->dimension === 'WORK_FORMAT' && $this->candidateWorkFormatValues($text) !== []) {
                 return true;
             }
+            if ($requirement->dimension === 'LOCATION') {
+                $actual = $this->structuredCandidateValue('LOCATION', $text);
+                if ($actual !== null && $this->structuredCompatible('LOCATION', $this->normalize((string) $requirement->normalized_value), $this->normalize($actual))) {
+                    return true;
+                }
+            }
+            if ($requirement->dimension === 'EXPERIENCE'
+                && $this->relevantStructuredEvidence($requirement, $clause)
+                && ! $this->candidateEvidenceNegated($requirement, $text)) {
+                return true;
+            }
+            if ($requirement->dimension === 'DOMAIN') {
+                $subject = $this->concreteLabelSubject($requirement->label);
+                if ($subject !== '' && $this->directSupportAllowed($requirement, $text)
+                    && ! $this->candidateEvidenceNegated($requirement, $text)
+                    && $this->directSubjectMatches($requirement, $text, $subject)) {
+                    return true;
+                }
+            }
         }
 
         return false;
