@@ -103,10 +103,12 @@ class VacancyChatContextBuilder
         $turns = collect();
         if (! $thread instanceof Vacancy) {
             $completeRunIds = VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)
+                ->where('vacancy_snapshot_id', $snapshot->id)->where('career_signature', $careerSignature)
                 ->where('status', 'COMPLETED')->whereNotNull('run_id')
                 ->select('run_id')->selectRaw('MAX(id) as latest_id')->groupBy('run_id')
                 ->havingRaw('COUNT(DISTINCT role) = 2')->orderByDesc('latest_id')->limit(self::MAX_HISTORY_TURNS)->pluck('run_id');
             $turns = VacancyChatMessage::query()->where('owner_id', $user->id)->where('thread_id', $thread->id)
+                ->where('vacancy_snapshot_id', $snapshot->id)->where('career_signature', $careerSignature)
                 ->where('status', 'COMPLETED')->whereIn('run_id', $completeRunIds)->orderByDesc('id')->get()
                 ->groupBy('run_id')->sortByDesc(static fn ($messages): string => (string) $messages->max('id'));
         }

@@ -1,5 +1,9 @@
 # CVortex Project State
 
+## PR #42 follow-up review findings — 2026-10-07 (third pass)
+
+On the user-authorized `feature/chatgpt-local-mcp-integration` override, fixed two further review findings: chat history now includes only completed turns matching the current vacancy snapshot and career signature, and draft save locks the owner row before checking career freshness and holds it through validation/persistence. Added regressions for both stale-history cases and the draft-save lock transaction. `VacancyPlanChatTest` passed with SQLite in-memory (39 tests / 239 assertions), `McpGatewayTest` passed (22 / 351), backend Pint and Larastan passed, and `git diff --check` passed. The full backend suite ran 363 tests / 2762 assertions with 11 skips but had one unrelated failure: `AccessCoreTest::test_http_registration_rejects_missing_csrf_before_any_user_is_created` expected 419 and got 201; the isolated test reproduces it. PostgreSQL execution of the conditional `FOR UPDATE` assertions remains unverified.
+
 ## PR #42 follow-up review findings — 2026-10-07 (second pass)
 
 Fixed and pushed the two new review findings on `feature/chatgpt-local-mcp-integration` in `2cf1ff8`. `VacancyChatService::begin` holds the career owner-row lock from context capture through turn persistence, and chat fact selection accepts only recognized technical terms or validated requirement semantics. Added regressions for the owner-lock transaction boundary and for excluding a skill fact that overlaps only on generic production/support wording. Targeted `VacancyPlanChatTest` passed with SQLite in-memory (36 tests / 221 assertions); backend Pint and Larastan passed; `git diff --check` passed. The two corresponding live PR threads were replied to and resolved. PostgreSQL execution of the conditional `FOR UPDATE` assertion remains unverified.

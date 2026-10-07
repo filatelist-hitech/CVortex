@@ -27,6 +27,9 @@ class VacancyAnalysisDraftService
         ?string $careerSignature = null): array
     {
         return $this->owners->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId, $snapshotId, $requestId, $analysis, $messageId, $careerSignature): array {
+            // Career writers take this lock before mutating facts or claims. Keep the captured
+            // signature and validation stable until the draft and its requirements are persisted.
+            User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
             $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
             Validator::make(['client_request_id' => $requestId], ['client_request_id' => ['required', 'string', 'max:128', 'regex:/\A[A-Za-z0-9_-]+\z/D']])->validate();
             $existing = VacancyAnalysisDraft::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)

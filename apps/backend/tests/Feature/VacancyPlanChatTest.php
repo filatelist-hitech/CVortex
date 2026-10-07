@@ -10,6 +10,7 @@ use App\Models\Vacancy;
 use App\Models\VacancyAnalysisDraft;
 use App\Models\VacancyLlmRun;
 use App\Models\VacancyRequirement;
+use App\Models\VacancySnapshot;
 use App\Services\CareerFactService;
 use App\Services\TrustedCareerQuery;
 use App\Services\VacancyAnalysisDraftService;
@@ -113,6 +114,42 @@ class VacancyPlanChatTest extends TestCase
 
         $this->assertSame(['user', 'assistant', 'user', 'assistant'], array_column($history, 'role'));
         $this->assertSame(['first question', 'first answer', 'second question', 'second answer'], array_column($history, 'content'));
+    }
+
+    public function test_history_omits_turns_with_a_stale_career_signature(): void
+    {
+        [$user, $vacancy] = $this->fixture('history-stale-career-signature');
+        $fact = app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $service = app(VacancyChatService::class);
+        $this->provider->text = 'Answer based on confirmed PHP evidence.';
+        $turn = $this->beginTurn($user, $vacancy, 'stale-career-history', 'Old evidence question', false);
+        iterator_to_array($service->stream($user, $turn));
+
+        app(CareerFactService::class)->deprecate($user, $fact);
+        $preview = $service->preview($user, $vacancy->id, 'Current evidence question', false);
+        $history = array_slice($preview['input'], 1, -1);
+
+        $this->assertSame([], $history);
+        $this->assertStringNotContainsString('Old evidence question', json_encode($history));
+        $this->assertStringNotContainsString('Answer based on confirmed PHP evidence.', json_encode($history));
+    }
+
+    public function test_history_omits_turns_from_a_stale_vacancy_snapshot(): void
+    {
+        [$user, $vacancy, $snapshot] = $this->fixture('history-stale-vacancy-snapshot');
+        $service = app(VacancyChatService::class);
+        $this->provider->text = 'Answer based on the prior vacancy source.';
+        $turn = $this->beginTurn($user, $vacancy, 'stale-snapshot-history', 'Old vacancy question', false);
+        iterator_to_array($service->stream($user, $turn));
+
+        VacancySnapshot::record((string) $user->id, (string) $vacancy->id, (int) $snapshot->version + 1,
+            'Updated engineer vacancy source.', null, hash('sha256', 'updated-source'), now());
+        $preview = $service->preview($user, $vacancy->id, 'Current vacancy question', false);
+        $history = array_slice($preview['input'], 1, -1);
+
+        $this->assertSame([], $history);
+        $this->assertStringNotContainsString('Old vacancy question', json_encode($history));
+        $this->assertStringNotContainsString('Answer based on the prior vacancy source.', json_encode($history));
     }
 
     public function test_history_limits_after_discarding_incomplete_runs(): void
@@ -684,6 +721,51 @@ class VacancyPlanChatTest extends TestCase
 
         $this->assertSame($first['id'], $retry['id']);
         $this->assertDatabaseCount('vacancy_analysis_drafts', 1);
+    }
+
+    public function test_draft_save_holds_the_career_owner_lock_through_validation_and_persistence(): void
+    {
+        [$user, $vacancy, $snapshot] = $this->fixture('draft-career-locked-save');
+        app(CareerFactService::class)->createManual($user, 'skill', 'Production PHP development.');
+        $baselineTransactionLevel = DB::transactionLevel();
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $sql = strtolower($query->sql);
+            if (str_contains($sql, 'users') || str_contains($sql, 'career_facts')
+                || str_contains($sql, 'insert into vacancy_analysis_drafts') || str_contains($sql, 'insert into "vacancy_analysis_drafts"')
+                || str_contains($sql, 'insert into vacancy_analysis_draft_requirements')
+                || str_contains($sql, 'insert into "vacancy_analysis_draft_requirements"')) {
+                $queries[] = ['sql' => $sql, 'transaction_level' => DB::transactionLevel()];
+            }
+        });
+
+        app(VacancyAnalysisDraftService::class)->save($user, $vacancy->id, $snapshot->id, 'locked-save', $this->analysis());
+
+        $ownerLockIndex = null;
+        $careerFactIndex = null;
+        $draftInsertIndexes = [];
+        foreach ($queries as $index => $query) {
+            if (str_contains($query['sql'], 'users')) {
+                $ownerLockIndex = $index;
+                if (DB::connection()->getDriverName() === 'pgsql') {
+                    $this->assertStringContainsString('for update', $query['sql']);
+                }
+            }
+            if (str_contains($query['sql'], 'career_facts')) {
+                $careerFactIndex ??= $index;
+                $this->assertGreaterThan($baselineTransactionLevel, $query['transaction_level']);
+            }
+            if (str_contains($query['sql'], 'insert into') && (str_contains($query['sql'], 'vacancy_analysis_drafts')
+                || str_contains($query['sql'], 'vacancy_analysis_draft_requirements'))) {
+                $draftInsertIndexes[] = $index;
+                $this->assertGreaterThan($baselineTransactionLevel, $query['transaction_level']);
+            }
+        }
+
+        $this->assertNotNull($ownerLockIndex);
+        $this->assertNotNull($careerFactIndex);
+        $this->assertLessThan($careerFactIndex, $ownerLockIndex);
+        $this->assertNotEmpty($draftInsertIndexes);
     }
 
     public function test_cross_user_cannot_read_threads_add_messages_save_or_approve_analysis(): void
