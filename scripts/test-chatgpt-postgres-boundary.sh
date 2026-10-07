@@ -10,7 +10,8 @@ cleanup() {
   docker compose exec -T backend rm -f "$counter" || true
   rm -f "${log_prefix}.refresh-a" "${log_prefix}.refresh-b" "${log_prefix}.draft-a" \
     "${log_prefix}.draft-b" "${log_prefix}.approval-a" "${log_prefix}.approval-b" \
-    "${log_prefix}.career-approval" "${log_prefix}.career-mutation"
+    "${log_prefix}.career-approval" "${log_prefix}.career-mutation" \
+    "${log_prefix}.mcp-read" "${log_prefix}.mcp-reimport"
   if [[ "$created" == true ]]; then
     docker compose exec -T postgres psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
       -c "DROP DATABASE \"$test_db\" WITH (FORCE)" >/dev/null
@@ -101,6 +102,17 @@ wait_worker "$approval_pid" "${log_prefix}.career-approval" 'approval concurrent
 wait_worker "$mutation_pid" "${log_prefix}.career-mutation" 'serialized Career Fact deprecation'
 worker career-race-verify
 printf '%s\n' 'PostgreSQL approval/Career Fact mutation serialization: PASS'
+
+# MCP must retain one vacancy version while a changed-content import waits on its row lock.
+worker mcp-read-setup
+worker mcp-read >"${log_prefix}.mcp-read" 2>&1 &
+read_pid=$!
+wait_pg_state cvortex-mcp-read Timeout PgSleep
+worker mcp-reimport >"${log_prefix}.mcp-reimport" 2>&1 &
+import_pid=$!
+wait_pg_state cvortex-mcp-reimport Lock ''
+wait_worker "$read_pid" "${log_prefix}.mcp-read" 'MCP vacancy read during re-import'
+wait_worker "$import_pid" "${log_prefix}.mcp-reimport" 'vacancy re-import after MCP read'
 
 docker compose run --rm --no-deps -e DB_DATABASE="$test_db" migration php artisan migrate:rollback --step=3 --force >/dev/null
 docker compose run --rm --no-deps -e DB_DATABASE="$test_db" migration php artisan migrate --force >/dev/null

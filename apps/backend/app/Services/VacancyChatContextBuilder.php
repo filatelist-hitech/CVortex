@@ -93,12 +93,15 @@ class VacancyChatContextBuilder
         }
         usort($ranked, fn (array $a, array $b): int => $b['score'] <=> $a['score']);
         $facts = [];
+        $factsTruncated = count($ranked) > 20;
         $budget = 8000;
         foreach (array_slice($ranked, 0, 20) as $entry) {
             /** @var CareerFact $fact */
             $fact = $entry['fact'];
             $assertion = $fact->approvedAssertion();
             if (mb_strlen($assertion) > $budget) {
+                $factsTruncated = true;
+
                 continue;
             }
             $budget -= mb_strlen($assertion);
@@ -160,7 +163,7 @@ class VacancyChatContextBuilder
             'vacancy' => ['id' => $vacancy->id, 'snapshot_id' => $snapshot->id, 'snapshot_version' => $snapshot->version,
                 'title' => $vacancy->title, 'company' => $vacancy->company, 'raw_text' => mb_substr($snapshot->raw_text, 0, self::MAX_SOURCE_CHARACTERS),
                 'source_truncated' => mb_strlen($snapshot->raw_text) > self::MAX_SOURCE_CHARACTERS],
-            'confirmed_facts' => $facts, 'fact_selection' => 'Bounded lexical relevance; absence is not absence of experience.',
+            'confirmed_facts' => $facts, 'facts_truncated' => $factsTruncated, 'fact_selection' => 'Bounded lexical relevance; absence is not absence of experience.',
             'selected_career_track' => null, 'career_track_available' => false,
             'employer_memory_available' => false, 'prior_approved_employer_statements' => $employer,
             'existing_analysis' => $analysis === null ? null : ['recommendation' => $analysis->recommendation, 'key_reasons' => array_slice((array) $analysis->key_reasons, 0, 8)],

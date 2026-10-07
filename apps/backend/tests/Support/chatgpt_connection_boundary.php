@@ -1,6 +1,7 @@
 <?php
 
 use App\AI\ChatGpt\ConnectionService;
+use App\Mcp\McpApplicationAdapter;
 use App\Models\CareerFact;
 use App\Models\ChatGptConnection;
 use App\Models\User;
@@ -87,6 +88,43 @@ if ($mode === 'setup') {
     });
     file_put_contents($counter, '0');
     echo "RLS and runtime-role isolation: PASS\n";
+} elseif ($mode === 'mcp-read-setup') {
+    Queue::fake();
+    $owner = User::query()->create(['email' => 'mcp-read-race@example.test', 'password' => 'synthetic-test-password'])->fresh();
+    app(VacancyIngestionService::class)->queue($owner, "Old Engineer\nCompany: Old Company\nPHP is required.", 'https://jobs.example.test/mcp-read-race');
+    $owners->run($owner->id, fn () => Vacancy::query()->update(['analysis_status' => 'FAILED']));
+} elseif ($mode === 'mcp-read') {
+    $owner = User::query()->where('email', 'mcp-read-race@example.test')->firstOrFail();
+    $vacancy = $owners->run($owner->id, fn () => Vacancy::query()->firstOrFail());
+    DB::selectOne("SELECT set_config('application_name', 'cvortex-mcp-read', false)");
+    $paused = false;
+    DB::listen(function ($query) use (&$paused): void {
+        if (! $paused && str_starts_with($query->sql, 'select') && str_contains($query->sql, 'from "vacancies"')) {
+            $paused = true;
+            DB::selectOne('SELECT pg_sleep(3)');
+        }
+    });
+    $payload = app(McpApplicationAdapter::class)->vacancy($owner, $vacancy->id);
+    assert($payload['title'] === 'Old Engineer');
+    assert($payload['company'] === 'Old Company');
+    assert($payload['analysis_status'] === 'FAILED');
+    assert($payload['snapshot_version'] === 1);
+    assert($payload['raw_text'] === "Old Engineer\nCompany: Old Company\nPHP is required.");
+    assert(DB::transactionLevel() === 0);
+    echo "MCP metadata/snapshot read during re-import: PASS\n";
+} elseif ($mode === 'mcp-reimport') {
+    Queue::fake();
+    $owner = User::query()->where('email', 'mcp-read-race@example.test')->firstOrFail();
+    DB::selectOne("SELECT set_config('application_name', 'cvortex-mcp-reimport', false)");
+    $result = app(VacancyIngestionService::class)->queue($owner, "New Engineer\nCompany: New Company\nLaravel is required.", 'https://jobs.example.test/mcp-read-race');
+    assert($result['snapshot']->version === 2);
+    $payload = app(McpApplicationAdapter::class)->vacancy($owner, $result['vacancy']->id);
+    assert($payload['title'] === 'New Engineer');
+    assert($payload['company'] === 'New Company');
+    assert($payload['analysis_status'] === 'PENDING');
+    assert($payload['snapshot_version'] === 2);
+    assert($payload['raw_text'] === "New Engineer\nCompany: New Company\nLaravel is required.");
+    echo "MCP metadata/snapshot read after re-import: PASS\n";
 } elseif ($mode === 'refresh') {
     $owner = User::query()->where('email', 'chatgpt-owner@example.test')->firstOrFail();
     $connection = $owners->run($owner->id, fn () => ChatGptConnection::query()->firstOrFail());

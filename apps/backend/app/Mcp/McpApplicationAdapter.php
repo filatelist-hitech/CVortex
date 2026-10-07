@@ -10,6 +10,7 @@ use App\Services\ApplicationContextBuilder;
 use App\Services\DatabaseOwnerContext;
 use App\Services\VacancyChatContextBuilder;
 use App\Services\VacancyMatchingService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class McpApplicationAdapter
@@ -30,13 +31,13 @@ class McpApplicationAdapter
     /** @return array<string, mixed> */
     public function vacancy(User $user, string $vacancyId): array
     {
-        return $this->ownerContext->run((string) $user->id, function () use ($user, $vacancyId): array {
-            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+        return $this->ownerContext->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId): array {
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
 
             $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
 
             return $this->vacancyPayload($vacancy, $snapshot);
-        });
+        }));
     }
 
     /** @return array<string, mixed> */
@@ -48,6 +49,7 @@ class McpApplicationAdapter
             $data = json_decode($bounded['input'][0]['content'], true);
             $facts = $data['confirmed_facts'];
             $sourceTruncated = $data['vacancy']['source_truncated'];
+            $factsTruncated = $data['facts_truncated'];
             $snapshot = $bounded['snapshot'];
             if ($vacancy->analysis_status !== Vacancy::STATUS_COMPLETED) {
                 return [
@@ -57,7 +59,7 @@ class McpApplicationAdapter
                     'confirmed_facts' => $facts,
                     'career_signature' => $bounded['career_signature'],
                     'untrusted_vacancy_data' => true,
-                    'context_truncated' => $sourceTruncated,
+                    'context_truncated' => $sourceTruncated || $factsTruncated,
                 ];
             }
             $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
@@ -70,7 +72,7 @@ class McpApplicationAdapter
             $context = $this->contextBuilder->build($user, $snapshot, $analysis);
             $requirements = $context['requirements'];
             $claims = $context['claims'];
-            $truncated = $sourceTruncated || count($requirements) > self::MAX_REQUIREMENTS || count($claims) > self::MAX_CLAIMS;
+            $truncated = $sourceTruncated || $factsTruncated || count($requirements) > self::MAX_REQUIREMENTS || count($claims) > self::MAX_CLAIMS;
             $boundedClaims = array_slice($claims, 0, self::MAX_CLAIMS);
 
             return [

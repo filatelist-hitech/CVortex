@@ -512,6 +512,55 @@ class McpGatewayTest extends TestCase
         $this->assertSame('NOT_FOUND', $context['result']['content'][0]['text']);
     }
 
+    public function test_vacancy_metadata_and_snapshot_are_read_in_one_transaction(): void
+    {
+        [$user, $vacancyId] = $this->vacancy('mcp-atomic-vacancy@example.test');
+        $reads = [];
+        DB::listen(function ($query) use (&$reads): void {
+            if (str_starts_with($query->sql, 'select')
+                && (str_contains($query->sql, 'from "vacancies"') || str_contains($query->sql, 'from "vacancy_snapshots"'))) {
+                $reads[] = $query->connection->transactionLevel();
+            }
+        });
+        $level = DB::transactionLevel();
+
+        $payload = app(McpApplicationAdapter::class)->vacancy($user, $vacancyId);
+
+        $this->assertCount(2, $reads);
+        $this->assertSame([$level + 1, $level + 1], $reads);
+        $this->assertSame($vacancyId, $payload['id']);
+        $this->assertSame(1, $payload['snapshot_version']);
+        $this->assertSame($level, DB::transactionLevel());
+    }
+
+    public function test_context_marks_relevant_facts_omitted_by_item_or_character_budget(): void
+    {
+        foreach (['COMPLETED', 'FAILED'] as $status) {
+            foreach (['items', 'characters'] as $limit) {
+                [$user, $vacancyId] = $this->vacancy("mcp-fact-cap-{$status}-{$limit}@example.test");
+                $count = $limit === 'items' ? 20 : 2;
+                for ($index = 0; $index < $count; $index++) {
+                    $statement = $limit === 'items' ? "Laravel API skill {$index}." : 'Laravel '.str_repeat('evidence ', 500);
+                    app(CareerFactService::class)->createManual($user, 'skill', $statement);
+                }
+                if ($status === 'COMPLETED') {
+                    $snapshot = VacancySnapshot::query()->where('vacancy_id', $vacancyId)->firstOrFail();
+                    app(VacancyAnalysisService::class)->analyze($user, $snapshot);
+                } else {
+                    DB::table('vacancies')->where('id', $vacancyId)->update(['analysis_status' => $status]);
+                }
+
+                $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))
+                    ->assertOk()->json('result.structuredContent');
+
+                $this->assertSame($status, $context['vacancy']['analysis_status']);
+                $this->assertFalse($context['vacancy']['source_truncated']);
+                $this->assertTrue($context['context_truncated']);
+                $this->assertCount($limit === 'items' ? 20 : 2, $context['confirmed_facts']);
+            }
+        }
+    }
+
     public function test_context_output_has_hard_item_caps(): void
     {
         [$user, $vacancyId] = $this->vacancy('mcp-context-caps@example.test');
@@ -553,7 +602,7 @@ class McpGatewayTest extends TestCase
             'career_signature' => $snapshotSignature,
             'input' => [['role' => 'user', 'content' => json_encode([
                 'confirmed_facts' => [['id' => 'snapshot-fact', 'statement' => 'Snapshot fact', 'status' => 'CONFIRMED']],
-                'vacancy' => ['source_truncated' => false],
+                'vacancy' => ['source_truncated' => false], 'facts_truncated' => false,
             ], JSON_THROW_ON_ERROR)]],
         ]);
         $builder = \Mockery::mock(ApplicationContextBuilder::class);
@@ -583,7 +632,7 @@ class McpGatewayTest extends TestCase
             'career_signature' => str_repeat('b', 64),
             'input' => [['role' => 'user', 'content' => json_encode([
                 'confirmed_facts' => [['id' => 'bounded-fact', 'statement' => 'Bounded fact', 'status' => 'CONFIRMED']],
-                'vacancy' => ['source_truncated' => false],
+                'vacancy' => ['source_truncated' => false], 'facts_truncated' => false,
             ], JSON_THROW_ON_ERROR)]],
         ]);
         $builder = \Mockery::mock(ApplicationContextBuilder::class);
