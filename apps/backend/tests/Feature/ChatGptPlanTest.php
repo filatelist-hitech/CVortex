@@ -281,7 +281,7 @@ class ChatGptPlanTest extends TestCase
             fn () => app(ConnectionService::class)->complete(['state' => $parameters['state'], 'code' => 'code']),
             'OAUTH_ATTEMPT_INVALIDATED',
         );
-        Http::assertSent(fn ($request): bool => $request->url() === config('chatgpt.token_url'));
+        Http::assertNotSent(fn ($request): bool => $request->url() === config('chatgpt.token_url'));
         $this->assertSame(1, $connection->fresh()->oauth_generation);
         $this->assertSame('NOT_CONNECTED', $connection->fresh()->status);
         $this->assertNull($connection->fresh()->access_token);
