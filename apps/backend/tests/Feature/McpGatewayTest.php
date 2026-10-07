@@ -549,6 +549,7 @@ class McpGatewayTest extends TestCase
         $analysisSignature = str_repeat('a', 64);
         $chatContext = \Mockery::mock(VacancyChatContextBuilder::class);
         $chatContext->shouldReceive('build')->once()->andReturn([
+            'snapshot' => VacancySnapshot::query()->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail(),
             'career_signature' => $snapshotSignature,
             'input' => [['role' => 'user', 'content' => json_encode([
                 'confirmed_facts' => [['id' => 'snapshot-fact', 'statement' => 'Snapshot fact', 'status' => 'CONFIRMED']],
@@ -568,6 +569,36 @@ class McpGatewayTest extends TestCase
 
         $this->assertSame($snapshotSignature, $context['career_signature']);
         $this->assertSame(['snapshot-fact'], array_column($context['confirmed_facts'], 'id'));
+    }
+
+    public function test_context_returns_the_same_snapshot_used_to_select_confirmed_facts(): void
+    {
+        [$user, $vacancyId] = $this->vacancy('mcp-context-consistent-snapshot@example.test');
+        $boundedSnapshot = VacancySnapshot::query()->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
+        $newer = app(VacancyIngestionService::class)->queue($user, 'New version with unrelated content.', null)['snapshot'];
+        DB::table('vacancies')->where('id', $vacancyId)->update(['analysis_status' => 'FAILED']);
+        $chatContext = \Mockery::mock(VacancyChatContextBuilder::class);
+        $chatContext->shouldReceive('build')->once()->andReturn([
+            'snapshot' => $boundedSnapshot,
+            'career_signature' => str_repeat('b', 64),
+            'input' => [['role' => 'user', 'content' => json_encode([
+                'confirmed_facts' => [['id' => 'bounded-fact', 'statement' => 'Bounded fact', 'status' => 'CONFIRMED']],
+                'vacancy' => ['source_truncated' => false],
+            ], JSON_THROW_ON_ERROR)]],
+        ]);
+        $builder = \Mockery::mock(ApplicationContextBuilder::class);
+        $builder->shouldReceive('build')->never();
+        $this->app->instance(McpApplicationAdapter::class, new McpApplicationAdapter(
+            app(DatabaseOwnerContext::class), $builder, app(VacancyMatchingService::class), $chatContext,
+        ));
+
+        $context = $this->mcpRequest($user, $this->mcpCall('application_context_get', ['vacancy_id' => $vacancyId]))
+            ->assertOk()->json('result.structuredContent');
+
+        $this->assertNotSame($boundedSnapshot->id, $newer->id);
+        $this->assertSame((string) $boundedSnapshot->id, $context['vacancy']['snapshot_id']);
+        $this->assertSame($boundedSnapshot->raw_text, $context['vacancy']['raw_text']);
+        $this->assertSame(['bounded-fact'], array_column($context['confirmed_facts'], 'id'));
     }
 
     public function test_oauth_consent_uses_the_cvortex_view(): void

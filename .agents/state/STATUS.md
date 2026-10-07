@@ -1,5 +1,11 @@
 # CVortex Project State
 
+## PR #42 follow-up review findings — 2026-10-07
+
+`application_context_get` now uses the exact vacancy snapshot returned with its bounded Career Facts for both the vacancy payload and analysis lookup. The Codex skill's draft-save workflow now supplies `career_signature` from `application_context_get`. The initial OAuth registration callback finding is also present in the current branch: callbacks lock the connection and compare `oauth_generation` before code exchange; its regression verifies disconnect prevents the token request.
+
+Validation: `ChatGptPlanTest` and `McpGatewayTest` passed with SQLite in-memory (35 tests / 400 assertions); targeted Pint passed for the changed backend adapter and MCP test; Larastan passed for the adapter; `git diff --check` passed. An initial test run against `cvortex_test` could not drop tables because the runtime role is not the table owner; no assertions ran in that attempt. Exact-head CI is pending the PR update.
+
 ## Authorized live vacancy retry — 2026-10-03
 
 With explicit user permission to send the analysis request to OpenAI, invoked the existing owner-scoped VacancyReanalysisService through the runtime application; no manual status changes or retry-policy bypass. Horizon executed all three normal attempts using `openai` / `gpt-6-luna`. All three recorded `RATE_LIMITED` / `NOT_VALIDATED` (provider maps HTTP 429 to this category), replacing the previous transport failure. Final aggregate status is `FAILED` / `PROVIDER_ERROR`, no next retry is scheduled and no VacancyAnalysis was created. TrustedCareerQuery contains one eligible confirmed/provenanced fact and one Truth-Guard-PASS Claim, but matching could not execute without extracted requirements. This verifies outbound provider reachability, not model availability or quota sufficiency. The stored category does not distinguish rate limits from exhausted quota; no raw provider body was collected. No additional provider probe, push or publication performed. Next bounded action: operator checks the configured OpenAI project's billing/quota/rate limits, then authorizes another analysis attempt.

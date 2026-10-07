@@ -35,15 +35,7 @@ class McpApplicationAdapter
 
             $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
 
-            return [
-                'snapshot_id' => (string) $snapshot->id, 'snapshot_version' => (int) $snapshot->version,
-                'raw_text' => mb_substr($snapshot->raw_text, 0, 25000), 'source_truncated' => mb_strlen($snapshot->raw_text) > 25000,
-                'id' => (string) $vacancy->id,
-                'title' => (string) $vacancy->title,
-                'company' => (string) $vacancy->company,
-                'analysis_status' => (string) $vacancy->analysis_status,
-                'untrusted_data' => true,
-            ];
+            return $this->vacancyPayload($vacancy, $snapshot);
         });
     }
 
@@ -56,9 +48,10 @@ class McpApplicationAdapter
             $data = json_decode($bounded['input'][0]['content'], true);
             $facts = $data['confirmed_facts'];
             $sourceTruncated = $data['vacancy']['source_truncated'];
+            $snapshot = $bounded['snapshot'];
             if ($vacancy->analysis_status !== Vacancy::STATUS_COMPLETED) {
                 return [
-                    'vacancy' => $this->vacancy($user, $vacancyId),
+                    'vacancy' => $this->vacancyPayload($vacancy, $snapshot),
                     'requirements' => [],
                     'confirmed_claims' => [],
                     'confirmed_facts' => $facts,
@@ -67,8 +60,6 @@ class McpApplicationAdapter
                     'context_truncated' => $sourceTruncated,
                 ];
             }
-            $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
-                ->orderByDesc('version')->orderByDesc('id')->firstOrFail();
             $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
                 ->where('vacancy_snapshot_id', $snapshot->id)
                 ->forCareerSignature($this->matching->careerSignature($user))->deterministicLatest()->first();
@@ -83,7 +74,7 @@ class McpApplicationAdapter
             $boundedClaims = array_slice($claims, 0, self::MAX_CLAIMS);
 
             return [
-                'vacancy' => $this->vacancy($user, $vacancyId),
+                'vacancy' => $this->vacancyPayload($vacancy, $snapshot),
                 'confirmed_facts' => $facts,
                 'career_signature' => $bounded['career_signature'],
                 'requirements' => array_map(fn (array $item): array => [
@@ -105,5 +96,19 @@ class McpApplicationAdapter
                 'context_truncated' => $truncated,
             ];
         });
+    }
+
+    /** @return array<string, mixed> */
+    private function vacancyPayload(Vacancy $vacancy, VacancySnapshot $snapshot): array
+    {
+        return [
+            'snapshot_id' => (string) $snapshot->id, 'snapshot_version' => (int) $snapshot->version,
+            'raw_text' => mb_substr($snapshot->raw_text, 0, 25000), 'source_truncated' => mb_strlen($snapshot->raw_text) > 25000,
+            'id' => (string) $vacancy->id,
+            'title' => (string) $vacancy->title,
+            'company' => (string) $vacancy->company,
+            'analysis_status' => (string) $vacancy->analysis_status,
+            'untrusted_data' => true,
+        ];
     }
 }
