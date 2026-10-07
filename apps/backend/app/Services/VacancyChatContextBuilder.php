@@ -26,6 +26,15 @@ class VacancyChatContextBuilder
         'rust', 'sql', 'swift', 'typescript', 'vue',
     ];
 
+    private const LANGUAGE_TERMS = [
+        'arabic', 'chinese', 'czech', 'danish', 'dutch', 'english', 'finnish', 'french', 'german', 'greek',
+        'hebrew', 'hindi', 'hungarian', 'indonesian', 'italian', 'japanese', 'korean', 'mandarin', 'norwegian',
+        'polish', 'portuguese', 'romanian', 'russian', 'slovak', 'spanish', 'swedish', 'thai', 'turkish',
+        'ukrainian', 'vietnamese',
+    ];
+
+    private const WORK_FORMAT_TERMS = ['hybrid', 'office', 'onsite', 'remote'];
+
     private const NON_DISCRIMINATIVE_TERMS = [
         'about', 'after', 'all', 'also', 'am', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'been', 'before',
         'being', 'between', 'both', 'but', 'by', 'can', 'could', 'did', 'do', 'does', 'doing', 'down', 'during',
@@ -63,12 +72,14 @@ class VacancyChatContextBuilder
         $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->latest('version')->firstOrFail();
         $careerContext = $this->career->forMatching($user);
         $careerSignature = $this->matching->careerSignatureForContext($careerContext);
+        $requirements = VacancyRequirement::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
+            ->limit(20)->get(['dimension', 'importance', 'label', 'normalized_value']);
         $terms = $this->terms($snapshot->raw_text.' '.$turn);
         $ranked = [];
         foreach ($careerContext['facts'] as $fact) {
             $overlap = array_values(array_intersect($terms, $this->terms($fact->approvedAssertion())));
             $score = count($overlap);
-            if ($this->hasSubstantiveOverlap($overlap)) {
+            if ($this->hasSubstantiveOverlap($overlap, $requirements, $fact->approvedAssertion())) {
                 $ranked[] = ['fact' => $fact, 'score' => $score];
             }
         }
@@ -145,8 +156,9 @@ class VacancyChatContextBuilder
             'selected_career_track' => null, 'career_track_available' => false,
             'employer_memory_available' => false, 'prior_approved_employer_statements' => $employer,
             'existing_analysis' => $analysis === null ? null : ['recommendation' => $analysis->recommendation, 'key_reasons' => array_slice((array) $analysis->key_reasons, 0, 8)],
-            'normalized_requirements' => VacancyRequirement::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
-                ->limit(20)->get(['dimension', 'importance', 'label'])->toArray(),
+            'normalized_requirements' => $requirements->map(fn (VacancyRequirement $requirement): array => [
+                'dimension' => $requirement->dimension, 'importance' => $requirement->importance, 'label' => $requirement->label,
+            ])->all(),
         ];
 
         return ['snapshot' => $snapshot, 'career_signature' => $careerSignature,
@@ -155,9 +167,54 @@ class VacancyChatContextBuilder
     }
 
     /** @param list<string> $overlap */
-    private function hasSubstantiveOverlap(array $overlap): bool
+    /** @param list<string> $overlap
+     * @param  iterable<VacancyRequirement>  $requirements
+     */
+    private function hasSubstantiveOverlap(array $overlap, iterable $requirements, string $assertion): bool
     {
-        return array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== [];
+        if (array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []
+            || array_intersect($overlap, self::LANGUAGE_TERMS) !== []
+            || array_intersect($overlap, self::WORK_FORMAT_TERMS) !== []) {
+            return true;
+        }
+
+        foreach ($requirements as $requirement) {
+            if ($requirement->dimension === 'SALARY'
+                && $this->salaryRequirementMatches($requirement->normalized_value, $assertion)) {
+                return true;
+            }
+            if (! in_array($requirement->dimension, ['DOMAIN', 'EXPERIENCE', 'LANGUAGE', 'LOCATION', 'WORK_FORMAT'], true)) {
+                continue;
+            }
+
+            $subjectTerms = $this->terms($requirement->label.' '.(string) $requirement->normalized_value);
+            if (array_intersect($overlap, $subjectTerms) !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function salaryRequirementMatches(?string $normalizedValue, string $assertion): bool
+    {
+        if (! is_string($normalizedValue) || preg_match('/\A(usd|eur|rub):(\d+)\z/i', $normalizedValue, $match) !== 1) {
+            return false;
+        }
+
+        $digits = implode('[\\s,.]?', str_split($match[2]));
+        $currency = match (strtolower($match[1])) {
+            'usd' => '(?:usd|\$)',
+            'eur' => '(?:eur|€)',
+            'rub' => '(?:rub|руб|₽)',
+            default => null,
+        };
+        if ($currency === null) {
+            return false;
+        }
+
+        return preg_match('/(?<!\d)'.$digits.'(?!\d)/iu', $assertion) === 1
+            && preg_match('/\b'.$currency.'\b|'.$currency.'/iu', $assertion) === 1;
     }
 
     /** @return list<string> */

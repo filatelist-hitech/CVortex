@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancyAnalysisDraft;
 use App\Models\VacancyLlmRun;
+use App\Models\VacancyRequirement;
 use App\Services\CareerFactService;
 use App\Services\TrustedCareerQuery;
 use App\Services\VacancyAnalysisDraftService;
@@ -337,6 +338,48 @@ class VacancyPlanChatTest extends TestCase
         $this->assertSame([$relevant->id], array_column($data['confirmed_facts'], 'id'));
         $this->assertStringNotContainsString('medical devices', json_encode($context['input']));
         $this->assertStringNotContainsString('team of engineers', json_encode($context['input']));
+    }
+
+    public function test_context_keeps_a_fact_matching_a_normalized_language_requirement(): void
+    {
+        $source = implode("\n", [
+            'German C1 is required.', 'Berlin is the required work location.', 'Fully remote work is required.',
+            'Five years of pharmaceutical sales experience are required.', 'Salary minimum: 100 000 RUB.',
+            'PHP development is also required.',
+        ]);
+        [$user, $vacancy, $snapshot] = $this->fixture('language-context', $source);
+        $language = app(CareerFactService::class)->createManual($user, 'language', 'German C1');
+        $location = app(CareerFactService::class)->createManual($user, 'experience', 'Based in Berlin');
+        $workFormat = app(CareerFactService::class)->createManual($user, 'experience', 'I work fully remote');
+        $domain = app(CareerFactService::class)->createManual($user, 'experience', 'Five years in pharmaceutical sales');
+        $salary = app(CareerFactService::class)->createManual($user, 'experience', 'Expected salary is 100 000 RUB');
+        $irrelevant = app(CareerFactService::class)->createManual($user, 'experience', 'Managed production support for medical devices.');
+        $relevant = app(CareerFactService::class)->createManual($user, 'skill', 'PHP development and API design.');
+        foreach ([
+            ['LANGUAGE', 'German', 'C1', 'German C1 is required.'],
+            ['LOCATION', 'Berlin', 'berlin', 'Berlin is the required work location.'],
+            ['WORK_FORMAT', 'Fully remote', 'remote', 'Fully remote work is required.'],
+            ['DOMAIN', 'pharmaceutical sales', 'pharmaceutical sales', 'Five years of pharmaceutical sales experience are required.'],
+            ['EXPERIENCE', 'pharmaceutical sales', 'years:5', 'Five years of pharmaceutical sales experience are required.'],
+            ['SALARY', 'Salary minimum', 'rub:100000', 'Salary minimum: 100 000 RUB.'],
+        ] as [$dimension, $label, $normalizedValue, $excerpt]) {
+            VacancyRequirement::query()->create([
+                'owner_id' => $user->id, 'vacancy_snapshot_id' => $snapshot->id, 'dimension' => $dimension,
+                'importance' => 'MANDATORY', 'label' => $label, 'normalized_value' => $normalizedValue,
+                'source_excerpt' => $excerpt, 'confidence' => 1, 'extracted_by' => 'test',
+                'candidate_hash' => hash('sha256', $dimension.$label),
+            ]);
+        }
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertEqualsCanonicalizing([
+            $language->id, $location->id, $workFormat->id, $domain->id, $salary->id, $relevant->id,
+        ], array_column($data['confirmed_facts'], 'id'));
+        $this->assertStringNotContainsString('medical devices', json_encode($context['input']));
+        $this->assertNotContains($irrelevant->id, array_column($data['confirmed_facts'], 'id'));
     }
 
     public function test_context_keeps_single_letter_c_technology_overlap(): void
