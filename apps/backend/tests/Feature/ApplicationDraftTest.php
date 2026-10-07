@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\ApplicationPreparationService;
 use App\Services\CareerFactService;
 use App\Services\VacancyAnalysisService;
+use App\Services\VacancyChatContextBuilder;
 use App\Services\VacancyIngestionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -29,7 +30,7 @@ class ApplicationDraftTest extends TestCase
     {
         Queue::fake();
         $user = $this->user('draft@example.test');
-        app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
+        $careerFact = app(CareerFactService::class)->createManual($user, 'skill', 'Built Laravel APIs.');
         $provider = new ApplicationDraftFakeProvider;
         $this->app->instance(LlmProvider::class, $provider);
         $queued = app(VacancyIngestionService::class)->queue($user, 'Backend Engineer at Example. Laravel is required.', null);
@@ -58,6 +59,20 @@ class ApplicationDraftTest extends TestCase
         $this->assertSame('APPROVED', $approved['status']);
         $this->assertSame('APPROVED', collect($approved['items'])->firstWhere('id', $recommendation['id'])['status']);
         $this->assertDatabaseHas('application_approval_events', ['draft_item_id' => $recommendation['id'], 'action' => 'APPROVED', 'revision_number' => 1]);
+        $queued['vacancy']->update(['company' => 'Example']);
+        $context = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
+        $data = json_decode($context['input'][0]['content'], true);
+        $this->assertFalse($data['employer_memory_available']);
+        $this->assertSame([], $data['prior_approved_employer_statements']);
+        app(CareerFactService::class)->deprecate($user, $careerFact);
+        $revokedContext = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
+        $revokedData = json_decode($revokedContext['input'][0]['content'], true);
+        $this->assertFalse($revokedData['employer_memory_available']);
+        $this->assertSame([], $revokedData['prior_approved_employer_statements']);
+        $queued['vacancy']->update(['company' => null]);
+        $emptyContext = app(VacancyChatContextBuilder::class)->build($user, $queued['vacancy'], 'Analyze vacancy');
+        $this->assertFalse(json_decode($emptyContext['input'][0]['content'], true)['employer_memory_available']);
+
         $this->assertSame(['ACCEPTED', 'APPROVED'], collect($approved['items'])->firstWhere('id', $recommendation['id'])['approvals']->pluck('action')->all());
         $this->postJson('/api/v1/applications/draft-items/'.$recommendation['id'].'/approve')->assertUnprocessable();
         $this->assertSame(1, \DB::table('application_approval_events')->where('draft_item_id', $recommendation['id'])->where('action', 'APPROVED')->count());

@@ -1,8 +1,12 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Home from "../page";
 import RegisterPage from "../register/page";
+
+// Vacancy chat has its own integration tests; isolate vacancy selection race fixtures.
+vi.mock("../vacancy-chat", () => ({ default: () => null }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
@@ -26,6 +30,16 @@ function mockVacancyPoll(onPoll: (poll: () => void) => void) {
 }
 
 describe("access shell", () => {
+  it("keeps credential submission disabled before hydration and uses POST", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<Home />);
+    const form = container.querySelector("form");
+    expect(form?.getAttribute("method")).toBe("post");
+    expect(form?.getAttribute("action")).toBe("/api/v1/auth/login");
+    expect(form?.querySelector("button")).toBeDisabled();
+    expect(form?.querySelector("button")).toHaveTextContent("Loading…");
+  });
+
   it("renders the approved brand and sign-in form", () => {
     render(<Home />);
 

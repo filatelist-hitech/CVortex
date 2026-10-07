@@ -16,7 +16,7 @@ if (config('mcp.enabled')) {
             return response()->json([
                 'resource' => $resource->resourceUri(),
                 'authorization_servers' => [$resource->authorizationServerUri()],
-                'scopes_supported' => ['mcp:use'],
+                'scopes_supported' => ['mcp:use', McpResource::DRAFT_WRITE_SCOPE],
                 'bearer_methods_supported' => ['header'],
             ]);
         };
@@ -40,7 +40,7 @@ if (config('mcp.enabled')) {
                 'grant_types_supported' => ['authorization_code', 'refresh_token'],
                 'token_endpoint_auth_methods_supported' => ['none'],
                 'code_challenge_methods_supported' => ['S256'],
-                'scopes_supported' => ['mcp:use'],
+                'scopes_supported' => ['mcp:use', McpResource::DRAFT_WRITE_SCOPE],
                 'authorization_response_iss_parameter_supported' => true,
             ]);
         })->name('mcp.oauth.authorization-server.cvortex');

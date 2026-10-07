@@ -39,3 +39,7 @@ There are no MCP product-data writes or MCP write rate bucket. MCP read calls do
 - [MCP Gateway architecture](../02-Architecture/MCP-Gateway.md)
 - [MCP validation](../10-Operations/MCP-Gateway-Validation.md)
 - [Current OpenAI/MCP research](../../research/technical/11-MCP-GATEWAY-FOUNDATION.md)
+
+## Amendment — 2026-10-04
+
+[ADR-0023](ADR-0023-chatgpt-plan-chat.md), authorized by the explicit expanded owner request, permits exactly one additional tool: `vacancy_analysis_draft_save`. It saves only validated owner-bound vacancy-analysis drafts through the shared application service. The historical two-tool decision above describes the prior boundary; all other prohibitions remain. External approval, fact changes and application submission remain unavailable.

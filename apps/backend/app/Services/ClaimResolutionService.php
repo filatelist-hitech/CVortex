@@ -6,6 +6,7 @@ use App\Models\CareerFact;
 use App\Models\Claim;
 use App\Models\ClaimEvidence;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ClaimResolutionService
@@ -62,30 +63,36 @@ class ClaimResolutionService
         if (! hash_equals($user->id, (string) $claim->owner_id)) {
             abort(404);
         }
-        if ($claim->resolution_reason !== 'VALID_EVIDENCE_AMBIGUITY' || $claim->resolution_requested_at === null) {
-            throw ValidationException::withMessages(['claim' => 'The claim does not require a valid-evidence resolution.']);
-        }
-        $selectedEvidence = ClaimEvidence::query()
-            ->where('owner_id', $user->id)
-            ->where('claim_id', $claim->id)
-            ->where('career_fact_id', $selectedFact->id)
-            ->first();
-        if ($selectedEvidence === null
-            || ! app(CareerOwnerChain::class)->evidenceSupportsClaim($selectedEvidence, $claim, $selectedFact)) {
-            throw ValidationException::withMessages(['career_fact_id' => 'The selected fact is not valid evidence for this claim.']);
-        }
 
-        $claim->forceFill([
-            'resolved_by' => $user->id,
-            'resolved_at' => now(),
-            'resolved_career_fact_id' => $selectedFact->id,
-        ])->save();
-        $claim->forceFill(['truth_status' => $this->truthGuard->evaluate($claim)])->save();
-        $this->audit->record('claim.valid_evidence_ambiguity_resolved', 'USER', $user, Claim::class, $claim->id, [
-            'resolution_reason' => 'VALID_EVIDENCE_AMBIGUITY',
-            'resolved_career_fact_id' => $selectedFact->id,
-        ]);
+        return DB::transaction(function () use ($user, $claim, $selectedFact): Claim {
+            User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $claim = Claim::query()->where('owner_id', $user->id)->whereKey($claim->id)->lockForUpdate()->firstOrFail();
+            $selectedFact = CareerFact::query()->where('owner_id', $user->id)->whereKey($selectedFact->id)->lockForUpdate()->firstOrFail();
+            if ($claim->resolution_reason !== 'VALID_EVIDENCE_AMBIGUITY' || $claim->resolution_requested_at === null) {
+                throw ValidationException::withMessages(['claim' => 'The claim does not require a valid-evidence resolution.']);
+            }
+            $selectedEvidence = ClaimEvidence::query()
+                ->where('owner_id', $user->id)
+                ->where('claim_id', $claim->id)
+                ->where('career_fact_id', $selectedFact->id)
+                ->first();
+            if ($selectedEvidence === null
+                || ! app(CareerOwnerChain::class)->evidenceSupportsClaim($selectedEvidence, $claim, $selectedFact)) {
+                throw ValidationException::withMessages(['career_fact_id' => 'The selected fact is not valid evidence for this claim.']);
+            }
 
-        return $claim;
+            $claim->forceFill([
+                'resolved_by' => $user->id,
+                'resolved_at' => now(),
+                'resolved_career_fact_id' => $selectedFact->id,
+            ])->save();
+            $claim->forceFill(['truth_status' => $this->truthGuard->evaluate($claim)])->save();
+            $this->audit->record('claim.valid_evidence_ambiguity_resolved', 'USER', $user, Claim::class, $claim->id, [
+                'resolution_reason' => 'VALID_EVIDENCE_AMBIGUITY',
+                'resolved_career_fact_id' => $selectedFact->id,
+            ]);
+
+            return $claim;
+        });
     }
 }

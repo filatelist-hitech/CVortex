@@ -27,11 +27,11 @@ class VacancyMatchingService
     {
         $context = $this->career->forMatching($user);
 
-        return $this->signatureForContext($context);
+        return $this->careerSignatureForContext($context);
     }
 
     /** @param array{facts: list<CareerFact>, claims: list<Claim>} $context */
-    private function signatureForContext(array $context): string
+    public function careerSignatureForContext(array $context): string
     {
         $values = [];
         foreach ($context['facts'] as $fact) {
@@ -48,7 +48,7 @@ class VacancyMatchingService
     public function analyze(User $user, Vacancy $vacancy, VacancySnapshot $snapshot, ?string $runToken = null): VacancyAnalysis
     {
         $context = $this->career->forMatching($user);
-        $signature = $this->signatureForContext($context);
+        $signature = $this->careerSignatureForContext($context);
         $requirements = VacancyRequirement::query()
             ->where('owner_id', $user->id)
             ->where('vacancy_snapshot_id', $snapshot->id)
@@ -258,6 +258,40 @@ class VacancyMatchingService
             'mandatory_count' => $mandatoryCount,
             'mandatory_matches' => $mandatoryMatches,
         ];
+    }
+
+    public function hasContextSubjectEvidence(VacancyRequirement $requirement, string $assertion): bool
+    {
+        foreach ($this->candidateClauses($assertion) as $clause) {
+            $text = $this->normalize($clause);
+            if ($requirement->dimension === 'LANGUAGE' && $this->languageEvidenceAllowed($requirement, $text)) {
+                return true;
+            }
+            if ($requirement->dimension === 'WORK_FORMAT' && $this->candidateWorkFormatValues($text) !== []) {
+                return true;
+            }
+            if ($requirement->dimension === 'LOCATION') {
+                $actual = $this->structuredCandidateValue('LOCATION', $text);
+                if ($actual !== null && $this->structuredCompatible('LOCATION', $this->normalize((string) $requirement->normalized_value), $this->normalize($actual))) {
+                    return true;
+                }
+            }
+            if ($requirement->dimension === 'EXPERIENCE'
+                && $this->relevantStructuredEvidence($requirement, $clause)
+                && ! $this->candidateEvidenceNegated($requirement, $text)) {
+                return true;
+            }
+            if ($requirement->dimension === 'DOMAIN') {
+                $subject = $this->concreteLabelSubject($requirement->label);
+                if ($subject !== '' && $this->directSupportAllowed($requirement, $text)
+                    && ! $this->candidateEvidenceNegated($requirement, $text)
+                    && $this->directSubjectMatches($requirement, $text, $subject)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** @param list<CareerFact> $facts

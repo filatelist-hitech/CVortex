@@ -116,3 +116,7 @@ bash scripts/check-runtime-db-credentials.sh
 ```
 
 The feature suite covers snapshot/hash/version behavior, URL non-fetching, preferred/mandatory correction, marketing and instruction-family filtering, legitimate controls, exact and adjacent matching, PENDING exclusion, all seven dimensions, stale detection, cross-user denial, safe URL/size validation and absence of an ATS score field. PostgreSQL-only suites verify real runtime-role flags, forced RLS/fail-closed behavior, HTTP/job context cleanup, cross-owner raw SQL denial, snapshot triggers and independent-process import convergence. `test-vacancy-postgres-revalidation.sh` creates one uniquely named disposable database, verifies that a one-step rollback of the snapshot-history migration does not introduce a non-existent owner-wide constraint, then rolls back both current Vacancy remediation migrations, migrates them forward, and runs the security suite again without removing first-run rows; it verifies that preserved `users` rows survive both migration stages.
+
+## ChatGPT plan / controlled draft extension — 2026-10-04
+
+[ADR-0023](../03-ADR/ADR-0023-chatgpt-plan-chat.md) defines a distinct OAuth plan provider and one controlled MCP vacancy-analysis draft save. See [ChatGPT Plan Chat](../10-Operations/ChatGPT-Plan-Chat.md) for implemented context budgets, credentials, errors and user flow, and [MCP architecture](../02-Architecture/MCP-Gateway.md) for the adapter contract. API-key billing remains independent; MCP is not inference.

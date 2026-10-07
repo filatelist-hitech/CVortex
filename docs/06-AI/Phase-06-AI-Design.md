@@ -58,3 +58,9 @@ OR Claim without valid CONFIRMED Career Fact evidence
 | Owner-scoped valid confirmed evidence and no unresolved contradiction | `PASS` | No |
 
 Semantic detection may use a model; status, linkage, provenance validity, ownership, required fields and resolution state remain ordinary code checks.
+
+## ChatGPT plan / controlled draft extension — 2026-10-04
+
+[ADR-0023](../03-ADR/ADR-0023-chatgpt-plan-chat.md) defines a distinct OAuth plan provider and one controlled MCP vacancy-analysis draft save. See [ChatGPT Plan Chat](../10-Operations/ChatGPT-Plan-Chat.md) for implemented context budgets, credentials, errors and user flow, and [MCP architecture](../02-Architecture/MCP-Gateway.md) for the adapter contract. API-key billing remains independent; MCP is not inference.
+
+The implemented ModelPolicyResolver.resolveSelected path reads user_selected_chatgpt_plan (selection=account_catalog) and retains the account's selected slug in the thread/run. It does not use a static entitlement list or invent API monetary cost. StreamingProvider is separate from structured API-key LlmProvider; no OAuth details enter vacancy matching/draft services. ChatGptConnection is the owner credential aggregate (no previous reusable OAuth credential store existed); existing API-key config remains unchanged.

@@ -47,7 +47,7 @@ health_authority="$(docker compose port nginx 80)"
 curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-Когда проверка готовности завершится успешно, откройте адрес `APP_URL` из локального файла `.env` (по умолчанию `http://localhost:8080`). Установка и устранение проблем описаны в разделе [Локальная установка](docs/10-Operations/Local-Development.md). Инструкции по созданию администратора и приглашению пользователей находятся в разделе [Первый вход и управление доступом](docs/10-Operations/M1-Access-Core.md).
+Когда проверка готовности завершится успешно, откройте адрес `APP_URL` из локального файла `.env` (по умолчанию `http://127.0.0.1:8080`). Установка и устранение проблем описаны в разделе [Локальная установка](docs/10-Operations/Local-Development.md). Инструкции по созданию администратора и приглашению пользователей находятся в разделе [Первый вход и управление доступом](docs/10-Operations/M1-Access-Core.md).
 
 ## Документация
 
@@ -64,3 +64,11 @@ CVortex пока не создаёт файлы DOCX/PDF и не отправл�
 ## Как внести вклад
 
 Порядок работы с репозиторием описан в [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### Local ChatGPT plan vacancy chat
+
+[ChatGPT Plan Chat](docs/10-Operations/ChatGPT-Plan-Chat.md) documents the separate
+Sign in with ChatGPT billing/authentication path, vacancy streaming/history and
+reviewable structured drafts. [MCP Gateway](docs/02-Architecture/MCP-Gateway.md)
+retains two read tools and adds one controlled analysis-draft save. MCP is an
+external adapter, not an inference provider. The existing API-key path remains.

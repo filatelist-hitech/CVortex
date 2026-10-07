@@ -35,6 +35,8 @@ class ApplicationContextGet extends BoundedTool
                 'id' => $schema->string()->required(), 'title' => $schema->string()->required(),
                 'company' => $schema->string()->required(), 'analysis_status' => $schema->string()->required(),
                 'untrusted_data' => $schema->boolean()->required(),
+                'snapshot_id' => $schema->string()->required(), 'snapshot_version' => $schema->integer()->required(),
+                'raw_text' => $schema->string()->required(), 'source_truncated' => $schema->boolean()->required(),
             ])->withoutAdditionalProperties()->required(),
             'requirements' => $schema->array()->items($schema->object([
                 'id' => $schema->string()->required(), 'dimension' => $schema->string()->required(),
@@ -46,6 +48,10 @@ class ApplicationContextGet extends BoundedTool
                     'id' => $schema->string()->required(), 'statement' => $schema->string()->required(),
                 ])->withoutAdditionalProperties())->required(),
             ])->withoutAdditionalProperties())->required(),
+            'confirmed_facts' => $schema->array()->items($schema->object([
+                'id' => $schema->string()->required(), 'statement' => $schema->string()->required(), 'status' => $schema->string()->required(),
+            ])->withoutAdditionalProperties())->required(),
+            'career_signature' => $schema->string()->pattern('^[a-f0-9]{64}$')->required(),
             'untrusted_vacancy_data' => $schema->boolean()->required(),
             'context_truncated' => $schema->boolean()->required(),
         ];

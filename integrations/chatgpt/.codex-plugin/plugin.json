@@ -1,0 +1,21 @@
+{
+  "name": "cvortex-read-only",
+  "version": "0.1.0",
+  "description": "Truth-first job search workflows using the connected CVortex MCP app with controlled analysis drafts.",
+  "author": {
+    "name": "CVortex"
+  },
+  "repository": "https://github.com/filatelist-hitech/CVortex",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CVortex",
+    "shortDescription": "Truth-first job search help",
+    "longDescription": "Use confirmed CVortex vacancy and application context to prepare truthful job-search material. This package provides the workflow skill; it does not bundle or register an MCP app.",
+    "developerName": "CVortex",
+    "category": "Productivity",
+    "capabilities": [
+      "Draft truthful job-search material from confirmed CVortex context"
+    ],
+    "defaultPrompt": "Use CVortex context to draft truthful job-search material for this vacancy."
+  }
+}

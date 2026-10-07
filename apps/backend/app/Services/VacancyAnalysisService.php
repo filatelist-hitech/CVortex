@@ -93,7 +93,7 @@ class VacancyAnalysisService
         $vacancy->refresh();
 
         try {
-            if (! VacancyLlmRun::query()->where('vacancy_snapshot_id', $snapshot->id)->where('status', 'COMPLETED')->exists()) {
+            if (! VacancyLlmRun::query()->where('vacancy_snapshot_id', $snapshot->id)->where('workflow', 'vacancy_requirement_extraction')->where('status', 'COMPLETED')->exists()) {
                 $this->extractRequirements($user, $snapshot, $runToken);
             }
             $analysis = $this->matching->analyze($user, $vacancy, $snapshot, $runToken);

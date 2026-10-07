@@ -81,7 +81,7 @@ class VacancyController extends Controller
         $analysis = (clone $analyses)->forCareerSignature($signature)->deterministicLatest()->first()
             ?? $analyses->deterministicLatest()->first();
         $run = VacancyLlmRun::query()->where('owner_id', $ownerId)
-            ->where('vacancy_snapshot_id', $snapshot->id)->latest()->first();
+            ->where('vacancy_snapshot_id', $snapshot->id)->where('workflow', 'vacancy_requirement_extraction')->latest()->first();
 
         return response()->json(['data' => [
             'id' => $vacancy->id,

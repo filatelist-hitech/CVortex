@@ -49,6 +49,10 @@ x-backend-environment: &backend-environment
   AI_PROVIDER: ${AI_PROVIDER:-none}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   MCP_ENABLED: ${MCP_ENABLED:-false}
+  CHATGPT_PLAN_ENABLED: ${CHATGPT_PLAN_ENABLED:-false}
+  CHATGPT_CALLBACK_URI: ${CHATGPT_CALLBACK_URI:-http://127.0.0.1:8080/api/v1/chatgpt/callback}
+  MCP_RESOURCE_URL: ${MCP_RESOURCE_URL:-}
+  MCP_AUTHORIZATION_SERVER_URL: ${MCP_AUTHORIZATION_SERVER_URL:-}
   OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
   OPENAI_CAREER_EXTRACTION_MODEL: ${OPENAI_CAREER_EXTRACTION_MODEL:-}
   OPENAI_APPLICATION_DRAFT_MODEL: ${OPENAI_APPLICATION_DRAFT_MODEL:-}
@@ -151,6 +155,7 @@ services:
     restart: unless-stopped
     networks:
       - internal
+      - egress
 
   scheduler:
     logging: *local-logging
@@ -214,6 +219,7 @@ services:
 
 networks:
   edge:
+  egress:
   internal:
     internal: true
 

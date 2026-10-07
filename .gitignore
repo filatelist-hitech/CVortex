@@ -76,4 +76,4 @@ venv/
 
 # --- Obsidian local workspace state ---
 # Project documentation remains plain Markdown in Git.
-/docs/.obsidian/
+.obsidian/

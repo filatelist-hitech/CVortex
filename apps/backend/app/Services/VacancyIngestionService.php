@@ -86,7 +86,7 @@ class VacancyIngestionService
                         'error_code' => null,
                         'active_run_token' => null,
                         'title' => $this->deterministicTitle($sourceText) ?? $vacancy->title,
-                        'company' => $this->deterministicCompany($sourceText) ?? $vacancy->company,
+                        'company' => $this->deterministicCompany($sourceText),
                     ])->save();
                 }
 

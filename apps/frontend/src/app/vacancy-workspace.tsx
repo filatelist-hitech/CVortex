@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "./access-shell";
+import VacancyChat from "./vacancy-chat";
 
 type VacancySummary = {
   id: string;
@@ -267,6 +268,7 @@ export default function VacancyWorkspace() {
       <div className="panel"><h3>Saved vacancies</h3>{vacancies.length === 0 ? <p className="empty">No vacancy snapshots yet.</p> : <ul className="vacancy-list">{vacancies.map((item) => <li key={item.id}><button type="button" className={selectedId === item.id ? "vacancy-selected" : "secondary"} onClick={() => void select(item.id)}><span>{item.title || "Untitled vacancy"}</span><small>{item.analysis_status}{item.recommendation ? ` · ${item.recommendation}` : ""}{item.analysis_stale ? " · stale" : ""}{item.analysis_run_stale ? " · recovery available" : ""}</small></button></li>)}</ul>}</div>
     </div>
     {detail && <div className="vacancy-detail">
+      <VacancyChat key={detail.id} vacancyId={detail.id} onApproved={() => void select(detail.id)} />
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Source snapshot v{detail.snapshot.version}</p><h3>{detail.title || "Untitled vacancy"}</h3></div><span className={`badge ${detail.analysis_status.toLowerCase()}`}>{detail.analysis_status}</span></div>{detail.company && <p>{detail.company}</p>}{detail.source_url && <p className="muted">Source URL metadata: {detail.source_url}</p>}<details><summary>Original untrusted source text</summary><pre className="source-copy">{detail.snapshot.raw_text}</pre></details>{detail.error_code && <p className="error">Safe error code: {detail.error_code}</p>}</section>
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">CVortex inference</p><h3>Requirements</h3></div><span className="count">{detail.requirements.length}</span></div>{detail.requirements.length === 0 ? <p className="empty">No supported requirements were extracted.</p> : <div className="requirement-list">{detail.requirements.map((requirement) => <article className="requirement-card" key={requirement.id}><div className="fact-meta"><span className={`badge ${requirement.importance.toLowerCase()}`}>{requirement.importance}</span><span>{dimensionNames[requirement.dimension]}</span></div><p className="assertion">{requirement.label}</p><details><summary>Source wording</summary><blockquote>{requirement.source_excerpt}</blockquote><p className="muted">Inference confidence: {Math.round(requirement.confidence * 100)}%</p></details></article>)}</div>}</section>
       {detail.analysis_status === "FAILED" && <section className="review-section"><p className="eyebrow">Analysis failed</p><h3>Retry extraction</h3><p className="muted">The source snapshot is preserved. Retry analysis when the provider is available.</p><button type="button" disabled={busy} onClick={() => void reanalyze()}>{busy ? "Retrying…" : "Retry analysis"}</button></section>}

@@ -6,6 +6,8 @@ use InvalidArgumentException;
 
 final class McpResource
 {
+    public const DRAFT_WRITE_SCOPE = 'mcp:draft:write';
+
     public function resourceUri(): string
     {
         $configured = $this->configured('mcp.resource');

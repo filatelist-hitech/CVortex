@@ -48,9 +48,13 @@ health_authority="$(docker compose port nginx 80)"
 curl -fsS "http://${health_authority}/api/v1/health/ready"
 ```
 
-При успехе адрес `/api/v1/health/ready` возвращает HTTP 200 и `{"status":"ready"}`. Затем откройте значение `APP_URL` из `.env`; по умолчанию это `http://localhost:8080`. Команды для создания первого администратора и приглашения находятся в инструкции [«Доступ и первый вход»](M1-Access-Core.md). Готовой учётной записи в новой установке нет.
+При успехе адрес `/api/v1/health/ready` возвращает HTTP 200 и `{"status":"ready"}`. Затем откройте значение `APP_URL` из `.env`; по умолчанию это `http://127.0.0.1:8080`. Команды для создания первого администратора и приглашения находятся в инструкции [«Доступ и первый вход»](M1-Access-Core.md). Готовой учётной записи в новой установке нет.
 
 ## Переменные окружения
+
+Horizon подключён к внутренней сети `internal` для PostgreSQL/Redis и к отдельной сети `egress` для исходящих запросов к LLM-провайдеру. Сеть `internal` сохраняет `internal: true`; у Horizon нет опубликованных портов. PostgreSQL, Redis и scheduler остаются во внутренней сети. После изменения сети примените конфигурацию командой `docker compose up -d --no-deps horizon`.
+
+Для проверки DNS/TLS/HTTP без ключа и карьерных данных выполните `docker compose exec -T horizon curl --connect-timeout 10 --max-time 20 -sS -o /dev/null -w 'HTTP %{http_code}\n' https://api.openai.com/v1/models`. HTTP 401 подтверждает соединение с API без авторизации; он не проверяет ключ, квоту или доступность выбранной модели. Повторный анализ вакансии отправляет данные провайдеру и требует отдельного разрешения пользователя.
 
 `.env.example` содержит безопасные настройки для локального запуска и пустые значения для внешних секретов. Не добавляйте в Git настоящие пароли, ключи API, приглашения и личные сведения о карьере. `make init` записывает локальные секреты в `.env`; не копируйте этот файл из другой рабочей копии.
 
@@ -176,6 +180,14 @@ PostgreSQL и каталог `storage/app/private` размещаются в и�
 
 ## Дополнительная настройка MCP
 
-Входящий MCP Gateway по умолчанию выключен. Если оператор отдельно его настроит, доступны только два инструмента для чтения: `vacancy_get` и `application_context_get`. Изменять факты, черновики и их статусы через них нельзя. Для Inspector, OAuth и Secure MCP Tunnel нужны отдельные ключи, адреса ресурса и издателя токенов, а также соответствующие права. Обычному пользователю это настраивать не нужно.
+Входящий MCP Gateway по умолчанию выключен. Если оператор отдельно его настроит, доступны только два инструмента для чтения: `vacancy_get` и `application_context_get`. Изменять факты, черновики и их статусы через них нельзя. Для Inspector, OAuth и Secure MCP Tunnel нужны отдельные ключи, адреса ресурса и издателя токенов, а также соответствующие права. Обычному пользователю это настраивать не нужно. Пошаговый локальный сценарий ChatGPT и границы доступности перечислены в [инструкции по подключению ChatGPT](ChatGPT-CVortex-Local-Setup.md).
 
 Технические шаги и принятые ограничения описаны в документах [«Архитектура MCP Gateway»](../02-Architecture/MCP-Gateway.md), [«Проверка MCP Gateway»](MCP-Gateway-Validation.md) и принятом [ADR-0021](../03-ADR/ADR-0021-inbound-mcp-read-only.md). Не включайте Gateway и не открывайте локальный адрес во внешнюю сеть без отдельной настройки и проверки.
+
+### Loopback frontend hydration
+
+Next.js dev resources require the canonical loopback host to be allowed in `next.config.ts`: the existing configuration explicitly adds `127.0.0.1` through `allowedDevOrigins`, without wildcards. If sign-in falls back to native GET or React event handlers do not attach, verify browser runtime/resource errors and restart frontend after configuration changes. The login form uses POST and disables submission until hydration to prevent credentials entering URLs. Production builds for validation should use an isolated `.next` mount rather than overwrite the running dev server's cache:
+
+```sh
+docker compose run --rm --no-deps -e NODE_ENV=production -v /app/.next frontend npm run build
+```

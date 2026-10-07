@@ -26,6 +26,11 @@ class RuntimeSkillRegistry
         return $this->load('application-truth-review/v3', 'application.truth-review');
     }
 
+    public function vacancyPlanChat(): RuntimeSkillDefinition
+    {
+        return $this->load('vacancy-plan-chat/v1', 'vacancy.plan-chat');
+    }
+
     private function load(string $relativeDirectory, string $expectedId): RuntimeSkillDefinition
     {
         $directory = rtrim((string) config('ai.asset_root'), '/').'/skills/'.$relativeDirectory;

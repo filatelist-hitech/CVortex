@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CareerWorkspace from "./career-workspace";
@@ -8,6 +8,10 @@ import Diagnostics from "./diagnostics";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
+
+const subscribeHydration = () => () => {};
+const clientHydrated = () => true;
+const serverHydrated = () => false;
 
 const csrf = () => decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
 
@@ -94,6 +98,7 @@ export async function api(path: string, options: RequestInit = {}) {
 
 export default function AccessShell({ registrationRoute = false, destination = "career" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" }) {
   const router = useRouter();
+  const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
   const [token, setToken] = useState("");
   const [user, setUser] = useState<User | null>(null);
@@ -140,5 +145,5 @@ export default function AccessShell({ registrationRoute = false, destination = "
 
   const registrationUnavailable = mode === "register" && (!registrationRoute || !token);
 
-  return <main className="shell"><section className="status-card" aria-labelledby="cvortex-title"><div className="brand-mark" aria-hidden="true" /><p className="eyebrow">Access core</p><h1 id="cvortex-title">CVortex</h1><p className="tagline">Your career, in context.</p><div className="tabs"><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>Sign in</button><button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>Register</button></div><form onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}><label>Email<input required type="email" name="email" autoComplete="email" /></label><label>Password<input required type="password" name="password" minLength={15} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} /></label>{mode === "register" && <><label>Confirm password<input required type="password" name="password_confirmation" minLength={15} maxLength={128} autoComplete="new-password" /></label>{registrationUnavailable && <p className="error">Open the registration link provided by your operator.</p>}</>} {message && <p className="error" role="alert">{message}</p>}<button disabled={busy || registrationUnavailable}>{busy ? "Working…" : mode === "login" ? "Sign in" : "Create account"}</button></form></section></main>;
+  return <main className="shell"><section className="status-card" aria-labelledby="cvortex-title"><div className="brand-mark" aria-hidden="true" /><p className="eyebrow">Access core</p><h1 id="cvortex-title">CVortex</h1><p className="tagline">Your career, in context.</p><div className="tabs"><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>Sign in</button><button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>Register</button></div><form method="post" action={mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register"} onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}><label>Email<input required type="email" name="email" autoComplete="email" /></label><label>Password<input required type="password" name="password" minLength={15} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} /></label>{mode === "register" && <><label>Confirm password<input required type="password" name="password_confirmation" minLength={15} maxLength={128} autoComplete="new-password" /></label>{registrationUnavailable && <p className="error">Open the registration link provided by your operator.</p>}</>} {message && <p className="error" role="alert">{message}</p>}<button disabled={!hydrated || busy || registrationUnavailable}>{!hydrated ? "Loading…" : busy ? "Working…" : mode === "login" ? "Sign in" : "Create account"}</button></form></section></main>;
 }

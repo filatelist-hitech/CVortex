@@ -8,7 +8,8 @@ use App\Models\VacancyAnalysis;
 use App\Models\VacancySnapshot;
 use App\Services\ApplicationContextBuilder;
 use App\Services\DatabaseOwnerContext;
-use App\Services\VacancyMatchingService;
+use App\Services\VacancyChatContextBuilder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class McpApplicationAdapter
@@ -22,44 +23,47 @@ class McpApplicationAdapter
     public function __construct(
         private readonly DatabaseOwnerContext $ownerContext,
         private readonly ApplicationContextBuilder $contextBuilder,
-        private readonly VacancyMatchingService $matching,
+        private readonly VacancyChatContextBuilder $chatContext,
     ) {}
 
     /** @return array<string, mixed> */
     public function vacancy(User $user, string $vacancyId): array
     {
-        return $this->ownerContext->run((string) $user->id, function () use ($user, $vacancyId): array {
-            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+        return $this->ownerContext->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId): array {
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
 
-            return [
-                'id' => (string) $vacancy->id,
-                'title' => (string) $vacancy->title,
-                'company' => (string) $vacancy->company,
-                'analysis_status' => (string) $vacancy->analysis_status,
-                'untrusted_data' => true,
-            ];
-        });
+            $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancyId)->latest('version')->firstOrFail();
+
+            return $this->vacancyPayload($vacancy, $snapshot);
+        }));
     }
 
     /** @return array<string, mixed> */
     public function context(User $user, string $vacancyId): array
     {
-        return $this->ownerContext->run((string) $user->id, function () use ($user, $vacancyId): array {
-            $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($vacancyId);
+        return $this->ownerContext->run((string) $user->id, fn (): array => DB::transaction(function () use ($user, $vacancyId): array {
+            User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)->lockForUpdate()->findOrFail($vacancyId);
+            $bounded = $this->chatContext->build($user, $vacancy, 'Analyze vacancy');
+            $data = json_decode($bounded['input'][0]['content'], true);
+            $facts = $data['confirmed_facts'];
+            $sourceTruncated = $data['vacancy']['source_truncated'];
+            $factsTruncated = $data['facts_truncated'];
+            $snapshot = $bounded['snapshot'];
             if ($vacancy->analysis_status !== Vacancy::STATUS_COMPLETED) {
                 return [
-                    'vacancy' => $this->vacancy($user, $vacancyId),
+                    'vacancy' => $this->vacancyPayload($vacancy, $snapshot),
                     'requirements' => [],
                     'confirmed_claims' => [],
+                    'confirmed_facts' => $facts,
+                    'career_signature' => $bounded['career_signature'],
                     'untrusted_vacancy_data' => true,
-                    'context_truncated' => false,
+                    'context_truncated' => $sourceTruncated || $factsTruncated,
                 ];
             }
-            $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
-                ->orderByDesc('version')->orderByDesc('id')->firstOrFail();
             $analysis = VacancyAnalysis::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
                 ->where('vacancy_snapshot_id', $snapshot->id)
-                ->forCareerSignature($this->matching->careerSignature($user))->deterministicLatest()->first();
+                ->forCareerSignature($bounded['career_signature'])->deterministicLatest()->first();
             if ($analysis === null) {
                 throw ValidationException::withMessages(['vacancy' => 'Reanalysis is required.']);
             }
@@ -67,11 +71,13 @@ class McpApplicationAdapter
             $context = $this->contextBuilder->build($user, $snapshot, $analysis);
             $requirements = $context['requirements'];
             $claims = $context['claims'];
-            $truncated = count($requirements) > self::MAX_REQUIREMENTS || count($claims) > self::MAX_CLAIMS;
+            $truncated = $sourceTruncated || $factsTruncated || count($requirements) > self::MAX_REQUIREMENTS || count($claims) > self::MAX_CLAIMS;
             $boundedClaims = array_slice($claims, 0, self::MAX_CLAIMS);
 
             return [
-                'vacancy' => $this->vacancy($user, $vacancyId),
+                'vacancy' => $this->vacancyPayload($vacancy, $snapshot),
+                'confirmed_facts' => $facts,
+                'career_signature' => $bounded['career_signature'],
                 'requirements' => array_map(fn (array $item): array => [
                     'id' => $item['id'], 'dimension' => $item['dimension'],
                     'importance' => $item['importance'], 'label' => $item['label'],
@@ -90,6 +96,20 @@ class McpApplicationAdapter
                 'untrusted_vacancy_data' => true,
                 'context_truncated' => $truncated,
             ];
-        });
+        }));
+    }
+
+    /** @return array<string, mixed> */
+    private function vacancyPayload(Vacancy $vacancy, VacancySnapshot $snapshot): array
+    {
+        return [
+            'snapshot_id' => (string) $snapshot->id, 'snapshot_version' => (int) $snapshot->version,
+            'raw_text' => mb_substr($snapshot->raw_text, 0, 25000), 'source_truncated' => mb_strlen($snapshot->raw_text) > 25000,
+            'id' => (string) $vacancy->id,
+            'title' => (string) $vacancy->title,
+            'company' => (string) $vacancy->company,
+            'analysis_status' => (string) $vacancy->analysis_status,
+            'untrusted_data' => true,
+        ];
     }
 }

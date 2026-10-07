@@ -233,6 +233,26 @@ Before merge, verify as applicable:
 
 ## Mandatory agent behavior
 
+### Codex Cloud Review Budget
+
+Fix/remediation sessions MUST NOT automatically request a new Codex GitHub review.
+
+The following do not authorize a re-review:
+
+- pushing review fixes;
+- resolving review threads;
+- replying to findings;
+- CI becoming green;
+- PR head changing.
+
+`@codex review` may be posted only when the current explicit user instruction requests a new/final cloud review.
+
+After a review-fix pass, report:
+
+`CLOUD_REVIEW_REQUESTED: NO`
+
+and STOP.
+
 Development agents must not:
 
 - push product work directly to `main` or `stage`;

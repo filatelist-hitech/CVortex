@@ -36,6 +36,7 @@ class CareerFactService
 
         try {
             return DB::transaction(function () use ($user, $factType, $assertion): CareerFact {
+                User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $fact = CareerFact::query()->create([
                     'owner_id' => $user->id,
                     'career_profile_id' => $this->profileFor($user)->id,
@@ -76,6 +77,7 @@ class CareerFactService
 
         try {
             return DB::transaction(function () use ($user, $fact, $action, $approvedAssertion): CareerFact {
+                User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $fact = CareerFact::query()->whereKey($fact->id)->lockForUpdate()->first();
                 if ($fact === null || $fact->status !== CareerFact::STATUS_PENDING
                     || ! $this->owners->factHasValidProvenance($fact, $user->id)) {
@@ -128,11 +130,18 @@ class CareerFactService
             throw ValidationException::withMessages(['action' => 'Only confirmed facts may be deprecated.']);
         }
         try {
-            DB::transaction(function () use ($fact, $user): void {
+            $fact = DB::transaction(function () use ($fact, $user): CareerFact {
+                User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+                $fact = CareerFact::query()->whereKey($fact->id)->where('owner_id', $user->id)->lockForUpdate()->firstOrFail();
+                if ($fact->status !== CareerFact::STATUS_CONFIRMED) {
+                    throw ValidationException::withMessages(['action' => 'Only confirmed facts may be deprecated.']);
+                }
                 $fact->forceFill(['status' => CareerFact::STATUS_DEPRECATED, 'reviewed_by' => $user->id, 'reviewed_at' => now()])->save();
                 Claim::query()->whereIn('id', ClaimEvidence::query()->where('career_fact_id', $fact->id)->pluck('claim_id'))
                     ->update(['truth_status' => TruthGuard::BLOCK]);
                 $this->audit->record('career_fact.deprecated', 'USER', $user, CareerFact::class, $fact->id);
+
+                return $fact;
             });
         } catch (QueryException) {
             throw new SafeCareerException;
@@ -152,6 +161,7 @@ class CareerFactService
 
         try {
             return DB::transaction(function () use ($user, $original, $factType, $assertion): CareerFact {
+                User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
                 $lockedOriginal = CareerFact::query()->whereKey($original->id)->lockForUpdate()->first();
                 if ($lockedOriginal === null || ! hash_equals($user->id, (string) $lockedOriginal->owner_id)) {
                     abort(404);

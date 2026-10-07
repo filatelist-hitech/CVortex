@@ -3,6 +3,10 @@
 return [
     'asset_root' => env('AI_ASSET_ROOT', is_dir('/runtime-ai') ? '/runtime-ai' : base_path('../../runtime-ai')),
     'model_policies' => [
+        'user_selected_chatgpt_plan' => [
+            'provider' => 'openai_chatgpt_plan',
+            'selection' => 'account_catalog',
+        ],
         'low_cost_structured_extraction' => [
             'provider' => env('AI_PROVIDER', 'none'),
             'model' => env('OPENAI_CAREER_EXTRACTION_MODEL'),
