@@ -1,5 +1,9 @@
 # CVortex Project State
 
+## Obsidian workspace ignore — 2026-10-07
+
+Completed explicit user override on `feature/chatgpt-local-mcp-integration`: `.gitignore` now ignores `.obsidian/` directories at any depth, including the repository root and the documentation vault. Validation: write preflight, `git check-ignore -v` for root/docs/nested workspace paths, and `git diff --check` passed. No Obsidian files were tracked. Canonical Preview/M2 authority is unchanged.
+
 ## PR #42 follow-up review findings — 2026-10-07
 
 Two additional PR #42 findings are fixed: `VacancyChatContextBuilder` locks the owned vacancy while reading its current snapshot, matching the ingestion transaction's row-lock protocol, and `McpDraftSaveInput` now requires the 64-character hexadecimal `career_signature` used by the MCP tool. Regression coverage verifies both vacancy/snapshot reads stay inside the lock transaction and checks `FOR UPDATE` on PostgreSQL. `VacancyPlanChatTest` and `McpGatewayTest` passed with SQLite in-memory (52 tests / 513 assertions); targeted Pint, Larastan, OpenAPI YAML/signature validation, and `git diff --check` passed. PostgreSQL execution of the new lock assertion and exact-head CI remain pending the PR update.
