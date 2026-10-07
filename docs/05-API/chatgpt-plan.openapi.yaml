@@ -865,6 +865,7 @@
         "required": [
           "vacancy_id",
           "snapshot_id",
+          "career_signature",
           "client_request_id",
           "analysis"
         ],
@@ -880,6 +881,12 @@
             "pattern": "^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$",
             "minLength": 26,
             "maxLength": 26
+          },
+          "career_signature": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "minLength": 64,
+            "maxLength": 64
           },
           "client_request_id": {
             "type": "string",

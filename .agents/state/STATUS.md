@@ -2,6 +2,8 @@
 
 ## PR #42 follow-up review findings — 2026-10-07
 
+Two additional PR #42 findings are fixed: `VacancyChatContextBuilder` locks the owned vacancy while reading its current snapshot, matching the ingestion transaction's row-lock protocol, and `McpDraftSaveInput` now requires the 64-character hexadecimal `career_signature` used by the MCP tool. Regression coverage verifies both vacancy/snapshot reads stay inside the lock transaction and checks `FOR UPDATE` on PostgreSQL. `VacancyPlanChatTest` and `McpGatewayTest` passed with SQLite in-memory (52 tests / 513 assertions); targeted Pint, Larastan, OpenAPI YAML/signature validation, and `git diff --check` passed. PostgreSQL execution of the new lock assertion and exact-head CI remain pending the PR update.
+
 `application_context_get` now uses the exact vacancy snapshot returned with its bounded Career Facts for both the vacancy payload and analysis lookup. The Codex skill's draft-save workflow now supplies `career_signature` from `application_context_get`. The initial OAuth registration callback finding is also present in the current branch: callbacks lock the connection and compare `oauth_generation` before code exchange; its regression verifies disconnect prevents the token request.
 
 Validation: `ChatGptPlanTest` and `McpGatewayTest` passed with SQLite in-memory (35 tests / 400 assertions); targeted Pint passed for the changed backend adapter and MCP test; Larastan passed for the adapter; `git diff --check` passed. An initial test run against `cvortex_test` could not drop tables because the runtime role is not the table owner; no assertions ran in that attempt. Exact-head CI is pending the PR update.

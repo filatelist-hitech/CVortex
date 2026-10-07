@@ -18,7 +18,9 @@ use App\Services\VacancyChatService;
 use App\Services\VacancyIngestionService;
 use App\Services\VacancyMatchingService;
 use Generator;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
@@ -294,6 +296,36 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('secret from another user', json_encode($context['input']));
         $this->assertStringNotContainsString('Underwater', json_encode($context['input']));
         $this->assertLessThan(50000, strlen(json_encode($context['input'])));
+    }
+
+    public function test_context_reads_vacancy_and_snapshot_under_the_vacancy_lock(): void
+    {
+        [$user, $vacancy] = $this->fixture('locked-context', 'PHP engineer is required.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+        $baselineTransactionLevel = DB::transactionLevel();
+        $reads = [];
+        DB::listen(function (QueryExecuted $query) use (&$reads): void {
+            $sql = strtolower($query->sql);
+            $table = str_contains($sql, 'from "vacancies"') || str_contains($sql, 'from `vacancies`') || str_contains($sql, 'from vacancies')
+                ? 'vacancy'
+                : (str_contains($sql, 'from "vacancy_snapshots"') || str_contains($sql, 'from `vacancy_snapshots`') || str_contains($sql, 'from vacancy_snapshots')
+                    ? 'snapshot'
+                    : null);
+            if ($table === null) {
+                return;
+            }
+
+            $reads[] = ['table' => $table, 'transaction_level' => DB::transactionLevel(), 'sql' => $sql];
+        });
+
+        app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+
+        $this->assertSame(['vacancy', 'snapshot'], array_column($reads, 'table'));
+        $this->assertGreaterThan($baselineTransactionLevel, $reads[0]['transaction_level']);
+        $this->assertGreaterThan($baselineTransactionLevel, $reads[1]['transaction_level']);
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $this->assertStringContainsString('for update', $reads[0]['sql']);
+        }
     }
 
     public function test_context_does_not_select_a_confirmed_fact_for_only_common_words(): void

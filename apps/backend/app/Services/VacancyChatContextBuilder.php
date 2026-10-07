@@ -68,8 +68,15 @@ class VacancyChatContextBuilder
     public function build(User $user, VacancyChatThread|Vacancy $thread, string $turn): array
     {
         abort_unless((string) $thread->owner_id === (string) $user->id, 404);
-        $vacancy = Vacancy::query()->where('owner_id', $user->id)->findOrFail($thread instanceof Vacancy ? $thread->id : $thread->vacancy_id);
-        $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)->latest('version')->firstOrFail();
+        [$vacancy, $snapshot] = DB::transaction(function () use ($user, $thread): array {
+            $vacancy = Vacancy::query()->where('owner_id', $user->id)
+                ->lockForUpdate()
+                ->findOrFail($thread instanceof Vacancy ? $thread->id : $thread->vacancy_id);
+            $snapshot = VacancySnapshot::query()->where('owner_id', $user->id)->where('vacancy_id', $vacancy->id)
+                ->latest('version')->firstOrFail();
+
+            return [$vacancy, $snapshot];
+        });
         $careerContext = $this->career->forMatching($user);
         $careerSignature = $this->matching->careerSignatureForContext($careerContext);
         $requirements = VacancyRequirement::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
