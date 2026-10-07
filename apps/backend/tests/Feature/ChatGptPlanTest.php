@@ -287,6 +287,29 @@ class ChatGptPlanTest extends TestCase
         $this->assertNull($connection->fresh()->access_token);
     }
 
+    public function test_disconnect_invalidates_a_pending_initial_registration_callback(): void
+    {
+        $user = $this->user('disconnect-initial-pending');
+        $connection = $this->connection($user, [
+            'access_token' => null, 'expires_at' => null, 'status' => 'NOT_CONNECTED',
+        ]);
+        $parameters = $this->parameters($user);
+        $this->fakeOAuth($parameters);
+        Http::fake([config('chatgpt.discovery_url') => Http::response([], 503)]);
+
+        $this->assertFalse(app(ConnectionService::class)->disconnect($user, $connection->id));
+        $this->expectPlanError(
+            fn () => app(ConnectionService::class)->complete([
+                'state' => $parameters['state'], 'code' => 'code', 'client_id' => 'oaiapp_fixture',
+            ]),
+            'OAUTH_ATTEMPT_INVALIDATED',
+        );
+        Http::assertNotSent(fn ($request): bool => $request->url() === config('chatgpt.token_url'));
+        $this->assertSame(1, $connection->fresh()->oauth_generation);
+        $this->assertSame('NOT_CONNECTED', $connection->fresh()->status);
+        $this->assertNull($connection->fresh()->access_token);
+    }
+
     private function user(string $name): User
     {
         return User::query()->create(['email' => $name.'@example.test', 'password' => 'long-fixture-password', 'role' => 'user', 'status' => 'ACTIVE'])->fresh();

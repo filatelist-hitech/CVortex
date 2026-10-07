@@ -864,3 +864,7 @@ Live review on head `77894d2` found that disconnecting a connection did not inva
 ### PR #42 stale OAuth grant remediation — 2026-10-07
 
 The exact-head follow-up review found that an invalidated reconnect could still exchange its authorization code before the generation check. Reconnect completion now holds the connection row lock through generation validation, code exchange, identity verification and token replacement; disconnect synchronizes on that same lock, so it either prevents the stale exchange or revokes the freshly issued refresh token before clearing local credentials. The regression verifies that a callback after disconnect does not call the token endpoint. Validation passed: targeted ChatGPT plan tests 15/86, full `make test` backend 349/2663 with 11 skips plus frontend 85/85, `make lint`, and `git diff --check`. Delivery remains pending.
+
+### PR #42 initial OAuth registration fence — 2026-10-07
+
+The next exact-head review found that the initial-registration callback could also overwrite a disconnect performed after its visible `NOT_CONNECTED` row was created. Initial attempts now carry generation `0`, and initial and reconnect callbacks share the same row-locked generation check and provider exchange path. Added a regression for a disconnected pending initial registration. Validation passed: targeted ChatGPT plan tests 16/92, full `make test` backend 350/2669 with 11 skips plus frontend 85/85, `make lint`, and `git diff --check`. Delivery remains pending.
