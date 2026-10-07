@@ -372,6 +372,54 @@ class VacancyPlanChatTest extends TestCase
         $this->assertStringNotContainsString('team of engineers', json_encode($context['input']));
     }
 
+    public function test_context_matches_technical_skills_outside_the_short_allowlist_when_extraction_is_unavailable(): void
+    {
+        [$user, $vacancy] = $this->fixture('unlisted-technologies', 'Kubernetes, Docker, Symfony, and .NET experience.');
+        $facts = [
+            app(CareerFactService::class)->createManual($user, 'skill', 'Kubernetes operations.'),
+            app(CareerFactService::class)->createManual($user, 'skill', 'Docker deployments.'),
+            app(CareerFactService::class)->createManual($user, 'skill', 'Symfony development.'),
+            app(CareerFactService::class)->createManual($user, 'technology_depth', '.NET application development.'),
+        ];
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertEqualsCanonicalizing(array_map(static fn ($fact): string => $fact->id, $facts),
+            array_column($data['confirmed_facts'], 'id'));
+    }
+
+    public function test_context_scores_all_requirements_before_limiting_serialized_requirements(): void
+    {
+        [$user, $vacancy, $snapshot] = $this->fixture('requirements-after-context-cap', 'Engineer based in Tallinn.');
+        for ($index = 0; $index < 20; $index++) {
+            VacancyRequirement::query()->create([
+                'owner_id' => $user->id, 'vacancy_snapshot_id' => $snapshot->id, 'dimension' => 'DOMAIN',
+                'importance' => 'PREFERRED', 'label' => 'Specialty '.$index, 'normalized_value' => 'specialty-'.$index,
+                'source_excerpt' => 'Specialty requirement '.$index, 'confidence' => 1, 'extracted_by' => 'test',
+                'candidate_hash' => hash('sha256', 'specialty-'.$index),
+                'created_at' => now()->subSeconds(20 - $index), 'updated_at' => now()->subSeconds(20 - $index),
+            ]);
+        }
+        VacancyRequirement::query()->create([
+            'owner_id' => $user->id, 'vacancy_snapshot_id' => $snapshot->id, 'dimension' => 'LOCATION',
+            'importance' => 'MANDATORY', 'label' => 'Tallinn', 'normalized_value' => 'tallinn',
+            'source_excerpt' => 'Engineer based in Tallinn.', 'confidence' => 1, 'extracted_by' => 'test',
+            'candidate_hash' => hash('sha256', 'tallinn-location'), 'created_at' => now()->addSecond(),
+            'updated_at' => now()->addSecond(),
+        ]);
+        $fact = app(CareerFactService::class)->createManual($user, 'experience', 'Based in Tallinn.');
+        $thread = app(VacancyChatService::class)->open($user, $vacancy->id);
+
+        $context = app(VacancyChatContextBuilder::class)->build($user, $thread, 'Analyze this role');
+        $data = json_decode($context['input'][0]['content'], true);
+
+        $this->assertSame([$fact->id], array_column($data['confirmed_facts'], 'id'));
+        $this->assertCount(20, $data['normalized_requirements']);
+        $this->assertNotContains('Tallinn', array_column($data['normalized_requirements'], 'label'));
+    }
+
     public function test_context_keeps_a_fact_matching_a_normalized_language_requirement(): void
     {
         $source = implode("\n", [

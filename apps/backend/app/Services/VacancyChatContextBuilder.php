@@ -80,13 +80,14 @@ class VacancyChatContextBuilder
         $careerContext = $this->career->forMatching($user);
         $careerSignature = $this->matching->careerSignatureForContext($careerContext);
         $requirements = VacancyRequirement::query()->where('owner_id', $user->id)->where('vacancy_snapshot_id', $snapshot->id)
-            ->limit(20)->get(['dimension', 'importance', 'label', 'normalized_value']);
+            ->orderBy('created_at')->orderBy('id')
+            ->get(['dimension', 'importance', 'label', 'normalized_value']);
         $terms = $this->terms($snapshot->raw_text.' '.$turn);
         $ranked = [];
         foreach ($careerContext['facts'] as $fact) {
             $overlap = array_values(array_intersect($terms, $this->terms($fact->approvedAssertion())));
             $score = count($overlap);
-            if ($this->hasSubstantiveOverlap($overlap, $requirements, $fact->approvedAssertion())) {
+            if ($this->hasSubstantiveOverlap($overlap, $requirements, $fact->fact_type, $fact->approvedAssertion())) {
                 $ranked[] = ['fact' => $fact, 'score' => $score];
             }
         }
@@ -163,7 +164,7 @@ class VacancyChatContextBuilder
             'selected_career_track' => null, 'career_track_available' => false,
             'employer_memory_available' => false, 'prior_approved_employer_statements' => $employer,
             'existing_analysis' => $analysis === null ? null : ['recommendation' => $analysis->recommendation, 'key_reasons' => array_slice((array) $analysis->key_reasons, 0, 8)],
-            'normalized_requirements' => $requirements->map(fn (VacancyRequirement $requirement): array => [
+            'normalized_requirements' => $requirements->take(20)->map(fn (VacancyRequirement $requirement): array => [
                 'dimension' => $requirement->dimension, 'importance' => $requirement->importance, 'label' => $requirement->label,
             ])->all(),
         ];
@@ -177,9 +178,10 @@ class VacancyChatContextBuilder
     /** @param list<string> $overlap
      * @param  iterable<VacancyRequirement>  $requirements
      */
-    private function hasSubstantiveOverlap(array $overlap, iterable $requirements, string $assertion): bool
+    private function hasSubstantiveOverlap(array $overlap, iterable $requirements, string $factType, string $assertion): bool
     {
-        if (array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []
+        if ((in_array($factType, ['skill', 'technology_depth'], true) && $overlap !== [])
+            || array_intersect($overlap, self::SINGLE_TOKEN_TECHNOLOGY_TERMS) !== []
             || array_intersect($overlap, self::LANGUAGE_TERMS) !== []
             || array_intersect($overlap, self::WORK_FORMAT_TERMS) !== []) {
             return true;
