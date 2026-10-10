@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-10-10T14:21:06.227Z",
+  "method": "CDP CSS.getPlatformFontsForNode; actual glyph providers",
+  "fonts": {
+    "russian": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "Arial-BoldMT",
+          "isCustomFont": false,
+          "glyphCount": 31
+        }
+      ]
+    },
+    "comparison": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 88
+        }
+      ]
+    },
+    "brand": {
+      "fonts": [
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_Bold",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    "salary": {
+      "fonts": [
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_wght2580000",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    "salaryUnit": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 5
+        },
+        {
+          "familyName": "STIX Two Math",
+          "postScriptName": "STIXTwoMath-Regular",
+          "isCustomFont": false,
+          "glyphCount": 1
+        }
+      ]
+    },
+    "company": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 14
+        }
+      ]
+    }
+  }
+}

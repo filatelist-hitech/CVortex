@@ -19,7 +19,7 @@ Under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), design re
 | Brand, accessibility, semantic states, token/component conventions | [Design Foundation](Design-Foundation.md) | Accepted specification; brand/token values retained. |
 | IA / Application Workspace behavior | [Application Workspace](Application-Workspace.md) | Accepted target direction; production migration not implemented. |
 | Machine values | [`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) | Existing canonical DTCG JSON; no values changed by reconciliation. |
-| Visual reference per pattern | Reviewed executable reference identified by manifest revision/state/viewport | Concept B is **exploratory**, browser-inspected; normalized reviewed reference/manifest is the first bounded task. No screenshot is newly marked human-approved. |
+| Visual reference per pattern | Reviewed executable reference identified by manifest revision/state/viewport | Concept B remains **exploratory**. B01 now has a [normalized draft reference/manifest](reference/README.md), fresh browser evidence and a pending [human review record](reference/REVIEW.md). It is not yet an approved visual baseline. |
 | Implemented presentation | Production component fixture view importing real theme/components | Existing production UI exists; isolated workspace fixture views are planned. Production code is not automatic approval authority. |
 | Visual drift evidence | Reviewed baselines + actual/diff capture in a pinned environment | Existing concept and Error Center screenshots are dated synthetic evidence; production visual-regression harness is planned. |
 
@@ -37,7 +37,7 @@ flowchart LR
   C --> D
 ```
 
-Keep one active visual reference per pattern, identified by a small manifest under `docs/07-Design/reference/` when that task creates it. The manifest is a locator/review record, not another token/theme source. Do not create an independent production component clone for reference maintenance.
+Keep one active visual reference per pattern, identified by a small manifest under `docs/07-Design/reference/`. B01's [manifest](reference/manifest.json) locates its draft HTML reference and generated token CSS. The manifest is a locator/review record, not another token/theme source. Do not create an independent production component clone for reference maintenance.
 
 Minimum record:
 
@@ -82,4 +82,4 @@ Rendered checks include desktop/mobile/reflow, real 200% zoom, contrast of selec
 
 ## First bounded task
 
-Execute only when started in a new authorized work block: [Application Workspace reference foundation](../../.agents/tasks/application-workspace-reference-foundation.md). It produces a token-derived, reviewable local reference and state manifest, not a production UI migration. [Reconciliation roadmap](Concept-B-Reconciliation.md#bounded-frontend-roadmap) describes subsequent conditional outcomes; it is not authority to advance into them.
+[Application Workspace reference foundation](../../.agents/tasks/application-workspace-reference-foundation.md) has a token-derived, reviewable local reference and state manifest: [run/evidence instructions](reference/README.md). Technical recovery checks passed; task status is `awaiting-review`, with the concrete owner action in [REVIEW.md](reference/REVIEW.md). Human visual/state review remains required before PASS or B02. [Reconciliation roadmap](Concept-B-Reconciliation.md#bounded-frontend-roadmap) describes subsequent conditional outcomes; it is not authority to advance into them.
