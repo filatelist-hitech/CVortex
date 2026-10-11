@@ -1,0 +1,94 @@
+{
+  "reviewer": "Codex agent; not human acceptance",
+  "date": "2026-10-11",
+  "nativeZoom": "200% confirmed by Chrome AX UI",
+  "zoomMetrics": {
+    "clientWidth": 734,
+    "dpr": 4,
+    "focus": "",
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  "states": [
+    {
+      "scenario": "normal",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "loading",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "empty",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "failed",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "stale",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "blocked",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "pending",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    },
+    {
+      "scenario": "approval",
+      "clientWidth": 734,
+      "dpr": 4,
+      "height": 385,
+      "scrollWidth": 734,
+      "width": 734
+    }
+  ],
+  "menu": "Tab/Shift+Tab boundary cycling; Escape returned to account-trigger after animation",
+  "evidence": "Escape returned to evidence trigger",
+  "screenReader": "NOT TESTED: no human audible reading/announcement assessment",
+  "limitations": [
+    "One native window size only; no four-viewport human zoom signoff",
+    "fullPage screenshots cropped by capture API at 200%; excluded from visual PASS evidence",
+    "No owner acceptance",
+    "Native capture subsequently failed with ScreenCaptureKit -3811; zoom restoration not confirmed"
+  ],
+  "lastObservedMetrics": {
+    "width": 734,
+    "height": 385,
+    "dpr": 4
+  },
+  "zoomRestoration": "NOT CONFIRMED; native Cmd+0 and tab shortcut attempts did not change observed metrics"
+}

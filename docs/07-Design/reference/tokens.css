@@ -63,3 +63,8 @@
   --cv-breakpoint-wide: 1440px;
   --cv-token-source-sha256: "72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7";
 }
+/* Additional existing canonical roles consumed by this candidate. */
+:root {
+  --cv-font-tracking-compact: -0.02rem;
+  --cv-shadow-overlay: 0px 16px 40px 0px rgb(0 0 0 / 0.4);
+}

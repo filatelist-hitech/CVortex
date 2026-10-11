@@ -7,7 +7,7 @@ const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
 const base = process.env.CVORTEX_B01_URL || 'http://127.0.0.1:8768';
 if (new URL(base).hostname !== '127.0.0.1') throw new Error('Loopback preview required');
-const output = path.join(__dirname, 'validation');
+const output = process.env.CVORTEX_VALIDATION_OUTPUT || path.join(__dirname, 'validation/closure-2026-10-10-v1');
 fs.mkdirSync(output, { recursive: true });
 const checks = [], captures = [], errors = [], externalRequests = [], contrast = [];
 function check(name, value) { assert.ok(value, name); checks.push(name); }
@@ -23,8 +23,12 @@ async function reflow(page, name) {
 }
 async function capture(page, name) {
   const file = `${name}.png`;
-  await page.screenshot({ path: path.join(output, file), fullPage: true });
-  captures.push({ file, url: page.url().replace(base, ''), viewport: page.viewportSize(), state: await page.locator('body').getAttribute('data-level') });
+  const modal = await page.evaluate(() => Boolean(document.querySelector('[aria-modal="true"], dialog[open]')));
+  // Full-page captures temporarily resize Chromium and can cross responsive breakpoints.
+  // A fixed modal is reviewed at the actual viewport, without changing application state.
+  if (!modal) await page.evaluate(() => scrollTo(0, 0));
+  await page.screenshot({ path: path.join(output, file), fullPage: !modal });
+  captures.push({ file, url: page.url().replace(base, ''), viewport: page.viewportSize(), state: await page.locator('body').getAttribute('data-level'), captureMode: modal ? 'viewport' : 'full-page' });
 }
 async function contrastAudit(page, name) {
   const result = await page.evaluate(() => {
@@ -55,7 +59,7 @@ async function contrastAudit(page, name) {
 }
 (async () => {
   const browser = await chromium.launch({ headless: true, ...(process.env.CVORTEX_CHROMIUM_PATH ? { executablePath: process.env.CVORTEX_CHROMIUM_PATH } : {}) });
-  const conditions = { browser: `Chromium ${browser.version()}`, playwright: require(path.join(path.dirname(require.resolve(process.env.CVORTEX_PLAYWRIGHT_MODULE || 'playwright')), 'package.json')).version, os: `${os.platform()} ${os.release()} ${os.arch()}`, locale: 'ru-RU', timezone: 'Europe/Moscow', motion: 'reduced', font: 'Canonical family list; installed/system fallback, no downloaded font', clock: 'Fixed fixture dates; no relative timestamps' };
+  const conditions = { browser: `Chromium ${browser.version()}`, playwright: require(path.join(path.dirname(require.resolve(process.env.CVORTEX_PLAYWRIGHT_MODULE || 'playwright')), 'package.json')).version, os: `${os.platform()} ${os.release()} ${os.arch()}`, locale: 'ru-RU', timezone: 'Europe/Moscow', motion: 'reduced', font: 'Arial working text and companies; pinned local Space Grotesk OFL for brand and salary digits', clock: 'Fixed fixture dates; no relative timestamps' };
   try {
     const context = await browser.newContext({ locale: 'ru-RU', timezoneId: 'Europe/Moscow', reducedMotion: 'reduce' });
     await context.route('**/*', async route => {
@@ -119,7 +123,7 @@ async function contrastAudit(page, name) {
     }
     for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [320, 640]]) {
       await page.setViewportSize({ width, height }); await load(page);
-      check(`${width}: salary is separate and exact`, await page.locator('#vacancy-salary').textContent() === '240 000…290 000 ₽' && (await page.locator('.salary-basis').textContent()).includes('до налогов'));
+      check(`${width}: salary is separate and exact`, await page.locator('#vacancy-salary').textContent() === '240–290 тыс. ₽' && await page.locator('#vacancy-salary').getAttribute('data-min') === '240000' && await page.locator('#vacancy-salary').getAttribute('data-max') === '290000' && (await page.locator('.salary-basis').textContent()) === 'В месяц, до налогов');
       check(`${width}: decorative artwork loaded`, await page.locator('.career-art').evaluate(el => el.complete && el.naturalWidth === 1536 && el.alt === '' && el.getAttribute('aria-hidden') === 'true'));
       await page.locator('#account-trigger').focus(); await page.keyboard.press('Enter');
       check(`${width}: account opens from keyboard`, await page.locator('#account-dialog').evaluate(el => el.open));
@@ -148,7 +152,7 @@ async function contrastAudit(page, name) {
       check(`${width}: profile display preserves review gates`, !await page.locator('#accept').isDisabled() && await page.locator('#approve').isDisabled());
     }
     await load(page, 'normal', 'cedar');
-    check('Cedar salary retains fixture and gross basis', await page.locator('#vacancy-salary').textContent() === '250 000…300 000 ₽' && (await page.locator('.salary-basis').textContent()).includes('до налогов'));
+    check('Cedar salary retains fixture and gross basis', await page.locator('#vacancy-salary').textContent() === '250–300 тыс. ₽' && await page.locator('#vacancy-salary').getAttribute('data-min') === '250000' && await page.locator('#vacancy-salary').getAttribute('data-max') === '300000' && (await page.locator('.salary-basis').textContent()) === 'В месяц, до налогов');
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.locator('[data-section="requirements"]').click();
     await reflow(page, '1440-cedar-requirements'); await contrastAudit(page, '1440-cedar-requirements'); await capture(page, '1440-cedar-requirements');
@@ -205,7 +209,7 @@ async function contrastAudit(page, name) {
     check('preview blocks network connections', response.headers()['content-security-policy'].includes("connect-src 'none'"));
     check('no external preview requests', !externalRequests.length);
     check('no browser errors or missing assets', !errors.length);
-    const referenceSourceSha256 = Object.fromEntries(['index.html', 'app.js', 'style.css', 'tokens.css', 'build-reference.cjs', 'preview-server.cjs', 'validate-browser.cjs', 'assets/career-vortex-v1.png', 'assets/sources.json', 'assets/lucide-LICENSE.txt'].map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, file))).digest('hex')]));
+    const referenceSourceSha256 = Object.fromEntries(['index.html', 'app.js', 'motion.js', 'style.css', 'tokens.css', 'build-reference.cjs', 'preview-server.cjs', 'validate-browser.cjs', 'assets/career-vortex-v1.png', 'assets/sources.json', 'assets/lucide-LICENSE.txt', 'assets/SpaceGrotesk.woff2', 'assets/OFL.txt', 'assets/font-source.json'].map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, file))).digest('hex')]));
     fs.writeFileSync(path.join(output, 'browser-results.json'), JSON.stringify({ status: 'PASS', checkedAt: new Date().toISOString(), referenceSourceSha256, checks, captures, conditions, errors, externalRequests, contrast, limitations: ['Human visual review pending', 'Real browser 200% zoom not performed', 'Manual screen-reader assessment not performed', 'No production component tests or visual regression baseline'] }, null, 2) + '\n');
     console.log(`B01 browser: PASS; ${checks.length} checks; ${captures.length} screenshots; no external requests`);
   } catch (error) {

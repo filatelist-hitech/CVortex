@@ -24,7 +24,7 @@ The selected mental model is **Concept B / Application Workspace**. [Application
 
 [`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) is the sole canonical machine-readable token source (DTCG 2025.10, ADR-0014). Under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), Git-reviewed behavior and executable references define visual intent; Figma is optional. [Design Handoff](Design-Handoff.md) controls reference lifecycle and human review. A disagreement is resolved by reviewing the affected specification/tokens/reference, never by silently editing a second master.
 
-This is an accepted specification, not evidence of production workspace implementation. The bounded [reference foundation](reference/README.md) is implemented as a draft and awaits human visual/state review; production changes remain separately authorized.
+The bounded [reference foundation](reference/README.md) is the reviewed B01 visual/product baseline under [ADR-0025](../03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md), and its mapped [Application Workspace React port](validation/application-port-2026-10-11/README.md) is owner-accepted for the documented visual scope. This does not imply personal review of every state or viewport. Manual state/viewport, screen-reader and native zoom checks remain open and block production release.
 
 ## Principles and content hierarchy
 

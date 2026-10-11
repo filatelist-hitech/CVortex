@@ -37,7 +37,7 @@ Preflight `check-agent-contract.sh implementation ... --write --user-override` P
 
 ## Источники и применение skill
 
-Изучен `/Users/filatelist/.agents/skills/apple-design/SKILL.md`.
+Изучен установленный skill `apple-design`.
 Других reference files в его каталоге нет. Проверены первичные материалы Apple:
 [Designing Fluid Interfaces, WWDC18](https://developer.apple.com/videos/play/wwdc2018/803/),
 [Motion HIG](https://developer.apple.com/design/human-interface-guidelines/motion),

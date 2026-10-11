@@ -89,14 +89,22 @@ function generate(tree, sourceHash) {
 
 function main(mode) {
   if (!['--write', '--check'].includes(mode)) throw new Error('Usage: node build-reference.cjs --write|--check');
-  const expected = generate(JSON.parse(fs.readFileSync(tokenFile, 'utf8')), sha256(tokenFile));
+  const tree = JSON.parse(fs.readFileSync(tokenFile, 'utf8'));
+  const get = resolver(tree);
+  const extras = ['font.tracking.compact', 'shadow.overlay'];
+  const extra = extras.map(name => {
+    const token = get(name);
+    const value = token.type === 'shadow' ? ['offsetX', 'offsetY', 'blur', 'spread'].map(key => cssValue({ type: 'dimension', value: token.value[key] })).join(' ') + ' ' + cssValue({ type: 'color', value: token.value.color }) : cssValue(token);
+    return `  --cv-${name.replaceAll('.', '-')}: ${value};`;
+  }).join('\n');
+  const expected = generate(tree, sha256(tokenFile)) + `/* Additional existing canonical roles consumed by this candidate. */\n:root {\n${extra}\n}\n`;
   const generated = {
     canonicalTokenPath: 'brand/tokens/cvortex.tokens.json',
     canonicalTokenSha256: sha256(tokenFile),
     activeReferenceSha256: sha256(referenceFile),
-    referenceAssetSha256: Object.fromEntries(['app.js', 'style.css', 'build-reference.cjs', 'preview-server.cjs', 'assets/career-vortex-v1.png', 'assets/sources.json', 'assets/lucide-LICENSE.txt'].map(file => [file, sha256(path.join(__dirname, file))])),
+    referenceAssetSha256: Object.fromEntries(['app.js', 'motion.js', 'style.css', 'build-reference.cjs', 'build-reference.test.cjs', 'preview-server.cjs', 'validate-browser.cjs', 'validate-candidate.cjs', 'validate-apple.cjs', 'validate-typography.cjs', ...fs.readdirSync(path.join(__dirname, 'assets')).map(file => `assets/${file}`)].map(file => [file, sha256(path.join(__dirname, file))])),
     sourceSha256: Object.fromEntries(sources.map(file => [file, sha256(path.join(root, file))])),
-    consumedTokenRoles: consumed,
+    consumedTokenRoles: [...consumed, ...extras],
   };
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   if (mode === '--write') {
@@ -107,17 +115,20 @@ function main(mode) {
     if (fs.readFileSync(cssFile, 'utf8') !== expected) throw new Error('tokens.css drift');
     if (JSON.stringify(manifest.generated) !== JSON.stringify(generated)) throw new Error('manifest source/hash drift');
     const html = fs.readFileSync(referenceFile, 'utf8');
-    for (const file of ['tokens.css', 'style.css', 'app.js', 'assets/career-vortex-v1.png']) {
+    for (const file of ['tokens.css', 'style.css', 'app.js', 'motion.js', 'assets/career-vortex-v1.png']) {
       if (!html.includes(`"./${file}"`) || !fs.existsSync(path.join(__dirname, file))) throw new Error(`Missing local asset: ${file}`);
     }
     const style = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
-    if (/https?:\/\/|@import|url\(/i.test(style)) throw new Error('External CSS asset detected');
+    if (/https?:\/\/|@import|#[\da-fA-F]{3,8}\b|rgba?\(/i.test(style)) throw new Error('External CSS asset or noncanonical palette detected');
+    for (const match of style.matchAll(/url\(['"]?([^)'"]+)['"]?\)/g)) {
+      if (match[1] !== './assets/SpaceGrotesk.woff2' || !fs.existsSync(path.join(__dirname, match[1]))) throw new Error('Unexpected CSS asset');
+    }
     const tokens = resolver(JSON.parse(fs.readFileSync(tokenFile, 'utf8')));
     for (const role of ['tablet', 'desktop', 'wide']) {
       const value = tokens(`breakpoint.${role}`).value.value;
       if (!style.includes(`${value - 1}px`) && !style.includes(`${value}px`)) throw new Error(`Breakpoint drift: ${role}`);
     }
-    if (/https?:\/\/|\bfetch\s*\(|XMLHttpRequest|WebSocket/i.test([html, fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8')].join('\n'))) throw new Error('External/API reference detected');
+    if (/https?:\/\/|\bfetch\s*\(|XMLHttpRequest|WebSocket/i.test([html, ...['app.js', 'motion.js'].map(file => fs.readFileSync(path.join(__dirname, file), 'utf8'))].join('\n'))) throw new Error('External/API reference detected');
   }
   console.log(`B01 reference ${mode.slice(2)}: PASS; canonical token sha256 ${generated.canonicalTokenSha256}`);
 }

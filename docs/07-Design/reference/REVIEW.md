@@ -1,57 +1,164 @@
 ---
-title: B01 Human Visual and State Review Record
-status: awaiting-review
+title: B01 Canonical Owner Decision and Review
+status: accepted
 owner: project
 created: 2026-10-08
-updated: 2026-10-10
+updated: 2026-10-11
 tags: [design, human-review, accessibility]
 related: [manifest.json, README.md, ../Design-Handoff.md]
 ---
 
-# B01 owner review
+# Решение владельца B01
 
-**Pending.** Reviewer, date and outcome are unset. Agent/browser validation in
-[the report](validation/browser-results.json) does not grant human approval.
-Review the [local reference](http://127.0.0.1:8768/) and exact hashes in
-[manifest.json](manifest.json). The manifest remains lifecycle `draft` until a
-named human review records its state/viewport scope and unresolved limitations.
+Актуальное окончательное решение — **OWNER ACCEPTANCE, 2026-10-11**, записано ниже.
+Записи от 2026-10-10 и подготовки human gate сохранены как история.
+Текущий итог: **B01 ACCEPTED** по ADR-0025; B02 **AUTHORIZED**. Ниже сохранены исторические решения до governance amendment.
 
-On 2026-10-10 the owner requested plain Russian UI copy and expressed a general
-positive reaction. Current captures show the translated interface in `ru-RU`.
-No state/viewport review scope, named reviewer or acceptance outcome was supplied;
-the record remains pending.
+Decision: **APPROVED VISUAL DIRECTION**. Reviewer: владелец продукта CVortex,
+явное решение в чате. Decision date: **2026-10-10**.
+Scope: **B01 Application Workspace Visual Reference**.
+Selected reference: **«Орбита решения»**, исходный объект
+`docs/07-Design/candidates/b01-frontend-redesign/index.html`.
 
-Следующие замечания владельца касались отсутствующего меню приложения,
-скудных цветов, визуальной подачи, незаметной зарплаты и отсутствия изображений.
-Текущая редакция содержит меню демонстрационного профиля, отдельный блок зарплаты,
-цветовые акценты, локальные иконки и декоративную иллюстрацию. Отзыв задаёт
-направление правок; результат этих правок ещё не получил human review.
+Утверждённое направление перенесено в единственный canonical reference:
+[index.html](index.html). Точные source/token hashes и связь с выбранным
+исходником — в [manifest](manifest.json). Прежний canonical draft не выбран;
+его исходники, manifest, review и evidence сохранены без изменения в
+[архиве](../archive/b01-pre-orbita-2026-10-10/README.md).
+Персональное превью служит проверке реальных сценариев; оно не является вторым
+canonical reference. Личные данные и `.local/` не переносились.
 
-| Review input | Scope |
+Это подтверждение выбора visual direction/reference. Оно не приписывает владельцу
+ручную проверку конкретных состояний, viewport, keyboard, 200% zoom или AT.
+Предыдущее scope-limited approval candidate и personal preview от 2026-10-10
+сохранено в архиве и candidate REVIEW. Ни одна запись не устанавливает эти проверки.
+
+## Оставшийся обязательный review
+
+**B01 PARTIAL / awaiting-review.** Lifecycle остаётся `draft`: owner selection
+завершён, visual/state/accessibility acceptance ещё не установлен.
+Автоматический прогон и просмотр скриншотов агентом — отдельное evidence,
+[closure v1](validation/closure-2026-10-10-v1/closure-results.json).
+
+| Объект ручной проверки | Статус |
 | --- | --- |
-| [Меню пользователя](validation/1440-account-user.png), [администратора](validation/390-account-admin.png), [без входа](validation/320-account-guest.png) | Только локальная демонстрация ролей; Tab, Shift+Tab, Escape, возврат фокуса; реальная сессия не меняется |
-| [Cedar: требования](validation/1440-cedar-requirements.png) | Зарплата, графика и предупреждение о конфликте на экране из замечаний владельца |
-| [Desktop normal](validation/1440-normal.png), [evidence](validation/1440-evidence.png) | 1440×900; list, workspace, optional inspector, evidence readability |
-| [Tablet workspace](validation/768-normal.png), [drawer](validation/768-evidence.png), [list](validation/768-list.png) | 768×1024; one transient panel, keyboard trap and Escape/return focus |
-| [Compact workspace](validation/390-normal.png), [list](validation/390-list.png), [evidence](validation/390-evidence.png) | 390×844; list → workspace → context and Back |
-| [Small workspace](validation/320-normal.png), [evidence](validation/320-evidence.png) | 320×640; wrapping, full-width evidence, touch controls |
-| [Loading](validation/1440-loading.png), [empty](validation/390-empty.png), [failed](validation/320-failed.png) | Visible operation/state, honest unavailable data and next action |
-| [Stale](validation/1440-stale.png), [blocked](validation/1440-blocked.png), [pending](validation/390-pending.png), [conflict](validation/1440-conflict.png) | Support reason remains inline; Accept/Approve unavailable |
-| [Approval distinct](validation/1440-approval.png), [compact approval](validation/320-approval.png) | Accept → separate exact-content approval → explicitly not sent |
+| normal/loading/empty/failed/stale/blocked/pending/approval на 1440×900, 768×1024, 390×844, 320×640 | not manually reviewed |
+| Cedar conflict, missing/pending/stale support, inline reason, Accept → exact-content approval → not sent | not manually reviewed |
+| list → workspace → evidence; Back/Forward; разделы overview/requirements/employer/history/materials | not manually reviewed |
+| Меню user/admin/guest, unreadable/long text, отсутствующая зарплата | not manually reviewed |
+| Tab/Shift+Tab, видимый focus, Escape, focus return, transient panel trap | not manually reviewed |
+| Реальный browser zoom 200%, reflow и доступность контролов | not manually reviewed; не выполнено в этом прогоне |
+| Manual screen reader: headings/landmarks, чтение evidence, live announcements loading/error/approval, modal focus | not manually reviewed; не выполнено в этом прогоне |
 
-All 53 captures are listed with scenario URL and viewport in the browser report;
-the links above are entry points, not approval of the remaining states.
+Для закрытия записать reviewer, дату, browser/OS/AT, конкретные состояния/viewport,
+результат и findings для текущих manifest hashes. ADR-0024 требует ручную AT
+assessment; Design Handoff и Foundation требуют zoom/reflow. Автоматическая
+проверка 720px reflow не заменяет реальный 200% zoom.
+При PASS без блокирующих findings обновить lifecycle и B01 state отдельным
+bounded block. B02 требует закрытия B01 и отдельного разрешения на implementation.
+Career Facts не подтверждены, отклики не отправлены. STOP.
 
-Record the following in a subsequent bounded review block:
+## Final Human Acceptance Gate — 2026-10-11
 
-- Reviewer name, date, actual reference/token hashes and browser/OS.
-- States and viewports actually inspected; visual/state outcome and findings.
-- Keyboard/focus/Escape/return behavior observed by the human reviewer.
-- Whether real 200% browser zoom and manual screen-reader reading/announcements
-  were performed, with results or explicit pending limitations.
-- Accepted scope and unresolved limitations. Only then update the manifest's
-  review record and lifecycle if the outcome supports approval.
+[Полная ручная матрица, guided review и неподписанная запись решения](MANUAL-ACCEPTANCE.md).
+Новый ограниченный native 200% zoom assessment агента сохранён отдельно в
+`validation/human-gate-2026-10-11/`; он не устанавливает human acceptance.
+Screen reader — NOT TESTED; owner state/viewport/keyboard/zoom gates остаются открытыми.
+Historical closure v1/source hashes сверены и переиспользованы без перезаписи.
+B01 PARTIAL / awaiting-review; lifecycle draft, NEXT B01. STOP.
 
-No review has occurred in this recovery session. Direction selection and fictional
-`Demo reviewer` metadata in the Career Fact fixture cannot fill this record.
-Do not mark B01 PASS or advance NEXT to B02 while this gate is pending.
+
+## Окончательное OWNER ACCEPTANCE — 2026-10-11
+
+Reviewer / decision maker: **владелец продукта CVortex**, явно подтвердивший
+окончательное решение в текущем чате «Final B01 Acceptance → B02 Production
+Implementation». Имя и результаты отдельных ручных сеансов не предоставлены.
+Первоначальное утверждение визуального направления: **2026-10-10**.
+Текущее решение: **2026-10-11**, Europe/Moscow.
+Scope: **B01 Application Workspace Visual Reference — «Орбита решения»**.
+Canonical: `docs/07-Design/reference/`; персональное превью принято как
+демонстрационный сценарий, без переноса его личных данных в production.
+
+### 1. Visual approval — PASS
+
+Владелец окончательно утвердил визуальную концепцию, композицию интерфейса,
+типографику, систему компонентов, адаптивный дизайн как направление и canonical
+reference. Это завершённое решение о дизайне; повторного редизайна не требуется.
+
+### 2. Product/UX acceptance — PASS в заявленном scope
+
+Владелец утвердил навигационные решения, интерфейсные тексты и персональное
+превью как демонстрационный сценарий. Это owner acceptance продукта/UX в указанном
+scope, без утверждения о выполнении 32 state/viewport проверок, keyboard/zoom/AT
+тестов, production implementation или Preview 0.1 end-to-end acceptance.
+
+### 3. Automated validation — PASS существующего baseline
+
+[Closure v1](validation/closure-2026-10-10-v1/closure-results.json): **1246 checks /
+99 captures**, **2568 integrity assertions / 820 snapshot files**, без browser
+errors и external requests. На 2026-10-11 повторно сверены 14 source hashes,
+SHA-256 и counts четырёх suite reports, hash integrity report и canonical tokens.
+Исторические suites не перезапускались и отчёты не переписывались. Проверка
+актуальности и сохранности текущего блока записана в
+[owner-acceptance verification](validation/owner-acceptance-2026-10-11.json).
+
+### 4. Manual validation — PARTIAL
+
+Все непроверенные строки [MANUAL-ACCEPTANCE](MANUAL-ACCEPTANCE.md) сохраняют
+**NOT TESTED**: 32 комбинации состояний/viewport, ручные сценарии взаимодействий,
+K1 keyboard/focus, полный Z1 native 200% zoom и A1 screen reader.
+Ограниченное agent evidence native zoom 200% (734×385 CSS px, одно окно, восемь
+состояний materials и отдельные controls/menu/evidence) сохранено отдельно.
+Оно не доказывает полное покрытие Z1 или human acceptance. Screen-reader сеанса
+нет; DOM/AX и автоматические assertions его не заменяют.
+
+### 5. Accepted residual risks
+
+Владелец ознакомлен с автоматическими результатами и известными ограничениями
+и принимает остаточный риск непроведённых ручных проверок **насколько это
+допускается действующими правилами проекта**. Риски: непроверенное человеком
+восприятие/читаемость состояний на всех размерах, keyboard/focus в полном scope,
+clipping/overlap и доступность controls при zoom, реальное чтение/announcements AT.
+Принятие риска записано; обязательные проверки им не заменяются.
+
+### Closure decision — PARTIAL; readiness B02 — BLOCKED
+
+Действующий контракт не предусматривает risk-acceptance waiver:
+
+- [ADR-0024, Security and validation impact](../../03-ADR/ADR-0024-git-design-reference-workflow.md#security-and-validation-impact)
+  требует manual assistive-technology assessment наряду с остальными проверками.
+- [Design Handoff, Handoff lifecycle](../Design-Handoff.md#handoff-lifecycle)
+  требует state/viewport scope и human review; при pending human review manifest
+  остаётся `draft`. Разделы Change and review procedure / Validation contract
+  сохраняют desktop/mobile/zoom и manual screen-reader assessment.
+- [Design Foundation](../Design-Foundation.md#accessibility-acceptance-baseline)
+  сохраняет keyboard, focus, 200% zoom/reflow и screen-reader requirements.
+- [B01 task specification](../../../.agents/tasks/application-workspace-reference-foundation.md#completion-criteria)
+  запрещает PASS и переход к B02 при остающемся awaiting-review;
+  [ручная матрица](MANUAL-ACCEPTANCE.md) сохраняет обязательные NOT TESTED.
+
+Даже окончательное owner acceptance не устраняет отсутствие обязательного AT
+assessment. Критерии, ADR и матрица не изменены задним числом. B01 остаётся
+**PARTIAL / awaiting-review**, lifecycle **draft**, NEXT —
+`application-workspace-reference-foundation`.
+
+Владелец **явно разрешил исключительно B02** по
+`.agents/tasks/b02-global-shell-navigation.md` **после корректного закрытия B01**.
+Разрешение получено и сохраняется; условие запуска не выполнено. B02 не начат;
+production files/React components не изменены. Следующее действие: выполнить и
+записать недостающие обязательные ручные проверки B01, затем повторно оценить
+closure по действующему контракту. B03 не разрешён. **STOP.**
+
+## Governance closure — 2026-10-11 (current)
+
+Decision maker: **владелец продукта CVortex**, explicit current request
+“Finalize B01 Governance → Execute B02”. Accepted [ADR-0025](../../03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md)
+amends B01 closure timing. **B01 ACCEPTED / lifecycle reviewed** as a visual/product
+implementation baseline. No redesign required. Owner acceptance, verified historical
+automatic baseline, documented risks above and mandatory follow-up satisfy the new gate.
+
+Manual matrix outcomes are unchanged: **NOT TESTED** remains NOT TESTED; no human
+screen-reader session or full manual state/viewport/keyboard/zoom PASS is claimed.
+[Mandatory release gate](../../../.agents/tasks/b01-manual-accessibility-release-gate.md)
+is OPEN and blocks production release. Historical automatic checks are not weakened
+or rerun by this decision. B02 authorization is now effective; B03 remains unauthorized.

@@ -1,9 +1,11 @@
 {
   "status": "PASS",
-  "checkedAt": "2026-10-10T14:25:24.763Z",
+  "checkedAt": "2026-10-10T17:33:43.505409+00:00",
   "protectedFiles": 639,
   "canonicalTokenSha256": "72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7",
   "activeReferenceUnchanged": true,
   "productionUnchanged": true,
-  "originalResearchUnchanged": true
+  "originalResearchUnchanged": true,
+  "baselineScope": "Fresh tracked files outside candidate and STATUS/BLOCKERS; compared from this turn start",
+  "freshProtectedHashesSha256": "135ccec4d306d3126f67c2937b277ddde526b0541cf2b6d6f9826c652020c96f"
 }

@@ -1,18 +1,19 @@
 ---
 title: B01 Application Workspace Reference
-status: awaiting-review
+status: accepted
 owner: project
 created: 2026-10-08
-updated: 2026-10-10
+updated: 2026-10-11
 tags: [design, reference, tokens, validation]
 related: [../Design-Handoff.md, ../Application-Workspace.md, ../../../.agents/tasks/application-workspace-reference-foundation.md]
 ---
 
 # Application Workspace reference (B01)
 
-One normalized, synthetic HTML reference for Concept B. Lifecycle is **draft**;
-human visual/state review is pending. This is not a production screen or an
-approved visual regression baseline. It uses native HTML/CSS/JavaScript isolated
+One normalized, synthetic HTML reference: owner-selected **«Орбита решения»**. Lifecycle is **reviewed** for owner visual/product acceptance under ADR-0025;
+manual state/accessibility checks remain **NOT TESTED** and block production release.
+This is an accepted implementation reference, not a production screen or completed
+production accessibility/visual-regression validation. It uses native HTML/CSS/JavaScript isolated
 from the Next.js application; no prototype HTML was copied into production.
 
 ## Open locally
@@ -56,8 +57,8 @@ capture locale `ru-RU`). URLs, scenario IDs, canonical tokens and source referen
 keep their existing identifiers. Global Opportunities appears as «Вакансии»;
 the other destinations retain their accepted roles under translated labels.
 
-Space Grotesk remains the canonical family preference; this reference uses the
-installed/system fallback and downloads no font. A production font asset remains
+Space Grotesk remains the canonical brand family; a pinned local OFL font is used
+for brand and salary. Arial is used for Russian working text. No network font download occurs. A production font asset remains
 a separate obligation. Today/Career/Employers/Settings and employer history are
 labelled unavailable. Fictional confirmation metadata inside the evidence fixture
 is not a human review of B01.
@@ -108,8 +109,8 @@ With the preview running, use the already installed Playwright/browser paths
 (override them for another available local runtime; no installation is required):
 
 ```bash
-CVORTEX_PLAYWRIGHT_MODULE='/Users/filatelist/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright' \
-CVORTEX_CHROMIUM_PATH='/Users/filatelist/Library/Caches/ms-playwright/chromium-1208/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing' \
+CVORTEX_PLAYWRIGHT_MODULE='/path/to/playwright' \
+CVORTEX_CHROMIUM_PATH='/path/to/chromium' \
 node docs/07-Design/reference/validate-browser.cjs
 ```
 
@@ -126,7 +127,7 @@ capture metadata and state closeout were unfinished. Valid implementation was
 preserved. Recovery fixed scenario URL persistence and the Cedar conflict reason,
 added three rendered regressions and ran the final combined browser result.
 
-Latest automatic/browser evidence: [browser-results.json](validation/browser-results.json)
+Historical recovery automatic/browser evidence: [browser-results.json](validation/browser-results.json)
 (379 checks / 53 captures), [integrity-results.json](validation/integrity-results.json).
 Two Node tests pass; derivation/hash check and syntax checks pass. The browser
 report pins Chromium/Playwright/OS, locale, timezone, motion and font fallback.
@@ -180,5 +181,39 @@ run. No dependencies were installed. No commit, push, PR or publication.
 на 390/320 px. Путь от источников к captures закреплён SHA-256 в browser report.
 Реальный 200% zoom, screen reader и human review остаются непроверенными.
 
-Next bounded action: owner visual/state review of this B01 revision using
+Next bounded action: remaining owner visual/state/accessibility review of this promoted B01 revision using
 [REVIEW.md](REVIEW.md). B01 is **awaiting-review**, not PASS. STOP before B02.
+
+## Canonical promotion — 2026-10-10
+
+Owner decision: **APPROVED VISUAL DIRECTION**, «Орбита решения».
+The selected candidate's HTML/CSS/JS/assets are promoted to this directory;
+no personal-preview data is included. Candidate becomes a historical source,
+not a second active reference. The previous draft is preserved verbatim in
+`../archive/b01-pre-orbita-2026-10-10/`; restore the whole saved reference directory
+and its mapping together through a bounded authorized rollback. Archive hashes
+are in `validation/closure-2026-10-10-v1/archive-hashes.json`.
+The shared canonical DTCG resolver remains; only the candidate's two existing
+consumed roles and permitted local font are included. Token values are unchanged.
+
+Fresh evidence lives exclusively in
+[closure-2026-10-10-v1](validation/closure-2026-10-10-v1/closure-results.json).
+The four canonical browser suites are `validate-browser.cjs`,
+`validate-candidate.cjs`, `validate-apple.cjs`, `validate-typography.cjs`.
+Run them against this directory's loopback server; their default output is the
+versioned closure directory. Do not overwrite historical candidate FAIL/baselines.
+
+Selection is approved; individual state/viewport review, real browser 200% zoom
+and manual screen reader remain pending. **B01 PARTIAL**, B02 not ready or authorized.
+
+Fresh final promotion checks: **1246 / 99 captures PASS** (379 browser, 70
+composition, 83 motion/menu, 714 typography); all 99 images decoded and reviewed
+as contact sheets, with full-size desktop/390 workspace inspection. Node tests
+2/2, derivation/manifest/syntax and whitespace PASS. Zero external requests and
+browser errors. Closure integrity: 820 session protected files, historical
+snapshots explicitly reconciled without changing baselines. Human state review,
+real 200% browser zoom and manual AT remain open. B01 PARTIAL; STOP before B02.
+
+## Current B01 governance outcome — 2026-10-11
+
+Under accepted [ADR-0025](../../03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md), B01 is **ACCEPTED** as the owner-approved visual/product implementation baseline; lifecycle `reviewed`. Earlier PARTIAL/draft/STOP records above are historical. Unperformed manual checks remain **NOT TESTED**, with mandatory follow-up `.agents/tasks/b01-manual-accessibility-release-gate.md` blocking production release. B02 is explicitly authorized after this closure; B03 is not authorized.

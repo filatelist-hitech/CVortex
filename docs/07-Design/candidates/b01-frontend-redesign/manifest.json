@@ -27,9 +27,21 @@
   ],
   "review": {
     "status": "awaiting-review",
-    "reviewer": null,
-    "date": null,
-    "outcome": null,
+    "reviewer": "Project owner (explicit chat message)",
+    "date": "2026-10-10",
+    "outcome": "Approved the Orbita design candidate and personal preview of two vacancies within the scope stated in chat.",
+    "scope": [
+      "Design direction: Orbita resheniya",
+      "Personal preview of two vacancies"
+    ],
+    "inspectedStatesOrViewports": "Not specified in the approval message",
+    "notEstablished": [
+      "Keyboard/focus inspection",
+      "Native 200% zoom",
+      "Assistive technology review",
+      "Career Facts confirmation or permission to submit applications",
+      "Replacement of the active reference"
+    ],
     "record": "docs/07-Design/candidates/b01-frontend-redesign/REVIEW.md",
     "screenshots": [
       "docs/07-Design/candidates/b01-frontend-redesign/validation/1440-normal.png",
@@ -116,33 +128,51 @@
       "docs/07-Design/candidates/b01-frontend-redesign/validation/apple-320-menu.png",
       "docs/07-Design/candidates/b01-frontend-redesign/validation/apple-320-workspace.png",
       "docs/07-Design/candidates/b01-frontend-redesign/validation/apple-high-contrast.png",
-      "docs/07-Design/candidates/b01-frontend-redesign/validation/apple-explicit-approval.png"
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/apple-explicit-approval.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/1440-overview.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/1440-materials.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/1440-rejected.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/390-overview.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/390-materials.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/390-rejected.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/1440-long-names.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/768-long-names.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/390-long-names.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/390-long-list.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/390-evidence.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/320-long-names.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/320-long-list.png",
+      "docs/07-Design/candidates/b01-frontend-redesign/validation/typography/after/320-evidence.png"
     ],
     "limitations": [
-      "Named human visual/state review pending",
+      "Owner approval is limited to the stated design and personal-preview scope; specific states/viewports were not reported",
       "Native browser 200% zoom attempted but not verified: CUA Chrome unavailable, native app capture failed ScreenCaptureKit -3811",
       "Manual screen-reader assessment not performed",
-      "Arial working text; local Space Grotesk used for brand, Latin company names and salary; no production font approval"
+      "Arial working text and company context; local Space Grotesk for brand, salary digits and ruble; no production font approval"
     ]
   },
   "automaticValidation": {
-    "status": "IN_PROGRESS",
-    "checks": null,
-    "captures": null,
+    "status": "PASS",
+    "checks": 1246,
+    "captures": 99,
     "reports": [
       "validation/browser-results.json",
       "validation/candidate-results.json",
       "validation/apple-results.json",
+      "validation/typography/after/results.json",
       "validation/font-results.json",
       "validation/static-results.json",
-      "validation/integrity-results.json"
+      "validation/integrity-results.json",
+      "validation/finalization-results.json"
     ],
     "harnessSha256": {
-      "validate-browser.cjs": "04527e30c09c3ee6e2f8854f070987ccf624aee450f1c73342ddc8746721436b",
+      "validate-browser.cjs": "15d83e898500f0c972418f40ba4cc94d62dd207790130ebee6fc51c5f5c5404b",
       "validate-candidate.cjs": "55d87d0ecd96fdd82a7876e262907eb4b1ad6823f1c7d1031b0744e603cb5073",
-      "validate-apple.cjs": "b28f483d07b2ef9365950fbc3d7a2352895144faea152a8fed3aeec12d099573"
+      "validate-apple.cjs": "703f789b490a0e6cb363166ce73535f7f15671f3c4c8172cf4aa12a313e74f8d",
+      "validate-typography.cjs": "e6a1f321ca437d23e727fbd17e5780131544c98abdbc2998a22ec04b6f4a6ecb"
     },
-    "humanApproval": false
+    "humanApproval": false,
+    "checkedAt": "2026-10-10T17:32:46.186914+00:00"
   },
   "generated": {
     "canonicalTokenPath": "brand/tokens/cvortex.tokens.json",
@@ -153,7 +183,7 @@
       "motion.js": "d90b55e80323f16ec504f1f848e403b580c53c3e4919cd9fc6b6b1819b956ba8",
       "style.css": "09c73542a01a52faeab4dbd5c3c3ff00a71027bb87c494537eaf04d3d84c7460",
       "validate-candidate.cjs": "55d87d0ecd96fdd82a7876e262907eb4b1ad6823f1c7d1031b0744e603cb5073",
-      "validate-apple.cjs": "a60974b05d310ee78e020a6d5bb7d01068ffbba633bec0a0a33e4330bf637f1c",
+      "validate-apple.cjs": "703f789b490a0e6cb363166ce73535f7f15671f3c4c8172cf4aa12a313e74f8d",
       "validate-typography.cjs": "e6a1f321ca437d23e727fbd17e5780131544c98abdbc2998a22ec04b6f4a6ecb",
       "build-reference.cjs": "97ef671f1948a9bab80fdf340ab62fb45d537ca227db8192da922eb23af7b31f",
       "preview-server.cjs": "495784f20b199e42a2ca9ca899151705acab8e1b9e44b1795bd1a1411824e3a4",
@@ -175,14 +205,14 @@
     "locale": "ru-RU",
     "timezone": "Europe/Moscow",
     "motion": "reduced",
-    "font": "Arial working text; pinned local Space Grotesk OFL for brand/company/salary",
+    "font": "Arial working text and company context; pinned local Space Grotesk OFL for brand, salary digits and ruble",
     "clock": "Fixed fixture dates; no relative timestamps",
-    "capturedAt": "2026-10-10T13:42:14.049Z",
+    "capturedAt": "2026-10-10T17:31:53.234Z",
     "captureMethod": "Full-page with scroll normalized to 0; modal uses actual viewport; supplemental spring checks use normal motion"
   },
   "agentVisualReview": {
     "date": "2026-10-10",
-    "scope": "Fresh 4 state/account sheets and 20-section sheet; full desktop normal, tablet evidence, compact workspace/pending/account and high-contrast inspected, compared with stored pre-refinement baseline. Agent review only.",
+    "scope": "Fresh typography AFTER desktop/mobile overview, materials and rejected recommendation inspected at full size and compared with saved BEFORE. Agent review only.",
     "approval": false
   },
   "refinement": {
@@ -190,5 +220,41 @@
     "record": "APPLE-REFINEMENT.md",
     "baseline": "validation/baseline/manifest.json",
     "isActiveReference": false
-  }
+  },
+  "stageA": {
+    "status": "TECHNICAL PASS",
+    "record": "README.md",
+    "humanApproval": false
+  },
+  "stageB": {
+    "status": "TECHNICAL PASS",
+    "record": "docs/07-Design/candidates/b01-personal-preview/README.md",
+    "evidence": "docs/07-Design/candidates/b01-personal-preview/manifest.json",
+    "historicalBlockedReport": "validation/finalization-results.json"
+  },
+  "ownerApproval": {
+    "status": "approved_scope_limited",
+    "reviewer": "Project owner (explicit chat message)",
+    "date": "2026-10-10",
+    "outcome": "Approved the Orbita design candidate and personal preview of two vacancies within the scope stated in chat.",
+    "scope": [
+      "Design direction: Orbita resheniya",
+      "Personal preview of two vacancies"
+    ],
+    "notEstablished": [
+      "Specific viewport or state inspection",
+      "Keyboard/focus inspection",
+      "Native 200% zoom",
+      "Assistive technology review",
+      "Career Facts confirmation or permission to submit applications"
+    ],
+    "activeReferenceChanged": true
+  },
+  "promotion": {
+    "status": "promoted-source-archive",
+    "date": "2026-10-10",
+    "canonicalReference": "docs/07-Design/reference/index.html",
+    "isActiveReference": false
+  },
+  "generatedRecordScope": "Historical pre-promotion candidate derivation; active reference hashes describe that point in time. Current promotion integrity is versioned in canonical closure v1."
 }

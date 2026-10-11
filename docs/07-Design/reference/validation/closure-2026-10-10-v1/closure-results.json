@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-10T18:22:26.087989+00:00",
+  "status": "PARTIAL",
+  "technicalValidation": "PASS",
+  "b01": "PARTIAL / awaiting-review",
+  "readyForB02": false,
+  "ownerDecision": {
+    "decision": "APPROVED VISUAL DIRECTION",
+    "reviewer": "Владелец продукта CVortex (явное сообщение в чате)",
+    "date": "2026-10-10",
+    "scope": "B01 Application Workspace Visual Reference",
+    "selectedReference": "Орбита решения",
+    "manualStates": [],
+    "manualViewports": [],
+    "keyboard": "not manually reviewed",
+    "zoom200": "not manually reviewed",
+    "assistiveTechnology": "not manually reviewed"
+  },
+  "canonicalReference": "docs/07-Design/reference/index.html",
+  "selectedSource": "docs/07-Design/candidates/b01-frontend-redesign/index.html",
+  "previousDraftArchive": "docs/07-Design/archive/b01-pre-orbita-2026-10-10",
+  "canonicalTokenSha256": "72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7",
+  "sourceIntegrity": "Final browser and typography capture hashes match current canonical sources",
+  "suites": {
+    "browser-results.json": {
+      "status": "PASS",
+      "checks": 379,
+      "captures": 53,
+      "checkedAt": "2026-10-10T18:20:52.672Z",
+      "reportSha256": "a1d59b401d1bbb1ac89982474e8c22177e5e70f9a1759a6a65169ce67cd48a51"
+    },
+    "candidate-results.json": {
+      "status": "PASS",
+      "checks": 70,
+      "captures": 22,
+      "checkedAt": "2026-10-10T18:20:58.607Z",
+      "reportSha256": "4de3f9ef90de683ccfb8949794663014f0f92f23eb4042d720d8cc20ec81ec11"
+    },
+    "apple-results.json": {
+      "status": "PASS",
+      "checks": 83,
+      "captures": 10,
+      "checkedAt": "2026-10-10T18:19:02.703Z",
+      "reportSha256": "4a82076381e9f709f531f1e70b595eeed5abc01384230a8a2ad09b753b44baf2"
+    },
+    "typography/after/results.json": {
+      "status": "PASS",
+      "checks": 714,
+      "captures": 14,
+      "checkedAt": "2026-10-10T18:20:12.648Z",
+      "reportSha256": "93012ffdea3f261f92e9a71a26a4ba1926c76f7973d7a239659014129ee1d7ae"
+    }
+  },
+  "checks": 1246,
+  "captures": 99,
+  "browserErrors": [],
+  "externalRequests": [],
+  "captureConditions": {
+    "browser": "Chromium 145.0.7632.6",
+    "playwright": "1.62.1",
+    "os": "darwin 25.6.0 arm64",
+    "locale": "ru-RU",
+    "timezone": "Europe/Moscow",
+    "motion": "reduced",
+    "font": "Arial working text and companies; pinned local Space Grotesk OFL for brand and salary digits",
+    "clock": "Fixed fixture dates; no relative timestamps",
+    "capturedAt": "2026-10-10T18:20:52.672Z"
+  },
+  "integrityReport": "integrity-results.json",
+  "agentVisualReview": {
+    "date": "2026-10-10",
+    "scope": "All 99 final captures inspected as 10 contact sheets; desktop 1440 and compact 390 workspace also inspected at full size",
+    "humanApproval": false,
+    "limitations": "Contact sheets are a coarse composition/state audit, not full-size reading of every screenshot or manual accessibility acceptance"
+  },
+  "manualReview": {
+    "statesViewports": "not manually reviewed",
+    "keyboardFocus": "not manually reviewed; automated assertions PASS",
+    "realBrowser200Zoom": "NOT RUN; no actual interactive 200% browser zoom performed; viewport reflow is supplemental only",
+    "assistiveTechnology": "NOT RUN; no human screen-reader session or recorded reading/announcement assessment"
+  },
+  "remainingGates": [
+    "Named human review of state/viewport/interaction matrix in canonical REVIEW.md",
+    "Real browser 200% zoom/reflow assessment",
+    "Manual screen-reader reading/announcements and focus assessment"
+  ],
+  "historicalEvidence": "Existing reports/FAIL/protected-before snapshots remain unchanged. Strict historical hash equality still FAIL for explicitly listed governance/promotion changes. Independent closure audit compares exact allowlist plus unchanged remaining protected files.",
+  "productionUnchanged": true,
+  "privateDataPromoted": false,
+  "initialPreviewAttempt": "127.0.0.1:8770 was occupied (EADDRINUSE); existing process preserved; fresh isolated preview on 8871",
+  "finalLabelRerun": "Pre-label PASS retained in pre-label-pass; browser/candidate rerun after canonical identity/status label change; final 1246 checks are from current sources only",
+  "excluded": "B02, production/API/DB changes, commit/push/PR, Career Facts confirmation and employer actions",
+  "integrityAssertions": 2568,
+  "integrityReportSha256": "b61b7a8907679efce933bcd2fa59d5d1c4224f14ce070ffb63f7eb8e1a0b794f",
+  "staticValidation": {
+    "nodeTests": "2/2 PASS",
+    "jsCjsSyntax": "PASS",
+    "canonicalDerivationManifest": "PASS",
+    "htmlIdsAssetsAnchors": "PASS",
+    "gitDiffCheck": "PASS",
+    "pngDecoding": "99/99 PASS"
+  }
+}

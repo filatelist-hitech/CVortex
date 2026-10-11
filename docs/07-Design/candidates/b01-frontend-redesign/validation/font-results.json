@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-10T14:21:06.227Z",
+  "checkedAt": "2026-10-10T17:30:54.548Z",
   "method": "CDP CSS.getPlatformFontsForNode; actual glyph providers",
   "fonts": {
     "russian": {
@@ -51,9 +51,19 @@
           "glyphCount": 5
         },
         {
-          "familyName": "STIX Two Math",
-          "postScriptName": "STIXTwoMath-Regular",
-          "isCustomFont": false,
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    "currency": {
+      "fonts": [
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_Regular",
+          "isCustomFont": true,
           "glyphCount": 1
         }
       ]
@@ -65,6 +75,16 @@
           "postScriptName": "ArialMT",
           "isCustomFont": false,
           "glyphCount": 14
+        }
+      ]
+    },
+    "salaryUnitText": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 5
         }
       ]
     }

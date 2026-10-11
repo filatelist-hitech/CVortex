@@ -1,0 +1,9 @@
+{
+  "date": "2026-10-10",
+  "oldReference": "docs/07-Design/archive/b01-pre-orbita-2026-10-10/index.html",
+  "newReference": "docs/07-Design/reference/index.html",
+  "oldLifecycle": "draft",
+  "oldSelected": false,
+  "reason": "Explicit owner canonical visual direction choice; archive is historical and not active",
+  "restore": "Restore archived reference sources/manifest/review/evidence together through an authorized bounded rollback; regenerate documentation source hashes if changed."
+}

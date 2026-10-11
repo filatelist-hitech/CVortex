@@ -14,8 +14,10 @@ related: [DESIGN.md, APPLE-REFINEMENT.md, REVIEW.md, ../../Design-Handoff.md]
 брифу владельца. [Исходный выбор направления](DESIGN.md),
 [аудит, приоритеты и refinement](APPLE-REFINEMENT.md).
 Сохранены бренд, sidebar, вакансия/зарплата, сравнение текста, отдельные факты/риски
-и exact-content approval. Кандидат **awaiting-review**, `isActiveReference: false`.
-Accepted visual baseline и active B01 не заменены.
+и exact-content approval. Владелец отдельно одобрил этот дизайн-кандидат и
+персональное превью двух вакансий в ограниченном scope; см. [review](REVIEW.md).
+Полный visual/state review остаётся awaiting-review. Кандидат не является active
+reference, accepted visual baseline не заменён.
 
 [Открыть кандидат](http://127.0.0.1:8769/?scenario=normal&opportunity=northstar&level=work#materials).
 [Active B01](http://127.0.0.1:8768/?scenario=normal&opportunity=northstar&level=work#materials).
@@ -24,7 +26,7 @@ Accepted visual baseline и active B01 не заменены.
 ## Что доработано
 
 - Русский и смешанный рабочий текст используют уже разрешённый Arial; локальный
-  Space Grotesk сохраняется для бренда, Latin company и зарплаты. CDP подтвердил
+  Space Grotesk сохраняется для бренда, цифр зарплаты и знака ₽; названия компаний используют Arial. CDP подтвердил
   реальные glyph providers, без заявления о кириллическом Space Grotesk.
 - Заголовки используют согласованный weight/leading и canonical compact tracking;
   меры текста ограничены. Числа зарплаты переносятся целыми группами.
@@ -58,11 +60,12 @@ User/admin/guest меняют только synthetic состояние в па�
 честно показывает «Не указана», без выдуманной суммы/периода.
 
 ```bash
-export CVORTEX_PLAYWRIGHT_MODULE='/Users/filatelist/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'
-export CVORTEX_CHROMIUM_PATH='/Users/filatelist/Library/Caches/ms-playwright/chromium-1208/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'
+export CVORTEX_PLAYWRIGHT_MODULE='/path/to/playwright'
+export CVORTEX_CHROMIUM_PATH='/path/to/chromium'
 node docs/07-Design/candidates/b01-frontend-redesign/validate-browser.cjs
 node docs/07-Design/candidates/b01-frontend-redesign/validate-candidate.cjs
 node docs/07-Design/candidates/b01-frontend-redesign/validate-apple.cjs
+node docs/07-Design/candidates/b01-frontend-redesign/validate-typography.cjs
 ```
 
 ## Финальная проверка после последних правок
@@ -71,13 +74,14 @@ node docs/07-Design/candidates/b01-frontend-redesign/validate-apple.cjs
 | --- | --- |
 | [Inherited suite](validation/browser-results.json) | PASS: 379 checks / 53 captures; все восемь состояний на 1440×900 / 768×1024 / 390×844 / 320×640 |
 | [Candidate sections](validation/candidate-results.json) | PASS: 70 checks / 22 captures; пять sections, missing salary, 720 px reflow, reduced motion |
-| [Apple interactions](validation/apple-results.json) | PASS: 79 checks / 10 captures; press-before-commit, release cancellation, anchored menu/sheet, reversal without jump, focus/scroll/Escape, preference change in flight, high contrast/transparency, actual fonts |
-| Общий результат | **528 checks / 85 свежих captures**; baseline до refinement: 449 / 75 |
+| [Apple interactions](validation/apple-results.json) | PASS: 83 checks / 10 captures; press-before-commit, release cancellation, anchored menu/sheet, reversal without jump, focus/scroll/Escape, preference change in flight, high contrast/transparency, actual fonts |
+| [Typography](validation/typography/after/results.json) | PASS: 714 checks / 14 captures; 12 ролей, 31 DOM context, heading hierarchy, salary, нейтральный отказ, long text |
+| Общий результат | **1246 checks / 99 свежих captures**; прежние 528 / 85 относятся к Apple baseline |
 | Text/control contrast | PASS в custom audit; минимум sampled text 6.20:1; focus/controls проверены |
-| Browser errors / external requests | **0 / 0** во всех трёх финальных suites |
-| [Actual fonts](validation/font-results.json) | CDP: русский заголовок и mixed comparison — Arial; brand/company/salary — custom Space Grotesk |
+| Browser errors / external requests | **0 / 0** во всех четырёх финальных suites |
+| [Actual fonts](validation/font-results.json) | CDP: русский заголовок и mixed comparison — Arial; brand/salary digits/₽ — custom Space Grotesk; company и «тыс.» — Arial |
 | [Static checks](validation/static-results.json) | Syntax, canonical derivation, source/capture hashes, JSON/PNG, local links, whitespace |
-| [Integrity](validation/integrity-results.json) | 424 Git-visible protected start/end hashes совпали: production, tokens, active reference, original research, authority/NEXT |
+| [Integrity](validation/integrity-results.json) | 639 Git-visible protected start/end hashes совпали: production, tokens, active reference, original research, authority/NEXT |
 | Shared alias/type/unit tests | 2/2 PASS; active reference transformer не изменён |
 
 Все старые approval/provenance assertions сохранены: missing/pending/stale/conflict
@@ -89,19 +93,17 @@ baseline evidence, а не свежий прогон этого блока.
 
 ## Визуальный просмотр и сравнение
 
-Агент просмотрел свежие четыре state/account sheets, матрицу 20 sections и
-полноразмерные desktop normal, tablet evidence, compact workspace/pending/account,
-high contrast; сравнил со [старым desktop](validation/baseline/1440-normal.png) и
-[старым mobile](validation/baseline/390-normal.png). Matrix review проверяет
-композицию; он не заявляет чтение каждой мелкой подписи на thumbnail.
+Агент сравнил шесть пар BEFORE/AFTER: overview, materials и rejected на 1440 и
+390 px. Все шесть свежих AFTER просмотрены полноразмерно. Название, суммы,
+причины, источники и риск читаются; отказ нейтрален; approval отделён от принятия.
+Пары и inventory доступны в [TYPOGRAPHY.md](TYPOGRAPHY.md). Старые review-sheet
+относятся к Apple baseline и не используются как свежая visual evidence.
 
-| Экран | Снимки |
+| Экран | Свежие снимки |
 | --- | --- |
-| Desktop 1440 | [Workspace](validation/1440-normal.png), [account](validation/apple-1440-menu.png), [states](validation/review-sheet-1440.png) |
-| Tablet 768 | [Workspace](validation/768-normal.png), [evidence](validation/768-evidence.png), [states](validation/review-sheet-768.png) |
-| Mobile 390 | [Workspace](validation/390-normal.png), [account](validation/apple-390-menu.png), [states](validation/review-sheet-390.png) |
-| Small mobile 320 | [Pending](validation/320-pending.png), [account](validation/apple-320-menu.png), [states](validation/review-sheet-320.png) |
-| Sections / accessibility | [20 sections](validation/review-sheet-sections.png), [high contrast](validation/apple-high-contrast.png) |
+| Desktop 1440 | [Обзор](validation/typography/after/1440-overview.png), [материалы](validation/typography/after/1440-materials.png), [отказ](validation/typography/after/1440-rejected.png) |
+| Mobile 390 | [Обзор](validation/typography/after/390-overview.png), [материалы](validation/typography/after/390-materials.png), [отказ](validation/typography/after/390-rejected.png) |
+| Tablet 768 / mobile 320 | [768 normal](validation/768-normal.png), [320 pending](validation/320-pending.png) |
 
 Fixed modal screenshots снимаются в фактическом viewport: full-page capture может
 временно менять Chromium viewport и закрывать responsive list. Full-page captures
@@ -114,7 +116,11 @@ target и начала pointer gesture; reversal regression проходит н�
 
 ## Ограничения и следующий шаг
 
-- Именной human visual/state review остаётся pending; screenshots агента его не заменяют.
+- Approval владельца ограничен дизайн-направлением и персональным preview двух
+  вакансий. Он не заявляет review конкретных состояний/viewport, keyboard/focus,
+  native zoom или assistive technology.
+- Канонический B01 reference в `docs/07-Design/reference/` не рассмотрен этим
+  решением; его review gate остаётся открытым. Кандидат не назначен active.
 - Нативный 200% browser zoom пытались проверить через CUA. Chrome browser connection
   недоступен; подключение к native Chrome завершилось ScreenCaptureKit `-3811`.
   Нативный zoom **не проверен**. 720 CSS px reflow не выдаётся за zoom; CSS zoom не используется.
@@ -124,8 +130,49 @@ target и начала pointer gesture; reversal regression проходит н�
 - Synthetic Truth Guard принимает две исходные формулировки; production/API enforcement,
   экспорт, реальный employer history и настоящий account/admin backend сюда не входят.
 
-Изменены только candidate и STATUS/BLOCKERS, по bounded user override. Production
-suites не запускались; dependencies, accepted ADR и canonical values не менялись.
-Commit/push/PR/публикация не выполнялись. Следующий bounded шаг: review владельца
-по REVIEW.md. NEXT остаётся `application-workspace-reference-foundation`.
-STOP до решения, без B02 или замены active reference.
+В историческом Stage A отчёте ниже статус Stage B `BLOCKED` отражает точку проверки
+2026-10-10T17:33:43Z. После неё Stage B был выполнен; актуальные результаты и
+приватная evidence находятся в [personal-preview README](../b01-personal-preview/README.md)
+и [manifest](../b01-personal-preview/manifest.json). Старый отчёт и его hashes
+сохранены без переписывания.
+
+Production suites не запускались в этом approval-closeout; dependencies, accepted
+ADR и canonical values не менялись. Active mapping и NEXT не изменены.
+
+## Завершение прерванной задачи, 10 октября 2026
+
+STAGE A: **TECHNICAL PASS**. На старте ветка была чистой, HEAD `89f30e3`;
+HTML/CSS/JS, типографика и BEFORE/AFTER уже сохранены. Typography и inherited
+reports имели PASS, Apple report содержал FAIL, manifest был IN_PROGRESS,
+README/REVIEW описывали прежний baseline. Все четыре suites запущены заново.
+
+Воспроизведён FAIL «Russian salary unit remains Arial». CDP возвращает шрифты
+контейнера вместе с дочерним ₽: Arial для «тыс.» и Space Grotesk для ₽. Проверка
+теперь обращается к собственному текстовому узлу «тыс. » и требует реальный Arial
+с ненулевым glyph count; отдельное строгое условие для ₽ сохранено. UI не менялся.
+Assertions для keyboard, provenance и approval сохранены.
+
+UI copy проверен по исходникам и DOM inventory: просмотр, принятие, изменение,
+отклонение, одобрение текста и отправка различаются. Проверены оба диапазона RUB,
+месячный период, до налогов и отсутствие зарплаты. Fixture одной суммы или иной
+валюты отсутствует; универсальный salary formatter этим кандидатом не заявлен.
+
+STAGE B в этом отчёте: **BLOCKED на момент проверки**. В том сообщении приложен
+бриф, полного резюме не было. Этот point-in-time результат не отменён и не
+переписан. Позднее полный source был получен, после чего отдельный Stage B создал
+personal preview; его технические проверки описаны в отдельном README/manifest.
+Сведения preview не являются подтверждёнными Career Facts.
+
+[Отчёт завершения](validation/finalization-results.json) фиксирует проверки Stage A
+и тогдашнюю блокировку Stage B с датой и source hashes. Stage B закрыт отдельным
+артефактом. Owner approval кандидата scope-limited; native zoom и screen reader не
+проверялись, а активный B01 reference не заменён.
+
+## Canonical promotion — 2026-10-10
+
+Owner selected this visual direction and authorized promotion to `../../reference/`.
+This directory is retained as historical source; it is not a second active reference.
+Historical reports and protected baselines remain unchanged. The historical builder's
+strict integrity assertion may fail after authorized canonical/governance changes;
+do not weaken it or rewrite its baseline. Current integrity and browser evidence is
+in `../../reference/validation/closure-2026-10-10-v1/closure-results.json`.

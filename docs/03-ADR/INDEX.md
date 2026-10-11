@@ -58,3 +58,7 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 ## Freeze rule
 
 Phase 06 and later work must operate inside accepted ADR boundaries. Architecture freeze means changes are explicit, traceable and versioned; it does not mean architecture can never evolve.
+
+## B01 governance amendment — 2026-10-11
+
+[ADR-0025](ADR-0025-b01-reference-acceptance-release-gate.md) — accepted / OWNER_CONSTRAINT; amends ADR-0024 B01 validation timing only. Manual/accessibility validation remains a mandatory production release gate.

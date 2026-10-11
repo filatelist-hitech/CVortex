@@ -83,3 +83,7 @@ Validation must combine rendered review, responsive/reflow checks, keyboard/focu
 ## Superseded By
 
 None.
+
+## Amended by — 2026-10-11
+
+[ADR-0025](ADR-0025-b01-reference-acceptance-release-gate.md) changes only B01 reference closure timing. Owner-accepted B01 can become the reviewed implementation baseline while mandatory manual/accessibility checks remain open and block production release. All validation obligations above remain required.

@@ -59,12 +59,18 @@ const check=(name,value)=>{assert.ok(value,name);checks.push(name);};
    const {nodeId}=await client.send('DOM.querySelector',{nodeId:documentNode.root.nodeId,selector});fonts[name]=await client.send('CSS.getPlatformFontsForNode',{nodeId});
   }
   check('actual Cyrillic rendering is Arial',fonts.russian.fonts.some(f=>f.familyName==='Arial'&&!f.isCustomFont));
+  // Query the unit's own text node: the parent also includes the custom-font ₽ child.
+  const {nodeId:unitId}=await client.send('DOM.querySelector',{nodeId:documentNode.root.nodeId,selector:'#vacancy-salary .salary-unit'});
+  const {node:unitNode}=await client.send('DOM.describeNode',{nodeId:unitId,depth:1});
+  const unitText=unitNode.children.find(node=>node.nodeType===3&&node.nodeValue==='тыс. ');
+  check('salary unit has its own Russian text node',Boolean(unitText));
+  fonts.salaryUnitText=await client.send('CSS.getPlatformFontsForNode',{nodeId:unitText.nodeId});
   check('mixed Latin/Cyrillic comparison stays one Arial family',fonts.comparison.fonts.every(f=>f.familyName==='Arial'&&!f.isCustomFont));
   check('actual brand remains local Space Grotesk',fonts.brand.fonts.some(f=>f.familyName.startsWith('Space Grotesk')&&f.isCustomFont));
   check('actual salary retains Space Grotesk digits',fonts.salary.fonts.some(f=>f.familyName.startsWith('Space Grotesk')&&f.isCustomFont));
   check('company context uses the same working Arial family',fonts.company.fonts.every(f=>f.familyName==='Arial'&&!f.isCustomFont));
   check('ruble currency uses the permitted Space Grotesk glyph, not a math fallback',fonts.currency.fonts.length===1&&fonts.currency.fonts[0].familyName.startsWith('Space Grotesk')&&fonts.currency.fonts[0].isCustomFont);
-  check('Russian salary unit remains Arial',fonts.salaryUnit.fonts.length===1&&fonts.salaryUnit.fonts[0].familyName==='Arial'&&!fonts.salaryUnit.fonts[0].isCustomFont);
+  check('Russian salary unit remains Arial',fonts.salaryUnitText.fonts.length===1&&fonts.salaryUnitText.fonts[0].familyName==='Arial'&&!fonts.salaryUnitText.fonts[0].isCustomFont&&fonts.salaryUnitText.fonts[0].glyphCount>0);
   await client.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-contrast',value:'more'},{name:'prefers-reduced-transparency',value:'reduce'}]});
   check('increased contrast and reduced transparency recognized',await page.evaluate(()=>matchMedia('(prefers-contrast: more)').matches&&matchMedia('(prefers-reduced-transparency: reduce)').matches));
   await page.locator('#account-trigger').click();await settled();

@@ -1,15 +1,15 @@
 {
   "status": "PASS",
   "phase": "after",
-  "checkedAt": "2026-10-10T14:22:10.492Z",
+  "checkedAt": "2026-10-10T17:30:23.751Z",
   "browser": "145.0.7632.6",
   "locale": "ru-RU",
   "timezone": "Europe/Moscow",
   "reducedMotion": "reduce",
   "sourceHashes": {
-    "index.html": "d8afbe322ae2b69072a6953126b524f090a9ebf02ed892a02fe4f22bc0c3f244",
-    "style.css": "01612ff72f72c1fdd84c1e3a41c529caa042ab16aef32830508eb6b6c3b71e1d",
-    "app.js": "b0365ebbdcb4c7426f35bb8d296013ad0a40a1c379f1696049605c9a9f0078dd",
+    "index.html": "a0563699ba97bb4caa1be6fa7571e64fd83cc387f654e4d4ac126472e01898cd",
+    "style.css": "09c73542a01a52faeab4dbd5c3c3ff00a71027bb87c494537eaf04d3d84c7460",
+    "app.js": "a3ac57b1bc3ffc2fda49a3414118d0027eb3169f14c2060d3875e5b8704a4c7e",
     "motion.js": "d90b55e80323f16ec504f1f848e403b580c53c3e4919cd9fc6b6b1819b956ba8",
     "tokens.css": "6c06383dc558f91770b3cc593f9f6780449c91d330eb879f00237947cefc9bc4"
   },
@@ -945,259 +945,259 @@
     {
       "name": "1440-overview",
       "minimum": 6.200935557415046,
-      "count": 68,
+      "count": 73,
       "failures": []
     },
     {
       "name": "1440-requirements",
       "minimum": 6.200935557415046,
-      "count": 66,
+      "count": 71,
       "failures": []
     },
     {
       "name": "1440-materials",
       "minimum": 6.200935557415046,
-      "count": 79,
+      "count": 84,
       "failures": []
     },
     {
       "name": "1440-employer",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 65,
       "failures": []
     },
     {
       "name": "1440-history",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 65,
       "failures": []
     },
     {
       "name": "1440-normal",
       "minimum": 6.200935557415046,
-      "count": 79,
+      "count": 84,
       "failures": []
     },
     {
       "name": "1440-loading",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 67,
       "failures": []
     },
     {
       "name": "1440-empty",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 67,
       "failures": []
     },
     {
       "name": "1440-failed",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 67,
       "failures": []
     },
     {
       "name": "1440-stale",
       "minimum": 6.200935557415046,
-      "count": 80,
+      "count": 85,
       "failures": []
     },
     {
       "name": "1440-blocked",
       "minimum": 6.200935557415046,
-      "count": 80,
+      "count": 85,
       "failures": []
     },
     {
       "name": "1440-pending",
       "minimum": 6.200935557415046,
-      "count": 80,
+      "count": 85,
       "failures": []
     },
     {
       "name": "1440-approval",
       "minimum": 6.200935557415046,
-      "count": 81,
+      "count": 86,
       "failures": []
     },
     {
       "name": "1440-long-names",
       "minimum": 6.200935557415046,
-      "count": 79,
+      "count": 84,
       "failures": []
     },
     {
       "name": "768-overview",
       "minimum": 6.200935557415046,
-      "count": 51,
+      "count": 52,
       "failures": []
     },
     {
       "name": "768-requirements",
       "minimum": 6.200935557415046,
-      "count": 49,
+      "count": 50,
       "failures": []
     },
     {
       "name": "768-materials",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 63,
       "failures": []
     },
     {
       "name": "768-employer",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "768-history",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "768-normal",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 63,
       "failures": []
     },
     {
       "name": "768-loading",
       "minimum": 6.200935557415046,
-      "count": 45,
+      "count": 46,
       "failures": []
     },
     {
       "name": "768-empty",
       "minimum": 6.200935557415046,
-      "count": 45,
+      "count": 46,
       "failures": []
     },
     {
       "name": "768-failed",
       "minimum": 6.200935557415046,
-      "count": 45,
+      "count": 46,
       "failures": []
     },
     {
       "name": "768-stale",
       "minimum": 6.200935557415046,
-      "count": 63,
+      "count": 64,
       "failures": []
     },
     {
       "name": "768-blocked",
       "minimum": 6.200935557415046,
-      "count": 63,
+      "count": 64,
       "failures": []
     },
     {
       "name": "768-pending",
       "minimum": 6.200935557415046,
-      "count": 63,
+      "count": 64,
       "failures": []
     },
     {
       "name": "768-approval",
       "minimum": 6.200935557415046,
-      "count": 64,
+      "count": 65,
       "failures": []
     },
     {
       "name": "768-long-names",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 63,
       "failures": []
     },
     {
       "name": "390-overview",
       "minimum": 6.200935557415046,
-      "count": 49,
+      "count": 50,
       "failures": []
     },
     {
       "name": "390-requirements",
       "minimum": 6.200935557415046,
-      "count": 47,
+      "count": 48,
       "failures": []
     },
     {
       "name": "390-materials",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "390-employer",
       "minimum": 6.200935557415046,
-      "count": 41,
+      "count": 42,
       "failures": []
     },
     {
       "name": "390-history",
       "minimum": 6.200935557415046,
-      "count": 41,
+      "count": 42,
       "failures": []
     },
     {
       "name": "390-normal",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "390-loading",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "390-empty",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "390-failed",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "390-stale",
       "minimum": 6.200935557415046,
-      "count": 61,
+      "count": 62,
       "failures": []
     },
     {
       "name": "390-blocked",
       "minimum": 6.200935557415046,
-      "count": 61,
+      "count": 62,
       "failures": []
     },
     {
       "name": "390-pending",
       "minimum": 6.200935557415046,
-      "count": 61,
+      "count": 62,
       "failures": []
     },
     {
       "name": "390-approval",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 63,
       "failures": []
     },
     {
       "name": "390-long-names",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "390-long-list",
       "minimum": 6.200935557415046,
-      "count": 38,
+      "count": 42,
       "failures": []
     },
     {
@@ -1209,91 +1209,91 @@
     {
       "name": "320-overview",
       "minimum": 6.200935557415046,
-      "count": 49,
+      "count": 50,
       "failures": []
     },
     {
       "name": "320-requirements",
       "minimum": 6.200935557415046,
-      "count": 47,
+      "count": 48,
       "failures": []
     },
     {
       "name": "320-materials",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "320-employer",
       "minimum": 6.200935557415046,
-      "count": 41,
+      "count": 42,
       "failures": []
     },
     {
       "name": "320-history",
       "minimum": 6.200935557415046,
-      "count": 41,
+      "count": 42,
       "failures": []
     },
     {
       "name": "320-normal",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "320-loading",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "320-empty",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "320-failed",
       "minimum": 6.200935557415046,
-      "count": 43,
+      "count": 44,
       "failures": []
     },
     {
       "name": "320-stale",
       "minimum": 6.200935557415046,
-      "count": 61,
+      "count": 62,
       "failures": []
     },
     {
       "name": "320-blocked",
       "minimum": 6.200935557415046,
-      "count": 61,
+      "count": 62,
       "failures": []
     },
     {
       "name": "320-pending",
       "minimum": 6.200935557415046,
-      "count": 61,
+      "count": 62,
       "failures": []
     },
     {
       "name": "320-approval",
       "minimum": 6.200935557415046,
-      "count": 62,
+      "count": 63,
       "failures": []
     },
     {
       "name": "320-long-names",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "320-long-list",
       "minimum": 6.200935557415046,
-      "count": 38,
+      "count": 42,
       "failures": []
     },
     {
@@ -1305,43 +1305,43 @@
     {
       "name": "360-intermediate",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "480-intermediate",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "600-intermediate",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "720-intermediate",
       "minimum": 6.200935557415046,
-      "count": 60,
+      "count": 61,
       "failures": []
     },
     {
       "name": "1024-intermediate",
       "minimum": 6.200935557415046,
-      "count": 79,
+      "count": 84,
       "failures": []
     },
     {
       "name": "1180-intermediate",
       "minimum": 6.200935557415046,
-      "count": 79,
+      "count": 84,
       "failures": []
     },
     {
       "name": "1280-intermediate",
       "minimum": 6.200935557415046,
-      "count": 79,
+      "count": 84,
       "failures": []
     }
   ],

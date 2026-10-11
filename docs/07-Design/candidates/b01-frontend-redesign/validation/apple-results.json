@@ -1,6 +1,7 @@
 {
-  "status": "FAIL",
-  "failure": "Russian salary unit remains Arial",
+  "status": "PASS",
+  "checkedAt": "2026-10-10T17:30:54.549Z",
+  "browser": "145.0.7632.6",
   "checks": [
     "1440: canonical heading tracking derived as rem",
     "1440: consistent Russian reading font",
@@ -69,12 +70,110 @@
     "320: mobile navigation discoverable while reading",
     "320: Escape closes mobile menu and restores summary focus",
     "actual Cyrillic rendering is Arial",
+    "salary unit has its own Russian text node",
     "mixed Latin/Cyrillic comparison stays one Arial family",
     "actual brand remains local Space Grotesk",
     "actual salary retains Space Grotesk digits",
     "company context uses the same working Arial family",
-    "ruble currency uses the permitted Space Grotesk glyph, not a math fallback"
+    "ruble currency uses the permitted Space Grotesk glyph, not a math fallback",
+    "Russian salary unit remains Arial",
+    "increased contrast and reduced transparency recognized",
+    "reduced transparency stays opaque with no backdrop blur",
+    "increased contrast focus ring",
+    "backdrop dismissal restores focus",
+    "account feedback resets on next opening",
+    "acceptance marks pending approval, not confirmed content",
+    "approved style follows explicit approval only",
+    "no browser errors",
+    "no external requests"
+  ],
+  "captures": [
+    {
+      "file": "apple-1440-menu.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-1440-workspace.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-768-menu.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-768-workspace.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-390-menu.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-390-workspace.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-320-menu.png",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-320-workspace.png",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-high-contrast.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    },
+    {
+      "file": "apple-explicit-approval.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials"
+    }
   ],
   "errors": [],
-  "external": []
+  "external": [],
+  "limitations": [
+    "Native 200% zoom attempted: CUA Chrome browser unavailable; native Chrome app capture failed with ScreenCaptureKit -3811",
+    "Manual screen reader pending",
+    "Named human review pending"
+  ]
 }
