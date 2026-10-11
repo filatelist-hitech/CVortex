@@ -74,6 +74,9 @@ venv/
 /generated/
 /artifacts/
 
+# Private personal-preview sources, fixtures, screenshots and evidence
+/.local/
+
 # --- Obsidian local workspace state ---
 # Project documentation remains plain Markdown in Git.
 .obsidian/

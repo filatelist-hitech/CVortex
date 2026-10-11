@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CareerWorkspace from "./career-workspace";
 import Diagnostics from "./diagnostics";
+import WorkspaceShell from "./workspace-shell";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
@@ -16,21 +17,21 @@ const serverHydrated = () => false;
 const csrf = () => decodeURIComponent(document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "");
 
 const safeErrorMessages: Record<string, string> = {
-  PROVIDER_ERROR: "Career extraction could not be completed. Manual fact entry is still available.",
-  INVALID_EXTRACTION_RESULT: "Career extraction returned unsupported data. Nothing was trusted.",
-  CAREER_OPERATION_FAILED: "The Career operation could not be completed.",
-  VACANCY_OPERATION_FAILED: "The vacancy operation could not be completed.",
-  LLM_OUTPUT_INVALID: "Analysis returned unsupported data. Nothing was trusted.",
-  LLM_REQUEST_REFUSED: "The provider could not process this request. Review the request before trying again.",
-  LLM_RESPONSE_INCOMPLETE: "The provider returned an incomplete result. Review the source size or operation limits.",
-  LLM_PROVIDER_FAILED: "The analysis could not be completed. Contact your administrator.",
-  LLM_PROVIDER_CONFIGURATION: "The analysis provider needs administrator configuration.",
-  LLM_PROVIDER_RATE_LIMITED: "The analysis provider is handling too many requests. Wait before retrying.",
-  LLM_PROVIDER_UNAVAILABLE: "The analysis service is temporarily unavailable.",
-  INTERNAL_ERROR: "The operation could not be completed.",
-  PERMISSION_DENIED: "You do not have access to this action.",
-  AUTH_REQUIRED: "Please sign in and try again.",
-  VALIDATION_FAILED: "Please check the submitted information.",
+  PROVIDER_ERROR: "Не удалось извлечь факты. Их можно добавить вручную.",
+  INVALID_EXTRACTION_RESULT: "Извлечение вернуло неподдерживаемые данные. Факты не подтверждены.",
+  CAREER_OPERATION_FAILED: "Не удалось выполнить операцию с карьерой.",
+  VACANCY_OPERATION_FAILED: "Не удалось выполнить операцию с вакансией.",
+  LLM_OUTPUT_INVALID: "Анализ вернул неподдерживаемые данные. Результат не принят.",
+  LLM_REQUEST_REFUSED: "Провайдер не обработал запрос. Проверьте его перед повтором.",
+  LLM_RESPONSE_INCOMPLETE: "Провайдер вернул неполный результат. Проверьте размер исходного текста и ограничения операции.",
+  LLM_PROVIDER_FAILED: "Не удалось выполнить анализ. Обратитесь к администратору.",
+  LLM_PROVIDER_CONFIGURATION: "Администратору нужно настроить провайдера анализа.",
+  LLM_PROVIDER_RATE_LIMITED: "Достигнут лимит запросов к провайдеру анализа. Подождите перед повтором.",
+  LLM_PROVIDER_UNAVAILABLE: "Сервис анализа временно недоступен.",
+  INTERNAL_ERROR: "Не удалось выполнить операцию.",
+  PERMISSION_DENIED: "У вас нет доступа к этому действию.",
+  AUTH_REQUIRED: "Войдите и повторите запрос.",
+  VALIDATION_FAILED: "Проверьте введённые данные.",
 };
 
 export class ApiError extends Error {
@@ -47,16 +48,16 @@ export class ApiError extends Error {
 
 function errorExplanation(code: string, retryable: boolean): string {
   if (code === "LLM_PROVIDER_UNAVAILABLE") {
-    return retryable ? safeErrorMessages[code] : "The analysis provider failed. Contact your administrator.";
+    return retryable ? safeErrorMessages[code] : "Ошибка провайдера анализа. Обратитесь к администратору.";
   }
   if (code === "LLM_PROVIDER_RATE_LIMITED") {
-    return retryable ? safeErrorMessages[code] : "The provider rejected this request. Contact your administrator.";
+    return retryable ? safeErrorMessages[code] : "Провайдер отклонил запрос. Обратитесь к администратору.";
   }
   if (code === "RATE_LIMITED") {
-    return retryable ? "Too many requests. Wait before trying again." : "The request was rate limited.";
+    return retryable ? "Слишком много запросов. Подождите перед повтором." : "Запрос отклонён из-за ограничения частоты.";
   }
 
-  return safeErrorMessages[code] ?? (retryable ? "The service is temporarily unavailable." : "The request could not be completed.");
+  return safeErrorMessages[code] ?? (retryable ? "Сервис временно недоступен." : "Не удалось выполнить запрос.");
 }
 
 export async function api(path: string, options: RequestInit = {}) {
@@ -72,7 +73,7 @@ export async function api(path: string, options: RequestInit = {}) {
     ...options,
     });
   } catch {
-    throw new ApiError("The connection failed. Check your network. [NETWORK_ERROR] You can retry.", true, "NETWORK_ERROR");
+    throw new ApiError("Не удалось подключиться. Проверьте сеть. [NETWORK_ERROR] Можно повторить запрос.", true, "NETWORK_ERROR");
   }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
@@ -88,15 +89,15 @@ export async function api(path: string, options: RequestInit = {}) {
     const explanation = errorExplanation(safeCode, retryable);
     const retryGuidance = retryable
       ? retryAfterSeconds !== null && retryAfterSeconds > 0
-        ? ` You can retry after ${retryAfterSeconds} seconds.`
-        : " You can retry."
+        ? ` Можно повторить запрос через ${retryAfterSeconds} с.`
+        : " Можно повторить запрос."
       : "";
-    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Reference: ${reference}` : ""}${retryGuidance}`, retryable, safeCode, retryAfterSeconds);
+    throw new ApiError(`${explanation}${reference ? ` [${safeCode}] Код запроса: ${reference}` : ""}${retryGuidance}`, retryable, safeCode, retryAfterSeconds);
   }
   return response.status === 204 ? null : response.json();
 }
 
-export default function AccessShell({ registrationRoute = false, destination = "career" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" }) {
+export default function AccessShell({ registrationRoute = false, destination = "vacancies" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" | "vacancies" }) {
   const router = useRouter();
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
@@ -130,20 +131,29 @@ export default function AccessShell({ registrationRoute = false, destination = "
       setUser(result.data);
       form.reset();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Request failed.");
+      setMessage(error instanceof Error ? error.message : "Не удалось выполнить запрос.");
     } finally {
       setBusy(false);
     }
   }
 
   if (user) {
-    if (destination === "diagnostics") {
-      return user.role === "admin" ? <main className="career-shell diagnostics-shell"><nav aria-label="Workspace"><Link href="/">← Career workspace</Link></nav><Diagnostics /></main> : <main className="shell"><section className="status-card"><h1>Access denied</h1><p>Diagnostics are available to administrators only.</p><Link href="/">Return to workspace</Link></section></main>;
+    const onSignOut = async () => {
+      await api("/api/v1/auth/logout", { method: "POST" });
+      setUser(null);
+      router.replace("/");
+    };
+    if (destination === "diagnostics" && user.role !== "admin") {
+      return <main className="shell"><section className="status-card"><h1>Доступ запрещён</h1><p>Диагностика доступна только администраторам.</p><Link href="/">Вернуться к рабочему пространству</Link></section></main>;
     }
-    return <CareerWorkspace email={user.email} role={user.role} onSignOut={async () => { await api("/api/v1/auth/logout", { method: "POST" }); setUser(null); router.replace("/"); }} />;
+    return <WorkspaceShell email={user.email} role={user.role} destination={destination} onSignOut={onSignOut}>
+      {destination === "diagnostics"
+        ? <main id="workspace-content" tabIndex={-1} className="career-shell diagnostics-shell"><Diagnostics /></main>
+        : <CareerWorkspace />}
+    </WorkspaceShell>;
   }
 
   const registrationUnavailable = mode === "register" && (!registrationRoute || !token);
 
-  return <main className="shell"><section className="status-card" aria-labelledby="cvortex-title"><div className="brand-mark" aria-hidden="true" /><p className="eyebrow">Access core</p><h1 id="cvortex-title">CVortex</h1><p className="tagline">Your career, in context.</p><div className="tabs"><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>Sign in</button><button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>Register</button></div><form method="post" action={mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register"} onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}><label>Email<input required type="email" name="email" autoComplete="email" /></label><label>Password<input required type="password" name="password" minLength={15} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} /></label>{mode === "register" && <><label>Confirm password<input required type="password" name="password_confirmation" minLength={15} maxLength={128} autoComplete="new-password" /></label>{registrationUnavailable && <p className="error">Open the registration link provided by your operator.</p>}</>} {message && <p className="error" role="alert">{message}</p>}<button disabled={!hydrated || busy || registrationUnavailable}>{!hydrated ? "Loading…" : busy ? "Working…" : mode === "login" ? "Sign in" : "Create account"}</button></form></section></main>;
+  return <main className="shell"><section className="status-card" aria-labelledby="cvortex-title"><div className="brand-mark" aria-hidden="true" /><p className="eyebrow">Вход в CVortex</p><h1 id="cvortex-title">CVortex</h1><p className="tagline">Your career, in context.</p><div className="tabs"><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>Войти</button><button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>Регистрация</button></div><form method="post" action={mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register"} onSubmit={(event) => { event.preventDefault(); void submit(event.currentTarget); }}><label>Электронная почта<input required type="email" name="email" autoComplete="email" /></label><label>Пароль<input required type="password" name="password" minLength={15} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} /></label>{mode === "register" && <><label>Подтвердите пароль<input required type="password" name="password_confirmation" minLength={15} maxLength={128} autoComplete="new-password" /></label>{registrationUnavailable && <p className="error">Откройте ссылку регистрации, полученную от оператора.</p>}</>} {message && <p className="error" role="alert">{message}</p>}<button disabled={!hydrated || busy || registrationUnavailable}>{!hydrated ? "Загрузка…" : busy ? "Выполнение…" : mode === "login" ? "Войти" : "Создать аккаунт"}</button></form></section></main>;
 }

@@ -3,8 +3,9 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "./access-shell";
 import VacancyChat from "./vacancy-chat";
+import { SavedRecommendationCard } from "./application/recommendation";
 
-type VacancySummary = {
+export type VacancySummary = {
   id: string;
   title: string | null;
   company: string | null;
@@ -42,7 +43,7 @@ type Analysis = {
   stale: boolean;
   dimensions: Dimension[];
 };
-type VacancyDetail = VacancySummary & {
+export type VacancyDetail = VacancySummary & {
   source_type: "PASTED_TEXT";
   snapshot: { id: string; version: number; raw_text: string; source_url: string | null; imported_at: string };
   requirements: Requirement[];
@@ -64,7 +65,7 @@ type DraftRevision = {
   actor_user_id: string;
   created_at: string;
 };
-type DraftItem = {
+export type DraftItem = {
   id: string;
   kind: "RESUME_RECOMMENDATION" | "COVER_DRAFT";
   variant: "SHORT" | "STANDARD" | null;
@@ -260,15 +261,15 @@ export default function VacancyWorkspace() {
   }
 
   return <section className="vacancy-workspace" aria-labelledby="vacancy-title">
-    <div className="section-title"><div><p className="eyebrow">Vacancy core</p><h2 id="vacancy-title">Should I apply?</h2></div><span className="count">{vacancies.length}</span></div>
-    <p className="muted">Paste-only ingestion. The optional URL is metadata and is never fetched in this slice.</p>
-    {error && <div className="alert error" role="alert"><strong>Vacancy flow failed</strong><span>{error}</span><button type="button" className="secondary" onClick={() => void refresh()}>Retry</button></div>}
+    <div className="section-title"><div><p className="eyebrow">Вакансии</p><h2 id="vacancy-title">Вакансии</h2></div><span className="count">{vacancies.length}</span></div>
+    <p className="muted">Вставьте текст вакансии. Ссылка сохраняется как источник; содержимое по ней не загружается.</p>
+    {error && <div className="alert error" role="alert"><strong>Ошибка обработки вакансии</strong><span>{error}</span><button type="button" className="secondary" onClick={() => void refresh()}>Повторить</button></div>}
     <div className="vacancy-grid">
-      <div className="panel"><h3>Add vacancy</h3><form onSubmit={(event) => void submit(event)}><label>Vacancy text<textarea name="source_text" required maxLength={50000} rows={10} /></label><label>Source URL (metadata only)<input name="source_url" type="url" maxLength={2048} placeholder="https://…" /></label><button disabled={busy}>{busy ? "Working…" : "Preserve and analyze"}</button></form></div>
-      <div className="panel"><h3>Saved vacancies</h3>{vacancies.length === 0 ? <p className="empty">No vacancy snapshots yet.</p> : <ul className="vacancy-list">{vacancies.map((item) => <li key={item.id}><button type="button" className={selectedId === item.id ? "vacancy-selected" : "secondary"} onClick={() => void select(item.id)}><span>{item.title || "Untitled vacancy"}</span><small>{item.analysis_status}{item.recommendation ? ` · ${item.recommendation}` : ""}{item.analysis_stale ? " · stale" : ""}{item.analysis_run_stale ? " · recovery available" : ""}</small></button></li>)}</ul>}</div>
+      <div className="panel"><h3>Добавить вакансию</h3><form onSubmit={(event) => void submit(event)}><label>Текст вакансии<textarea name="source_text" required maxLength={50000} rows={10} /></label><label>Ссылка на источник<input name="source_url" type="url" maxLength={2048} placeholder="https://…" /></label><button disabled={busy}>{busy ? "Выполнение…" : "Сохранить и проанализировать"}</button></form></div>
+      <div className="panel"><h3>Сохранённые вакансии</h3>{vacancies.length === 0 ? <p className="empty">Сохранённых вакансий пока нет.</p> : <ul className="vacancy-list">{vacancies.map((item) => <li key={item.id}><button type="button" className={selectedId === item.id ? "vacancy-selected" : "secondary"} onClick={() => void select(item.id)}><span>{item.title || "Untitled vacancy"}</span><small>{item.analysis_status}{item.recommendation ? ` · ${item.recommendation}` : ""}{item.analysis_stale ? " · stale" : ""}{item.analysis_run_stale ? " · recovery available" : ""}</small></button></li>)}</ul>}</div>
     </div>
     {detail && <div className="vacancy-detail">
-      <VacancyChat key={detail.id} vacancyId={detail.id} onApproved={() => void select(detail.id)} />
+      <VacancyChat key={`chat-${detail.id}`} vacancyId={detail.id} onApproved={() => void select(detail.id)} />
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Source snapshot v{detail.snapshot.version}</p><h3>{detail.title || "Untitled vacancy"}</h3></div><span className={`badge ${detail.analysis_status.toLowerCase()}`}>{detail.analysis_status}</span></div>{detail.company && <p>{detail.company}</p>}{detail.source_url && <p className="muted">Source URL metadata: {detail.source_url}</p>}<details><summary>Original untrusted source text</summary><pre className="source-copy">{detail.snapshot.raw_text}</pre></details>{detail.error_code && <p className="error">Safe error code: {detail.error_code}</p>}</section>
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">CVortex inference</p><h3>Requirements</h3></div><span className="count">{detail.requirements.length}</span></div>{detail.requirements.length === 0 ? <p className="empty">No supported requirements were extracted.</p> : <div className="requirement-list">{detail.requirements.map((requirement) => <article className="requirement-card" key={requirement.id}><div className="fact-meta"><span className={`badge ${requirement.importance.toLowerCase()}`}>{requirement.importance}</span><span>{dimensionNames[requirement.dimension]}</span></div><p className="assertion">{requirement.label}</p><details><summary>Source wording</summary><blockquote>{requirement.source_excerpt}</blockquote><p className="muted">Inference confidence: {Math.round(requirement.confidence * 100)}%</p></details></article>)}</div>}</section>
       {detail.analysis_status === "FAILED" && <section className="review-section"><p className="eyebrow">Analysis failed</p><h3>Retry extraction</h3><p className="muted">The source snapshot is preserved. Retry analysis when the provider is available.</p><button type="button" disabled={busy} onClick={() => void reanalyze()}>{busy ? "Retrying…" : "Retry analysis"}</button></section>}
@@ -280,12 +281,12 @@ export default function VacancyWorkspace() {
       </>}
       {detail.analysis && (detail.analysis.stale || detail.analysis_status !== "COMPLETED"
         ? <section className="review-section"><p className="eyebrow">Preview 0.1 · saved preparation</p><h3>Prepare for {detail.title || "Untitled vacancy"}</h3><p className="empty">Reanalyze this vacancy against current confirmed Career Facts before preparing drafts.</p></section>
-        : <ApplicationDraftPanel key={detail.id} vacancyId={detail.id} vacancyTitle={detail.title || "Untitled vacancy"} />)}
+        : <ApplicationDraftPanel key={`preparation-${detail.id}`} vacancyId={detail.id} vacancyTitle={detail.title || "Untitled vacancy"} />)}
     </div>}
   </section>;
 }
 
-export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
+export function ApplicationDraftPanel({ vacancyId, vacancyTitle, canonical = false }: { vacancyId: string; vacancyTitle: string; canonical?: boolean }) {
   const [preparation, setPreparation] = useState<Preparation | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -425,17 +426,17 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle }: { vacancyId: 
     } finally { if (version === requestVersion.current) setBusy(""); }
   }
 
-  return <section className="review-section application-draft" aria-labelledby="application-draft-title">
-    <p className="eyebrow">Preview 0.1 · saved preparation</p>
-    <h3 id="application-draft-title">Prepare for {vacancyTitle}</h3>
-    <p className="muted">Recommendations and cover drafts stay private. Approval does not submit an application or contact an employer.</p>
-    {loading && <p className="loading" role="status">Loading saved preparation…</p>}
+  return <section className={canonical ? "saved-preparation" : "review-section application-draft"} aria-labelledby="application-draft-title">
+    {!canonical && <p className="eyebrow">Preview 0.1 · saved preparation</p>}
+    <h3 id="application-draft-title">{canonical ? `Подготовка: ${vacancyTitle}` : `Prepare for ${vacancyTitle}`}</h3>
+    <p className="muted">{canonical ? "Материалы остаются приватными. Одобрение не отправляет отклик и не связывается с работодателем." : "Recommendations and cover drafts stay private. Approval does not submit an application or contact an employer."}</p>
+    {loading && <p className="loading" role="status">{canonical ? "Загрузка сохранённых материалов…" : "Loading saved preparation…"}</p>}
     {error && <div className="alert error" role="alert"><span>{error}</span></div>}
-    {preparation?.stale && <p className="stale-callout" role="status"><strong>Preparation is stale.</strong><span>Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing.</span></p>}
-    {retrySecondsRemaining > 0 && <p role="status">Wait at least {formatRetryWait(retrySecondsRemaining)} before retrying a provider-backed action.</p>}
+    {preparation?.stale && <p className="stale-callout" role="status"><strong>{canonical ? "Материалы устарели." : "Preparation is stale."}</strong><span>{canonical ? "Вакансия или подтверждённые факты изменились. Проверьте анализ и откройте материалы заново." : "Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing."}</span></p>}
+    {retrySecondsRemaining > 0 && <p role="status">{canonical ? `До повторного запроса к провайдеру: ${retrySecondsRemaining} с.` : `Wait at least ${formatRetryWait(retrySecondsRemaining)} before retrying a provider-backed action.`}</p>}
     {preparation && !loading && <>
-      {preparation.items.length === 0 && <div className="panel"><p>No saved recommendations or cover drafts yet.</p><button type="button" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0} onClick={() => void generate()}>{busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
-      {preparation.items.map((item) => <article className="application-draft-item" key={item.id}>
+      {preparation.items.length === 0 && <div className={canonical ? "content-card" : "panel"}><p>{canonical ? "Сохранённых рекомендаций и черновиков пока нет." : "No saved recommendations or cover drafts yet."}</p><button type="button" disabled={Boolean(busy) || preparation.stale || !retryCooldownReady || retrySecondsRemaining > 0} onClick={() => void generate()}>{canonical ? busy === "generate" ? "Подготовка материалов…" : "Подготовить рекомендации и черновики" : busy === "generate" ? "Generating drafts…" : "Generate recommendations and cover drafts"}</button></div>}
+      {preparation.items.map((item) => canonical ? <SavedRecommendationCard key={item.id} item={item} content={edits[item.id] ?? item.content} busy={Boolean(busy)} stale={preparation.stale} providerPaused={!retryCooldownReady || retrySecondsRemaining > 0} onChange={value => setEdits(current => ({ ...current, [item.id]: value }))} onAction={action => void act(item, action)} /> : <article className="application-draft-item" key={item.id}>
         <div className="section-title"><div><p className="eyebrow">{item.kind === "COVER_DRAFT" ? `${item.variant?.toLowerCase()} cover draft` : `Resume recommendation · ${item.section}`} · Revision {item.revision_number}</p><h4>{item.kind === "COVER_DRAFT" ? "Candidate-facing draft" : item.reason}</h4></div><span className={`badge ${item.validation_result.toLowerCase()}`}>{item.status} · Truth Guard {item.validation_result}</span></div>
         {item.before && <p><strong>Before</strong><br />{item.before}</p>}
         {item.kind === "RESUME_RECOMMENDATION" && <p><strong>Reason</strong><br />{item.reason}</p>}
