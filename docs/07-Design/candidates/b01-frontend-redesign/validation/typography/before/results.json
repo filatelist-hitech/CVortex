@@ -1,0 +1,74 @@
+{
+  "status": "PASS",
+  "phase": "before-inventory",
+  "checkedAt": "2026-10-10T14:25:40.474Z",
+  "browser": "145.0.7632.6",
+  "locale": "ru-RU",
+  "timezone": "Europe/Moscow",
+  "reducedMotion": "reduce",
+  "sourceHashes": {
+    "index.html": "5dd88141e6c932260d7cd3369bb5f26e8e398f3e8b7b00f08fffe382059728a2",
+    "style.css": "f840cd116c59477b27a385391f31d8b5b2b9e9bc1e361dcfa48a078a81ef296f",
+    "app.js": "9007c17b98e7b6c47d96c40d8c316047487ff913acae7fb4640cb44d1fcc52bc",
+    "motion.js": "d90b55e80323f16ec504f1f848e403b580c53c3e4919cd9fc6b6b1819b956ba8",
+    "tokens.css": "6523689cf6f75152f1bf2eae5dd8ea0fad472e070621740bdc3b0d9b4a4b7300"
+  },
+  "roles": {},
+  "checks": [
+    "no browser errors",
+    "no external requests"
+  ],
+  "captures": [
+    {
+      "file": "1440-overview.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#overview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "1440-materials.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "1440-rejected.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "390-overview.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#overview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "390-materials.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "390-rejected.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ],
+  "contrast": [],
+  "errors": [],
+  "external": []
+}

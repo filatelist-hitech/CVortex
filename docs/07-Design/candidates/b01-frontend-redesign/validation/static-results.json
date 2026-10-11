@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-10-10T17:33:43.505409+00:00",
+  "syntaxFiles": [
+    "app.js",
+    "build-reference.cjs",
+    "motion.js",
+    "preview-server.cjs",
+    "validate-apple.cjs",
+    "validate-browser.cjs",
+    "validate-candidate.cjs",
+    "validate-typography.cjs"
+  ],
+  "jsonDecoded": 23,
+  "pngDecoded": 114,
+  "localMarkdownLinks": 47,
+  "sourceCaptureHashes": "PASS inherited/typography; finalization records source hash binding for all suites",
+  "protectedFiles": 639,
+  "noOutsideScopeChanges": true,
+  "commands": [
+    "node --check candidate JS/CJS",
+    "node --test docs/07-Design/reference/build-reference.test.cjs: 2/2 PASS",
+    "node candidate/build-reference.cjs --check: PASS",
+    "git diff --check: PASS"
+  ],
+  "limitations": [
+    "Full resume missing; no real matching or personal preview",
+    "Named human review, native 200% zoom and manual screen reader pending",
+    "Only existing RUB range and missing salary fixtures; single amount and other currency not represented",
+    "Custom contrast checks are not WCAG certification",
+    "Production tests outside scope"
+  ]
+}

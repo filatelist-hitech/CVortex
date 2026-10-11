@@ -1,0 +1,30 @@
+{
+  "icons": {
+    "source": "https://github.com/lucide-icons/lucide",
+    "revision": "70562c1ee1c4fdcf736fe97bc893fb8511927934",
+    "names": [
+      "sun",
+      "briefcase",
+      "user",
+      "building",
+      "settings",
+      "shield-check",
+      "log-out",
+      "log-in",
+      "chevron-down",
+      "sparkles",
+      "banknote",
+      "map-pin",
+      "activity"
+    ],
+    "license": "lucide-LICENSE.txt",
+    "embedding": "Inline SVG symbols; viewBox 0 0 24 24, stroke-width 2, currentColor"
+  },
+  "illustration": {
+    "file": "career-vortex-v1.png",
+    "method": "Built-in image_gen; transparent background",
+    "purpose": "Draft decorative illustration; not an approved logo or factual employer asset",
+    "sha256": "89ade98fd69cb8888732031b51235747fbc718ead8449ad8e00c10537106162a",
+    "prompt": "Create a premium UI editorial illustration asset for CVortex, a technical job application workspace. A compact sculptural vortex made from three interlocking translucent frosted-glass ribbons with one matte navy core, flowing like a coherent career path, precise studio product-render craftsmanship, subtle refractions and soft ambient light, asymmetrical but calm composition. Palette strictly centered on navy #070B18 #111C35, cyan #35D6E8, blue #669BFF and violet #A78BFA; no other bright colors. The silhouette must be legible at 160px wide and attractive in a restrained dark technical application header. Transparent background, isolated object, generous empty margin. No letters, words, charts, scores, badges, logos, people, hands, office stock photos, UI frame or decorative particles. This is draft decorative artwork, not a company logo. Single image."
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-10-10T18:19:02.703Z",
+  "method": "CDP CSS.getPlatformFontsForNode; actual glyph providers",
+  "fonts": {
+    "russian": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "Arial-BoldMT",
+          "isCustomFont": false,
+          "glyphCount": 31
+        }
+      ]
+    },
+    "comparison": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 88
+        }
+      ]
+    },
+    "brand": {
+      "fonts": [
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_Bold",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    "salary": {
+      "fonts": [
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_wght2580000",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    "salaryUnit": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 5
+        },
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    "currency": {
+      "fonts": [
+        {
+          "familyName": "Space Grotesk Light",
+          "postScriptName": "SpaceGrotesk-Light_Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    "company": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 14
+        }
+      ]
+    },
+    "salaryUnitText": {
+      "fonts": [
+        {
+          "familyName": "Arial",
+          "postScriptName": "ArialMT",
+          "isCustomFont": false,
+          "glyphCount": 5
+        }
+      ]
+    }
+  }
+}

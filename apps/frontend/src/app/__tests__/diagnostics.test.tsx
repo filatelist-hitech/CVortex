@@ -53,7 +53,7 @@ describe("Error Center", () => {
     const failure = await api("/api/v1/applications/generate").catch((error) => error);
     expect(failure).toBeInstanceOf(ApiError);
     expect(failure).toMatchObject({ code: "LLM_PROVIDER_CONFIGURATION", retryable: false });
-    expect(failure.message).toContain("needs administrator configuration");
+    expect(failure.message).toContain("нужно настроить провайдера анализа");
     expect(failure.message).not.toContain("SECRET");
   });
 
@@ -64,7 +64,7 @@ describe("Error Center", () => {
     ));
     const failure = await api("/api/v1/applications/generate").catch((error) => error);
     expect(failure).toMatchObject({ retryable: true, retryAfterSeconds: 86400 });
-    expect(failure.message).toContain("You can retry after 86400 seconds.");
+    expect(failure.message).toContain("Можно повторить запрос через 86400 с.");
 
     vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
       { error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } },
@@ -72,7 +72,7 @@ describe("Error Center", () => {
     ));
     const invalid = await api("/api/v1/applications/generate").catch((error) => error);
     expect(invalid).toMatchObject({ retryAfterSeconds: null });
-    expect(invalid.message).toBe("The analysis service is temporarily unavailable. You can retry.");
+    expect(invalid.message).toBe("Сервис анализа временно недоступен. Можно повторить запрос.");
   });
 
   it("blocks synchronous draft generation until Retry-After expires", async () => {
@@ -95,7 +95,7 @@ describe("Error Center", () => {
     await waitFor(() => expect(generate).toBeEnabled());
     fireEvent.click(generate);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 86400 seconds.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Можно повторить запрос через 86400 с.");
     expect(generate).toBeDisabled();
     expect(screen.getByRole("status")).toHaveTextContent("Wait at least 24 hours before retrying a provider-backed action.");
     expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/generate"))).toHaveLength(1);
@@ -132,7 +132,7 @@ describe("Error Center", () => {
     expect(providerAction).toBeEnabled();
     fireEvent.click(providerAction);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Можно повторить запрос через 42 с.");
     expect(providerAction).toBeDisabled();
     if (action === "edit") fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Draft copy." } });
     expect(screen.getByRole("button", { name: "Reject" })).toBeEnabled();
@@ -169,7 +169,7 @@ describe("Error Center", () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent("You can retry after 3 seconds.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Можно повторить запрос через 3 с.");
     fireEvent.change(screen.getByLabelText("Draft content"), { target: { value: "Draft copy." } });
     const accept = screen.getByRole("button", { name: "Accept draft" });
     expect(saveEdit).toBeDisabled();
@@ -206,7 +206,7 @@ describe("Error Center", () => {
     const firstGenerate = await screen.findByRole("button", { name: "Generate recommendations and cover drafts" });
     await waitFor(() => expect(firstGenerate).toBeEnabled());
     fireEvent.click(firstGenerate);
-    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Можно повторить запрос через 42 с.");
     expect(localStorage.getItem("cvortex.application-draft.retry-until")).not.toBeNull();
 
     cleanup();
@@ -282,7 +282,7 @@ describe("Error Center", () => {
     // The short response writes before the other tab's longer storage event is delivered.
     localStorage.setItem(key, String(Date.now() + 5_000));
     shortResponse.resolve(Response.json({ error: { code: "LLM_PROVIDER_UNAVAILABLE", retryable: true } }, { status: 503, headers: { "Retry-After": "5" } }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 5 seconds.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Можно повторить запрос через 5 с.");
     expect(generateButtons[0]).toBeEnabled();
 
     act(() => window.dispatchEvent(new StorageEvent("storage", { key, newValue: String(longDeadline) })));
@@ -313,7 +313,7 @@ describe("Error Center", () => {
     expect(localStorage.getItem(key)).toBeNull();
     fireEvent.click(generate);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("You can retry after 42 seconds.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Можно повторить запрос через 42 с.");
     const savedDeadline = Number(localStorage.getItem(key));
     expect(savedDeadline).toBeGreaterThan(Date.now() + 40_000);
     expect(savedDeadline).toBeLessThanOrEqual(Date.now() + 42_000);
@@ -343,7 +343,7 @@ describe("Error Center", () => {
     const saveEdit = screen.getByRole("button", { name: "Save edit and revalidate" });
     fireEvent.click(saveEdit);
 
-    expect(await screen.findByRole("alert")).not.toHaveTextContent("You can retry after");
+    expect(await screen.findByRole("alert")).not.toHaveTextContent("Можно повторить запрос через");
     expect(screen.queryByText(/Wait at least/)).not.toBeInTheDocument();
     expect(saveEdit).toBeEnabled();
     expect(fetchMock.mock.calls.filter(([input]) => String(input).includes("draft-1"))).toHaveLength(1);
@@ -861,7 +861,7 @@ describe("Error Center", () => {
       throw new Error(String(input));
     });
     render(<AccessShell destination="diagnostics" />);
-    expect(await screen.findByRole("heading", { name: "Access denied" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Доступ запрещён" })).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("/diagnostics/incidents"), expect.anything());
   });
 

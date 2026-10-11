@@ -921,4 +921,445 @@ Validation: targeted chat/MCP suites PASS (57 tests / 562 assertions); final MCP
 
 On live PR head `b8e37fa`, disabled employer-memory inclusion because imported vacancy company names have no separately confirmed employer association. Career context selection now delegates LOCATION, DOMAIN, and EXPERIENCE facts to existing structured matching semantics, preventing lexical mentions such as a conference location from selecting candidate facts. Added regressions for both findings.
 
-Validation: `VacancyPlanChatTest.php` plus `ApplicationDraftTest.php` passed (59 tests / 494 assertions); `make lint` passed (Pint 213 files, PHPStan 135 files, ESLint and TypeScript); `git diff --check` passed. Employer memory stays unavailable until employer association can be confirmed independently. Commit `31ad943` is pushed to PR #42; both addressed review threads have replies and are resolved, with live unresolved count zero. `PR contract` and `Roadmap metadata` passed on that head; `m0-quality` is still in progress. No merge performed.
+Validation: `VacancyPlanChatTest.php` plus `ApplicationDraftTest.php` passed (59 tests / 495 assertions); `make lint` passed (Pint 213 files, PHPStan 135 files, ESLint and TypeScript); `git diff --check` passed. Employer memory stays unavailable until employer association can be confirmed independently. Commit `31ad943` is pushed to PR #42; both addressed review threads have replies and are resolved, with live unresolved count zero. `PR contract` and `Roadmap metadata` passed on that head; `m0-quality` is still in progress. No merge performed.
+
+### UX/UI redesign research and four concept previews — 2026-10-07
+
+Explicit current-user research override, one agent and sequential execution: inspected the current Career/Vacancy/draft UI and relevant design authority; completed external primary-source research, UX diagnosis, proposed IA, four distinct isolated HTML concepts, comparison and recommendation. Artifacts and synthetic-data previews are under `research/design-redesign/` on local branch `docs/ux-redesign-concepts`, based on stage `a62ff0899ea9a2dd2266eb5a972d618f803c9952`. Recommended B as an expert hypothesis; no final user selection recorded.
+
+Validation: final Playwright Chromium run PASS (127 checks), covering four desktop/mobile concepts, reflow, text contrast, keyboard behavior, state recovery, provenance/approval boundaries and absence of browser JavaScript errors or external requests. Final desktop and mobile screenshots were visually inspected. Evidence and reproduction commands: `research/design-redesign/validation/`. No production suites were run because production code is unchanged.
+
+`DESIGN_SOURCE_OF_TRUTH_CONFLICT` is present: accepted Figma/Git-token authority remains in force; HTML exploration is not a superseding design system. Existing design documentation, tokens, ADRs and production files are unchanged. No Figma, commit, push, PR, merge, deployment, live AI or persistent-data mutation. Canonical NEXT/BLOCKERS and Preview/M2 authorization are unchanged. Completed bounded exploration; **STOP — awaiting explicit user design selection before reconciliation or implementation**.
+
+### Concept B / Application Workspace design reconciliation — 2026-10-08
+
+**Concept B / Application Workspace selected and design reconciliation completed — PASS (local documentation/architecture block).** Explicit owner brief selects B and authorizes this bounded reconciliation over the Preview pointer; repository-native ARCHITECTURE workflow, one agent, no subagents. The preceding exploration's waiting-selection/conflict statements are historical and resolved by this block. Exact prototype pixels are not automatically approved.
+
+Canonical target IA: Today / Opportunities / Career / Employers / Settings. Opportunity is a UI projection of Vacancy and any existing preparation/Application; no domain/entity/API change. Application Workspace now specifies local views, header/state separation, inspector selection/pin/close, AI recommendation review, progressive provenance, Employer Memory boundaries and mobile list → workspace → evidence navigation. Full employer association/memory, tracking, conversations, interview and files/export remain gated by their actual product slices.
+
+ADR-0024 is accepted, supersedes ADR-0013 and explicitly amends ADR-0014's Figma role. Markdown specifies behavior, the existing DTCG JSON remains the sole machine-token authority, reviewed HTML references precede implementation, and production component fixtures replace them per pattern after review. Figma is optional; Storybook deferred. Design Foundation/Handoff, product/architecture references, historical Figma/task/audit notes and indexes are reconciled. Traceable decision matrix, token ledger, conditional B01–B12 frontend outcomes and browser evidence: `docs/07-Design/Concept-B-Reconciliation.md`.
+
+Fresh validation: architecture write preflight PASS; actual Concept B rendered in the in-app browser with desktop/mobile screenshots, record/section selection, provenance disclosure/return focus, unsupported-edit BLOCK, Accept/approval separation and error recovery; no captured warning/error browser log entries. Current production Sign in page rendered; protected Career/Vacancy comparison is source-based, and Error Center comparison uses previously captured synthetic screenshots. Structural/YAML-frontmatter/local-link/table/ADR checks PASS (initial final audit: 25 Markdown files, 271 links, 44 tables; no broken links); token reference audit PASS (113 leaves, 28 alias resolutions); 378 protected production/token/prototype file hashes unchanged; `git diff --check` PASS. The old 127-check research report is not a fresh run. No production tests/lint/build, real-user study, screen-reader/zoom certification or new visual-regression harness claimed.
+
+NEXT is deliberately changed to `application-workspace-reference-foundation` (B01) as requested: one normalized token-derived local reference and review manifest. Previous Preview 0.1 E2E/feedback (`m1-4-application-draft`) remains outstanding; M2 planning stays blocked, and the existing provider/build-environment limitations are unchanged. Normalized reference and human state/pixel review remain next-task acceptance, not a reconciliation failure. No production code/token values, backend/schema, dependencies or deployment changed; no commit, push, PR, merge, external message, Figma or live AI operation. **STOP before B01 or any production implementation.**
+
+### Concept B reconciliation — Vision review finding remediation — 2026-10-08
+
+Independent review returned CHANGES REQUIRED for one blocking inconsistency: accepted `docs/01-Product/Vision.md` still declared Figma the visual source of truth. That omission qualified the preceding completion claim until this correction. Bounded DOCS user override on `docs/ux-redesign-concepts` (base/target `stage`): Vision now names Git-reviewed Markdown behavior/IA, versioned Git-held DTCG machine values and reviewed executable visual references under ADR-0024 and Design Handoff. Figma is optional auxiliary tooling with no required canvas-parity or approval gate.
+
+Local remediation validation PASS: documentation write preflight; source-of-truth/Figma wording inventory across `docs/` with current versus historical qualifications inspected; all 9 accepted product/design documents checked; all 6 Vision local Markdown/wiki links resolve; `git diff --check`. The confirmed blocking finding is corrected; reconciliation is ready for independent re-review, whose outcome remains pending. NEXT remains B01 (`application-workspace-reference-foundation`); unrelated Preview/provider/build blockers are unchanged. No production suites, commit, push, publication or external review request. **CLOUD_REVIEW_REQUESTED: NO. STOP before B01.**
+
+### B01 interrupted reference foundation recovery — 2026-10-08
+
+**Recovery result: PARTIAL — technical reference and concrete review surface complete; B01 awaiting-review, not PASS.** Repository-native IMPLEMENT workflow, one agent, no orchestration/subagents. Resumed existing `chore/application-workspace-reference-foundation` at `936e95bdc5e79fdb80d07502e5661322b4f94ad5`; implementation write preflight passed with NEXT naming this task. No restart or branch/history rewrite.
+
+Found after interruption: no tracked/staged diff; untracked B01 task, normalized HTML/JS/CSS reference, token derivation/server, two tests, browser harness, 40 synthetic PNGs and a PASS browser report. Existing `research/design-redesign/` is preserved older exploration, not newly produced recovery evidence. The manifest's app/style hashes were stale; capture conditions/review instructions/task-state closeout were incomplete. No truncated/corrupt reference source, JSON or PNG was found by syntax/parsing/full-image decoding. No unrelated staged work.
+
+Preserved valid implementation. Fixed scenario selection URL persistence and Cedar's inline confirmed-conflict reason; added three rendered regressions. Regenerated canonical token CSS/hash manifest, recorded fresh capture conditions/source hashes and separate automatic/human status, and added `docs/07-Design/reference/{README,REVIEW}.md` plus integrity evidence. Updated only stale Foundation/Handoff readiness and B01 task status/checklist. Tokens, production and original research remained unchanged.
+
+Actual validation: Node derivation tests 2/2 PASS; `build-reference.cjs --check` PASS after regeneration (initial check detected manifest drift); all reference JS/CJS `node --check` PASS; fresh Playwright Chromium PASS, 278 checks / 40 captures at 1440×900, 768×1024, 390×844 and 320×640. Covered eight scenarios, mobile list/workspace/evidence and Back/Forward, keyboard/visible focus/Escape/return, modal focus traps, pin reset/context scoping, unsupported editing, missing/pending/stale/conflict approval gates, separate accept/content approval/not-sent semantics, status/busy announcements, reduced-motion setting, long Russian text/identifiers, reflow, local assets, loopback/CSP/write/path boundaries and zero external requests/browser errors. Rendered custom contrast checks PASS (minimum sampled text 6.20:1). Captures visually inspected by the agent, including desktop evidence, tablet drawer and compact workspace/evidence/block. This is not human approval or full WCAG certification.
+
+Integrity evidence: `docs/07-Design/reference/validation/integrity-results.json`; 40 PNGs decode, capture-source hashes match final assets, 320 protected production/token/original-research start/end hashes unchanged, no tracked apps/brand diff, no staged changes, affected local links and tracked/untracked whitespace checks PASS. The hash baseline begins at recovery start; pre-interruption untracked history cannot be reconstructed. Browser report: `docs/07-Design/reference/validation/browser-results.json`; manifest and README identify the active source and reproduction steps.
+
+Human visual/state review remains pending, with concrete owner action in `docs/07-Design/reference/REVIEW.md`. Real browser 200% zoom and manual screen-reader checks were not performed. Production ESLint/TypeScript/Vitest/build/component/visual-regression checks are outside B01 and were not run. No dependencies installed; no Figma, API/AI operation, commit, push, PR, publication or external message.
+
+NEXT deliberately remains exactly `application-workspace-reference-foundation`: next bounded action is the owner's B01 visual/state review and recording reviewer/date/outcome/state/viewport scope before PASS. BLOCKERS records that gate and retains existing Preview/provider/build limitations. B02, Preview PASS and M2 are not started. **STOP.**
+
+### B01: русский текст интерфейса, 2026-10-10
+
+По запросу владельца переведён интерфейс локального макета B01 с применением `humanizer`. Русский текст используют навигация, кнопки, состояния, ошибки, подсказки, вымышленные примеры резюме и сообщения для экранного диктора. «Принять правку», «Одобрить этот текст» и подтверждение карьерного факта остаются разными действиями. Идентификаторы, URL, источники и условия доступности действий сохранены. На компактных экранах подпись переключателя состояния стоит над полем: длинный перевод больше не вызывает горизонтальный скролл.
+
+Изменения: `docs/07-Design/reference/{index.html,app.js,style.css,validate-browser.cjs,manifest.json,README.md,REVIEW.md}`, свежие 40 PNG и отчёты в `validation/`, эта запись STATUS. Manifest hashes и capture metadata соответствуют русской версии (`ru-RU`). `tokens.css` регенерирован без изменения содержимого; канонические токены, production и исходное исследование не изменены, проверены 319 start/end hashes.
+
+Проверки выполнены: Node derivation tests 2/2 PASS; все reference JS/CJS syntax checks, token/manifest derivation check, JSON/PNG integrity, локальные ссылки и tracked/untracked whitespace checks PASS. Финальный Playwright Chromium прогон PASS: 278 проверок / 40 captures на 1440×900, 768×1024, 390×844 и 320×640, восемь состояний, reflow, прежние keyboard/focus/approval/provenance assertions, rendered contrast и отсутствие внешних запросов/browser errors. Desktop evidence, tablet drawer, mobile normal и 320 pending captures осмотрены. Первый прогон обнаружил overflow переключателя на 390 px; исправлено расположение подписи. Промежуточный прогон завершился тайм-аутом возврата фокуса планшетного списка; отдельное воспроизведение и финальный полный прогон прошли без изменения keyboard assertions. Это наблюдение сохранено в `browser-results.json`.
+
+Реальный 200% browser zoom и screen reader не проверялись; production suites не запускались, так как production не менялся. Общий положительный отзыв владельца не задаёт охват human visual/state review. B01 остаётся `awaiting-review`; NEXT/BLOCKERS сохраняют тот же bounded review gate. Commit/push/PR, B02 и M2 не выполнялись. Следующее действие: визуальная проверка владельцем русской версии B01 по `docs/07-Design/reference/REVIEW.md`.
+
+### B01: меню профиля, зарплата и визуальная подача, 2026-10-10
+
+По пяти замечаниям владельца обновлён локальный reference B01. Добавлены меню профиля и демонстрационные режимы пользователь/администратор/без входа, локальные вход/выход, условный пункт диагностики и явная недоступность готовой панели пользователей/приглашений. Эти действия не меняют production-сессию, права или данные. Зарплата вынесена в бирюзовый блок с сохранением диапазона, месячного периода и условия до налогов. Использованы существующие цветовые роли для навигации, компаний, предложений ИИ и предупреждений; добавлены закреплённые в Git иконки Lucide с лицензией и локальная иллюстрация, сгенерированная image_gen. Файл, точный prompt, источник и hashes записаны в reference/assets/sources.json. Канонические токены не менялись.
+
+Изменены reference index.html/app.js/style.css, build-reference.cjs для учёта локальных assets, validate-browser.cjs, manifest/README/REVIEW, assets и 53 captures/отчёты. B01 task уточняет разрешённый владельцем объём визуальных правок; эта запись фиксирует результат. Обновлены только демонстрация и её evidence. Production, исходное исследование и NEXT сохранены.
+
+Фактические проверки: Node derivation tests 2/2 PASS, reference syntax/JSON, token/hash derivation, PNG decoding, local links и whitespace PASS. Финальный Chromium прогон: 379 проверок / 53 снимка, 1440×900, 768×1024, 390×844, 320×640; восемь прежних состояний, три режима меню, локальный вход/выход, Tab/Shift+Tab/Escape/return focus, закреплённая кнопка закрытия при прокрутке, reflow, зарплата/изображение, прежние approval/provenance gates. Минимальный sampled text contrast 6.20:1, внешних запросов и browser errors нет. Осмотрены desktop normal/Cedar requirements, 320 normal, 390/320 admin menu. Первый прогон выявил reverse-Tab выход из native dialog, исправлен явным trap; изображение на 320 px перемещено над заголовком. Проверка закрытия теперь ожидает завершение native close event вместе с focus/aria state. Финальные checks проверяют все три условия. 319 protected production/token/original-research hashes сравниваются с началом этого блока; evidence записано в validation/integrity-results.json.
+
+B01 остаётся awaiting-review. Общий положительный отзыв и список замечаний не задают named human review новой редакции. Реальный 200% zoom и screen reader не проверялись; production suites не запускались. Следующее bounded действие: визуальная проверка обновлённого B01 по reference/REVIEW.md с фиксацией reviewer/date/outcome/state/viewport scope. B02/M2, commit/push/PR, публикация и сообщения не выполнялись. STOP.
+
+### B01: отдельный кандидат «Орбита решения», 2026-10-10
+
+Выполнен bounded user override по полному брифу визуального редизайна, с skill `frontend-design`, repository-native IMPLEMENT, один агент, на `chore/application-workspace-reference-foundation` / `936e95bdc5e79fdb80d07502e5661322b4f94ad5`, base/target stage. Рассмотрены Precision Workspace, Neon Intelligence и «Орбита решения»; выбор и ограничения authority записаны в candidate/DESIGN.md. Создан отдельный runnable candidate в `docs/07-Design/candidates/b01-frontend-redesign/`: постоянная desktop navigation, новая композиция вакансии/зарплаты, крупное сравнение текста, контекстная колонка причин/фактов/рисков, отдельное exact-content approval, mobile list/workspace/evidence и user/admin/guest. Прежние fixtures и продуктовые границы сохранены. Preview: http://127.0.0.1:8769/. Candidate draft/awaiting-review, isActiveReference=false; active B01 не заменён.
+
+Фактическая финальная validation: Chromium inherited suite PASS 379 checks / 53 captures; candidate additions PASS 70 checks / 22 captures; суммарно 449 checks / 75 свежих снимков на 1440×900, 768×1024, 390×844, 320×640 плюс supplemental 720 px reflow. Проверены пять sections, восемь states, salary absence, local font, отсутствие overflow, keyboard/focus/Escape/return, modal traps, unsaved guard, pin/context reset, missing/pending/stale/conflict gates, accept/approval/not-sent separation и фактическое отключение CSS motion. Минимальный sampled text contrast 6.20:1; внешних запросов, missing assets и browser errors нет. Сохранённый active preview 8768 отдельно прошёл 379 inherited checks; его captures вынесены в /tmp, report — в candidate validation. Node derivation tests 2/2 PASS на shared transformer; syntax/static audit 14 checks PASS, 21 локальная Markdown-ссылка/90 HTML IDs, PNG decoding, token/hash derivation и git diff --check PASS. 416 protected start/end hashes совпадают: production, tokens, active reference, original research, authority docs и NEXT.
+
+Агент осмотрел актуальную матрицу снимков и полноразмерные desktop/mobile/evidence/menu/overview. По осмотру исправлены пустота у comparison/action, mobile reading order и sticky dialog heading на 320 px. В candidate harness fixed modal captures снимаются в реальном viewport: Chromium full-page capture менял responsive width и закрывал tablet list; отдельное воспроизведение подтвердило причину. Keyboard assertions не ослаблены. Early CSS zoom experiment не является native zoom и исключён из acceptance; реальный browser 200% zoom и manual screen reader остаются непроверенными. CDP подтвердил local Space Grotesk для Latin/цифр и Arial fallback для кириллицы. Custom contrast audit не заменяет полную accessibility certification.
+
+Изменены только candidate directory и STATUS/BLOCKERS этого блока. Existing dirty work сохранён; production suites не запускались. Dependencies/accepted ADR/canonical token values/active manifest не менялись. Ни commit/push/PR, ни публикация, backend, B02/M2 не выполнялись. NEXT сохраняет `application-workspace-reference-foundation`; следующий bounded шаг — human design/state review кандидата владельцем по candidate/REVIEW.md, выбор направления и отдельная команда на дальнейшие изменения. STOP.
+
+
+### B01 candidate: Apple Design refinement — 2026-10-10
+
+По брифу владельца выполнен bounded user override, repository-native IMPLEMENT,
+один агент, apple-design; write preflight PASS на существующей
+`chore/application-workspace-reference-foundation` / `936e95bdc5e79fdb80d07502e5661322b4f94ad5`,
+base/target stage. Уточнена существующая «Орбита решения» в
+`docs/07-Design/candidates/b01-frontend-redesign/`; baseline snapshot и три исходных
+PNG/manifest/reports сохранены до изменений. Точная область: только candidate и
+STATUS/BLOCKERS. Existing dirty work сохранён.
+
+Реализованы coherent Arial для русского/mixed рабочего текста с локальным Space
+Grotesk для brand/company/salary, canonical tracking/shadows без token changes,
+цельный перенос сумм, точные action grid rows, pointer-down feedback, semantic
+accepted/approved styles, anchored desktop account menu и mobile bottom sheet,
+critically damped interruptible rAF spring без зависимости, preference change
+in-flight, backdrop dismissal, scroll lock/trap/return, sticky mobile wayfinding
+и safe areas, high-contrast/reduced-transparency fallbacks. Вкладки/warnings/roles
+и approval gates меняются немедленно; фиктивного backend или provider action нет.
+
+Фактический финальный Chromium прогон после последних CSS/capture правок PASS:
+379 inherited + 70 candidate + 79 Apple = **528 checks / 85 captures**, размеры
+1440/768/390/320 и supplemental 720 CSS px reflow. Browser errors/external
+requests 0/0; sampled text contrast минимум 6.20:1, control/focus custom checks
+PASS; старые восемь сценариев и Truth-first/Human Approval/Employer gates
+сохранены. CDP glyph evidence: русский и mixed copy Arial, brand/company/salary
+custom local Space Grotesk. Shared transformer tests 2/2 PASS; syntax, source/token
+derivation, JSON/PNG integrity, links/whitespace проверены в static-results.json.
+424 Git-visible protected hashes совпали: production, tokens, active B01,
+original research, authority/NEXT. Active suite не повторялась; её прежний report
+отмечен historical evidence.
+
+Осмотрены fresh state/account sheets на четырёх ширинах, 20 sections sheet и
+full-size desktop/mobile/pending/evidence/account/high-contrast. Исправлены
+зарплатный wrap, phantom action gap, double-close backdrop и sticky full-page
+capture; final suites после исправлений PASS. Screenshots не подменяют human review.
+Native 200% zoom попытка не состоялась: CUA Chrome connection unavailable,
+native app ScreenCaptureKit -3811; manual screen reader не запускался. Cross-OS
+fonts, реальный usability и visual/motion оценка владельцем остаются ограничениями.
+
+Candidate **awaiting-review**, `isActiveReference=false`, reviewer/date/outcome
+не заполнены. NEXT остаётся `application-workspace-reference-foundation`; следующий
+bounded шаг — owner visual/state review по candidate/REVIEW.md, отдельно native
+zoom/AT. Production suites/dependencies/ADR/canonical values/active reference не
+менялись; commit/push/PR/publication/messages, B02/M2 не выполнялись. STOP.
+
+
+### B01 candidate: восстановление типографики, 2026-10-10
+
+Выполнен bounded user override «B01 Finalization & Personal Career Preview»,
+repository-native IMPLEMENT, один агент, frontend-design/apple-design/humanizer.
+Git preflight PASS на чистой `chore/application-workspace-reference-foundation`,
+HEAD `89f30e3`, base/target stage. Существующий дизайн сохранён.
+
+STAGE A: TECHNICAL PASS. Воспроизведён прежний FAIL Apple font assertion:
+CDP учитывал вложенный ₽ вместе с Arial-текстом «тыс.». В validate-apple.cjs проверка
+перенесена на собственный текстовый узел, с ненулевым glyph count; отдельное
+строгое условие для Space Grotesk ₽ сохранено. UI и approval gates не менялись.
+Manifest IN_PROGRESS и исторические README/REVIEW приведены к фактической версии.
+
+Свежие Chromium suites: 379 inherited + 70 candidate + 83 Apple + 714 typography
+= 1246 checks / 99 captures, PASS, browser errors/external requests 0/0.
+1440/768/390/320, восемь состояний, keyboard/focus/Escape/dialogs, provenance,
+approval, reduced motion, long titles, RUB ranges/basis/missing salary проверены.
+Шесть свежих desktop/mobile overview/materials/rejected просмотрены полноразмерно
+и сравнены с сохранённым BEFORE. Node transformer tests 2/2 PASS; derivation,
+syntax/JSON/PNG/links/whitespace и protected hashes отражены в candidate validation.
+
+STAGE B: BLOCKED. В обоих указанных attachment directories есть только бриф,
+полного резюме Senior QA Engineer, обновлённого 10 октября 2026, нет.
+Personal preview/fixtures и real matching не созданы; краткое описание кандидата
+не использовано как замена резюме. Требуется полный PDF/DOCX/TXT резюме.
+
+B01/candidate остаются awaiting-review, candidate isActiveReference=false.
+Native 200% zoom, manual screen reader и named human visual approval не закрыты.
+Production/canonical tokens/active B01/accepted ADR/NEXT не менялись.
+Commit/push/PR/publication/messages, live AI, B02/M2 не выполнялись.
+NEXT сохраняет application-workspace-reference-foundation; текущий user override
+продолжается с STAGE B после предоставления полного резюме. STOP.
+
+
+### B01 personal preview: Stage B, 2026-10-10
+
+После Stage A получено полное резюме владельца. Выполнен следующий bounded блок
+того же user override: изолированный `b01-personal-preview`, прежняя «Орбита решения»
+и shared tokens/style/motion. Production, active reference и Stage A сохранены.
+Две вакансии; 21 требование; 25 точных карьерных цитат, исходно unconfirmed.
+История владельца помечена source summary, неизвестные даты/зарплаты сохранены.
+Confirmation, recommendation acceptance и exact-text approval раздельны, только
+в памяти вкладки. Нет AI, persistent Career Facts или отправки отклика.
+
+STAGE B TECHNICAL PASS: 292 fresh Chromium assertions / 24 captures на
+1440/768/390/320; no browser errors/external requests. 95 integrity assertions
+проверили provenance, conservative matching, salary/history/privacy и ignore.
+793 pre-existing файла неизменны по SHA-256, все private PNG декодируются.
+Node syntax, JSON и git diff whitespace checks PASS. Финальные screenshots
+осмотрены агентом; owner visual/state approval остаётся pending. Native zoom/AT
+и cross-OS fonts не проверены. Private evidence — `.local/b01-personal-preview/`;
+generic code/docs — `docs/07-Design/candidates/b01-personal-preview/`.
+
+Candidate не active, B01 не approved. NEXT остаётся
+`application-workspace-reference-foundation`; точный следующий шаг — owner review
+по personal-preview/REVIEW.md. Commit/push/PR/publication/messages, B02/M2
+не выполнялись. STOP.
+
+
+### B01 candidate approval closeout + B02 preparation — 2026-10-10
+
+Владелец проекта явно одобрил «Орбиту решения» и персональное превью двух
+вакансий сообщением в чате от 2026-10-10. Scope-only approval записан в
+`docs/07-Design/candidates/b01-frontend-redesign/{REVIEW.md,manifest.json}` и
+`docs/07-Design/candidates/b01-personal-preview/{REVIEW.md,manifest.json}`.
+Не заявлены конкретные viewport/states, keyboard/focus, native zoom или AT review;
+Career Facts не подтверждены, отклики не разрешены.
+
+Кандидат не назначен active reference. B01 остаётся `awaiting-review`, потому что
+его task spec требует owner decision по точному canonical reference
+`docs/07-Design/reference/`, а одобрение двух отдельных candidate artifacts этого
+не подменяет. `.agents/state/NEXT.md` не изменён и остаётся на B01. Этот scope и
+точный blocker отражены в task spec, BLOCKERS и Design-Handoff.
+
+Подготовлена `.agents/tasks/b02-global-shell-navigation.md` по roadmap B02 на
+основании реальных routes `/`, `/register`, `/diagnostics` и существующих
+`AccessShell`, `CareerWorkspace`, `VacancyWorkspace`. Specification status —
+`prepared-awaiting-authorization`; NEXT не указывает B02. B02 implementation требует
+закрытия B01 и отдельной явной authority.
+
+Проверки этого closeout: candidate source/token SHA-256 сверены с обоими manifests
+и совпали; JSON manifests парсятся; локальные Markdown-ссылки проверены; ignored
+private fixture/report/PNG paths подтверждены `git check-ignore`; docs preflight
+прошёл. `build-reference.cjs --check` остановился на ожидаемом protected-file
+mismatch: этот closeout обновил B01 task contract, входящий в snapshot
+`validation/typography/protected-before.json`. Historical integrity baseline не
+перезаписан; сверка всех candidate source/token hashes совпала. Исторические
+Stage A/B technical reports не переписывались. No production, token values, active
+mapping, dependencies, backend/API/database, commit/push/PR/publication or external
+messages changed.
+
+
+### B01 final canonical review preparation, 2026-10-10
+
+Проведена свежая проверка canonical reference. Начальный
+`build-reference.cjs --check` завершился `manifest source/hash drift`: среди его
+входных источников изменился `Design-Handoff.md`; B01 task specification не
+входит в source list этого скрипта и не вызвала этот конкретный отказ. Текущая
+производная карта `reference/manifest.json` пересчитана через `--write`; canonical
+token hash остался `72565fc8…`. Исторические browser/integrity reports и
+candidate `protected-before.json` не перезаписывались.
+
+Проверки после пересчёта: `build-reference.cjs --check` PASS; derivation tests
+2/2 PASS; JS syntax PASS; свежий Chromium report PASS (379 checks / 53 captures,
+browser errors 0, external requests 0) записан в
+`docs/07-Design/reference/validation/canonical-review-2026-10-10/` отдельно от
+предыдущей validation истории. Automated browser matrix покрыла 1440/768/390/320,
+state navigation, keyboard/focus interactions и reflow. Owner visual/state approval,
+native 200% zoom и manual assistive-technology review не заявляются; zoom и manual
+AT не выполнялись.
+
+Отдельный candidate `build-reference.cjs --check` остаётся FAIL на устаревшем
+`activeReferenceManifestSha256`; его historical snapshot включает B01 task spec,
+task index, `.gitignore` и Design-Handoff, изменённые как governance metadata после
+создания `protected-before.json`. Содержимое canonical HTML, production, canonical
+tokens и original research в этом сравнении не изменено; текущая manifest metadata
+изменена намеренно. Snapshot и исторический FAIL не переписаны/не скрыты. Это не
+дефект реализации canonical reference, но candidate snapshot больше не является
+актуальным общим tree baseline.
+
+Canonical объект остаётся `docs/07-Design/reference/index.html` (draft,
+`isActiveReference` mapping без изменений); «Орбита решения» остаётся отдельным
+неактивным candidate. По ADR-0024 автоматические проверки не заменяют human review.
+B01 — PARTIAL / `awaiting-review`; точный вопрос о canonical mapping и scope review
+внесён в `reference/REVIEW.md`. BLOCKERS отражает решение владельца; NEXT по-прежнему
+указывает B01. B02 не начат и не авторизован.
+
+
+### B01 canonical owner decision and promotion — 2026-10-10
+
+Owner decision: **APPROVED VISUAL DIRECTION**, «Орбита решения»; scope B01
+Application Workspace Visual Reference. Explicitly authorized promotion, manifest/
+handoff updates, fresh validation and conditional closure; production/B02 and
+commit/push/PR remain outside scope. Existing task branch and dirty work preserved.
+Implementation write preflight passed, NEXT already names B01; no user override needed.
+
+Selected synthetic candidate source promoted to the sole active
+`docs/07-Design/reference/index.html`; previous draft preserved verbatim with
+hashes in `docs/07-Design/archive/b01-pre-orbita-2026-10-10/`.
+Canonical resolver retained, existing compact tracking/overlay shadow/local font
+included; canonical token values unchanged. Candidate is retained historical
+source, personal preview is scenario evidence only. No private fixtures, resume,
+personal vacancies or ignored `.local/` are promoted.
+
+Fresh versioned evidence: `docs/07-Design/reference/validation/closure-2026-10-10-v1/`.
+Fresh final suites: 1246 checks / 99 captures PASS (379 browser, 70 composition,
+83 motion/menu, 714 typography), zero browser errors/external requests; Node tests
+2/2, canonical derivation/manifest/syntax and whitespace PASS. Integrity: 820 session
+protected files, historical governance/promotion differences explicitly enumerated.
+Actual source/token/production integrity and capture environment are
+recorded in `closure-results.json`; historical reports/baselines/FAIL are unchanged.
+Agent screenshot inspection does not establish human state/accessibility acceptance.
+
+**B01 PARTIAL / awaiting-review**, not PASS: visual direction/reference selection
+is approved; specific state/viewport/keyboard review, real 200% browser zoom and
+manual screen reader remain unverified. Exact remaining matrix is in canonical
+REVIEW. NEXT remains `application-workspace-reference-foundation`; B02 is not ready
+for execution and is not started. Preview/provider/environment blockers are unchanged.
+No production/API/DB/token values/dependencies or original research changed;
+no commit/push/PR, external messages, Career Facts confirmation or application submission.
+**STOP.**
+
+
+### B01 final owner acceptance and closure assessment — 2026-10-11
+
+Recorded final **OWNER ACCEPTANCE** from the product owner in canonical
+`docs/07-Design/reference/REVIEW.md`: visual concept/composition/typography,
+component system, responsive direction, navigation/copy, canonical reference and
+personal preview as a demonstration scenario. Initial visual approval remains
+2026-10-10. Final acceptance and residual-risk acceptance are dated 2026-10-11.
+They do not claim human execution of the 32 state/viewport cases or K1/Z1/A1.
+
+Closure assessment: **B01 PARTIAL / awaiting-review**, lifecycle `draft`.
+ADR-0024 requires manual AT assessment and Handoff requires state/viewport and
+accessibility review; no risk-acceptance waiver is defined. Mandatory NOT TESTED
+rows remain unchanged. Existing limited agent native zoom evidence is retained.
+B02 is explicitly authorized only after proper B01 closure: authorization received,
+condition unmet, **B02 BLOCKED / not started**. NEXT remains B01. Next action is
+actual missing manual evidence followed by a bounded closure reassessment.
+
+Validation: implementation write preflight PASS on existing task branch (base/target
+stage, no user override needed); 14 source hashes, four historical suite report
+hashes/counts, integrity report hash/counts and canonical token hash verified.
+Reused baseline: 1246 checks / 99 captures and 2568 integrity assertions / 820
+snapshot files, not rerun browser tests. Current verification record:
+`docs/07-Design/reference/validation/owner-acceptance-2026-10-11.json`.
+Canonical derivation check and `git diff --check` PASS; session file comparison
+confirms only acceptance documentation/state and the new verification record changed.
+Existing dirty work and historical evidence preserved. Production/React components,
+backend/API/DB, tokens and reference executable sources unchanged; no B02/B03,
+commit/push/PR, Career Facts edits or employer actions. **STOP.**
+
+## B01 governance closure — 2026-10-11
+
+Owner-approved ADR-0025 explicitly amends ADR-0024 B01 closure timing. B01 **ACCEPTED**, canonical «Орбита решения», lifecycle reviewed for implementation. Historical 1246 checks/99 screenshots and 2568 assertions remain historical; source/report integrity is checked separately. Manual matrix stays NOT TESTED. Mandatory `b01-manual-accessibility-release-gate` is OPEN and blocks production release. Owner B02 authorization is effective; no B03/Preview/M2/release authorization.
+
+## B02 global shell/navigation — 2026-10-11
+
+Completed locally on `feature/b02-global-shell-navigation`, after B01 ACCEPTED
+under owner-approved ADR-0025. One shared WorkspaceShell wraps existing Career
+and admin Diagnostics; available destinations preserve `/` and `/#vacancy-title`,
+three unavailable directions disclose capability absence. Identity/logout/admin
+utility, login/register/token handling and same-origin API contracts retained.
+No backend/API/DB/dependency/token values/private preview data changed.
+
+Validation: TypeScript PASS; ESLint exit 0 with two disclosed native-navigation
+warnings; Vitest 94/94 (9 new shell regressions; existing vacancy fixture key warnings);
+production build PASS with NODE_ENV=production. Browser 135 checks / 15 screenshots
+at 320/390/768/1024/1440, synthetic API fixtures: navigation/history/refresh, keyboard,
+auth integration/admin denial, zero unexpected console/hydration errors/external requests.
+Live unauthenticated HTTP smoke: pages 200; me/diagnostics API 401. No live authenticated
+Laravel session is claimed. B01 rendered assets and 335 historical validation files
+unchanged; 14 source and four suite hashes plus integrity report/token hashes verified.
+B01 derivation check and 2/2 Node tests PASS; git whitespace check PASS.
+Evidence: `docs/07-Design/validation/b02-2026-10-11/README.md` and
+`docs/07-Design/reference/validation/governance-closure-2026-10-11.json`.
+
+NEXT: mandatory `b01-manual-accessibility-release-gate` OPEN. Production release
+BLOCKED until manual/AT/zoom/reference and applicable shipped-scope evidence passes.
+B03 not authorized; Preview/M2 unchanged. No commit/push/PR/employer action. STOP.
+
+## B02 visual parity remediation — 2026-10-11
+
+Explicit owner IMPLEMENT override of NEXT on existing
+`feature/b02-global-shell-navigation` (base/target stage); write preflight PASS.
+Initial B02 functional completion did not establish visual acceptance: owner
+rejected the oversized horizontal navigation/header and Career hierarchy.
+
+Remediation uses unchanged canonical B01 `docs/07-Design/reference/`:
+168px desktop sidebar with icons/current/unavailable states; compact brand/context/
+authenticated profile; tablet row and mobile disclosure with Escape/close/focus
+return. Native account dialog retains actual user/admin utilities and logout.
+Typography, form borders/surfaces, focus and spacing consume canonical token roles;
+decorative gradients/giant headings removed. Primary Career/access/vacancy-ingestion
+copy and safe API error copy are Russian; extraction/provenance display labels are
+localized without changing status values. Existing routes/auth/API/Career Facts
+operations retained; no new Application Workspace/backend/DB/dependency/font asset.
+
+Fresh validation: TypeScript PASS, ESLint PASS without warnings, Vitest 94/94 PASS,
+production build PASS (`NODE_ENV=production`). Previous duplicate-key warnings in
+vacancy test fixtures remain disclosed. Browser 155 navigation/auth/role/keyboard/
+responsive checks + 41 Career/profile checks PASS using isolated synthetic API
+fixtures; no live authenticated Laravel/provider calls or persisted Career Facts.
+155-check matrix has no unexpected console/hydration/page errors or external requests;
+Career exception count is zero. 1440/768/390/320 and extra 1024 covered. Screenshots
+and four contact sheets inspected; 24 computed style roles match exactly, 1px header
+height difference documented. Critical shared-shell deviations removed in agent
+rendered review; this does not establish owner acceptance or universal pixel parity.
+
+Remaining differences: brand uses fallback font (production font shipping remains
+separately gated); legacy deep vacancy/draft/chat/Diagnostics copy remains English;
+content/composition of Career and canonical Application Workspace differ by product
+scope. Manual AT/native zoom/live authenticated Laravel remain unverified.
+B02 **awaiting owner visual review**. Evidence:
+`docs/07-Design/validation/b02-remediation-2026-10-11/README.md`.
+B01 lifecycle, canonical reference, tokens, historical evidence and unrelated dirty
+work preserved. NEXT remains `b01-manual-accessibility-release-gate` OPEN; production
+release BLOCKED. Later Application Workspace rows B03/B04/B05+ remain separate,
+unauthorized and not started. No commit/push/PR/release. STOP.
+
+
+## Exact canonical B01 React port — resumed closeout, 2026-10-11
+
+Explicit owner IMPLEMENT override of NEXT on authorized dirty
+`feature/b02-global-shell-navigation`, base/target stage; write preflight PASS.
+Existing interrupted components preserved; exact canonical CSS/tokens/assets used.
+Added canonical critical-damping motion with interruptible dialog exit/reduced-motion
+settle and unmount cleanup; fixed context Back/Forward/refresh, mobile selected-item
+focus and menu reset, guarded admin navigation, and distinct legacy chat/preparation
+keys. Apple Design/frontend-design application and component mapping are documented.
+
+Fresh final checks: TypeScript/ESLint PASS, Vitest **108/108**, isolated
+`NODE_ENV=production` build PASS; browser **117 workspace / 41 Career / 50 motion**,
+synthetic APIs only, no exceptions/external requests. Visual **97 cases + 142 scroll
+pairs / 717 PNGs**, four required viewports, zero measured geometry/style differences;
+maximum core diff **0.2423%** against fixed 0.5% gate. Account menu uses a measured
+local content/shadow exception with raw diff and remaining-page checks retained.
+Source derivation **260 checks**; **1318 protected files** unchanged against actual
+resume baseline (including 358 canonical reference files, 243 backend files and tokens).
+Node syntax/canonical check/whitespace PASS; live unauthenticated pages 200, me 401.
+
+Status: **LOCAL TECHNICAL/VISUAL PASS / awaiting owner review**. Evidence:
+`docs/07-Design/validation/application-port-2026-10-11/README.md`.
+Actual local app preview 8080 remains Next dev; production build verified separately.
+Native 200% zoom, human AT and real authenticated Laravel/provider flows not claimed.
+NEXT remains `b01-manual-accessibility-release-gate` OPEN; production release BLOCKED.
+No accepted ADR/canonical/backend/API/DB/token values/dependencies changes;
+no B03/Preview/M2, commit/push/PR, real facts or employer action. **STOP.**
+
+## Owner visual acceptance — 2026-10-11
+
+The owner accepts the «Орбита решения» visual direction and its React
+implementation for canonical correspondence, desktop/tablet/mobile design,
+navigation, typography, Application Workspace composition and component visual
+language. This does not assert personal review of every state or viewport. Manual
+screen-reader verification, native 200% zoom, real authenticated Laravel E2E and
+the ADR-0025 production release gate remain open/not tested. NEXT remains
+`b01-manual-accessibility-release-gate`.
+
+## Git consolidation delivery — 2026-10-11
+
+Consolidated design/B01 and React workspace shipped on
+`feature/b02-global-shell-navigation`; PR [#44](https://github.com/filatelist-hitech/CVortex/pull/44)
+open to `stage`. PR #43 was closed as superseded after verifying its complete
+single-commit change (`936e95b`) is an ancestor of the new branch. No merge,
+release, stage/main update, backend change or token-value change.
+
+PR metadata/checkpoint comments are present. Local PR contract and latest GitHub
+`PR contract` / `Roadmap metadata` checks pass. GitHub `m0-quality` remains pending
+at this status capture; no external quality result is claimed. Local validation and
+manual limitations are recorded in the PR and
+`docs/07-Design/validation/application-port-2026-10-11/delivery-validation.json`.
+NEXT remains `b01-manual-accessibility-release-gate`; screen-reader, native 200% zoom,
+authenticated Laravel E2E and the production accessibility gate remain open/not tested.
+
+## PR evidence payload trim — 2026-10-11
+
+Removed the 53 PNG captures in archived `canonical-review-2026-10-10/` from the
+tracked PR payload. The local files remain on disk as untracked recovery evidence;
+JSON reports and integrity records remain tracked. Representative current-port
+screenshots and reproducible validation reports are unchanged.

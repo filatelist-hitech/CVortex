@@ -3,7 +3,7 @@ title: Phase 06 System Design
 status: accepted
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [architecture, c4, deployment, phase-06]
 related: ["[[Architecture-Baseline]]", "[[../03-ADR/INDEX|ADR Index]]", "[[../04-Data/Phase-06-Data-Design|Data Design]]", "[[../06-AI/Phase-06-AI-Design|AI Design]]"]
 ---
@@ -21,7 +21,7 @@ flowchart LR
   CV --> LLM[LLM providers]
   VS[Vacancy sources] --> CV
   ES[Documents and web sources] --> CV
-  F[Figma reviewed design dependency] -. engineering .-> CV
+  D[Git-reviewed design references and canonical tokens] -. engineering .-> CV
 ```
 
 ```mermaid
@@ -37,6 +37,8 @@ flowchart TB
 ```
 
 Trust boundaries: browsers and all external sources are untrusted; API authenticates and scopes requests; storage/converters are private worker boundaries; provider calls receive minimal authorised context. Future clients consume the same API, never direct storage/database access.
+
+Design is an engineering reference, not a runtime service. [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) replaces mandatory Figma authority; Figma is optional. [Application Workspace](../07-Design/Application-Workspace.md) composes the existing domain boundaries without adding an Opportunity aggregate or changing API/ownership/workflow responsibilities.
 
 ## Component contracts
 

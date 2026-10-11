@@ -1,0 +1,66 @@
+[
+  {
+    "scenario": "normal",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "loading",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "empty",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "failed",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "stale",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "blocked",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "pending",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  },
+  {
+    "scenario": "approval",
+    "clientWidth": 734,
+    "dpr": 4,
+    "height": 385,
+    "scrollWidth": 734,
+    "width": 734
+  }
+]

@@ -56,7 +56,7 @@ These directions are approved but do not imply fixed dependency versions.
 - Queue/cache: Redis + Laravel Horizon.
 - Web: Nginx.
 - Documents: DOCX templates/generation + LibreOffice headless PDF conversion.
-- Design: Figma is the reviewed visual/component source; Git-held design tokens are the machine-readable authority.
+- Design: Concept B / Application Workspace; Git-reviewed behavior and executable visual references under ADR-0024. Git-held DTCG tokens remain the machine-readable authority; Figma is optional auxiliary tooling. See `docs/07-Design/Design-Handoff.md`.
 - Documentation: Markdown + Git + Obsidian-compatible structure.
 
 ## Deployment Direction

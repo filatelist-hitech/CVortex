@@ -1,0 +1,1295 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-10-10T13:21:58.954Z",
+  "referenceSourceSha256": {
+    "index.html": "878e7f151a41a727f4fe7c52b936b9629d883c1e72a7d3908c0a10664d2adfcf",
+    "app.js": "a2ddcacb34aee77a1dcdc3c318d36413ac63c3481c5cee47a25f5842c8117269",
+    "style.css": "85d99578d085afc916d1e4758019c3e9b63e88a7f04ed5f35bbb4476ef0c1200",
+    "tokens.css": "90e8389f0c4942f610e9aae2a207c01d799548fab92a03ecf472d1197e380b09",
+    "build-reference.cjs": "57ce428bf554946da835f431b5b2e0866e7321e5f7f779ecc7cfd871872efbe2",
+    "preview-server.cjs": "495784f20b199e42a2ca9ca899151705acab8e1b9e44b1795bd1a1411824e3a4",
+    "validate-browser.cjs": "71763d84e228b2d7a48d5bc3508bc7b6c363978c40ca9c9ecdd0d16421728013",
+    "assets/career-vortex-v1.png": "89ade98fd69cb8888732031b51235747fbc718ead8449ad8e00c10537106162a",
+    "assets/sources.json": "f830c638c0f6901c60b4e2ea0a0085ed0fb910d78687830194b61e9076b389b6",
+    "assets/lucide-LICENSE.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+    "assets/SpaceGrotesk.woff2": "8e085aa438094f11487a836652edd5c054fa6a96f63fc7c282105ee3a4b08c07",
+    "assets/OFL.txt": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72",
+    "assets/font-source.json": "cccc834b5224ef400be6870b645a70b3c9835d1a40f5fc69d15e1c9047adc6f1"
+  },
+  "checks": [
+    "1440-normal: no page overflow",
+    "1440-normal: correct scenario",
+    "1440-normal: review availability",
+    "1440-normal: approval gate",
+    "1440-normal: rendered text contrast and size",
+    "1440-normal: control boundary contrast",
+    "1440-loading: no page overflow",
+    "1440-loading: correct scenario",
+    "1440-loading: review availability",
+    "1440-loading: approval gate",
+    "1440-loading: operation announced busy",
+    "1440-loading: rendered text contrast and size",
+    "1440-loading: control boundary contrast",
+    "1440-empty: no page overflow",
+    "1440-empty: correct scenario",
+    "1440-empty: review availability",
+    "1440-empty: approval gate",
+    "1440-empty: rendered text contrast and size",
+    "1440-empty: control boundary contrast",
+    "1440-failed: no page overflow",
+    "1440-failed: correct scenario",
+    "1440-failed: review availability",
+    "1440-failed: approval gate",
+    "1440-failed: rendered text contrast and size",
+    "1440-failed: control boundary contrast",
+    "1440-stale: no page overflow",
+    "1440-stale: correct scenario",
+    "1440-stale: review availability",
+    "1440-stale: approval gate",
+    "1440-stale: acceptance blocked",
+    "1440-stale: rendered text contrast and size",
+    "1440-stale: control boundary contrast",
+    "1440-blocked: no page overflow",
+    "1440-blocked: correct scenario",
+    "1440-blocked: review availability",
+    "1440-blocked: approval gate",
+    "1440-blocked: acceptance blocked",
+    "1440-blocked: rendered text contrast and size",
+    "1440-blocked: control boundary contrast",
+    "1440-pending: no page overflow",
+    "1440-pending: correct scenario",
+    "1440-pending: review availability",
+    "1440-pending: approval gate",
+    "1440-pending: acceptance blocked",
+    "1440-pending: rendered text contrast and size",
+    "1440-pending: control boundary contrast",
+    "1440-approval: no page overflow",
+    "1440-approval: correct scenario",
+    "1440-approval: review availability",
+    "1440-approval: approval gate",
+    "1440-approval: rendered text contrast and size",
+    "1440-approval: control boundary contrast",
+    "1440: evidence opens from keyboard",
+    "1440: title focus",
+    "1440-evidence: no page overflow",
+    "1440-evidence: rendered text contrast and size",
+    "1440-evidence: control boundary contrast",
+    "1440: Escape closes and returns focus",
+    "1440: visible focus",
+    "768-normal: no page overflow",
+    "768-normal: correct scenario",
+    "768-normal: review availability",
+    "768-normal: approval gate",
+    "768-normal: rendered text contrast and size",
+    "768-normal: control boundary contrast",
+    "768-loading: no page overflow",
+    "768-loading: correct scenario",
+    "768-loading: review availability",
+    "768-loading: approval gate",
+    "768-loading: operation announced busy",
+    "768-loading: rendered text contrast and size",
+    "768-loading: control boundary contrast",
+    "768-empty: no page overflow",
+    "768-empty: correct scenario",
+    "768-empty: review availability",
+    "768-empty: approval gate",
+    "768-empty: rendered text contrast and size",
+    "768-empty: control boundary contrast",
+    "768-failed: no page overflow",
+    "768-failed: correct scenario",
+    "768-failed: review availability",
+    "768-failed: approval gate",
+    "768-failed: rendered text contrast and size",
+    "768-failed: control boundary contrast",
+    "768-stale: no page overflow",
+    "768-stale: correct scenario",
+    "768-stale: review availability",
+    "768-stale: approval gate",
+    "768-stale: acceptance blocked",
+    "768-stale: rendered text contrast and size",
+    "768-stale: control boundary contrast",
+    "768-blocked: no page overflow",
+    "768-blocked: correct scenario",
+    "768-blocked: review availability",
+    "768-blocked: approval gate",
+    "768-blocked: acceptance blocked",
+    "768-blocked: rendered text contrast and size",
+    "768-blocked: control boundary contrast",
+    "768-pending: no page overflow",
+    "768-pending: correct scenario",
+    "768-pending: review availability",
+    "768-pending: approval gate",
+    "768-pending: acceptance blocked",
+    "768-pending: rendered text contrast and size",
+    "768-pending: control boundary contrast",
+    "768-approval: no page overflow",
+    "768-approval: correct scenario",
+    "768-approval: review availability",
+    "768-approval: approval gate",
+    "768-approval: rendered text contrast and size",
+    "768-approval: control boundary contrast",
+    "768: evidence opens from keyboard",
+    "768: title focus",
+    "768-evidence: no page overflow",
+    "768-evidence: rendered text contrast and size",
+    "768-evidence: control boundary contrast",
+    "tablet: evidence is modal",
+    "tablet: forward focus trap",
+    "tablet: reverse focus trap",
+    "768: Escape closes and returns focus",
+    "768: visible focus",
+    "tablet: workspace first",
+    "tablet: list dialog",
+    "tablet: list return focus",
+    "390-normal: no page overflow",
+    "390-normal: correct scenario",
+    "390-normal: review availability",
+    "390-normal: approval gate",
+    "390-normal: rendered text contrast and size",
+    "390-normal: control boundary contrast",
+    "390-loading: no page overflow",
+    "390-loading: correct scenario",
+    "390-loading: review availability",
+    "390-loading: approval gate",
+    "390-loading: operation announced busy",
+    "390-loading: rendered text contrast and size",
+    "390-loading: control boundary contrast",
+    "390-empty: no page overflow",
+    "390-empty: correct scenario",
+    "390-empty: review availability",
+    "390-empty: approval gate",
+    "390-empty: rendered text contrast and size",
+    "390-empty: control boundary contrast",
+    "390-failed: no page overflow",
+    "390-failed: correct scenario",
+    "390-failed: review availability",
+    "390-failed: approval gate",
+    "390-failed: rendered text contrast and size",
+    "390-failed: control boundary contrast",
+    "390-stale: no page overflow",
+    "390-stale: correct scenario",
+    "390-stale: review availability",
+    "390-stale: approval gate",
+    "390-stale: acceptance blocked",
+    "390-stale: rendered text contrast and size",
+    "390-stale: control boundary contrast",
+    "390-blocked: no page overflow",
+    "390-blocked: correct scenario",
+    "390-blocked: review availability",
+    "390-blocked: approval gate",
+    "390-blocked: acceptance blocked",
+    "390-blocked: rendered text contrast and size",
+    "390-blocked: control boundary contrast",
+    "390-pending: no page overflow",
+    "390-pending: correct scenario",
+    "390-pending: review availability",
+    "390-pending: approval gate",
+    "390-pending: acceptance blocked",
+    "390-pending: rendered text contrast and size",
+    "390-pending: control boundary contrast",
+    "390-approval: no page overflow",
+    "390-approval: correct scenario",
+    "390-approval: review availability",
+    "390-approval: approval gate",
+    "390-approval: rendered text contrast and size",
+    "390-approval: control boundary contrast",
+    "390: evidence opens from keyboard",
+    "390: title focus",
+    "390-evidence: no page overflow",
+    "390-evidence: rendered text contrast and size",
+    "390-evidence: control boundary contrast",
+    "390: Escape closes and returns focus",
+    "390: visible focus",
+    "390: mobile section control visible",
+    "390: browser Back restores workspace approval",
+    "390: browser Forward restores filter",
+    "390: mobile section preserves selection",
+    "320-normal: no page overflow",
+    "320-normal: correct scenario",
+    "320-normal: review availability",
+    "320-normal: approval gate",
+    "320-normal: rendered text contrast and size",
+    "320-normal: control boundary contrast",
+    "320-loading: no page overflow",
+    "320-loading: correct scenario",
+    "320-loading: review availability",
+    "320-loading: approval gate",
+    "320-loading: operation announced busy",
+    "320-loading: rendered text contrast and size",
+    "320-loading: control boundary contrast",
+    "320-empty: no page overflow",
+    "320-empty: correct scenario",
+    "320-empty: review availability",
+    "320-empty: approval gate",
+    "320-empty: rendered text contrast and size",
+    "320-empty: control boundary contrast",
+    "320-failed: no page overflow",
+    "320-failed: correct scenario",
+    "320-failed: review availability",
+    "320-failed: approval gate",
+    "320-failed: rendered text contrast and size",
+    "320-failed: control boundary contrast",
+    "320-stale: no page overflow",
+    "320-stale: correct scenario",
+    "320-stale: review availability",
+    "320-stale: approval gate",
+    "320-stale: acceptance blocked",
+    "320-stale: rendered text contrast and size",
+    "320-stale: control boundary contrast",
+    "320-blocked: no page overflow",
+    "320-blocked: correct scenario",
+    "320-blocked: review availability",
+    "320-blocked: approval gate",
+    "320-blocked: acceptance blocked",
+    "320-blocked: rendered text contrast and size",
+    "320-blocked: control boundary contrast",
+    "320-pending: no page overflow",
+    "320-pending: correct scenario",
+    "320-pending: review availability",
+    "320-pending: approval gate",
+    "320-pending: acceptance blocked",
+    "320-pending: rendered text contrast and size",
+    "320-pending: control boundary contrast",
+    "320-approval: no page overflow",
+    "320-approval: correct scenario",
+    "320-approval: review availability",
+    "320-approval: approval gate",
+    "320-approval: rendered text contrast and size",
+    "320-approval: control boundary contrast",
+    "320: evidence opens from keyboard",
+    "320: title focus",
+    "320-evidence: no page overflow",
+    "320-evidence: rendered text contrast and size",
+    "320-evidence: control boundary contrast",
+    "320: Escape closes and returns focus",
+    "320: visible focus",
+    "320: mobile section control visible",
+    "320: browser Back restores workspace approval",
+    "320: browser Forward restores filter",
+    "320: mobile section preserves selection",
+    "1440: salary is separate and exact",
+    "1440: decorative artwork loaded",
+    "1440: account opens from keyboard",
+    "1440: account initial focus",
+    "1440: admin tools hidden for user",
+    "1440-account-user: no page overflow",
+    "1440-account-user: rendered text contrast and size",
+    "1440-account-user: control boundary contrast",
+    "1440: account forward trap",
+    "1440: account reverse trap",
+    "1440: admin example exposes diagnostics",
+    "1440: unfinished admin panel stays unavailable",
+    "1440: diagnostics explains isolated reference",
+    "1440: account close stays in viewport after scroll",
+    "1440-account-admin: no page overflow",
+    "1440-account-admin: rendered text contrast and size",
+    "1440-account-admin: control boundary contrast",
+    "1440: demo logout has no admin tools",
+    "1440-account-guest: no page overflow",
+    "1440-account-guest: rendered text contrast and size",
+    "1440-account-guest: control boundary contrast",
+    "1440: demo login restores user only",
+    "1440: account Escape and return focus",
+    "1440: profile display preserves review gates",
+    "768: salary is separate and exact",
+    "768: decorative artwork loaded",
+    "768: account opens from keyboard",
+    "768: account initial focus",
+    "768: admin tools hidden for user",
+    "768-account-user: no page overflow",
+    "768-account-user: rendered text contrast and size",
+    "768-account-user: control boundary contrast",
+    "768: account forward trap",
+    "768: account reverse trap",
+    "768: admin example exposes diagnostics",
+    "768: unfinished admin panel stays unavailable",
+    "768: diagnostics explains isolated reference",
+    "768: account close stays in viewport after scroll",
+    "768-account-admin: no page overflow",
+    "768-account-admin: rendered text contrast and size",
+    "768-account-admin: control boundary contrast",
+    "768: demo logout has no admin tools",
+    "768-account-guest: no page overflow",
+    "768-account-guest: rendered text contrast and size",
+    "768-account-guest: control boundary contrast",
+    "768: demo login restores user only",
+    "768: account Escape and return focus",
+    "768: profile display preserves review gates",
+    "390: salary is separate and exact",
+    "390: decorative artwork loaded",
+    "390: account opens from keyboard",
+    "390: account initial focus",
+    "390: admin tools hidden for user",
+    "390-account-user: no page overflow",
+    "390-account-user: rendered text contrast and size",
+    "390-account-user: control boundary contrast",
+    "390: account forward trap",
+    "390: account reverse trap",
+    "390: admin example exposes diagnostics",
+    "390: unfinished admin panel stays unavailable",
+    "390: diagnostics explains isolated reference",
+    "390: account close stays in viewport after scroll",
+    "390-account-admin: no page overflow",
+    "390-account-admin: rendered text contrast and size",
+    "390-account-admin: control boundary contrast",
+    "390: demo logout has no admin tools",
+    "390-account-guest: no page overflow",
+    "390-account-guest: rendered text contrast and size",
+    "390-account-guest: control boundary contrast",
+    "390: demo login restores user only",
+    "390: account Escape and return focus",
+    "390: profile display preserves review gates",
+    "320: salary is separate and exact",
+    "320: decorative artwork loaded",
+    "320: account opens from keyboard",
+    "320: account initial focus",
+    "320: admin tools hidden for user",
+    "320-account-user: no page overflow",
+    "320-account-user: rendered text contrast and size",
+    "320-account-user: control boundary contrast",
+    "320: account forward trap",
+    "320: account reverse trap",
+    "320: admin example exposes diagnostics",
+    "320: unfinished admin panel stays unavailable",
+    "320: diagnostics explains isolated reference",
+    "320: account close stays in viewport after scroll",
+    "320-account-admin: no page overflow",
+    "320-account-admin: rendered text contrast and size",
+    "320-account-admin: control boundary contrast",
+    "320: demo logout has no admin tools",
+    "320-account-guest: no page overflow",
+    "320-account-guest: rendered text contrast and size",
+    "320-account-guest: control boundary contrast",
+    "320: demo login restores user only",
+    "320: account Escape and return focus",
+    "320: profile display preserves review gates",
+    "Cedar salary retains fixture and gross basis",
+    "1440-cedar-requirements: no page overflow",
+    "1440-cedar-requirements: rendered text contrast and size",
+    "1440-cedar-requirements: control boundary contrast",
+    "account replaces open evidence without stale modal state",
+    "accept differs from approval",
+    "content approval is not submission",
+    "unsupported edit fails closed",
+    "unsaved context guard preserves text",
+    "supported edit remains unapproved",
+    "opportunity switch clears inspector",
+    "confirmed conflict cannot be accepted",
+    "pin cleared and evidence scoped",
+    "conflict next action identifies confirmed conflict",
+    "scenario selection updates deep link",
+    "scenario survives reload with approval blocked",
+    "loading: inspector never falsely confirms",
+    "empty: inspector never falsely confirms",
+    "failed: inspector never falsely confirms",
+    "blocked: inspector never falsely confirms",
+    "pending: inspector never falsely confirms",
+    "stale: inspector never falsely confirms",
+    "empty filtered list",
+    "employer availability honest",
+    "320-long-RU: no page overflow",
+    "320-long-identifier: no page overflow",
+    "reduced motion respected",
+    "manifest local asset available",
+    "no POST operation",
+    "path traversal rejected",
+    "preview blocks network connections",
+    "no external preview requests",
+    "no browser errors or missing assets"
+  ],
+  "captures": [
+    {
+      "file": "1440-normal.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-loading.png",
+      "url": "/?scenario=loading&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-empty.png",
+      "url": "/?scenario=empty&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-failed.png",
+      "url": "/?scenario=failed&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-stale.png",
+      "url": "/?scenario=stale&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-blocked.png",
+      "url": "/?scenario=blocked&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-pending.png",
+      "url": "/?scenario=pending&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-approval.png",
+      "url": "/?scenario=approval&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-evidence.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-normal.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-loading.png",
+      "url": "/?scenario=loading&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-empty.png",
+      "url": "/?scenario=empty&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-failed.png",
+      "url": "/?scenario=failed&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-stale.png",
+      "url": "/?scenario=stale&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-blocked.png",
+      "url": "/?scenario=blocked&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-pending.png",
+      "url": "/?scenario=pending&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-approval.png",
+      "url": "/?scenario=approval&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "768-evidence.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "768-list.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "390-normal.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-loading.png",
+      "url": "/?scenario=loading&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-empty.png",
+      "url": "/?scenario=empty&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-failed.png",
+      "url": "/?scenario=failed&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-stale.png",
+      "url": "/?scenario=stale&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-blocked.png",
+      "url": "/?scenario=blocked&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-pending.png",
+      "url": "/?scenario=pending&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-approval.png",
+      "url": "/?scenario=approval&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-evidence.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=context#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "context",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "390-list.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=list#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "list",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-normal.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-loading.png",
+      "url": "/?scenario=loading&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-empty.png",
+      "url": "/?scenario=empty&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-failed.png",
+      "url": "/?scenario=failed&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-stale.png",
+      "url": "/?scenario=stale&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-blocked.png",
+      "url": "/?scenario=blocked&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-pending.png",
+      "url": "/?scenario=pending&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-approval.png",
+      "url": "/?scenario=approval&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-evidence.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=context#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "context",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "320-list.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=list#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "list",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-account-user.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "1440-account-admin.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "1440-account-guest.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "768-account-user.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "768-account-admin.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "768-account-guest.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "390-account-user.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "390-account-admin.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "390-account-guest.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "320-account-user.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "320-account-admin.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "320-account-guest.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "state": "work",
+      "captureMode": "viewport"
+    },
+    {
+      "file": "1440-cedar-requirements.png",
+      "url": "/?scenario=normal&opportunity=cedar&level=work#requirements",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    },
+    {
+      "file": "1440-conflict.png",
+      "url": "/?scenario=normal&opportunity=cedar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "work",
+      "captureMode": "full-page"
+    }
+  ],
+  "conditions": {
+    "browser": "Chromium 145.0.7632.6",
+    "playwright": "1.62.1",
+    "os": "darwin 25.6.0 arm64",
+    "locale": "ru-RU",
+    "timezone": "Europe/Moscow",
+    "motion": "reduced",
+    "font": "Pinned local Space Grotesk OFL; Cyrillic uses canonical system fallback",
+    "clock": "Fixed fixture dates; no relative timestamps"
+  },
+  "errors": [],
+  "externalRequests": [],
+  "contrast": [
+    {
+      "name": "1440-normal",
+      "count": 79,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-loading",
+      "count": 62,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-empty",
+      "count": 62,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-failed",
+      "count": 62,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-stale",
+      "count": 80,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-blocked",
+      "count": 80,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-pending",
+      "count": 80,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-approval",
+      "count": 81,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-evidence",
+      "count": 93,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-normal",
+      "count": 62,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-loading",
+      "count": 45,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-empty",
+      "count": 45,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-failed",
+      "count": 45,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-stale",
+      "count": 63,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-blocked",
+      "count": 63,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-pending",
+      "count": 63,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-approval",
+      "count": 64,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-evidence",
+      "count": 15,
+      "minimum": 8.71715889508997,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-normal",
+      "count": 60,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-loading",
+      "count": 43,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-empty",
+      "count": 43,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-failed",
+      "count": 43,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-stale",
+      "count": 61,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-blocked",
+      "count": 61,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-pending",
+      "count": 61,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-approval",
+      "count": 62,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-evidence",
+      "count": 39,
+      "minimum": 8.266927477601076,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-normal",
+      "count": 60,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-loading",
+      "count": 43,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-empty",
+      "count": 43,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-failed",
+      "count": 43,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-stale",
+      "count": 61,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-blocked",
+      "count": 61,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-pending",
+      "count": 61,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-approval",
+      "count": 62,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-evidence",
+      "count": 39,
+      "minimum": 8.266927477601076,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-account-user",
+      "count": 93,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-account-admin",
+      "count": 96,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-account-guest",
+      "count": 89,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-account-user",
+      "count": 76,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-account-admin",
+      "count": 79,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "768-account-guest",
+      "count": 72,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-account-user",
+      "count": 74,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-account-admin",
+      "count": 77,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "390-account-guest",
+      "count": 70,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-account-user",
+      "count": 74,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-account-admin",
+      "count": 77,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "320-account-guest",
+      "count": 70,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    },
+    {
+      "name": "1440-cedar-requirements",
+      "count": 65,
+      "minimum": 6.200935557415046,
+      "failures": [],
+      "controlFailures": []
+    }
+  ],
+  "limitations": [
+    "Human visual review pending",
+    "Real browser 200% zoom not performed",
+    "Manual screen-reader assessment not performed",
+    "No production component tests or visual regression baseline"
+  ]
+}

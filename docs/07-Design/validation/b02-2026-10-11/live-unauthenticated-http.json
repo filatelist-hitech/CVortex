@@ -1,0 +1,25 @@
+{
+  "scope": "Live Nginx/Next/Laravel read-only HTTP smoke; no authenticated session or persisted data",
+  "results": [
+    {
+      "path": "/",
+      "unauthenticatedHttpStatus": 200
+    },
+    {
+      "path": "/register",
+      "unauthenticatedHttpStatus": 200
+    },
+    {
+      "path": "/diagnostics",
+      "unauthenticatedHttpStatus": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "unauthenticatedHttpStatus": 401
+    },
+    {
+      "path": "/api/v1/diagnostics/incidents",
+      "unauthenticatedHttpStatus": 401
+    }
+  ]
+}

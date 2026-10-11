@@ -3,7 +3,7 @@ title: Vision
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags:
   - product
   - vision
@@ -67,7 +67,7 @@ Outcome + analytics
 - **Name:** CVortex
 - **Primary tagline:** *Your career, in context.*
 - **Design direction:** dark-first, deep navy/black base with cyan/blue/violet accents and Space Grotesk typography.
-- **Visual source of truth:** Figma.
+- **Design source of truth:** Git-reviewed Markdown design documentation for behavior/IA, versioned Git-held DTCG tokens for machine values, and reviewed executable references for visual states, under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) and [Design Handoff](../07-Design/Design-Handoff.md). Figma is optional auxiliary tooling derived from this Git baseline, with no required canvas-parity or approval gate.
 
 ## What success looks like
 

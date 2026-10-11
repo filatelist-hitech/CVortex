@@ -1,0 +1,78 @@
+{
+  "status": "PASS",
+  "capturedAt": "2026-10-11T15:20:05.859Z",
+  "browser": "145.0.7632.6",
+  "platform": "darwin arm64",
+  "conditions": {
+    "dpr": 1,
+    "zoom": "100%",
+    "locale": "ru-RU",
+    "timezone": "Europe/Moscow",
+    "motion": "reduce"
+  },
+  "thresholds": {
+    "channel": 16,
+    "coreRatio": 0.005,
+    "fullRatio": 0.02,
+    "geometry": 1
+  },
+  "visualCases": 97,
+  "scrollPairs": 142,
+  "rawComparisonPngs": 717,
+  "committedRepresentativePngs": 6,
+  "fullCaptureStorage": "local-only; not included in PR",
+  "maxComparableCoreDiffPercent": 0.2422,
+  "maxComparableFullDiffPercent": 0.1699,
+  "geometryDifferences": 0,
+  "computedStyleDifferences": 0,
+  "masks": 0,
+  "browserErrors": 0,
+  "externalRequests": 0,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "cases": 24,
+      "scrollPairs": 23,
+      "maxCoreDiffPercent": 0.0186,
+      "maxFullDiffPercent": 0.0416,
+      "intentionalAccountCases": 1
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "cases": 25,
+      "scrollPairs": 20,
+      "maxCoreDiffPercent": 0.0061,
+      "maxFullDiffPercent": 0.0125,
+      "intentionalAccountCases": 1
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "cases": 24,
+      "scrollPairs": 36,
+      "maxCoreDiffPercent": 0.133,
+      "maxFullDiffPercent": 0.1057,
+      "intentionalAccountCases": 1
+    },
+    {
+      "width": 320,
+      "height": 640,
+      "cases": 24,
+      "scrollPairs": 63,
+      "maxCoreDiffPercent": 0.2422,
+      "maxFullDiffPercent": 0.1699,
+      "intentionalAccountCases": 1
+    }
+  ],
+  "representativeEvidence": [
+    "1440-normal-canonical.png",
+    "1440-normal-production.png",
+    "1440-normal-difference.png",
+    "390-normal-canonical.png",
+    "390-normal-production.png",
+    "390-normal-difference.png"
+  ],
+  "scope": "Synthetic fixtures only; account content exception is separately measured; no live authenticated Laravel, human screen reader, or native 200% zoom validation."
+}

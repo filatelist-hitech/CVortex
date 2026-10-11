@@ -15,6 +15,8 @@ related:
 
 # Аудит текущего состояния CVortex
 
+> **Design-only amendment — 2026-10-08.** Owner selected Concept B / Application Workspace. [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) supersedes ADR-0013 and amends ADR-0014’s Figma role: the current workflow is [Git Design Handoff](../07-Design/Design-Handoff.md), with optional Figma. Figma-parity/human-canvas requirements in the dated audit below are historical, no longer current gates. No runtime readiness, authenticated product E2E, production redesign, Preview acceptance or M2 completion was re-audited here. Current design limitations are the normalized reference, human state/pixel review and production accessibility/visual regression still to be executed.
+
 ## Границы и правило доказательств
 
 Аудит опирается на checkout `a599330bbaec5ff957bd6d6600136b97c2a83655`. На момент проверки 2026-10-03 этот SHA совпадал с `origin/stage`. Проверены исходный код, миграции, тесты, task specs, ADR, продуктовая и операционная документация, GitHub PR/CI и доступные локальные health checks.

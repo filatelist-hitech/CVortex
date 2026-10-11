@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-11",
+  "reusedTechnicalBaseline": "docs/07-Design/reference/validation/closure-2026-10-10-v1/closure-results.json",
+  "browserSourceHashes": {
+    "index.html": true,
+    "app.js": true,
+    "motion.js": true,
+    "style.css": true,
+    "tokens.css": true,
+    "build-reference.cjs": true,
+    "preview-server.cjs": true,
+    "validate-browser.cjs": true,
+    "assets/career-vortex-v1.png": true,
+    "assets/sources.json": true,
+    "assets/lucide-LICENSE.txt": true,
+    "assets/SpaceGrotesk.woff2": true,
+    "assets/OFL.txt": true,
+    "assets/font-source.json": true
+  },
+  "historicalReportHashes": {
+    "browser-results.json": true,
+    "candidate-results.json": true,
+    "apple-results.json": true,
+    "typography/after/results.json": true,
+    "integrity-results.json": true
+  },
+  "canonicalTokenMatchesClosure": true,
+  "sessionProtectedFiles": 19305,
+  "sessionProtectedChanges": [],
+  "browserChecks": 1246,
+  "captures": 99,
+  "integrityAssertions": 2568,
+  "historicalSnapshotsRewritten": false
+}

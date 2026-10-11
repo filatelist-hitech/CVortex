@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "scope": "Live unauthenticated HTTP only; no response bodies, login or data writes",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/career",
+      "status": 200
+    },
+    {
+      "path": "/register",
+      "status": 200
+    },
+    {
+      "path": "/diagnostics",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "status": 401
+    }
+  ]
+}

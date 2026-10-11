@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="CVortex: макет подготовки отклика B01 на вымышленных данных">
+  <title>Орбита решения · Кандидат B01 · CVortex</title>
+  <link rel="stylesheet" href="./tokens.css">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./motion.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body data-level="list">
+  <svg class="icon-sprite" aria-hidden="true" focusable="false"><symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" /></symbol><symbol id="icon-briefcase" viewBox="0 0 24 24"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+  <rect width="20" height="14" x="2" y="6" rx="2" /></symbol><symbol id="icon-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+  <circle cx="12" cy="7" r="4" /></symbol><symbol id="icon-building" viewBox="0 0 24 24"><path d="M12 10h.01" />
+  <path d="M12 14h.01" />
+  <path d="M12 6h.01" />
+  <path d="M16 10h.01" />
+  <path d="M16 14h.01" />
+  <path d="M16 6h.01" />
+  <path d="M8 10h.01" />
+  <path d="M8 14h.01" />
+  <path d="M8 6h.01" />
+  <path d="M9 22v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+  <rect x="4" y="2" width="16" height="20" rx="2" /></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+  <circle cx="12" cy="12" r="3" /></symbol><symbol id="icon-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+  <path d="m9 12 2 2 4-4" /></symbol><symbol id="icon-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5" />
+  <path d="M21 12H9" />
+  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></symbol><symbol id="icon-log-in" viewBox="0 0 24 24"><path d="m10 17 5-5-5-5" />
+  <path d="M15 12H3" />
+  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></symbol><symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol><symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
+  <path d="M20 2v4" />
+  <path d="M22 4h-4" />
+  <circle cx="4" cy="20" r="2" /></symbol><symbol id="icon-banknote" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2" />
+  <circle cx="12" cy="12" r="2" />
+  <path d="M6 12h.01M18 12h.01" /></symbol><symbol id="icon-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+  <circle cx="12" cy="10" r="3" /></symbol><symbol id="icon-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></symbol></svg>
+  <a class="skip-link" href="#workspace-title">Перейти к подготовке отклика</a>
+  <header class="site-header">
+    <div class="brand"><span class="brand-accent" aria-hidden="true"></span><strong>CVortex</strong><span class="type-caption">Your career, in context.</span></div>
+    <div class="reference-meta"><strong class="type-secondary">Орбита решения</strong><span class="type-caption">Кандидат B01, <b>демо-данные. Ждёт проверки владельцем.</b></span></div>
+    <label class="scenario-picker type-caption">Состояние макета <select id="scenario-select" aria-label="Состояние макета">
+      <option value="normal">Обычное</option><option value="loading">Загрузка</option><option value="empty">Нет анализа</option>
+      <option value="failed">Ошибка анализа</option><option value="stale">Данные устарели</option><option value="blocked">Нет подтверждений</option>
+      <option value="pending">Факт не подтверждён</option><option value="approval">Правка принята, текст не одобрен</option>
+    </select></label>
+    <button id="account-trigger" class="account-trigger" type="button" aria-haspopup="dialog" aria-controls="account-dialog" aria-expanded="false"><span class="account-avatar" aria-hidden="true">Д</span><span><strong class="type-label">Профиль</strong><small id="account-role-label">Демо · пользователь</small></span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-chevron-down"/></svg></button>
+  </header>
+  <div class="compact-navigation">
+  <details class="global-menu" open><summary class="type-nav">Меню: вакансии</summary>
+  <nav class="global-nav" aria-label="Основное меню">
+    <span class="type-nav" title="Этот раздел показан только в макете"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-sun"/></svg>Сегодня <small>Недоступно</small></span>
+    <strong class="type-nav" aria-current="page"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-briefcase"/></svg>Вакансии</strong>
+    <span class="type-nav" title="Этот раздел показан только в макете"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-user"/></svg>Карьера <small>Недоступно</small></span>
+    <span class="type-nav" title="В приложении ещё нет подтверждённой связи с работодателем"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-building"/></svg>Работодатели <small>Недоступно</small></span>
+    <span class="type-nav" title="Этот раздел показан только в макете"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-settings"/></svg>Настройки <small>Недоступно</small></span>
+  </nav></details>
+  <div class="tablet-bar"><button id="open-list" type="button" aria-controls="opportunity-list" aria-expanded="false">Выбрать вакансию</button></div>
+  <div class="mobile-bar" aria-label="Раздел макета">
+    <button id="back-level" type="button" hidden>← Назад</button>
+    <strong class="type-nav" id="level-title">Вакансии</strong>
+    <span>Локальный макет</span>
+  </div>
+  </div>
+  <div class="layout">
+    <aside class="opportunity-list" id="opportunity-list" aria-labelledby="list-title">
+      <div class="pane-heading"><button id="close-list" type="button">Закрыть список</button><p class="type-section" id="list-title" tabindex="-1">Вакансии</p><span class="badge neutral">2 примера</span></div>
+      <label class="field">Найти вакансию <input id="opportunity-filter" type="search" autocomplete="off" placeholder="Должность или компания"></label>
+      <div class="opportunity-items" id="opportunity-items">
+        <button class="opportunity-item" type="button" data-opportunity="northstar"><strong class="company-row type-secondary"><span class="company-mark" aria-hidden="true">N</span>Northstar Labs</strong><span class="list-salary type-secondary">240–290 тыс. <span class="salary-currency">₽</span> / месяц</span><span class="list-role type-card">Старший инженер по тестированию</span><small>Проверить правку</small></button>
+        <button class="opportunity-item" type="button" data-opportunity="cedar"><strong class="company-row type-secondary"><span class="company-mark" aria-hidden="true">C</span>Cedar Systems</strong><span class="list-salary type-secondary">250–300 тыс. <span class="salary-currency">₽</span> / месяц</span><span class="list-role type-card">Старший тестировщик</span><small>Устранить противоречие</small></button>
+      </div>
+      <p id="list-no-results" class="subtle" hidden role="status" aria-live="polite">Ничего не найдено. Попробуйте другой запрос или очистите поиск.</p>
+      <p class="list-note type-caption">Вымышленные вакансии. Выбор сохраняется, пока макет открыт.</p>
+    </aside>
+    <main class="workspace" id="workspace">
+      <div class="eyebrow-row type-caption"><span>Вакансии / <span id="crumb-company">Northstar Labs</span></span><span class="badge neutral" id="domain-status">Отклик не отправлен</span></div>
+      <div class="vacancy-summary">
+        <div class="vacancy-copy"><div class="workspace-heading"><div class="identity" aria-hidden="true" id="identity-initial">N</div><p class="type-secondary" id="company-name">Northstar Labs</p></div><h1 class="type-page" id="workspace-title" tabindex="-1">Старший инженер по тестированию</h1>
+          <p class="metadata type-secondary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-map-pin"/></svg><span id="vacancy-metadata">Удалённо · UTC+3</span></p>
+          <span class="vacancy-context type-caption">Подготовка резюме</span>
+        </div>
+        <div class="vacancy-finance"><img class="career-art" src="./assets/career-vortex-v1.png" alt="" aria-hidden="true" width="240" height="160"><div class="salary-card"><span class="salary-label type-caption">Зарплата</span><div class="salary-value" id="vacancy-salary"><span class="type-number">240–290</span> <span class="salary-unit type-secondary">тыс. <span class="salary-currency">₽</span></span></div><span class="salary-basis type-support">В месяц, до налогов</span></div></div>
+      </div>
+      <div class="notice" id="next-action"><p class="next-action-title type-subsection" id="next-action-title">Проверьте предложенную правку</p><p class="type-secondary" id="next-action-copy">Сравните исходный и предложенный текст, затем проверьте факты.</p></div>
+      <nav class="section-nav" aria-label="Подготовка к выбранной вакансии">
+        <a class="type-nav" href="#overview" data-section="overview">Обзор</a>
+        <a class="type-nav" href="#requirements" data-section="requirements">Требования и мой опыт</a>
+        <a class="type-nav" href="#materials" data-section="materials">Материалы</a>
+        <a class="type-nav" href="#employer" data-section="employer">Работодатель</a>
+        <a class="type-nav" href="#history" data-section="history">История</a>
+      </nav>
+      <label class="mobile-section field">Раздел подготовки <select id="section-select">
+        <option value="overview">Обзор</option><option value="requirements">Требования и мой опыт</option>
+        <option value="materials">Материалы</option><option value="employer">Работодатель</option><option value="history">История</option>
+      </select></label>
+      <section class="content-section" id="overview" aria-labelledby="overview-title" hidden>
+        <h2 class="type-section" id="overview-title">Обзор вакансии</h2>
+        <div class="analysis-summary"><article><span class="badge neutral">Подтверждения</span><h3 class="type-card">API и PostgreSQL</h3><p class="type-body" id="summary-evidence">Актуальность подтверждений нужно проверить.</p><button type="button" data-open-evidence>Посмотреть подтверждения</button></article><article><span class="badge warning">Неизвестно</span><h3 class="type-card">Playwright</h3><p>Опыт в рабочих проектах не подтверждён. Соответствие этому требованию оценить нельзя.</p></article></div>
+        <div class="content-card"><h3 class="type-card">Перед использованием текста</h3><p>Проверьте факты и формулировку. Примите подходящую правку, затем отдельно одобрите точный текст. Это не отправляет отклик. История общения с работодателем в макете недоступна.</p><a class="type-secondary action-link" href="#materials" data-section="materials">Перейти к правке резюме</a></div>
+      </section>
+      <section class="content-section" id="requirements" aria-labelledby="requirements-title" hidden>
+        <h2 class="type-section" id="requirements-title">Требования и мой опыт</h2><div class="content-card">
+          <article class="requirement-line"><span class="requirement-marker" aria-hidden="true"></span><div><h3 class="type-card">Регрессионные тесты API на Python и pytest</h3><p class="type-body" id="requirement-support">Актуальность подтверждений нужно проверить.</p></div></article>
+          <article class="requirement-line unknown"><span class="requirement-marker" aria-hidden="true"></span><div><h3 class="type-card">Playwright в рабочих проектах</h3><p><span class="badge warning">Неизвестно</span> Опыт в рабочих проектах не подтверждён. Соответствие этому требованию оценить нельзя.</p></div></article>
+          <button type="button" data-open-evidence>Посмотреть источник и факты</button><details><summary class="type-label">Текст вакансии (вымышленный источник)</summary><p>В вымышленной вакансии нужны API, PostgreSQL и автоматизация браузерных тестов. Требования работодателя сами по себе не подтверждают ваш опыт.</p></details></div>
+      </section>
+      <section class="content-section" id="materials" aria-labelledby="materials-title">
+        <div class="section-heading"><h2 class="type-section" id="materials-title">Правка резюме</h2><span class="badge recommended"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-sparkles"/></svg>Предложение ИИ</span></div>
+        <div id="scenario-panel" class="state-panel" hidden role="status" aria-live="polite"><h3 class="type-subsection" id="scenario-heading"></h3><p class="type-secondary" id="scenario-description"></p><p class="type-secondary" id="scenario-recovery"></p></div>
+        <article class="review-card" id="review-card" aria-labelledby="recommendation-title">
+          <div class="review-head"><span class="badge recommended">Предложение R-07</span><span class="badge warning" id="review-state" tabindex="-1">Текст не одобрен</span></div>
+          <h3 class="type-card" id="recommendation-title">Уточнить опыт тестирования API</h3><p class="subtle">Пример резюме. Создание и экспорт файла здесь недоступны.</p>
+          <div class="review-body">
+          <div class="diff"><div><h4 class="type-label">Сейчас</h4><p class="type-body">Тестировал серверные сервисы.</p></div><div><h4 class="type-label">Предлагаемая правка</h4><p class="type-body" id="proposal-copy">Писал регрессионные тесты API на Python и pytest; проверял границы транзакций PostgreSQL.</p></div></div>
+          <aside class="reason-grid" aria-label="Обоснование и риски правки"><div><h4 class="type-label">Почему эта правка</h4><p class="type-secondary">Правка связывает подтверждённый опыт тестирования API и баз данных с требованиями вакансии.</p></div><div><h4 class="type-label">Подтверждения</h4><p class="type-secondary"><span id="review-evidence">Факты F-12 и F-18 подтверждают утверждение CL-08 в этом примере.</span></p><button type="button" data-open-evidence>Факты и источник</button></div><div><h4 class="type-label">Что нельзя добавлять</h4><p class="type-secondary">Опыт руководства и работы с Playwright в реальных проектах не подтверждён. Не добавляйте его в текст.</p></div></aside>
+          <div id="edit-box" class="edit-box" hidden><label class="field">Изменить предложенный текст <textarea id="proposal-edit" rows="3"></textarea></label><p class="type-support">Макет проверяет только две заранее подготовленные формулировки с подтверждениями.</p><button id="save-edit" type="button">Сохранить и проверить</button><button id="cancel-edit" type="button">Отменить правку</button></div>
+          <div class="actions"><button class="primary" id="accept" type="button">Принять правку</button><button id="edit" type="button">Изменить</button><button id="reject" type="button">Отклонить</button></div>
+
+          </div>
+          <div class="approval"><div><h4 class="type-subsection">Одобрение текста</h4><p class="type-support" id="approval-copy">После принятия правки текст нужно одобрить отдельно. Отклик при этом не отправляется.</p></div><button id="approve" type="button" disabled>Одобрить этот текст</button></div>
+          <p class="action-status type-secondary" id="action-status" role="status" aria-live="polite"></p>
+        </article>
+      </section>
+      <section class="content-section" id="employer" aria-labelledby="employer-title" hidden><h2 class="type-section" id="employer-title">Работодатель</h2><div class="content-card"><h3 class="type-card">История общения пока недоступна</h3><p>Чтобы открыть историю общения, подтвердите связь вакансии с работодателем в своём профиле. Название компании эту связь не подтверждает. Макет не создаёт историю общения.</p><button type="button" disabled>История общения недоступна</button></div></section>
+      <section class="content-section" id="history" aria-labelledby="history-title" hidden><h2 class="type-section" id="history-title">История</h2><div class="content-card"><h3 class="type-card">События этого примера</h3><p>Источник, предложение и решение о правке вымышлены. Переписка с работодателем и отправка отклика здесь не сохраняются.</p></div></section>
+    </main>
+    <aside class="inspector" id="inspector" aria-labelledby="inspector-title" hidden>
+      <div class="inspector-top"><h2 class="type-section" id="inspector-title" tabindex="-1">На чём основан текст</h2><button id="close-inspector" type="button">Закрыть</button></div>
+      <p class="subtle" id="inspector-scope">Northstar Labs · предложение R-07</p>
+      <p><span class="badge success" id="inspector-status">Подтверждения есть · вымышленный пример</span></p>
+      <h3 class="type-subsection" id="evidence-title">От текста к источнику</h3><ol id="evidence-trace"><li>Предложенный текст / версия примера R-07</li><li>Утверждение CL-08 · проверено для этой формулировки</li><li>F-12 · подтверждённый вымышленный факт о тестах API</li><li>F-18 · подтверждённый вымышленный факт о PostgreSQL</li><li>Вымышленные заметки об опыте · в примере указаны даты подтверждения</li></ol>
+      <p class="subtle">Все выдержки вымышлены и хранятся в макете. Дата проверки сама по себе не подтверждает опыт.</p>
+      <button id="pin-inspector" type="button" aria-pressed="false">Закрепить</button>
+      <p class="inspector-note type-support">Закрепите панель, чтобы оставить её открытой в других разделах. Выбор другой вакансии снимает закрепление.</p>
+    </aside>
+  </div>
+  <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title" aria-describedby="account-description">
+    <div class="account-heading"><div><p class="type-caption">Демо-профиль</p><h2 class="type-section" id="account-title">Профиль и доступ</h2></div><button id="close-account" type="button">Закрыть</button></div>
+    <div class="demo-profile"><span class="account-avatar" aria-hidden="true">Д</span><div><strong class="type-label" id="demo-profile-name">Демо-пользователь</strong><p class="type-support" id="demo-profile-detail">Вымышленный профиль · данные не загружаются</p></div></div>
+    <p id="account-description" class="subtle">Режимы ниже меняют только пример в макете. Реальный вход, выход и права в приложении не меняются.</p>
+    <div class="account-actions"><button id="profile-action" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-user"/></svg>Мой профиль<span class="type-caption">Пока недоступен в макете</span></button><button id="settings-action" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-settings"/></svg>Настройки<span class="type-caption">Пока недоступны в макете</span></button></div>
+    <div id="admin-utilities" class="admin-utilities" hidden><h3 class="type-subsection"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-shield-check"/></svg>Для администратора</h3><button id="diagnostics-action" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-activity"/></svg>Диагностика<span class="type-caption">В приложении доступна администратору</span></button><button id="admin-action" type="button" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-shield-check"/></svg>Пользователи и приглашения<span class="type-caption">Готовой панели в приложении пока нет</span></button></div>
+    <p id="account-feedback" class="account-feedback type-secondary" role="status" aria-live="polite">Выберите пункт меню или посмотрите другой режим доступа.</p>
+    <div class="session-actions"><button id="demo-login" class="primary" type="button" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-log-in"/></svg>Войти в демо-профиль</button><button id="demo-logout" type="button"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-log-out"/></svg>Выйти из демо-профиля</button></div>
+    <label class="field demo-mode">Режим макета<select id="demo-session"><option value="user">Пользователь</option><option value="admin">Администратор</option><option value="guest">Без входа</option></select></label>
+  </dialog>
+  <footer class="reference-footer type-caption"><span id="live-status" role="status" aria-live="polite">Макет B01 на вымышленных данных. Запросы к API и ИИ не отправляются; действий с работодателем нет.</span><span>Токены SHA-256: <code id="token-revision"></code></span><span>Исходные файлы и статус проверки: <a href="./manifest.json">manifest.json</a></span></footer>
+</body>
+</html>

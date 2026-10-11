@@ -3,7 +3,7 @@ title: Phase 06 Product Design
 status: accepted
 owner: project
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 tags: [product, prd, requirements, mvp, phase-06]
 related: ["[[Vision]]", "[[Scope]]", "[[Glossary]]", "[[Roadmap]]", "[[../02-Architecture/Phase-06-System-Design|System Design]]"]
 ---
@@ -61,6 +61,12 @@ The flow deliberately routes imported career material and recruiter conversation
 **Post-MVP direction:** additional approved source adapters, richer analytics, browser/mobile clients, deeper research automation and measured semantic-search improvements.
 
 **Explicitly out of scope:** automatic submissions or employer messages, fabricated/AI-detector-evasion content, native mobile, Kubernetes, microservices, Kafka, standalone vector DB, GraphQL, fine-tuning and event sourcing.
+
+## Presentation reconciliation — Concept B, 2026-10-08
+
+The product requirements and dependency flow above remain valid. [Application Workspace](../07-Design/Application-Workspace.md) is the canonical target presentation: Today / Opportunities / Career / Employers / Settings, with requirements/match/materials/employer/history inside the selected opportunity. Users can inspect Career evidence and return without losing draft context; the dependency flow does not mandate a wizard or separate page for every domain concept.
+
+Opportunity is a UI projection, not a replacement for Vacancy/Application or a new schema. Current preparation is labelled honestly; actual application tracking, Employer Memory, conversations, interviews and files require their separately authorized product contracts. [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) resolves design authority; no FR/NFR/Truth Guard/approval or implementation milestone is weakened.
 
 ## Implementation roadmap
 

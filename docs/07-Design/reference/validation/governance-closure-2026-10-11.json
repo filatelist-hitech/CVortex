@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-11",
+  "status": "PASS",
+  "scope": "B01 governance integrity; not rerun browser suites or manual tests",
+  "b01": "ACCEPTED",
+  "sourceHashesVerified": 14,
+  "suiteReportsVerified": 4,
+  "integrityReportVerified": true,
+  "historicalFilesUnchanged": 335,
+  "historicalChecks": 1246,
+  "historicalCaptures": 99,
+  "historicalIntegrityAssertions": 2568,
+  "manual": "NOT TESTED; release gate OPEN",
+  "canonicalTokensUnchanged": true,
+  "generatedManifestRefresh": "governance source hashes only; rendered source/assets/tokens.css unchanged"
+}

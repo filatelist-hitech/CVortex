@@ -111,3 +111,11 @@ Do not:
 - publish before validation;
 - claim `v1.0.0` because the roadmap reached M6;
 - use version labels as a substitute for the canonical roadmap mapping.
+
+## B01 manual/accessibility prerequisite — ADR-0025
+
+Before any production release, verify that
+`.agents/tasks/b01-manual-accessibility-release-gate.md` is completed with linked
+human evidence for its full reference and applicable shipped-component scope.
+OPEN, FAIL or NOT TESTED means release BLOCKED. B01 visual/product acceptance,
+B02 completion and automatic checks do not close this prerequisite.

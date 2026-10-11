@@ -1,0 +1,56 @@
+{
+  "status": "PASS",
+  "stageA": "TECHNICAL PASS",
+  "stageB": "BLOCKED",
+  "stageBBlocker": "Full resume updated 2026-10-10 not attached; only task briefs supplied",
+  "checkedAt": "2026-10-10T17:33:43.505409+00:00",
+  "head": "89f30e3740cdd8ba72804e0a284438cb30491709",
+  "suites": {
+    "browser-results.json": {
+      "status": "PASS",
+      "checks": 379,
+      "captures": 53,
+      "checkedAt": "2026-10-10T17:31:30.013Z"
+    },
+    "candidate-results.json": {
+      "status": "PASS",
+      "checks": 70,
+      "captures": 22,
+      "checkedAt": "2026-10-10T17:31:53.234Z"
+    },
+    "apple-results.json": {
+      "status": "PASS",
+      "checks": 83,
+      "captures": 10,
+      "checkedAt": "2026-10-10T17:30:54.549Z"
+    },
+    "typography/after/results.json": {
+      "status": "PASS",
+      "checks": 714,
+      "captures": 14,
+      "checkedAt": "2026-10-10T17:30:23.751Z"
+    }
+  },
+  "checks": 1246,
+  "captures": 99,
+  "humanApproval": false,
+  "sourceHashes": {
+    "index.html": "a0563699ba97bb4caa1be6fa7571e64fd83cc387f654e4d4ac126472e01898cd",
+    "app.js": "a3ac57b1bc3ffc2fda49a3414118d0027eb3169f14c2060d3875e5b8704a4c7e",
+    "motion.js": "d90b55e80323f16ec504f1f848e403b580c53c3e4919cd9fc6b6b1819b956ba8",
+    "style.css": "09c73542a01a52faeab4dbd5c3c3ff00a71027bb87c494537eaf04d3d84c7460",
+    "tokens.css": "6c06383dc558f91770b3cc593f9f6780449c91d330eb879f00237947cefc9bc4"
+  },
+  "protectedFiles": 639,
+  "limitations": [
+    "Full resume missing; no real matching or personal preview",
+    "Named human review, native 200% zoom and manual screen reader pending",
+    "Only existing RUB range and missing salary fixtures; single amount and other currency not represented",
+    "Custom contrast checks are not WCAG certification",
+    "Production tests outside scope"
+  ],
+  "visualReview": {
+    "scope": "Six fresh AFTER desktop/mobile overview, materials, rejected inspected full size; six BEFORE/AFTER pairs compared",
+    "humanApproval": false
+  }
+}

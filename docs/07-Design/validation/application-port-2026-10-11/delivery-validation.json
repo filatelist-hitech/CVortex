@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-11",
+  "capturedAt": "2026-10-11T15:23:56Z",
+  "scope": "Fresh local verification for the consolidated B01 design and React implementation; no production deployment or live authenticated Laravel session",
+  "frontend": {
+    "typecheck": { "status": "PASS", "command": "docker compose exec -T frontend npm run typecheck" },
+    "eslint": { "status": "PASS", "command": "docker compose exec -T frontend npm run lint", "warnings": 0 },
+    "vitest": { "status": "PASS", "command": "docker compose exec -T frontend npm test", "tests": 108, "files": 9 },
+    "productionBuild": { "status": "PASS", "method": "NODE_ENV=production npm run build in an isolated copy inside the frontend container", "routes": ["/", "/career", "/diagnostics", "/register"] }
+  },
+  "browser": {
+    "workspace": { "status": "PASS", "checks": 117, "fixtures": "ephemeral synthetic API" },
+    "career": { "status": "PASS", "checks": 41, "fixtures": "ephemeral synthetic API" },
+    "motion": { "status": "PASS", "checks": 50, "fixtures": "synthetic canonical and React views" },
+    "visualParity": { "status": "PASS", "summary": "comparison-summary.json" }
+  },
+  "canonicalReference": {
+    "derivation": { "status": "PASS", "checks": 260, "canonicalRules": 252 },
+    "buildReferenceWriteThenCheck": "PASS",
+    "nodeTests": { "status": "PASS", "passed": 2, "failed": 0 },
+    "tokenSha256": "72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7"
+  },
+  "httpSmoke": { "status": "PASS", "routes200": ["/", "/career", "/diagnostics", "/register"], "unauthenticatedMe": 401 },
+  "nodeSyntax": "PASS",
+  "gitDiffCheck": "PASS",
+  "documentationRelativeLinks": "PASS",
+  "scopePrivacyAudit": { "status": "PASS", "textFilesScanned": 157, "emailMatches": "synthetic *.example.test fixtures only", "credentialLikeTokens": 0, "privateKeys": 0, "absoluteUserPaths": 0, "excluded": ["docs/07-Design/candidates/b01-personal-preview/", "ignored .local/ and environment files"] },
+  "notTested": ["manual screen-reader verification", "full native 200% zoom assessment", "real authenticated Laravel E2E", "production release accessibility gate"],
+  "externalCI": "Not yet available at time of local validation; PR checks are reported separately"
+}

@@ -1,0 +1,260 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-10-10T13:21:25.117Z",
+  "checks": [
+    "1440: local Space Grotesk loaded",
+    "1440: distinct content approval",
+    "desktop: global nav is a vertical rail",
+    "desktop: action belongs to comparison column",
+    "desktop: primary action follows proposed text",
+    "1440-overview: section visible and same opportunity",
+    "1440-overview: no horizontal overflow",
+    "1440-requirements: section visible and same opportunity",
+    "1440-requirements: no horizontal overflow",
+    "1440-materials: section visible and same opportunity",
+    "1440-materials: no horizontal overflow",
+    "1440-employer: section visible and same opportunity",
+    "1440-employer: no horizontal overflow",
+    "1440-history: section visible and same opportunity",
+    "1440-history: no horizontal overflow",
+    "1440: reduced motion disables actual dialog animation",
+    "1440: reduced motion disables actual button transition",
+    "768: local Space Grotesk loaded",
+    "768: distinct content approval",
+    "768-overview: section visible and same opportunity",
+    "768-overview: no horizontal overflow",
+    "768-requirements: section visible and same opportunity",
+    "768-requirements: no horizontal overflow",
+    "768-materials: section visible and same opportunity",
+    "768-materials: no horizontal overflow",
+    "768-employer: section visible and same opportunity",
+    "768-employer: no horizontal overflow",
+    "768-history: section visible and same opportunity",
+    "768-history: no horizontal overflow",
+    "768: reduced motion disables actual dialog animation",
+    "768: reduced motion disables actual button transition",
+    "390: local Space Grotesk loaded",
+    "390: distinct content approval",
+    "390-overview: section visible and same opportunity",
+    "390-overview: no horizontal overflow",
+    "390-requirements: section visible and same opportunity",
+    "390-requirements: no horizontal overflow",
+    "390-materials: section visible and same opportunity",
+    "390-materials: no horizontal overflow",
+    "390-employer: section visible and same opportunity",
+    "390-employer: no horizontal overflow",
+    "390-history: section visible and same opportunity",
+    "390-history: no horizontal overflow",
+    "390: global menu keyboard opens",
+    "390: menu summary focus visible",
+    "390: reduced motion disables actual dialog animation",
+    "390: reduced motion disables actual button transition",
+    "320: local Space Grotesk loaded",
+    "320: distinct content approval",
+    "320-overview: section visible and same opportunity",
+    "320-overview: no horizontal overflow",
+    "320-requirements: section visible and same opportunity",
+    "320-requirements: no horizontal overflow",
+    "320-materials: section visible and same opportunity",
+    "320-materials: no horizontal overflow",
+    "320-employer: section visible and same opportunity",
+    "320-employer: no horizontal overflow",
+    "320-history: section visible and same opportunity",
+    "320-history: no horizontal overflow",
+    "320: global menu keyboard opens",
+    "320: menu summary focus visible",
+    "320: reduced motion disables actual dialog animation",
+    "320: reduced motion disables actual button transition",
+    "missing salary: honest label and no invented period",
+    "missing salary survives local state navigation",
+    "pending overview never claims current confirmed support",
+    "720-reflow: no horizontal overflow",
+    "normal motion: dialog uses bounded duration",
+    "candidate: zero browser errors",
+    "candidate: zero external requests"
+  ],
+  "captures": [
+    {
+      "file": "1440-section-overview.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#overview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "1440-section-requirements.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#requirements",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "1440-section-materials.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "1440-section-employer.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#employer",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "1440-section-history.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#history",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "file": "768-section-overview.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#overview",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "file": "768-section-requirements.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#requirements",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "file": "768-section-materials.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "file": "768-section-employer.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#employer",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "file": "768-section-history.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#history",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "file": "390-section-overview.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#overview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "390-section-requirements.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#requirements",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "390-section-materials.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "390-section-employer.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#employer",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "390-section-history.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#history",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "320-section-overview.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#overview",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      }
+    },
+    {
+      "file": "320-section-requirements.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#requirements",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      }
+    },
+    {
+      "file": "320-section-materials.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      }
+    },
+    {
+      "file": "320-section-employer.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#employer",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      }
+    },
+    {
+      "file": "320-section-history.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#history",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      }
+    },
+    {
+      "file": "390-salary-missing.png",
+      "url": "/?scenario=pending&opportunity=northstar&level=work&salary=missing#overview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "720-reflow.png",
+      "url": "/?scenario=normal&opportunity=northstar&level=work#materials",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      }
+    }
+  ],
+  "errors": [],
+  "external": [],
+  "limitations": [
+    "Native browser 200% zoom not performed",
+    "Manual screen reader and named human review pending"
+  ]
+}

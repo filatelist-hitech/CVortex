@@ -1,0 +1,235 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-10-11T09:57:02.578Z",
+  "scope": "Ephemeral synthetic API fixtures; no persisted Career Facts, live AI, credentials or backend mutations",
+  "checks": [
+    "1440: native modal opens",
+    "1440: profile Escape closes",
+    "1440: profile focus returns",
+    "1440: profile close returns focus",
+    "768: native modal opens",
+    "768: profile Escape closes",
+    "768: profile focus returns",
+    "768: profile close returns focus",
+    "390: native modal opens",
+    "390: profile Escape closes",
+    "390: profile focus returns",
+    "390: profile close returns focus",
+    "320: native modal opens",
+    "320: profile Escape closes",
+    "320: profile focus returns",
+    "320: profile close returns focus",
+    "required manual fields prevent requests",
+    "manual remains POST",
+    "manual payload unchanged",
+    "manual result rendered as confirmed",
+    "extraction remains POST with source_text",
+    "extraction creates pending candidates",
+    "untrusted evidence inert",
+    "confirm: review remains PATCH",
+    "confirm: review payload unchanged",
+    "confirm result rendered",
+    "edit: review remains PATCH",
+    "edit: review payload unchanged",
+    "edited assertion preserved",
+    "edit-confirm result rendered",
+    "reject: review remains PATCH",
+    "reject: review payload unchanged",
+    "reject removed pending card",
+    "extraction remains POST with source_text",
+    "safe error hides backend message",
+    "manual remains available after error",
+    "failed logout remains POST",
+    "logout failure retains authenticated session",
+    "logout retry remains available",
+    "admin profile link reaches guarded Diagnostics",
+    "no page exceptions"
+  ],
+  "requests": [
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career/facts/manual",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career/extractions",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career/facts/confirm/review",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career/facts/edit/review",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career/facts/reject/review",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career/extractions",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/auth/logout",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    }
+  ],
+  "errors": [],
+  "captures": [
+    "1440-profile.png",
+    "768-profile.png",
+    "390-profile.png",
+    "320-profile.png",
+    "390-pending.png",
+    "390-confirmed.png"
+  ]
+}
