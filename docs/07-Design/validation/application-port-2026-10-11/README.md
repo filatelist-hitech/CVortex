@@ -6,7 +6,7 @@ created: 2026-10-11
 
 # Exact B01 React port: local technical PASS
 
-Interrupted work resumed on `feature/b02-global-shell-navigation`, HEAD `89f30e3`.
+Interrupted work was resumed from the local checkpoint at `89f30e3`; the consolidated delivery is recorded on `feature/b02-global-shell-navigation`.
 Native IMPLEMENT preflight with `--user-override` passed; base/target `stage`.
 Explicit owner authorization overrides NEXT only for this bounded port. The owner
 accepted the «Орбита решения» visual direction and its React implementation on
