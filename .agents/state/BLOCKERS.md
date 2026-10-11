@@ -1,6 +1,6 @@
 # Реальные blockers
 
-Проверено 2026-10-11; scope/evidence в [Recovery Report](PROJECT_RECOVERY_REPORT.md).
+Recovery проверен 2026-10-11; QA-001 обновлён 2026-10-12; scope/evidence в [Recovery Report](PROJECT_RECOVERY_REPORT.md).
 Недостающие M2–M6 функции — planned deliverables, а не blockers текущей recovery task.
 
 ## Закрыто в RCV-01 — local schema mismatch
@@ -25,17 +25,14 @@ readiness этим не доказана. Production mutations и другие D
   отдельными authorized tasks. Сначала current reference integrity.
 - **Владелец:** нужен human reviewer/AT session; screenshots/DOM/AX недостаточны.
 
-## 2. Current B01 reference integrity
+## 2. QA-001 current B01 integrity — resolved locally, review pending
 
-- **Причина:** fresh `build-reference.cjs --check` FAIL:
-  manifest/referenceAssetSha256 для assets/OFL.txt не соответствует tracked bytes.
-  [Точное hash evidence](recovery-2026-10-11/manifest-drift.json).
-- **Влияние:** current canonical integrity PASS и новые release-readiness claims
-  не подтверждены; historical owner acceptance не отменяется.
-- **Разрешение:** отдельная bounded current-manifest/license-provenance reconciliation,
-  exact diff review и --check PASS, без переписывания historical reports/goldens.
-- **Владелец:** новое design/ADR решение сейчас не требуется; разрешённый scope
-  будущей correction task нужен, здесь manifest не менялся.
+- Canonical `--check` PASS; 10/10 Node tests PASS, including QA001-01…08.
+- OFL tracked bytes unchanged; upstream CRLF SHA and stored LF SHA separated,
+  with offline normalization/provenance verification in both check/write modes.
+- [Current status/evidence](../../docs/09-QA/QA-001-RECONCILIATION.md).
+  Historical FAIL and evidence manifest remain intact.
+- Independent PR review/integration remains pending. No manual release gate closure.
 
 ## 3. Preview 0.1 → M2 product gate
 
