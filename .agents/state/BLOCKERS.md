@@ -1,8 +1,13 @@
 # Blockers
 
-Design reconciliation has no remaining blocking decision. ADR-0024 resolves the mandatory Figma source-of-truth conflict; Figma is optional. B01's local reference and technical validation are complete; status is `awaiting-review`. The remaining B01 gate is owner visual/state review of the concrete surface in `docs/07-Design/reference/REVIEW.md`, with reviewer/date/outcome/state/viewport scope recorded in the manifest. B01 is not PASS and NEXT must not advance to B02 before this review. No live AI, Preview acceptance or M2 implementation is needed for that review. Existing blockers below retain their Preview/provider/environment scope.
+B01 **ACCEPTED** under owner-approved ADR-0025. On 2026-10-11 the owner also accepted the «Орбита решения» visual direction and its React implementation at the documented scope. This does not claim review of every state or viewport. B02 functional implementation and visual remediation are validated; NEXT remains the mandatory manual/accessibility release gate. B03 is not authorized.
 
-По полному брифу владельца 2026-10-10 подготовлен отдельный B01 visual candidate «Орбита решения»: `docs/07-Design/candidates/b01-frontend-redesign/REVIEW.md`, preview 127.0.0.1:8769. После Apple refinement technical/browser validation завершена (528 checks / 85 свежих captures; candidate/APPLE-REFINEMENT.md и README.md). Human review новой композиции, recorded state/viewport outcome и manual screen reader остаются pending. Native 200% zoom попытка заблокирована unavailable CUA Chrome connection / ScreenCaptureKit -3811, результат zoom не подтверждён. Candidate не назначен active, существующий reference сохранён; выбор/принятие владельцем требуется перед заменой active mapping. NEXT не продвигается к B02.
+Exact canonical B01 React port is implemented and technically/visually validated;
+owner visual acceptance is recorded in `docs/07-Design/validation/application-port-2026-10-11/README.md`.
+97 visual cases plus 142 scroll pairs and fresh frontend/browser suites do not close
+the manual release gate. Live authenticated Laravel/AI validation is not claimed.
+
+**Production release BLOCKED** by mandatory `b01-manual-accessibility-release-gate` (OPEN): full manual state/viewport and interactions, K1 keyboard/focus, Z1 native 200% zoom/reflow, A1 human screen-reader assessment. Unperformed checks remain **NOT TESTED**. Owner visual/product acceptance does not close this gate.
 
 - Live vacancy analysis after the authorized Horizon egress repair reaches OpenAI but all three normal attempts return category `RATE_LIMITED` (HTTP 429); final status `FAILED` / `PROVIDER_ERROR`, no analysis/matching result. Configured project billing/quota/rate-limit cause remains unverified; stored metadata cannot distinguish these causes. Operator verification is required before another authorized retry. Preview/M2 authority is unchanged.
 

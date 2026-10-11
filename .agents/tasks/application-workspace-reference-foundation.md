@@ -1,6 +1,6 @@
 ---
 title: Application Workspace — Reference Foundation
-status: awaiting-review
+status: accepted
 owner: project
 created: 2026-10-08
 updated: 2026-10-10
@@ -68,8 +68,22 @@ Changes to `apps/`, backend/API/database/migrations, dependencies/lockfiles, dep
 - [x] Production files and original research remain unchanged.
 - [x] STATUS/NEXT/BLOCKERS reflect the actual outcome and remaining gate.
 
-Recovery result on 2026-10-08: technical foundation and concrete review surface complete; **awaiting-review**, not PASS. Evidence and limitations: [reference README](../../docs/07-Design/reference/README.md). Next bounded action is owner visual/state review of B01 via [REVIEW.md](../../docs/07-Design/reference/REVIEW.md); NEXT retains this task until that gate is recorded. No B02 work is authorized by this closeout.
+Recovery result on 2026-10-08: technical foundation and concrete review surface complete; **awaiting-review**, not PASS. Evidence and limitations: [reference README](../../docs/07-Design/reference/README.md).
+
+Owner decision 2026-10-10: **APPROVED VISUAL DIRECTION**, «Орбита решения»,
+Scope: B01 Application Workspace Visual Reference. Explicitly authorized promotion
+of the selected synthetic candidate into the sole canonical `reference/` mapping,
+manifest/handoff updates, fresh validation and conditional closure. Previous draft
+archived with hashes. Personal preview is scenario evidence, not visual authority.
+Specific state/viewport, keyboard, real 200% zoom and manual AT review are **not
+manually reviewed**. Under ADR-0024/Foundation/Handoff these remain closure gates;
+B01 is PARTIAL / awaiting-review, NEXT remains B01. No B02 implementation authority.
+Fresh evidence: `docs/07-Design/reference/validation/closure-2026-10-10-v1/`.
 
 ## STOP
 
 Stop after this reference foundation. Do not start B02, migrate production UI, mark Preview PASS or begin M2. Commit, push, PR, publication and external messages require separate explicit authorization.
+
+## Current B01 governance outcome — 2026-10-11
+
+Under accepted [ADR-0025](../../docs/03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md), B01 is **ACCEPTED** as the owner-approved visual/product implementation baseline; lifecycle `reviewed`. Earlier PARTIAL/draft/STOP records above are historical. Unperformed manual checks remain **NOT TESTED**, with mandatory follow-up `.agents/tasks/b01-manual-accessibility-release-gate.md` blocking production release. B02 is explicitly authorized after this closure; B03 is not authorized.

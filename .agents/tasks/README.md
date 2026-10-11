@@ -27,6 +27,9 @@ Completed Phases 00–07 remain historical foundation. The active implementation
 | M1.3 | `m1-3-vacancy-core.md` | pasted vacancy receives explainable match/gaps/apply recommendation |
 | M1.4 | `m1-4-application-draft.md` | truthful resume recommendations + cover drafts can be reviewed/approved |
 | M2 planning | `m2-application-package-planning.md` | Preview 0.1 findings define one bounded application-package implementation task |
+| B02 frontend | `b02-global-shell-navigation.md` | Local visual remediation validated; awaiting owner review, 2026-10-11 |
+| Owner implementation override | `application-workspace-reference-port.md` | Exact canonical B01 React port; separately authorized on current B02 branch, 2026-10-11 |
+| Mandatory release gate | `b01-manual-accessibility-release-gate.md` | OPEN: manual state/viewport, keyboard, native zoom and human screen-reader evidence before production release |
 
 Only the task named by `NEXT.md` is executable.
 
@@ -34,7 +37,19 @@ M2–M6 implementation detail stays at roadmap level until the previous value ch
 
 ## Current bounded design override
 
-The owner-selected Concept B reconciliation changes NEXT to `application-workspace-reference-foundation.md` (B01): one token-derived normalized local reference and review manifest. It does not complete Preview 0.1 or authorize M2/backend/product implementation. Conditional later frontend outcomes live in `docs/07-Design/Concept-B-Reconciliation.md`, not executable task specs.
+B01 «Орбита решения» is ACCEPTED under owner-approved ADR-0025. B02 was explicitly
+authorized after that closure. The owner rejected the initial visual composition;
+local visual remediation is awaiting owner review. No delivery/commit/PR occurred.
+NEXT names the mandatory manual/accessibility release gate. All outstanding B01
+manual outcomes remain NOT TESTED. Production release is blocked until its reference
+and applicable production checks pass. B03 is not authorized; Preview 0.1/M2 gates
+remain unchanged.
+
+The owner subsequently authorized `application-workspace-reference-port` and
+explicitly permitted the current `feature/b02-global-shell-navigation` branch.
+It is a separate bounded IMPLEMENT override of NEXT, not a rewrite of B02/B03
+specifications or authority to implement missing backend/domain capabilities.
+Its visual/functional evidence is recorded separately; the release gate stays OPEN.
 
 ## Legacy phase specs
 
