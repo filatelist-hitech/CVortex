@@ -19,7 +19,10 @@ asset hashes change, with no token/source/rendering or unrelated asset changes.
 [Current defect status and evidence](../../docs/09-QA/QA-001-RECONCILIATION.md).
 Historical QA-001 FAIL, register and evidence manifest stay byte-for-byte intact;
 new status supersedes their dated outcome. QA-002–QA-004 are not addressed.
-Independent PR review pending; technical result is not independent review PASS.
+First remote Quality run failed because the Python test sandbox omitted the new
+linked task; its fixture helper now copies that task. Final-tree Python evidence
+regressions 8/8 PASS; original CI failure retained. Independent PR review pending;
+technical result is not independent review PASS.
 B01 owner acceptance remains; full manual matrix/K1/Z1/A1 **NOT TESTED / OPEN**,
 production release blocked. NEXT names the existing manual gate after QA-001
 review/integration; this task stops without executing it.

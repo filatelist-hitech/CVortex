@@ -44,7 +44,8 @@ class EvidenceRegressionTest(unittest.TestCase):
         root = Path(tmp)
         shutil.copytree(source / qa.QA, root / qa.QA)
         inv = qa.strict_json(source / qa.PACKAGE / 'function-inventory.json')
-        refs = {'apps/backend/routes/api.php', *inv['page_mapping']}
+        refs = {'apps/backend/routes/api.php', *inv['page_mapping'],
+                '.agents/tasks/b01-current-manifest-integrity-reconciliation.md'}
         for function in inv['functions']:
             refs.update(function['implementation'] + function['tests'] + function['ui_files'])
         for name in refs:

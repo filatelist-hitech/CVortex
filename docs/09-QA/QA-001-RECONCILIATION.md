@@ -103,11 +103,18 @@ local tests do not imply remote CI success or independent review.
 Negative tests never modify real source assets. A post-commit fresh detached checkout
 is also checked before push; its result belongs to the Git delivery checkpoint.
 
+First remote Quality run failed before the B01 step: the Python sandbox fixture
+omitted the new linked task specification. The test helper now copies that task;
+production/evidence verification is unchanged. The original failure remains in
+[CI run 38177488835](https://github.com/filatelist-hitech/CVortex/actions/runs/38177488835).
+The final-tree Python tests were rerun after all documentation was added.
+
 ## Changed files
 
 - `.github/workflows/quality.yml` — canonical/Node regression CI step.
 - `docs/07-Design/reference/build-reference.cjs` — offline license/provenance guard.
 - `docs/07-Design/reference/build-reference.test.cjs` — eight deterministic regressions.
+- `scripts/test_qa_evidence.py` — copy the new linked task into the isolated QA fixture.
 - `docs/07-Design/reference/assets/font-source.json` — separate stored-byte metadata.
 - `docs/07-Design/reference/manifest.json` — four justified current hashes.
 - `docs/07-Design/reference/README.md` — integrity/provenance contract.

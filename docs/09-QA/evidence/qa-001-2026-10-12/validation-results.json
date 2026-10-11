@@ -59,6 +59,17 @@
       "command": "Scoped secret scan of all changed and new files",
       "result": "PASS",
       "findings": 0
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_qa_evidence.py'",
+      "result": "PASS",
+      "tests": 8,
+      "scope": "Final documentation tree after CI-induced fixture correction"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_career_review_harness.py'",
+      "result": "PASS",
+      "tests": 2
     }
   ],
   "historicalManifestSha256": "15d1f2cc72890ca6306a30ecaa6e62c65b5b6049e04701234b95d6062f2d4494",
@@ -67,5 +78,11 @@
   "preflight": {
     "launch": "PASS; NEXT matched; no task spec existed; explicit owner prompt used",
     "completion": "PASS with --user-override because NEXT was advanced to the intended manual gate after local completion; QA-001 remains the owner-authorized active task"
+  },
+  "ciInitialFailure": {
+    "run": "https://github.com/filatelist-hitech/CVortex/actions/runs/38177488835",
+    "result": "FAIL",
+    "cause": "Isolated Python QA fixture omitted the new linked task spec",
+    "correction": "Include QA-001 task spec in clone_package refs; no verifier weakening"
   }
 }
