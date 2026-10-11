@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "changed_files": [
+    ".agents/state/BLOCKERS.md",
+    ".agents/state/NEXT.md",
+    ".agents/state/STATUS.md",
+    ".agents/tasks/README.md",
+    ".agents/tasks/b02-global-shell-navigation.md",
+    ".agents/tasks/m1-3-vacancy-core.md",
+    ".agents/tasks/m1-3r-vacancy-core-remediation-review.md",
+    ".agents/tasks/m1-4-application-draft.md",
+    "docs/00-Home/CURRENT-PROJECT-STATE.md",
+    "docs/00-Home/CVortex.md",
+    "docs/00-Home/Documentation-Map.md",
+    ".agents/state/PROJECT_RECOVERY_REPORT.md",
+    ".agents/state/STATUS-HISTORY-2026-10-11.md",
+    ".agents/state/recovery-2026-10-11/final-document-checks.json",
+    ".agents/state/recovery-2026-10-11/git-snapshot.json",
+    ".agents/state/recovery-2026-10-11/manifest-drift.json",
+    ".agents/state/recovery-2026-10-11/validation.json",
+    ".agents/tasks/recovery-local-runtime-alignment.md",
+    "docs/00-Home/PROJECT-STATE-AUDIT-2026-10-03.md"
+  ],
+  "scope_files": 19,
+  "markdown_checked": 13,
+  "relative_links_checked": 86,
+  "historical_archives_byte_identical": true,
+  "original_untracked_files_byte_identical": 802,
+  "original_head_branch_tracked_tree_unchanged": true,
+  "next_task_contract_sections_present": true
+}

@@ -1,0 +1,201 @@
+{
+  "date": "2026-10-11",
+  "timezone": "Europe/Moscow",
+  "head": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "workflow": "implementation",
+  "agents": 1,
+  "authorization": "Owner explicitly authorized cvortex_test as the current local development DB after private backup, overriding task test-DB exclusion. Production prohibited; no live AI/commit/push/PR; STOP.",
+  "target": {
+    "database": "cvortex_test",
+    "compose_project": "cvortex",
+    "postgres_container_id": "6a949b61b901ae686a8e0eed1522bfa5773ad02e4e48a09f2845a84b8a931176",
+    "backend_container_id": "2fe738a892df1699aa8ec1c25f6d91175d4dcc83596d4476f6f0f80b5cd5b9b1",
+    "app_env": "local",
+    "runtime_role": "cvortex_app",
+    "migration_role": "cvortex"
+  },
+  "commands": [
+    {
+      "command": "git ls-remote --heads origin stage",
+      "layer": "live remote Git read-only",
+      "status": "PASS",
+      "result": "f06a6dba058589823bf3d3c8b693cb625170bc4b"
+    },
+    {
+      "command": "bash scripts/check-agent-contract.sh implementation .agents/tasks/recovery-local-runtime-alignment.md --write",
+      "layer": "local Git/task preflight",
+      "status": "PASS",
+      "result": "Before repository writes; write=true user_override=false"
+    },
+    {
+      "command": "docker context show",
+      "layer": "local Docker identity",
+      "status": "PASS",
+      "result": "desktop-linux; endpoint verified by selected docker context inspect metadata"
+    },
+    {
+      "command": "docker inspect cvortex-backend-1 cvortex-postgres-1 cvortex-horizon-1 cvortex-scheduler-1 cvortex-nginx-1",
+      "layer": "local container identity",
+      "status": "PASS",
+      "result": "Output filtered in Python to labels/mounts/ports and whitelisted non-secret env only"
+    },
+    {
+      "command": "docker exec cvortex-backend-1 php artisan migrate:status --no-ansi",
+      "layer": "local PostgreSQL migration history",
+      "status": "PASS",
+      "result": "Before: 27 Ran, exact one Pending. After: 28 Ran, no Pending"
+    },
+    {
+      "command": "docker exec -i cvortex-postgres-1 sh -c 'psql -X -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -v ON_ERROR_STOP=1 -P pager=off'",
+      "layer": "local PostgreSQL preflight",
+      "status": "PASS",
+      "result": "Read-only SQL: actual DB cvortex_test, role cvortex, 36 public tables, migration count27, no oauth_generation; safe counts/role flags only"
+    },
+    {
+      "command": "docker compose --project-directory /Users/filatelist/Documents/it/CVortex --env-file /Users/filatelist/Documents/it/CVortex/.env --profile tools config --format json",
+      "layer": "local rendered Compose",
+      "status": "PASS",
+      "result": "Captured in Python, only whitelisted metadata printed; APP_ENV local, DB cvortex_test, migration role cvortex"
+    },
+    {
+      "command": "docker exec cvortex-postgres-1 sh -c 'exec pg_dump -U \"$POSTGRES_USER\" -d cvortex_test --format=custom --no-password'",
+      "layer": "private local backup",
+      "status": "PASS",
+      "result": "stdout redirected directly to owner-only private file outside Git before mutation"
+    },
+    {
+      "command": "docker exec -i cvortex-postgres-1 pg_restore --file=/dev/null --exit-on-error",
+      "layer": "private backup integrity",
+      "status": "PASS",
+      "result": "Private backup supplied on stdin; entire archive decoded, no DB restore"
+    },
+    {
+      "command": "docker exec -i cvortex-postgres-1 pg_restore --list",
+      "layer": "private backup TOC",
+      "status": "PASS",
+      "result": "Private backup on stdin; TOC captured privately; expected migrations/chatgpt_connections TABLE DATA present"
+    },
+    {
+      "command": "docker compose --project-directory /Users/filatelist/Documents/it/CVortex --env-file /Users/filatelist/Documents/it/CVortex/.env --profile tools run --rm --no-deps migration php artisan migrate:status --no-ansi",
+      "layer": "local migration-role TCP preflight",
+      "status": "PASS",
+      "result": "Same27 Ran/one Pending, separate privileged service, no provisioning/recreation"
+    },
+    {
+      "command": "docker compose --project-directory /Users/filatelist/Documents/it/CVortex --env-file /Users/filatelist/Documents/it/CVortex/.env --profile tools run --rm --no-deps migration php artisan migrate --force --path=database/migrations/2026_10_07_000001_add_oauth_generation_to_chatgpt_connections.php --no-ansi",
+      "layer": "authorized local PostgreSQL mutation",
+      "status": "PASS",
+      "result": "Exact one migration DONE21.23ms, batch5; owner target-specific override and backup already verified"
+    },
+    {
+      "command": "docker exec -i cvortex-postgres-1 sh -c 'psql -X -qAt -U \"$POSTGRES_USER\" -d cvortex_test -v ON_ERROR_STOP=1'",
+      "layer": "local PostgreSQL preservation",
+      "status": "PASS",
+      "sql_input": "data-control.sql",
+      "result": "Before/after count and sorted row fingerprints match35 tables/302 rows. initial schema-control verifier FAIL due implied NOT NULL constraint; corrected verifier PASS"
+    },
+    {
+      "command": "docker exec -i cvortex-postgres-1 pg_restore --schema-only --file=-",
+      "layer": "private schema-only before",
+      "status": "PASS",
+      "result": "Private dump on stdin; schema captured privately without table rows"
+    },
+    {
+      "command": "docker exec cvortex-postgres-1 sh -c 'pg_dump -U \"$POSTGRES_USER\" -d cvortex_test --schema-only --no-password'",
+      "layer": "schema-only after",
+      "status": "PASS",
+      "result": "Compared using Python difflib after removing random restrict/unrestrict markers. Exactly one additive column line; schema-diff.patch"
+    },
+    {
+      "command": "docker exec -i cvortex-postgres-1 sh -c 'psql -X -U \"$POSTGRES_USER\" -d cvortex_test -v ON_ERROR_STOP=1 -P pager=off'",
+      "layer": "local PostgreSQL postcheck",
+      "status": "PASS",
+      "result": "Read-only:28 migrations; batch5; bigint, default'0'::bigint, nullableNO;2 connections,2 generation0,0 null"
+    },
+    {
+      "command": "docker exec -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= -e CACHE_STORE=array -e QUEUE_CONNECTION=sync -e SESSION_DRIVER=array -e MAIL_MAILER=array -e AI_PROVIDER=none -e OPENAI_API_KEY= cvortex-backend-1 php vendor/bin/phpunit --filter ChatGptPlanTest --do-not-cache-result",
+      "layer": "local SQLite/mock HTTP",
+      "status": "PASS",
+      "result": "16 tests /92 assertions; existing preventStrayRequests; no live calls"
+    },
+    {
+      "command": "docker exec cvortex-backend-1 php artisan horizon:status --no-ansi",
+      "layer": "local runtime",
+      "status": "PASS",
+      "result": "Horizon is running"
+    },
+    {
+      "command": "curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/v1/health/live",
+      "layer": "public local HTTP, unauthenticated",
+      "status": "PASS",
+      "result": "HTTP200"
+    },
+    {
+      "command": "curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/v1/health/ready",
+      "layer": "public local HTTP, unauthenticated",
+      "status": "PASS",
+      "result": "HTTP200"
+    },
+    {
+      "command": "curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/v1/me",
+      "layer": "public local HTTP, unauthenticated",
+      "status": "PASS",
+      "result": "HTTP401"
+    },
+    {
+      "command": "curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/",
+      "layer": "public local HTTP, unauthenticated",
+      "status": "PASS",
+      "result": "HTTP200"
+    },
+    {
+      "command": "git diff --check",
+      "layer": "local whitespace",
+      "status": "PASS"
+    },
+    {
+      "command": "git -C /Users/filatelist/Documents/it/CVortex diff --exit-code --quiet",
+      "layer": "primary tracked worktree",
+      "status": "PASS"
+    },
+    {
+      "command": "git -C /Users/filatelist/Documents/it/CVortex diff --cached --exit-code --quiet",
+      "layer": "primary index",
+      "status": "PASS"
+    }
+  ],
+  "corrected_verifier": "Exclude only pg_constraint where conrelid=public.chatgpt_connections, contype=n, conkey=array containing pg_attribute.attnum for oauth_generation; compare unchanged original before controls. Independent schema-only diff has exactly one added column.",
+  "not_run": [
+    "restore to database",
+    "full suites/Pint/Larastan/frontend lint or build",
+    "disposable PostgreSQL/RLS/races",
+    "live AI/OAuth/provider quota",
+    "authenticated user E2E/manual accessibility",
+    "next B01 integrity task",
+    "commit/push/PR"
+  ],
+  "final_checks": {
+    "targeted_documentation_links": {
+      "status": "PASS",
+      "count": 55
+    },
+    "state_task_completion": "PASS",
+    "evidence_json": "PASS",
+    "head_unchanged": "PASS",
+    "dirty_file_preservation": {
+      "status": "PASS",
+      "preexisting_files": 19,
+      "authorized_updated_files": 6,
+      "other_preexisting_files_unchanged": 13
+    },
+    "added_files": [
+      ".agents/state/LOCAL_RUNTIME_ALIGNMENT_REPORT.md",
+      ".agents/state/runtime-alignment-2026-10-11/backup-metadata.json",
+      ".agents/state/runtime-alignment-2026-10-11/data-control.sql",
+      ".agents/state/runtime-alignment-2026-10-11/preservation-result.json",
+      ".agents/state/runtime-alignment-2026-10-11/schema-diff.patch",
+      ".agents/state/runtime-alignment-2026-10-11/validation.json"
+    ],
+    "next_spec": "NOT_PREPARED: separate owner launch required; STOP applies"
+  }
+}

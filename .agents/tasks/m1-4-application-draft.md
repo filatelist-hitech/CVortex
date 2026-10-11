@@ -1,6 +1,6 @@
 ---
 title: CVortex M1.4 — Application Draft
-status: ready
+status: implemented-preview-unverified
 milestone: m1-first-value
 slice: m1-4-application-draft
 owner: project
@@ -768,3 +768,12 @@ Do not:
 - perform speculative refactoring.
 
 Preview 0.1 is the boundary of this task.
+
+## Recovery lifecycle reconciliation — 2026-10-11
+
+Implementation is integrated through PR #31 (`8e08f45`) and #32 (`98f656b`).
+The task is not fresh implementation-ready: code/tests exist, while the mandatory
+real-user Preview criteria and feedback are unverified. Checkboxes stay unchanged;
+[Recovery Report](../state/PROJECT_RECOVERY_REPORT.md) separates implementation,
+fresh SQLite tests and missing user acceptance. Do not restart implementation or
+advance M2 merely from the merged PR.
