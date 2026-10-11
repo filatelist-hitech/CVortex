@@ -84,3 +84,7 @@ Pinned upstream fixture: 4495 bytes, 93 CRLF sequences; tracked asset: 4401 byte
 - Full WCAG/contrast, every state keyboard traversal and production-scale/SLO testing are not covered by semantic/responsive/performance smoke.
 
 Recommended bounded next task: repair QA-001–QA-003 proof gates only under a separate authorization. Product fix QA-004 and human gates remain subsequent work; no remediation is part of this audit.
+
+## PR #46 evidence correction — 2026-10-12
+
+QA-001–QA-004 above remain unchanged. Historical Career review concurrency has an additional verifier proof failure: the original log throws while its wrapper exits 0 and prints PASS. This is REVIEW-002, not an established product race defect. The historical ledger/F48 now record FAIL; helper repair and fresh isolated evidence are documented in [PR46 remediation](PR46-REMEDIATION.md). No historical failed verification is replaced by a later successful run.

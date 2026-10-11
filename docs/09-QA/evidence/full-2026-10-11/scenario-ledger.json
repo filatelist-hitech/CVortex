@@ -4,15 +4,17 @@
     "scenario_unit": "named backend case including data set, aggregated Vitest case, unique browser scenario, DB/control run or explicit acceptance gap; wrapper controls are counted separately from their constituent assertions",
     "total": 539,
     "results": {
-      "PASS": 526,
-      "FAIL": 4,
+      "PASS": 525,
+      "FAIL": 5,
       "BLOCKED": 7,
       "NOT_RUN": 2
     },
     "mocked_provider_e2e": 7,
     "unique_original_browser": 26,
     "duplicates_removed": 1,
-    "scenario_assertions_not_counted": true
+    "scenario_assertions_not_counted": true,
+    "records": 432,
+    "weighted_units": 539
   },
   "scenarios": [
     {
@@ -2947,10 +2949,11 @@
     {
       "id": "CONTROL:career-review-postgres-concurrency",
       "count": 1,
-      "result": "PASS",
+      "result": "FAIL",
       "classification": "LOCAL_CONTROL",
       "evidence": "career-review-postgres-concurrency.log",
-      "note": "Original historical run retained; no successful rerun"
+      "note": "Historical final verifier exception; wrapper exit 0/PASS is insufficient. New remediation execution is recorded separately; historical FAIL retained.",
+      "outcome_kind": "VERIFIER_EXCEPTION"
     },
     {
       "id": "CONTROL:career-fact-supersession-postgres-concurrency",

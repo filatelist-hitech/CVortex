@@ -1,0 +1,286 @@
+{
+  "scope": "remediation only; historical audit accounting excludes these runs",
+  "runs": [
+    {
+      "id": "career-race",
+      "time_moscow": "2026-10-12T00:02:08.472255+03:00",
+      "argv": [
+        "bash",
+        "scripts/test-career-review-postgres-concurrency.sh"
+      ],
+      "exit_code": 0,
+      "seconds": 4.841,
+      "result": "PASS",
+      "outcome_kind": "SUCCESSFUL_FINAL_VERIFICATION",
+      "log": "remediation-career-race.log",
+      "log_sha256": "2b058ba7d2db5085d85cf16eb29aea8d631fc2f422da2ac71a23c378965986db",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "b4651c238fcdc63030cf49295815238d6331f0b94009aa28b6404b07a1715e9e"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "career-regressions",
+      "time_moscow": "2026-10-12T00:02:13.324110+03:00",
+      "argv": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "-e",
+        "DB_CONNECTION=sqlite",
+        "-e",
+        "DB_DATABASE=:memory:",
+        "-e",
+        "CACHE_STORE=array",
+        "-e",
+        "SESSION_DRIVER=array",
+        "-e",
+        "QUEUE_CONNECTION=sync",
+        "backend",
+        "vendor/bin/phpunit",
+        "--filter",
+        "CareerReviewInvariantTest|CareerCoreTest|CareerCoreRemediationTest"
+      ],
+      "exit_code": 0,
+      "seconds": 8.998,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-career-regressions.log",
+      "log_sha256": "c23087296a378b58a03b89a49d022405dde94cbd45963866ef1c100f66da3f03",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "b4651c238fcdc63030cf49295815238d6331f0b94009aa28b6404b07a1715e9e"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "pint",
+      "time_moscow": "2026-10-12T00:02:22.337416+03:00",
+      "argv": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "backend",
+        "vendor/bin/pint",
+        "--test",
+        "tests/Support/CareerReviewInvariant.php",
+        "tests/Support/verify_career_review_concurrency.php",
+        "tests/Unit/CareerReviewInvariantTest.php"
+      ],
+      "exit_code": 0,
+      "seconds": 0.287,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-pint.log",
+      "log_sha256": "d7a9f081a6d08077e54a6db2a436d50423f29b44b4a1c648761353d84f245659",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "b4651c238fcdc63030cf49295815238d6331f0b94009aa28b6404b07a1715e9e"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "phpstan",
+      "time_moscow": "2026-10-12T00:02:22.636498+03:00",
+      "argv": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "backend",
+        "vendor/bin/phpstan",
+        "analyse",
+        "--memory-limit=1G"
+      ],
+      "exit_code": 0,
+      "seconds": 7.449,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-phpstan.log",
+      "log_sha256": "f26882d0d22af7a7c2eaa63863f734b5e95afa75a9d2a5221a9904bf45fc6f1e",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "b4651c238fcdc63030cf49295815238d6331f0b94009aa28b6404b07a1715e9e"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "evidence-regressions",
+      "time_moscow": "2026-10-12T00:02:45.009882+03:00",
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_qa_evidence.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.521,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-evidence-regressions.log",
+      "log_sha256": "7d94959ce941f541d3d49998d6187fcaed5fdf33d6079f298ab1c6df70a3e3bf",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "e0c94d0136a36dd2df1b9b6496c8163064c8c1fe8257a00fbbe6d40f471a029c"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "wrapper-regressions",
+      "time_moscow": "2026-10-12T00:02:45.542010+03:00",
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_career_review_harness.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.43,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-wrapper-regressions.log",
+      "log_sha256": "1f81b392676b4f1a76db93e354d3d80a1b01f8833409e025c2e4228490853bed",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "e0c94d0136a36dd2df1b9b6496c8163064c8c1fe8257a00fbbe6d40f471a029c"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "bash-syntax",
+      "time_moscow": "2026-10-12T00:02:46.980670+03:00",
+      "argv": [
+        "bash",
+        "-n",
+        "scripts/test-career-review-postgres-concurrency.sh"
+      ],
+      "exit_code": 0,
+      "seconds": 0.003,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-bash-syntax.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "e0c94d0136a36dd2df1b9b6496c8163064c8c1fe8257a00fbbe6d40f471a029c"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "evidence-regressions",
+      "time_moscow": "2026-10-12T00:04:36.239298+03:00",
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_qa_evidence.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.58,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-evidence-regressions-2.log",
+      "log_sha256": "0b66f1e141a34a1222a376856d6eecf551d1a05500d7669ef56f6f0899f64e1b",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "41b55297f837f887358d87e39f1458554cececa0c688a85c88f5818da1005ff8"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "wrapper-regressions",
+      "time_moscow": "2026-10-12T00:04:36.830621+03:00",
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_career_review_harness.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.35,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-wrapper-regressions-2.log",
+      "log_sha256": "067206407ecfa199864bebc0f3fdbf1ad94b9b2bc2b57bee6302fc912f852e0b",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "41b55297f837f887358d87e39f1458554cececa0c688a85c88f5818da1005ff8"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    },
+    {
+      "id": "verifier-exception",
+      "time_moscow": "2026-10-12T00:05:37.518869+03:00",
+      "argv": [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "backend",
+        "php",
+        "tests/Support/verify_career_review_concurrency.php"
+      ],
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "seconds": 0.231,
+      "result": "PASS",
+      "outcome_kind": "COMMAND_EXIT",
+      "log": "remediation-verifier-exception-1.log",
+      "log_sha256": "308002cc97375d75361898e48c44ffe0454a3ca369a1625af79c19f72aa3efb8",
+      "baseline_commit": "d53c545455930e282c212d111a5a3f514f144846",
+      "source_sha256": {
+        "scripts/test-career-review-postgres-concurrency.sh": "6fe73fb39e24224b61f1bbcfd1acd43f758c72423c6cad679bcf3d7cc3dc0d63",
+        "apps/backend/tests/Support/verify_career_review_concurrency.php": "25c325899d0f33eb3ab9b8ef1214381fac641157bdca946acd4cf26e5e627681",
+        "apps/backend/tests/Support/CareerReviewInvariant.php": "4dd1b6fe3cc3a80f235e5a3a7603b63e4493fd33de1f371b822c2c8fbcef1776",
+        "scripts/qa_evidence.py": "41b55297f837f887358d87e39f1458554cececa0c688a85c88f5818da1005ff8"
+      },
+      "environment": "cvortexpr46remediation; generated credentials omitted; own PostgreSQL/private volumes; read-only dependency volume; backend internal-only; AI_PROVIDER=none; no live AI"
+    }
+  ]
+}

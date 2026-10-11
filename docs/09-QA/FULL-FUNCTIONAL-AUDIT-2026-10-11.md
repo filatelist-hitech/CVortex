@@ -8,28 +8,31 @@ tags: [qa, audit, first-value]
 
 # Full functional audit — 2026-10-11
 
-**CHANGES REQUIRED.** Основной synthetic workflow работает на реальном локальном стеке с mock provider. Самостоятельное разрешение Claim ambiguity через Career UI отсутствует. B01 integrity check и два test harness controls имеют открытые failures. Preview 0.1 и MVP 0.2 не готовы.
+**CHANGES REQUIRED.** Основной synthetic workflow работает на реальном локальном стеке с mock provider. Самостоятельное разрешение Claim ambiguity через Career UI отсутствует. B01 integrity check и три исторических test harness controls имеют открытые failures. Preview 0.1 и MVP 0.2 не готовы.
 
-Tested SHA: `f06a6dba058589823bf3d3c8b693cb625170bc4b`. QA branch: `docs/full-functional-qa-2026-10-11`; checkout and temporary artifact paths are intentionally omitted from the Git export. Итоговые отчёты ранее отсутствовали; создан ровно один файл по каждому запрошенному пути, старые evidence сохранены. No product code changes, external provider calls or production writes.
+Tested SHA: `f06a6dba058589823bf3d3c8b693cb625170bc4b`. QA branch: `docs/full-functional-qa-2026-10-11`; checkout and temporary artifact paths are intentionally omitted from the Git export. Итоговые отчёты ранее отсутствовали; создан ровно один файл по каждому запрошенному пути, старые evidence сохранены. Historical audit made no product code changes, external provider calls or production writes. PR remediation changes verification helpers only; see [remediation](PR46-REMEDIATION.md).
 
 ## Recovery and counting
 
+Historical numbers are recomputed by `python3 scripts/qa_evidence.py`. [accounting.json](evidence/full-2026-10-11/accounting.json) separates named tests, frontend aggregates, controls and gaps. 370 named backend/QA identities, 369 executed; 108 frontend cases reported without exported individual identities. 539 weighted units are not 539 unique executed tests. [Export provenance](evidence/full-2026-10-11/export-provenance.json) records original and published bytes and missing execution metadata.
+
+
 | Показатель | Количество |
 |---|---:|
-| Функции / контроли в bounded inventory | 59 |
-| Функции с проверкой / inspection | 51 |
-| Function PASS / FAIL / BLOCKED / NOT_RUN | 47 / 3 / 7 / 2 |
-| Сценарии / контрольные прогоны | 539 |
-| Scenario PASS | 526 |
-| Scenario FAIL | 4 |
-| Scenario BLOCKED | 7 |
-| Scenario NOT_RUN | 2 |
+| Функции / контроли в bounded inventory | 67 |
+| Функции с проверкой / inspection | 59 |
+| Function PASS / FAIL / BLOCKED / NOT_RUN | 54 / 4 / 7 / 2 |
+| Weighted audit units (432 records) | 539 |
+| Weighted PASS | 525 |
+| Weighted FAIL | 5 |
+| Weighted BLOCKED | 7 |
+| Weighted NOT_RUN | 2 |
 | MOCKED_PROVIDER_E2E, входит в PASS | 7 |
 | Дефекты | 4: 1 functional UI, 1 reference integrity, 2 test infrastructure |
 
-Термины и exact ledger: [Coverage matrix](FUNCTIONAL-COVERAGE-MATRIX.md). Числа не означают процент готовности всего продукта. Четыре FAIL сценария: B01 checker, duplicate-migration harness, Diagnostics timestamp-tie test, expected Career UI resolution action. Function Diagnostics BLOCKED: его timestamp-tie поведение не доказано из-за faulty fixture; product sorting failure не установлен.
+Термины и exact ledger: [Coverage matrix](FUNCTIONAL-COVERAGE-MATRIX.md). Числа не означают процент готовности всего продукта. Пять исторических FAIL единиц: Career review verifier exception, B01 checker, duplicate-migration harness, Diagnostics timestamp-tie test, expected Career UI resolution action. Function Diagnostics BLOCKED: его timestamp-tie поведение не доказано из-за faulty fixture; product sorting failure не установлен.
 
-Восстановлены: canonical backend suite **366 cases / 2772 assertions / 11 skips**, frontend **108/108**, lint/Pint/Larastan/TS/build, B01 node tests, MCP route toggle и PostgreSQL harnesses. PostgreSQL targeted suite **10 cases / 122 assertions**, 9 PASS и 1 FAIL. После merge результатов по test name 364 из 366 canonical backend cases PASS, 1 FAIL и 1 BLOCKED. Оставшийся skipped `VacancyCoreTest::test_postgres_rejects_a_cross_owner_snapshot_requirement_chain` не выполнялся как exact PHPUnit case; эквивалентный FK/RLS transaction probe PASS. Existing QA Truth Guard data sets: **4/4 / 12 assertions**.
+Восстановлены: canonical backend suite **366 cases / 2772 assertions / 11 skips**, frontend **108/108**, lint/Pint/Larastan/TS/build, B01 node tests, MCP route toggle и именованные PostgreSQL harnesses; Career review final verification исторически FAIL, несмотря на wrapper exit 0. PostgreSQL targeted suite **10 cases / 122 assertions**, 9 PASS и 1 FAIL. После merge результатов по test name 364 из 366 canonical backend cases PASS, 1 FAIL и 1 BLOCKED. Оставшийся skipped `VacancyCoreTest::test_postgres_rejects_a_cross_owner_snapshot_requirement_chain` не выполнялся как exact PHPUnit case; эквивалентный FK/RLS transaction probe PASS. Existing QA Truth Guard data sets: **4/4 / 12 assertions**.
 
 `checks.json` содержит 19 исторических запусков. Первоначальный nginx check exit 1 снят прежним исправленным запуском с QA host/port — PASS в `nginx-log-safety-corrected.log`; raw record не переписан. Первоначальный noncanonical SQLite run имел 2 errors/3 failures; тот же SHA позже прошёл canonical suite. Это environment-sensitive attempt, не пять подтверждённых product defects; точная первоначальная effective config не сохранена, root cause не объявляется доказанным.
 
@@ -97,7 +100,7 @@ Performance: 20 requests each to Career, vacancy list/detail, preparation (**80*
 | Preview 0.1 | BLOCKED | Mandatory real-user value/feedback acceptance missing; no real provider E2E; required technical checks not all green; B01 manual release gate OPEN |
 | MVP 0.2 | NOT_READY / NOT_RUN | M2 package/export/employer-consistency features not implemented/authorized; Preview exit not achieved |
 
-Open coverage: external OpenAI, external ChatGPT OAuth/MCP consumer, real-user acceptance, A1 screen reader, Z1 native 200%, full manual state matrix, one exact PostgreSQL PHPUnit case. Equivalent FK negative proof reduces the ownership gap, not the missing exact runner execution. No cloud review, CI readiness, PR contract or release promotion was claimed.
+Open coverage: external OpenAI, external ChatGPT OAuth/MCP consumer, real-user acceptance, A1 screen reader, Z1 native 200%, full manual state matrix, one exact PostgreSQL PHPUnit case. Equivalent FK negative proof reduces the ownership gap, not the missing exact runner execution. The historical audit did not establish cloud review, remote CI readiness or release promotion; remediation validation is separate.
 
 ## Defects and recommended order
 
@@ -108,7 +111,7 @@ Open coverage: external OpenAI, external ChatGPT OAuth/MCP consumer, real-user a
 3. Complete mandatory human accessibility/state review and named Preview acceptance; authorized real-provider runs require their own consent and suitable account conditions.
 4. Consider M2 planning only after Preview gates; no package readiness by inference.
 
-**One recommended next bounded task:** `Repair full-functional QA proof gates`: change only the legacy migration harness setup, Diagnostics timestamp-tie fixture and B01 license provenance handling; run targeted regressions on an isolated disposable environment under separate authorization. No product feature changes. This recommendation does not update authority: repository `NEXT` remains `b01-manual-accessibility-release-gate`.
+**One recommended next bounded task:** `Repair full-functional QA proof gates`: change only the legacy migration harness setup, Diagnostics timestamp-tie fixture and B01 license provenance handling; run targeted regressions on an isolated disposable environment under separate authorization. No product feature changes. This recommendation does not update authority: repository `NEXT` remains `b01-current-manifest-integrity-reconciliation`.
 
 ## Preservation and STOP
 

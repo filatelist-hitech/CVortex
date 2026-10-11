@@ -1,14 +1,14 @@
 {
   "summary": {
-    "total": 59,
-    "checked": 51,
+    "total": 67,
+    "checked": 59,
     "result_counts": {
-      "PASS": 47,
-      "FAIL": 3,
+      "PASS": 54,
+      "FAIL": 4,
       "BLOCKED": 7,
       "NOT_RUN": 2
     },
-    "definition": "Bounded audit inventory of 51 implemented functions/technical controls plus 8 external/human/M2 gaps; a checked function can still FAIL or be BLOCKED at one gate"
+    "definition": "59 historical rows plus 8 omitted implemented workflows, explicitly mapped; no product completeness or readiness percentage."
   },
   "functions": [
     {
@@ -18,7 +18,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "AccessCoreTest; REGISTRATION-invited-browser",
-      "scope": "Targeted invite and normalized identity; no public registration"
+      "scope": "Targeted invite and normalized identity; no public registration",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/AuthController.php",
+        "apps/backend/app/Http/Controllers/CurrentUserController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/AccessCoreTest.php"
+      ],
+      "executed_suites": [
+        "AccessCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/access-shell.tsx"
+      ],
+      "entry_points": [
+        "POST api/v1/auth/login",
+        "POST api/v1/auth/logout",
+        "POST api/v1/auth/register",
+        "GET|HEAD api/v1/me"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Targeted invite and normalized identity; no public registration"
     },
     {
       "id": "F02",
@@ -27,7 +51,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "AccessCoreTest; AUTH-LOGIN-browser",
-      "scope": "Real session browser; enumeration/disabled cases automated"
+      "scope": "Real session browser; enumeration/disabled cases automated",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/AuthController.php",
+        "apps/backend/app/Http/Controllers/CurrentUserController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/AccessCoreTest.php"
+      ],
+      "executed_suites": [
+        "AccessCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/access-shell.tsx"
+      ],
+      "entry_points": [
+        "POST api/v1/auth/login",
+        "POST api/v1/auth/logout",
+        "POST api/v1/auth/register",
+        "GET|HEAD api/v1/me"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Real session browser; enumeration/disabled cases automated"
     },
     {
       "id": "F03",
@@ -36,7 +84,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "AccessCoreTest; AUTH-CSRF-origin-and-token-fallback",
-      "scope": "419 cross-site; stale generations and long-password behavior automated"
+      "scope": "419 cross-site; stale generations and long-password behavior automated",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/AuthController.php",
+        "apps/backend/app/Http/Controllers/CurrentUserController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/AccessCoreTest.php"
+      ],
+      "executed_suites": [
+        "AccessCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/access-shell.tsx"
+      ],
+      "entry_points": [
+        "POST api/v1/auth/login",
+        "POST api/v1/auth/logout",
+        "POST api/v1/auth/register",
+        "GET|HEAD api/v1/me"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "419 cross-site; stale generations and long-password behavior automated"
     },
     {
       "id": "F04",
@@ -45,7 +117,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "DiagnosticsTest; ADMIN-boundary",
-      "scope": "User 403; admin diagnostics 200 with no private-data bypass"
+      "scope": "User 403; admin diagnostics 200 with no private-data bypass",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/AuthController.php",
+        "apps/backend/app/Http/Controllers/CurrentUserController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/AccessCoreTest.php"
+      ],
+      "executed_suites": [
+        "AccessCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/access-shell.tsx"
+      ],
+      "entry_points": [
+        "POST api/v1/auth/login",
+        "POST api/v1/auth/logout",
+        "POST api/v1/auth/register",
+        "GET|HEAD api/v1/me"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "User 403; admin diagnostics 200 with no private-data bypass"
     },
     {
       "id": "F05",
@@ -54,7 +150,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "McpGatewayTest; AUTH-002-005-IDOR",
-      "scope": "Foreign vacancy/preparation/fact/item 404; foreign list empty"
+      "scope": "Foreign vacancy/preparation/fact/item 404; foreign list empty",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/AuthController.php",
+        "apps/backend/app/Http/Controllers/CurrentUserController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/AccessCoreTest.php"
+      ],
+      "executed_suites": [
+        "AccessCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/access-shell.tsx"
+      ],
+      "entry_points": [
+        "POST api/v1/auth/login",
+        "POST api/v1/auth/logout",
+        "POST api/v1/auth/register",
+        "GET|HEAD api/v1/me"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Foreign vacancy/preparation/fact/item 404; foreign list empty"
     },
     {
       "id": "F06",
@@ -63,7 +183,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "AUTH-LOGOUT-browser",
-      "scope": "204 logout followed by 401 /me"
+      "scope": "204 logout followed by 401 /me",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/AuthController.php",
+        "apps/backend/app/Http/Controllers/CurrentUserController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/AccessCoreTest.php"
+      ],
+      "executed_suites": [
+        "AccessCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/access-shell.tsx"
+      ],
+      "entry_points": [
+        "POST api/v1/auth/login",
+        "POST api/v1/auth/logout",
+        "POST api/v1/auth/register",
+        "GET|HEAD api/v1/me"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "204 logout followed by 401 /me"
     },
     {
       "id": "F07",
@@ -72,7 +216,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CareerCoreTest; CAREER-MANUAL-browser",
-      "scope": "Real local manual fact with user_manual provenance"
+      "scope": "Real local manual fact with user_manual provenance",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Real local manual fact with user_manual provenance"
     },
     {
       "id": "F08",
@@ -81,7 +256,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CareerCoreRemediationTest; CAREER-EXTRACT-PENDING-browser",
-      "scope": "Local mocked provider; no automatic confirmation"
+      "scope": "Local mocked provider; no automatic confirmation",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Local mocked provider; no automatic confirmation"
     },
     {
       "id": "F09",
@@ -90,7 +296,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CareerCoreTest; CAREER-EXTRACT-PENDING-browser",
-      "scope": "Browser confirm; edit-confirm backend suite"
+      "scope": "Browser confirm; edit-confirm backend suite",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Browser confirm; edit-confirm backend suite"
     },
     {
       "id": "F10",
@@ -99,7 +336,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CareerCoreTest; CAREER-REJECT-API",
-      "scope": "Rejected fact cannot become confirmed via repeated review"
+      "scope": "Rejected fact cannot become confirmed via repeated review",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Rejected fact cannot become confirmed via repeated review"
     },
     {
       "id": "F11",
@@ -108,7 +376,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CareerCoreRemediationTest; supersession concurrency log",
-      "scope": "Automated lifecycle and PostgreSQL race tests"
+      "scope": "Automated lifecycle and PostgreSQL race tests",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Automated lifecycle and PostgreSQL race tests"
     },
     {
       "id": "F12",
@@ -117,7 +416,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CareerCoreTest; CAREER-REFRESH-persistence",
-      "scope": "Raw provenance, repeated-source behavior; refresh"
+      "scope": "Raw provenance, repeated-source behavior; refresh",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Raw provenance, repeated-source behavior; refresh"
     },
     {
       "id": "F13",
@@ -126,7 +456,40 @@
       "result": "PASS",
       "checked": true,
       "evidence": "qa-added.xml; database-evidence.json",
-      "scope": "Confirmed PASS; PENDING/REJECTED/DEPRECATED BLOCK"
+      "scope": "Confirmed PASS; PENDING/REJECTED/DEPRECATED BLOCK",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-added.xml",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Confirmed PASS; PENDING/REJECTED/DEPRECATED BLOCK"
     },
     {
       "id": "F14",
@@ -135,7 +498,38 @@
       "result": "PASS",
       "checked": true,
       "evidence": "CAREER-AMBIGUITY-resolution-API",
-      "scope": "Owned evidence selected; Truth Guard PASS"
+      "scope": "Owned evidence selected; Truth Guard PASS",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Owned evidence selected; Truth Guard PASS"
     },
     {
       "id": "F15",
@@ -144,7 +538,39 @@
       "result": "FAIL",
       "checked": true,
       "evidence": "career-actions.json; career-workspace.tsx",
-      "scope": "No action for USER_RESOLUTION_REQUIRED; API workaround needed"
+      "scope": "No action for USER_RESOLUTION_REQUIRED; API workaround needed",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/CareerController.php",
+        "apps/backend/app/Http/Controllers/CareerExtractionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/CareerCoreTest.php",
+        "apps/backend/tests/Feature/CareerCoreRemediationTest.php"
+      ],
+      "executed_suites": [
+        "CareerCoreTest",
+        "CareerCoreRemediationTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/career-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/career",
+        "PATCH api/v1/career/claims/{id}/resolve",
+        "POST api/v1/career/extractions",
+        "POST api/v1/career/facts/manual",
+        "PATCH api/v1/career/facts/{id}/deprecate",
+        "PATCH api/v1/career/facts/{id}/review",
+        "POST api/v1/career/facts/{id}/supersede",
+        "GET|HEAD api/v1/career/sources/{id}",
+        "GET|HEAD api/v1/career/trusted"
+      ],
+      "evidence_files": [
+        "career-actions.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "No action for USER_RESOLUTION_REQUIRED; API workaround needed"
     },
     {
       "id": "F16",
@@ -153,7 +579,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VACANCY-IMPORT-browser",
-      "scope": "Safe synthetic vacancy via real UI"
+      "scope": "Safe synthetic vacancy via real UI",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Safe synthetic vacancy via real UI"
     },
     {
       "id": "F17",
@@ -162,7 +611,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "database-evidence.json; VacancyCoreTest",
-      "scope": "Immutable raw text, versioning and history"
+      "scope": "Immutable raw text, versioning and history",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Immutable raw text, versioning and history"
     },
     {
       "id": "F18",
@@ -171,7 +644,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VacancyCoreTest; VACANCY-DUPLICATE-replay",
-      "scope": "Metadata URL not fetched; duplicate convergence"
+      "scope": "Metadata URL not fetched; duplicate convergence",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Metadata URL not fetched; duplicate convergence"
     },
     {
       "id": "F19",
@@ -180,7 +676,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VACANCY-IMPORT-browser; VacancyCoreTest",
-      "scope": "Laravel TECHNICAL MANDATORY normalized; local mock"
+      "scope": "Laravel TECHNICAL MANDATORY normalized; local mock",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Laravel TECHNICAL MANDATORY normalized; local mock"
     },
     {
       "id": "F20",
@@ -189,7 +708,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "INPUT-002-prompt-injection-controlled-block",
-      "scope": "SEMANTIC_REJECTED, zero persisted requirements/analysis for attack"
+      "scope": "SEMANTIC_REJECTED, zero persisted requirements/analysis for attack",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "SEMANTIC_REJECTED, zero persisted requirements/analysis for attack"
     },
     {
       "id": "F21",
@@ -198,7 +740,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VACANCY-REANALYZE-after-resolution; VacancyCoreTest",
-      "scope": "Career signature and snapshot fences"
+      "scope": "Career signature and snapshot fences",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Career signature and snapshot fences"
     },
     {
       "id": "F22",
@@ -207,7 +772,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "vacancy-postgres-concurrency.log; VacancyCoreTest",
-      "scope": "Controlled failures and races; no real provider delivery proof"
+      "scope": "Controlled failures and races; no real provider delivery proof",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "vacancy-postgres-concurrency.log",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Controlled failures and races; no real provider delivery proof"
     },
     {
       "id": "F23",
@@ -216,7 +805,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "OpenAiResponsesProviderTest; VacancyCoreTest",
-      "scope": "Fake HTTP error, retry and invalid output regressions"
+      "scope": "Fake HTTP error, retry and invalid output regressions",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Fake HTTP error, retry and invalid output regressions"
     },
     {
       "id": "F24",
@@ -225,7 +837,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "database-evidence.json; VacancyCoreTest",
-      "scope": "TECHNICAL MATCH; six NOT_APPLICABLE for this source"
+      "scope": "TECHNICAL MATCH; six NOT_APPLICABLE for this source",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "TECHNICAL MATCH; six NOT_APPLICABLE for this source"
     },
     {
       "id": "F25",
@@ -234,7 +870,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VacancyCoreTest",
-      "scope": "Backend multi-requirement negative tests; main E2E material_gaps=[]"
+      "scope": "Backend multi-requirement negative tests; main E2E material_gaps=[]",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Backend multi-requirement negative tests; main E2E material_gaps=[]"
     },
     {
       "id": "F26",
@@ -243,7 +902,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VacancyCoreTest",
-      "scope": "Negation, incidental terms, language and requirement-scoped support"
+      "scope": "Negation, incidental terms, language and requirement-scoped support",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Negation, incidental terms, language and requirement-scoped support"
     },
     {
       "id": "F27",
@@ -252,7 +934,30 @@
       "result": "PASS",
       "checked": true,
       "evidence": "VacancyCoreTest; VacancyPlanChatTest",
-      "scope": "Changed fact/snapshot cannot reuse stale matching"
+      "scope": "Changed fact/snapshot cannot reuse stale matching",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyCoreTest.php"
+      ],
+      "executed_suites": [
+        "VacancyCoreTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-workspace.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies",
+        "POST api/v1/vacancies",
+        "GET|HEAD api/v1/vacancies/{id}",
+        "POST api/v1/vacancies/{id}/reanalyze"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Changed fact/snapshot cannot reuse stale matching"
     },
     {
       "id": "F28",
@@ -261,7 +966,32 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-GENERATE-browser; database-evidence.json",
-      "scope": "Saved snapshot/analysis/career signature; preparation remains DRAFT with mixed items"
+      "scope": "Saved snapshot/analysis/career signature; preparation remains DRAFT with mixed items",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Saved snapshot/analysis/career signature; preparation remains DRAFT with mixed items"
     },
     {
       "id": "F29",
@@ -270,7 +1000,33 @@
       "result": "PASS",
       "checked": true,
       "evidence": "ApplicationDraftTest; recovery-browser.json",
-      "scope": "Before/After/Reason/Evidence/Risk; mocked generation"
+      "scope": "Before/After/Reason/Evidence/Risk; mocked generation",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "browser.json",
+        "recovery-browser.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Before/After/Reason/Evidence/Risk; mocked generation"
     },
     {
       "id": "F30",
@@ -279,7 +1035,32 @@
       "result": "PASS",
       "checked": true,
       "evidence": "ApplicationDraftTest; frontend-test.log; APPLICATION-ACCEPT-APPROVE-browser",
-      "scope": "Browser accepted/approved SHORT cover; resume acceptance backend/frontend tests"
+      "scope": "Browser accepted/approved SHORT cover; resume acceptance backend/frontend tests",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "frontend-test.log",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Browser accepted/approved SHORT cover; resume acceptance backend/frontend tests"
     },
     {
       "id": "F31",
@@ -288,7 +1069,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-TRUTHGUARD-unsupported; ApplicationDraftTest",
-      "scope": "Unsupported edit stores BLOCK and cannot approve"
+      "scope": "Unsupported edit stores BLOCK and cannot approve",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Unsupported edit stores BLOCK and cannot approve"
     },
     {
       "id": "F32",
@@ -297,7 +1102,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-REJECT-API",
-      "scope": "Rejected recommendation persists; cannot approve"
+      "scope": "Rejected recommendation persists; cannot approve",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Rejected recommendation persists; cannot approve"
     },
     {
       "id": "F33",
@@ -306,7 +1135,32 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-GENERATE-browser; database-evidence.json",
-      "scope": "Mocked content supported by Claims"
+      "scope": "Mocked content supported by Claims",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Mocked content supported by Claims"
     },
     {
       "id": "F34",
@@ -315,7 +1169,32 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-GENERATE-browser; database-evidence.json",
-      "scope": "Original truthful draft generated; later deliberately blocked edit"
+      "scope": "Original truthful draft generated; later deliberately blocked edit",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Original truthful draft generated; later deliberately blocked edit"
     },
     {
       "id": "F35",
@@ -324,7 +1203,33 @@
       "result": "PASS",
       "checked": true,
       "evidence": "qa-added.xml; ApplicationDraftTest; database-evidence.json",
-      "scope": "Same-owner confirmed backing required; mock semantic reviewer scoped"
+      "scope": "Same-owner confirmed backing required; mock semantic reviewer scoped",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "database-evidence.json",
+        "qa-added.xml",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Same-owner confirmed backing required; mock semantic reviewer scoped"
     },
     {
       "id": "F36",
@@ -333,7 +1238,32 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-ACCEPT-APPROVE-browser; qa-postgres.xml",
-      "scope": "Exact hash, actor, revision, events; no sending"
+      "scope": "Exact hash, actor, revision, events; no sending",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "qa-postgres.xml",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Exact hash, actor, revision, events; no sending"
     },
     {
       "id": "F37",
@@ -342,7 +1272,31 @@
       "result": "PASS",
       "checked": true,
       "evidence": "APPLICATION-REFRESH-persistence; RECOVERY-UI-reopen-results",
-      "scope": "APPROVED SHORT, BLOCKED STANDARD, REJECTED recommendation reopen"
+      "scope": "APPROVED SHORT, BLOCKED STANDARD, REJECTED recommendation reopen",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ApplicationPreparationController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ApplicationDraftTest.php"
+      ],
+      "executed_suites": [
+        "ApplicationDraftTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/application/panels.tsx"
+      ],
+      "entry_points": [
+        "PATCH api/v1/applications/draft-items/{id}",
+        "POST api/v1/applications/draft-items/{id}/approve",
+        "GET|HEAD api/v1/applications/preparations/{id}",
+        "POST api/v1/applications/preparations/{id}/generate",
+        "POST api/v1/vacancies/{vacancyId}/preparation"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "APPROVED SHORT, BLOCKED STANDARD, REJECTED recommendation reopen"
     },
     {
       "id": "F38",
@@ -351,7 +1305,27 @@
       "result": "PASS",
       "checked": true,
       "evidence": "mcp-toggle.log; McpGatewayTest",
-      "scope": "Disabled routes absent, enabled bounded contract available"
+      "scope": "Disabled routes absent, enabled bounded contract available",
+      "implementation": [
+        "apps/backend/routes/ai.php",
+        "apps/backend/app/Mcp/CvortexServer.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/McpGatewayTest.php"
+      ],
+      "executed_suites": [
+        "McpGatewayTest"
+      ],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Gateway on/off / discovery"
+      ],
+      "evidence_files": [
+        "mcp-toggle.log",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Disabled routes absent, enabled bounded contract available"
     },
     {
       "id": "F39",
@@ -360,7 +1334,26 @@
       "result": "PASS",
       "checked": true,
       "evidence": "McpGatewayTest",
-      "scope": "Local automated tokens, redirects, scope and resource controls; no external consumer"
+      "scope": "Local automated tokens, redirects, scope and resource controls; no external consumer",
+      "implementation": [
+        "apps/backend/routes/ai.php",
+        "apps/backend/app/Mcp/CvortexServer.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/McpGatewayTest.php"
+      ],
+      "executed_suites": [
+        "McpGatewayTest"
+      ],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: OAuth / PKCE / scopes / resource"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Local automated tokens, redirects, scope and resource controls; no external consumer"
     },
     {
       "id": "F40",
@@ -369,7 +1362,27 @@
       "result": "PASS",
       "checked": true,
       "evidence": "McpGatewayTest; qa-postgres.xml",
-      "scope": "Read calls preserve product rows and owner scope"
+      "scope": "Read calls preserve product rows and owner scope",
+      "implementation": [
+        "apps/backend/routes/ai.php",
+        "apps/backend/app/Mcp/CvortexServer.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/McpGatewayTest.php"
+      ],
+      "executed_suites": [
+        "McpGatewayTest"
+      ],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Read-only owned context"
+      ],
+      "evidence_files": [
+        "qa-postgres.xml",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Read calls preserve product rows and owner scope"
     },
     {
       "id": "F41",
@@ -378,7 +1391,26 @@
       "result": "PASS",
       "checked": true,
       "evidence": "McpGatewayTest; VacancyPlanChatTest",
-      "scope": "No MCP approve/send; snapshot/signature fences and draft-write scope"
+      "scope": "No MCP approve/send; snapshot/signature fences and draft-write scope",
+      "implementation": [
+        "apps/backend/routes/ai.php",
+        "apps/backend/app/Mcp/CvortexServer.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/McpGatewayTest.php"
+      ],
+      "executed_suites": [
+        "McpGatewayTest"
+      ],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Bounded unapproved draft save"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "No MCP approve/send; snapshot/signature fences and draft-write scope"
     },
     {
       "id": "F42",
@@ -387,7 +1419,26 @@
       "result": "PASS",
       "checked": true,
       "evidence": "frontend-test.log; checks.json",
-      "scope": "108 tests; lint, TS and production build PASS"
+      "scope": "108 tests; lint, TS and production build PASS",
+      "implementation": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "tests": [
+        "apps/frontend/src/app/__tests__/workspace-shell.test.tsx"
+      ],
+      "executed_suites": [],
+      "ui_files": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "entry_points": [
+        "Documented control/gap: Build / frontend contracts"
+      ],
+      "evidence_files": [
+        "checks.json",
+        "frontend-test.log"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "108 tests; lint, TS and production build PASS"
     },
     {
       "id": "F43",
@@ -396,7 +1447,25 @@
       "result": "PASS",
       "checked": true,
       "evidence": "RESPONSIVE-and-keyboard; responsive-320.png",
-      "scope": "1440/768/390/320 overflow, Escape and focus return; screenshots only sampled"
+      "scope": "1440/768/390/320 overflow, Escape and focus return; screenshots only sampled",
+      "implementation": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "tests": [
+        "apps/frontend/src/app/__tests__/workspace-shell.test.tsx"
+      ],
+      "executed_suites": [],
+      "ui_files": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "entry_points": [
+        "Documented control/gap: Responsive / keyboard smoke"
+      ],
+      "evidence_files": [
+        "responsive-320.png"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "1440/768/390/320 overflow, Escape and focus return; screenshots only sampled"
     },
     {
       "id": "F44",
@@ -405,7 +1474,25 @@
       "result": "PASS",
       "checked": true,
       "evidence": "accessibility-smoke.json",
-      "scope": "Materials + Career controls named; lang/title/alt/duplicate ID smoke only"
+      "scope": "Materials + Career controls named; lang/title/alt/duplicate ID smoke only",
+      "implementation": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "tests": [
+        "apps/frontend/src/app/__tests__/workspace-shell.test.tsx"
+      ],
+      "executed_suites": [],
+      "ui_files": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "entry_points": [
+        "Documented control/gap: Accessible-name DOM automation"
+      ],
+      "evidence_files": [
+        "accessibility-smoke.json"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "Materials + Career controls named; lang/title/alt/duplicate ID smoke only"
     },
     {
       "id": "F45",
@@ -414,7 +1501,25 @@
       "result": "PASS",
       "checked": true,
       "evidence": "performance.json; BROWSER-no-exceptions-no-egress",
-      "scope": "80 read requests; zero error; no defined SLO/load threshold"
+      "scope": "80 read requests; zero error; no defined SLO/load threshold",
+      "implementation": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "tests": [
+        "apps/frontend/src/app/__tests__/workspace-shell.test.tsx"
+      ],
+      "executed_suites": [],
+      "ui_files": [
+        "apps/frontend/src/app/workspace-shell.tsx"
+      ],
+      "entry_points": [
+        "Documented control/gap: Performance / browser errors"
+      ],
+      "evidence_files": [
+        "performance.json"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "80 read requests; zero error; no defined SLO/load threshold"
     },
     {
       "id": "F46",
@@ -423,7 +1528,23 @@
       "result": "PASS",
       "checked": true,
       "evidence": "database-evidence.json",
-      "scope": "Read-only DB confirms snapshot, requirements, matching, cover, usages and approvals"
+      "scope": "Read-only DB confirms snapshot, requirements, matching, cover, usages and approvals",
+      "implementation": [
+        "apps/backend/app/Services/ApplicationPreparationService.php"
+      ],
+      "tests": [
+        "scripts/test-application-postgres-boundary.sh"
+      ],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: PostgreSQL application persistence"
+      ],
+      "evidence_files": [
+        "database-evidence.json"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "Read-only DB confirms snapshot, requirements, matching, cover, usages and approvals"
     },
     {
       "id": "F47",
@@ -432,16 +1553,60 @@
       "result": "PASS",
       "checked": true,
       "evidence": "pg-constraint-probe.json; qa-postgres.xml",
-      "scope": "Foreign owner sees zero; cross-owner FK rejects insert; no commits"
+      "scope": "Foreign owner sees zero; cross-owner FK rejects insert; no commits",
+      "implementation": [
+        "apps/backend/database/migrations/2026_09_24_000013_create_application_preparations.php",
+        "apps/backend/database/migrations/2026_09_21_000010_allow_reappearing_vacancy_snapshot_content.php",
+        "apps/backend/database/migrations/2026_09_19_000008_create_vacancy_core_tables.php",
+        "apps/backend/database/migrations/2026_10_04_000002_create_vacancy_chat_and_analysis_drafts.php",
+        "apps/backend/database/migrations/2026_09_24_000011_reconcile_vacancy_aggregate_state.php",
+        "apps/backend/database/migrations/2026_09_19_000009_remediate_vacancy_core_review_findings.php"
+      ],
+      "tests": [
+        "docs/09-QA/evidence/full-2026-10-11/pg-constraint-probe.py"
+      ],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Runtime RLS / owner FK"
+      ],
+      "evidence_files": [
+        "pg-constraint-probe.json",
+        "qa-postgres.xml"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "Foreign owner sees zero; cross-owner FK rejects insert; no commits"
     },
     {
       "id": "F48",
       "group": "PostgreSQL",
       "function": "Concurrency / upgrade integrity",
-      "result": "PASS",
+      "result": "FAIL",
       "checked": true,
       "evidence": "access/career/vacancy/application/chatgpt PostgreSQL logs",
-      "scope": "Saved scripts PASS except separate legacy duplicate-migration harness"
+      "scope": "Historical Career review final verification FAIL; other named races/upgrade logs retained. New fixed-harness runs are separate.",
+      "implementation": [
+        "scripts/test-career-review-postgres-concurrency.sh",
+        "scripts/test-career-core-postgres-upgrade.sh",
+        "scripts/test-career-fact-supersession-postgres-concurrency.sh",
+        "scripts/test-vacancy-postgres-concurrency.sh"
+      ],
+      "tests": [
+        "apps/backend/tests/Support/verify_career_review_concurrency.php"
+      ],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Concurrency / upgrade integrity"
+      ],
+      "evidence_files": [
+        "checks.json",
+        "career-review-postgres-concurrency.log",
+        "career-fact-supersession-postgres-concurrency.log",
+        "vacancy-postgres-concurrency.log"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "Historical Career review final verification FAIL; other named races/upgrade logs retained. New fixed-harness runs are separate."
     },
     {
       "id": "F49",
@@ -450,7 +1615,33 @@
       "result": "BLOCKED",
       "checked": true,
       "evidence": "qa-postgres.xml; diagnostics-isolated-repro.log",
-      "scope": "Fixture dedup prevents intended assertion; 3 other PostgreSQL Diagnostics tests PASS"
+      "scope": "Fixture dedup prevents intended assertion; 3 other PostgreSQL Diagnostics tests PASS",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/DiagnosticsController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/DiagnosticsTest.php",
+        "apps/frontend/src/app/__tests__/diagnostics.test.tsx"
+      ],
+      "executed_suites": [
+        "DiagnosticsTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/diagnostics.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/diagnostics/incidents",
+        "GET|HEAD api/v1/diagnostics/incidents/{id}",
+        "PATCH api/v1/diagnostics/incidents/{id}",
+        "POST api/v1/diagnostics/report"
+      ],
+      "evidence_files": [
+        "diagnostics-isolated-repro.log",
+        "qa-postgres.xml",
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Fixture dedup prevents intended assertion; 3 other PostgreSQL Diagnostics tests PASS"
     },
     {
       "id": "F50",
@@ -459,7 +1650,24 @@
       "result": "FAIL",
       "checked": true,
       "evidence": "b01-provenance.json; b01-recovery-repro.log",
-      "scope": "OFL.txt byte SHA differs after normalization"
+      "scope": "OFL.txt byte SHA differs after normalization",
+      "implementation": [
+        "docs/07-Design/reference/build-reference.cjs"
+      ],
+      "tests": [
+        "docs/07-Design/reference/build-reference.test.cjs"
+      ],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: B01 asset provenance integrity"
+      ],
+      "evidence_files": [
+        "b01-provenance.json",
+        "b01-recovery-repro.log"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "OFL.txt byte SHA differs after normalization"
     },
     {
       "id": "F51",
@@ -468,7 +1676,23 @@
       "result": "FAIL",
       "checked": true,
       "evidence": "vacancy-postgres-duplicate-migration.log",
-      "scope": "Fixed --step=4 no longer reaches pre-000009 schema"
+      "scope": "Fixed --step=4 no longer reaches pre-000009 schema",
+      "implementation": [
+        "scripts/test-vacancy-postgres-duplicate-migration.sh"
+      ],
+      "tests": [
+        "scripts/test-vacancy-postgres-duplicate-migration.sh"
+      ],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Legacy duplicate vacancy migration proof"
+      ],
+      "evidence_files": [
+        "vacancy-postgres-duplicate-migration.log"
+      ],
+      "coverage_status": "LOCAL_CONTROL_OR_INSPECTION",
+      "limitations": "Fixed --step=4 no longer reaches pre-000009 schema"
     },
     {
       "id": "F52",
@@ -477,7 +1701,17 @@
       "result": "BLOCKED",
       "checked": false,
       "evidence": "no live AI authorized",
-      "scope": "Mock results do not validate real OpenAI"
+      "scope": "Mock results do not validate real OpenAI",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Real OpenAI extraction / generation"
+      ],
+      "evidence_files": [],
+      "coverage_status": "BLOCKED",
+      "limitations": "Mock results do not validate real OpenAI"
     },
     {
       "id": "F53",
@@ -486,7 +1720,17 @@
       "result": "BLOCKED",
       "checked": false,
       "evidence": "no live integration authorized",
-      "scope": "Local contracts tested; external account/transport not verified"
+      "scope": "Local contracts tested; external account/transport not verified",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Real ChatGPT OAuth / MCP consumer"
+      ],
+      "evidence_files": [],
+      "coverage_status": "BLOCKED",
+      "limitations": "Local contracts tested; external account/transport not verified"
     },
     {
       "id": "F54",
@@ -495,7 +1739,17 @@
       "result": "BLOCKED",
       "checked": false,
       "evidence": "b01-manual-accessibility-release-gate",
-      "scope": "A1 requires named human/AT evidence"
+      "scope": "A1 requires named human/AT evidence",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Human audible screen reader"
+      ],
+      "evidence_files": [],
+      "coverage_status": "BLOCKED",
+      "limitations": "A1 requires named human/AT evidence"
     },
     {
       "id": "F55",
@@ -504,7 +1758,17 @@
       "result": "BLOCKED",
       "checked": false,
       "evidence": "b01-manual-accessibility-release-gate",
-      "scope": "Z1 requires native browser zoom reviewer evidence"
+      "scope": "Z1 requires native browser zoom reviewer evidence",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Native 200% zoom / reflow"
+      ],
+      "evidence_files": [],
+      "coverage_status": "BLOCKED",
+      "limitations": "Z1 requires native browser zoom reviewer evidence"
     },
     {
       "id": "F56",
@@ -513,7 +1777,17 @@
       "result": "BLOCKED",
       "checked": false,
       "evidence": "b01-manual-accessibility-release-gate",
-      "scope": "32 cases and G/N/M/T/K interactions remain open"
+      "scope": "32 cases and G/N/M/T/K interactions remain open",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Full manual state/viewport matrix"
+      ],
+      "evidence_files": [],
+      "coverage_status": "BLOCKED",
+      "limitations": "32 cases and G/N/M/T/K interactions remain open"
     },
     {
       "id": "F57",
@@ -522,7 +1796,17 @@
       "result": "BLOCKED",
       "checked": false,
       "evidence": "m1-4-application-draft completion criteria",
-      "scope": "Synthetic automation is not real-user acceptance"
+      "scope": "Synthetic automation is not real-user acceptance",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Preview real-user value and feedback"
+      ],
+      "evidence_files": [],
+      "coverage_status": "BLOCKED",
+      "limitations": "Synthetic automation is not real-user acceptance"
     },
     {
       "id": "F58",
@@ -531,7 +1815,17 @@
       "result": "NOT_RUN",
       "checked": false,
       "evidence": "Roadmap M2",
-      "scope": "Not implemented/authorized by this audit"
+      "scope": "Not implemented/authorized by this audit",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: DOCX / PDF application package"
+      ],
+      "evidence_files": [],
+      "coverage_status": "NOT_RUN",
+      "limitations": "Not implemented/authorized by this audit"
     },
     {
       "id": "F59",
@@ -540,7 +1834,625 @@
       "result": "NOT_RUN",
       "checked": false,
       "evidence": "Roadmap M2",
-      "scope": "MVP acceptance unavailable at M1 baseline"
+      "scope": "MVP acceptance unavailable at M1 baseline",
+      "implementation": [],
+      "tests": [],
+      "executed_suites": [],
+      "ui_files": [],
+      "entry_points": [
+        "Documented control/gap: Full employer memory / contradiction flow"
+      ],
+      "evidence_files": [],
+      "coverage_status": "NOT_RUN",
+      "limitations": "MVP acceptance unavailable at M1 baseline"
+    },
+    {
+      "id": "F60",
+      "group": "ChatGPT",
+      "function": "Local owner-bound connection lifecycle",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "ChatGptPlanTest; qa-sqlite.xml",
+      "scope": "Local mocked OAuth/refresh/disconnect, consent and owner tests; external account delivery BLOCKED.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ChatGptConnectionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ChatGptPlanTest.php",
+        "apps/frontend/src/app/__tests__/chatgpt-connection.test.tsx"
+      ],
+      "executed_suites": [
+        "ChatGptPlanTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/chatgpt-connection.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/chatgpt/callback",
+        "GET|HEAD api/v1/chatgpt/connections",
+        "POST api/v1/chatgpt/connections",
+        "DELETE api/v1/chatgpt/connections/{id}",
+        "GET|HEAD api/v1/chatgpt/connections/{id}/models",
+        "POST api/v1/chatgpt/connections/{id}/proof",
+        "PATCH api/v1/chatgpt/connections/{id}/welcome"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Local mocked OAuth/refresh/disconnect, consent and owner tests; external account delivery BLOCKED."
+    },
+    {
+      "id": "F61",
+      "group": "ChatGPT",
+      "function": "Local model catalog and connection proof",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "ChatGptPlanTest; qa-sqlite.xml",
+      "scope": "Fake catalog/proof tests; no live model catalog or subscription inference verified.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/ChatGptConnectionController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/ChatGptPlanTest.php",
+        "apps/frontend/src/app/__tests__/chatgpt-connection.test.tsx"
+      ],
+      "executed_suites": [
+        "ChatGptPlanTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/chatgpt-connection.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/chatgpt/callback",
+        "GET|HEAD api/v1/chatgpt/connections",
+        "POST api/v1/chatgpt/connections",
+        "DELETE api/v1/chatgpt/connections/{id}",
+        "GET|HEAD api/v1/chatgpt/connections/{id}/models",
+        "POST api/v1/chatgpt/connections/{id}/proof",
+        "PATCH api/v1/chatgpt/connections/{id}/welcome"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Fake catalog/proof tests; no live model catalog or subscription inference verified."
+    },
+    {
+      "id": "F62",
+      "group": "Chat",
+      "function": "Owned history and exact context preview",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyPlanChatTest; qa-sqlite.xml",
+      "scope": "Local tests of bounded history, preview fingerprint, confirmed context and isolation; no browser chat E2E.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyChatController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyPlanChatTest.php",
+        "apps/frontend/src/app/__tests__/vacancy-chat.test.tsx"
+      ],
+      "executed_suites": [
+        "VacancyPlanChatTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-chat.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies/{id}/analysis-drafts",
+        "POST api/v1/vacancies/{id}/analysis-drafts",
+        "GET|HEAD api/v1/vacancies/{id}/chat",
+        "POST api/v1/vacancies/{id}/chat/cancel",
+        "POST api/v1/vacancies/{id}/chat/context-preview",
+        "POST api/v1/vacancies/{id}/chat/messages",
+        "POST api/v1/vacancy-analysis-drafts/{id}/approve"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Local tests of bounded history, preview fingerprint, confirmed context and isolation; no browser chat E2E."
+    },
+    {
+      "id": "F63",
+      "group": "Chat",
+      "function": "Stream persistence, interruption and cancellation",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyPlanChatTest; qa-sqlite.xml",
+      "scope": "Mocked stream/abort and stale context tests; external stream delivery BLOCKED.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyChatController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyPlanChatTest.php",
+        "apps/frontend/src/app/__tests__/vacancy-chat.test.tsx"
+      ],
+      "executed_suites": [
+        "VacancyPlanChatTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-chat.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies/{id}/analysis-drafts",
+        "POST api/v1/vacancies/{id}/analysis-drafts",
+        "GET|HEAD api/v1/vacancies/{id}/chat",
+        "POST api/v1/vacancies/{id}/chat/cancel",
+        "POST api/v1/vacancies/{id}/chat/context-preview",
+        "POST api/v1/vacancies/{id}/chat/messages",
+        "POST api/v1/vacancy-analysis-drafts/{id}/approve"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Mocked stream/abort and stale context tests; external stream delivery BLOCKED."
+    },
+    {
+      "id": "F64",
+      "group": "Analysis approval",
+      "function": "Draft list/save and explicit analysis approval",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyPlanChatTest; qa-sqlite.xml",
+      "scope": "Local schema/source/staleness/owner/human approval tests; distinct from application-item approval; no browser approval E2E.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/VacancyChatController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/VacancyPlanChatTest.php",
+        "apps/frontend/src/app/__tests__/vacancy-chat.test.tsx"
+      ],
+      "executed_suites": [
+        "VacancyPlanChatTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/vacancy-chat.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/vacancies/{id}/analysis-drafts",
+        "POST api/v1/vacancies/{id}/analysis-drafts",
+        "GET|HEAD api/v1/vacancies/{id}/chat",
+        "POST api/v1/vacancies/{id}/chat/cancel",
+        "POST api/v1/vacancies/{id}/chat/context-preview",
+        "POST api/v1/vacancies/{id}/chat/messages",
+        "POST api/v1/vacancy-analysis-drafts/{id}/approve"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Local schema/source/staleness/owner/human approval tests; distinct from application-item approval; no browser approval E2E."
+    },
+    {
+      "id": "F65",
+      "group": "Diagnostics",
+      "function": "Report ingestion and safe redaction",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "DiagnosticsTest; qa-sqlite.xml",
+      "scope": "57 historical SQLite cases cover bounded Diagnostics contracts; not exhaustive security proof.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/DiagnosticsController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/DiagnosticsTest.php",
+        "apps/frontend/src/app/__tests__/diagnostics.test.tsx"
+      ],
+      "executed_suites": [
+        "DiagnosticsTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/diagnostics.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/diagnostics/incidents",
+        "GET|HEAD api/v1/diagnostics/incidents/{id}",
+        "PATCH api/v1/diagnostics/incidents/{id}",
+        "POST api/v1/diagnostics/report"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "57 historical SQLite cases cover bounded Diagnostics contracts; not exhaustive security proof."
+    },
+    {
+      "id": "F66",
+      "group": "Diagnostics",
+      "function": "Admin filtering, details and status lifecycle",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "DiagnosticsTest; qa-sqlite.xml",
+      "scope": "Local tests plus admin browser read; exact PostgreSQL tie regression remains F49 BLOCKED.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/DiagnosticsController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/DiagnosticsTest.php",
+        "apps/frontend/src/app/__tests__/diagnostics.test.tsx"
+      ],
+      "executed_suites": [
+        "DiagnosticsTest"
+      ],
+      "ui_files": [
+        "apps/frontend/src/app/diagnostics.tsx"
+      ],
+      "entry_points": [
+        "GET|HEAD api/v1/diagnostics/incidents",
+        "GET|HEAD api/v1/diagnostics/incidents/{id}",
+        "PATCH api/v1/diagnostics/incidents/{id}",
+        "POST api/v1/diagnostics/report"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Local tests plus admin browser read; exact PostgreSQL tie regression remains F49 BLOCKED."
+    },
+    {
+      "id": "F67",
+      "group": "Health",
+      "function": "Liveness and dependency readiness",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "HealthTest; qa-sqlite.xml",
+      "scope": "Five local automated health cases; no external service readiness claim.",
+      "implementation": [
+        "apps/backend/app/Http/Controllers/HealthController.php"
+      ],
+      "tests": [
+        "apps/backend/tests/Feature/HealthTest.php"
+      ],
+      "executed_suites": [
+        "HealthTest"
+      ],
+      "ui_files": [],
+      "entry_points": [
+        "GET|HEAD api/v1/health/live",
+        "GET|HEAD api/v1/health/ready"
+      ],
+      "evidence_files": [
+        "qa-sqlite.xml"
+      ],
+      "coverage_status": "LOCAL_AUTOMATED",
+      "limitations": "Five local automated health cases; no external service readiness claim."
     }
-  ]
+  ],
+  "route_mapping": {
+    "PATCH api/v1/applications/draft-items/{id}": [
+      "F28",
+      "F29",
+      "F30",
+      "F31",
+      "F32",
+      "F33",
+      "F34",
+      "F35",
+      "F36",
+      "F37"
+    ],
+    "POST api/v1/applications/draft-items/{id}/approve": [
+      "F28",
+      "F29",
+      "F30",
+      "F31",
+      "F32",
+      "F33",
+      "F34",
+      "F35",
+      "F36",
+      "F37"
+    ],
+    "GET|HEAD api/v1/applications/preparations/{id}": [
+      "F28",
+      "F29",
+      "F30",
+      "F31",
+      "F32",
+      "F33",
+      "F34",
+      "F35",
+      "F36",
+      "F37"
+    ],
+    "POST api/v1/applications/preparations/{id}/generate": [
+      "F28",
+      "F29",
+      "F30",
+      "F31",
+      "F32",
+      "F33",
+      "F34",
+      "F35",
+      "F36",
+      "F37"
+    ],
+    "POST api/v1/auth/login": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06"
+    ],
+    "POST api/v1/auth/logout": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06"
+    ],
+    "POST api/v1/auth/register": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06"
+    ],
+    "GET|HEAD api/v1/career": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "PATCH api/v1/career/claims/{id}/resolve": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "POST api/v1/career/extractions": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "POST api/v1/career/facts/manual": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "PATCH api/v1/career/facts/{id}/deprecate": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "PATCH api/v1/career/facts/{id}/review": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "POST api/v1/career/facts/{id}/supersede": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "GET|HEAD api/v1/career/sources/{id}": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "GET|HEAD api/v1/career/trusted": [
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15"
+    ],
+    "GET|HEAD api/v1/chatgpt/callback": [
+      "F60"
+    ],
+    "GET|HEAD api/v1/chatgpt/connections": [
+      "F60"
+    ],
+    "POST api/v1/chatgpt/connections": [
+      "F60"
+    ],
+    "DELETE api/v1/chatgpt/connections/{id}": [
+      "F60"
+    ],
+    "GET|HEAD api/v1/chatgpt/connections/{id}/models": [
+      "F61"
+    ],
+    "POST api/v1/chatgpt/connections/{id}/proof": [
+      "F61"
+    ],
+    "PATCH api/v1/chatgpt/connections/{id}/welcome": [
+      "F60"
+    ],
+    "GET|HEAD api/v1/diagnostics/incidents": [
+      "F66"
+    ],
+    "GET|HEAD api/v1/diagnostics/incidents/{id}": [
+      "F66"
+    ],
+    "PATCH api/v1/diagnostics/incidents/{id}": [
+      "F66"
+    ],
+    "POST api/v1/diagnostics/report": [
+      "F65"
+    ],
+    "GET|HEAD api/v1/health/live": [
+      "F67"
+    ],
+    "GET|HEAD api/v1/health/ready": [
+      "F67"
+    ],
+    "GET|HEAD api/v1/me": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06"
+    ],
+    "GET|HEAD api/v1/vacancies": [
+      "F16",
+      "F17",
+      "F18",
+      "F19",
+      "F20",
+      "F21",
+      "F22",
+      "F23",
+      "F24",
+      "F25",
+      "F26",
+      "F27"
+    ],
+    "POST api/v1/vacancies": [
+      "F16",
+      "F17",
+      "F18",
+      "F19",
+      "F20",
+      "F21",
+      "F22",
+      "F23",
+      "F24",
+      "F25",
+      "F26",
+      "F27"
+    ],
+    "GET|HEAD api/v1/vacancies/{id}": [
+      "F16",
+      "F17",
+      "F18",
+      "F19",
+      "F20",
+      "F21",
+      "F22",
+      "F23",
+      "F24",
+      "F25",
+      "F26",
+      "F27"
+    ],
+    "GET|HEAD api/v1/vacancies/{id}/analysis-drafts": [
+      "F64"
+    ],
+    "POST api/v1/vacancies/{id}/analysis-drafts": [
+      "F64"
+    ],
+    "GET|HEAD api/v1/vacancies/{id}/chat": [
+      "F62"
+    ],
+    "POST api/v1/vacancies/{id}/chat/cancel": [
+      "F63"
+    ],
+    "POST api/v1/vacancies/{id}/chat/context-preview": [
+      "F62"
+    ],
+    "POST api/v1/vacancies/{id}/chat/messages": [
+      "F63"
+    ],
+    "POST api/v1/vacancies/{id}/reanalyze": [
+      "F16",
+      "F17",
+      "F18",
+      "F19",
+      "F20",
+      "F21",
+      "F22",
+      "F23",
+      "F24",
+      "F25",
+      "F26",
+      "F27"
+    ],
+    "POST api/v1/vacancies/{vacancyId}/preparation": [
+      "F28",
+      "F29",
+      "F30",
+      "F31",
+      "F32",
+      "F33",
+      "F34",
+      "F35",
+      "F36",
+      "F37"
+    ],
+    "POST api/v1/vacancy-analysis-drafts/{id}/approve": [
+      "F64"
+    ]
+  },
+  "page_mapping": {
+    "apps/frontend/src/app/page.tsx": [
+      "F42",
+      "F43",
+      "F60",
+      "F61",
+      "F62",
+      "F63",
+      "F64"
+    ],
+    "apps/frontend/src/app/career/page.tsx": [
+      "F07",
+      "F15"
+    ],
+    "apps/frontend/src/app/diagnostics/page.tsx": [
+      "F04",
+      "F49",
+      "F65",
+      "F66"
+    ],
+    "apps/frontend/src/app/register/page.tsx": [
+      "F01"
+    ]
+  },
+  "grouping_policy": "Many-to-many route/workflow mapping; endpoint count is not a feature count. Framework OAuth/discovery routes are grouped at F38-F41; test-only route excluded. Health is explicit F67. Missing external/manual coverage remains visible."
 }

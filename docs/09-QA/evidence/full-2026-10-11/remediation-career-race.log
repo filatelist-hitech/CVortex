@@ -1,0 +1,4 @@
+ Container cvortexpr46remediation-migration-run-66011282199e Creating 
+ Container cvortexpr46remediation-migration-run-66011282199e Created 
+verified: confirm transition and valid Claim state
+career-review-postgres-concurrency: PASS (one transition wins, competing transition rejected, valid Claim state)

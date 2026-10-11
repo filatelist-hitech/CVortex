@@ -1,14 +1,25 @@
 # CVortex — проверенное текущее состояние
 
+## PR #46 evidence remediation candidate — 2026-10-12
+
+Explicit owner override, primary mode IMPLEMENT, существующая PR branch `docs/full-functional-qa-2026-10-11`. Исправлены механизм manifest LF export, historical false-PASS accounting, mapping восьми реализованных workflows, export provenance и Documentation Map. Career verification helpers теперь проверяют реального победителя confirm/reject, owner/Claim/evidence и требуют успешной финальной проверки; exceptions/incomplete output не становятся PASS. Product code/ADRs/schema, QA-001–QA-004 и RCV-01 не изменены.
+
+Executed validation: isolated PostgreSQL race PASS (confirm winner); targeted backend 51 tests / 358 assertions PASS, включая 11 новых invariant datasets; Python evidence regression 8 tests PASS, wrapper regression 2 tests PASS; targeted Pint, PHPStan и Bash syntax PASS. Raw logs/source hashes/commands — [remediation-runs](../../docs/09-QA/evidence/full-2026-10-11/remediation-runs.json). Manifest/JSON/XML/accounting verification выполняется canonical `python3 scripts/qa_evidence.py`; подробности — [PR46 remediation](../../docs/09-QA/PR46-REMEDIATION.md). Независимый review и Git delivery относятся к последующему frozen candidate gate; отчёт хранится вне дерева, не подменён self-review.
+
+Исторические 432 records / 539 weighted units сохраняют 525 PASS / 5 FAIL / 7 BLOCKED / 2 NOT_RUN. Новый isolated run не стирает historical verifier failure. `NEXT` и `BLOCKERS` не менялись; production accessibility, real provider/Preview и M2 gates остаются открыты.
+
 ## PR #46 QA audit integration — 2026-10-11
 
 PR #45 MERGED в `stage`; интегрированный Recovery HEAD — `ecf65f7f20224544beabbd6df7aadb69d7cc352a`. Сохранённый functional QA относится к исходному baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`; Recovery update был документационным и не менял product code. Отчёты и evidence сохранены без повторного полного QA Audit.
 
-QA ledger содержит **432 scenario records / 539 executions**: **526 PASS, 4 FAIL, 7 BLOCKED, 2 NOT_RUN**. Bounded inventory: 59 функций/контролей, 51 проверена; 47 PASS, 3 FAIL, 7 BLOCKED, 2 NOT_RUN. Вердикт аудита — **CHANGES REQUIRED**. Четыре FAIL и связанные QA-001–QA-004 остаются открыты; исправления не выполнялись. Состав результатов и ограничения — в [audit report](../../docs/09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), детализация — в [coverage matrix](../../docs/09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), проверяемые хэши — в evidence manifest.
+QA ledger содержит **432 records / 539 weighted units**: **525 PASS, 5 FAIL, 7 BLOCKED, 2 NOT_RUN**. Bounded inventory: 67 функций/контролей, 59 проверены; 54 PASS, 4 FAIL, 7 BLOCKED, 2 NOT_RUN. Вердикт аудита — **CHANGES REQUIRED**. QA-001–QA-004 остаются открыты. Пятый historical FAIL — Career concurrency final verifier; его verification helpers исправлены отдельным bounded remediation ниже, historical log не переписан. Состав результатов и ограничения — в [audit report](../../docs/09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), детализация — в [coverage matrix](../../docs/09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), проверяемые хэши — в evidence manifest.
 
-Это отдельный результат от RCV-01 Recovery: Recovery closeout сохранён как **DONE_VERIFIED в локальном scope**, а функциональный QA — **CHANGES REQUIRED**. Текущий `NEXT` остаётся `b01-current-manifest-integrity-reconciliation`; `BLOCKERS.md` и Recovery gate не изменялись этой QA-интеграцией. Product code, migrations и QA-001–QA-004 не менялись.
+Это отдельный результат от RCV-01 Recovery: Recovery closeout сохранён как **DONE_VERIFIED в локальном scope**, а функциональный QA — **CHANGES REQUIRED**. Текущий `NEXT` остаётся `b01-current-manifest-integrity-reconciliation`; `BLOCKERS.md` и Recovery gate не изменялись этой QA-интеграцией. Product code, migrations и QA-001–QA-004 не менялись; remediation затрагивает test/verification helpers.
 
-Последняя проверка: **2026-10-11, Europe/Moscow**.
+## Recovery snapshot — 2026-10-11
+
+Следующие checkout/Git/runtime формулировки — датированный Recovery snapshot, не live PR #46 head.
+Последняя проверка Recovery: **2026-10-11, Europe/Moscow**.
 Основной audited checkout: `stage`, HEAD
 `f06a6dba058589823bf3d3c8b693cb625170bc4b`, совпадает с live remote stage.
 Последний блок: **IMPLEMENT / RCV-01, DONE_VERIFIED в локальном scope**.
