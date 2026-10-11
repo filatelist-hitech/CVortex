@@ -1340,3 +1340,19 @@ language. This does not assert personal review of every state or viewport. Manua
 screen-reader verification, native 200% zoom, real authenticated Laravel E2E and
 the ADR-0025 production release gate remain open/not tested. NEXT remains
 `b01-manual-accessibility-release-gate`.
+
+## Git consolidation delivery — 2026-10-11
+
+Consolidated design/B01 and React workspace shipped on
+`feature/b02-global-shell-navigation`; PR [#44](https://github.com/filatelist-hitech/CVortex/pull/44)
+open to `stage`. PR #43 was closed as superseded after verifying its complete
+single-commit change (`936e95b`) is an ancestor of the new branch. No merge,
+release, stage/main update, backend change or token-value change.
+
+PR metadata/checkpoint comments are present. Local PR contract and latest GitHub
+`PR contract` / `Roadmap metadata` checks pass. GitHub `m0-quality` remains pending
+at this status capture; no external quality result is claimed. Local validation and
+manual limitations are recorded in the PR and
+`docs/07-Design/validation/application-port-2026-10-11/delivery-validation.json`.
+NEXT remains `b01-manual-accessibility-release-gate`; screen-reader, native 200% zoom,
+authenticated Laravel E2E and the production accessibility gate remain open/not tested.
