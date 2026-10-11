@@ -1,0 +1,125 @@
+{
+  "project": "cvortexqa1011",
+  "action": "stop-only",
+  "volumes_removed": false,
+  "containers_removed": false,
+  "evidence_saved_before_stop": true,
+  "resources": [
+    {
+      "name": "cvortexqa1011-scheduler-1",
+      "running": false,
+      "exit_code": 0
+    },
+    {
+      "name": "cvortexqa1011-horizon-1",
+      "running": false,
+      "exit_code": 137
+    },
+    {
+      "name": "cvortexqa1011-fakeprovider-1",
+      "running": false,
+      "exit_code": 137
+    },
+    {
+      "name": "cvortexqa1011-frontend-1",
+      "running": false,
+      "exit_code": 1
+    },
+    {
+      "name": "cvortexqa1011-backend-1",
+      "running": false,
+      "exit_code": 0
+    },
+    {
+      "name": "cvortexqa1011-nginx-1",
+      "running": false,
+      "exit_code": 0
+    },
+    {
+      "name": "cvortexqa1011-postgres-1",
+      "running": false,
+      "exit_code": 0
+    },
+    {
+      "name": "cvortexqa1011-redis-1",
+      "running": false,
+      "exit_code": 0
+    }
+  ],
+  "primary_before": {
+    "cvortex-backend-1": {
+      "id": "2fe738a892df1699aa8ec1c25f6d91175d4dcc83596d4476f6f0f80b5cd5b9b1",
+      "running": true,
+      "started_at": "2026-10-04T07:22:50.182108545Z"
+    },
+    "cvortex-horizon-1": {
+      "id": "03c6c8de808e0f2680a7ca4ba19a459511d6598f7b9077a28acc6c6a9332343b",
+      "running": true,
+      "started_at": "2026-10-03T20:49:51.103982382Z"
+    },
+    "cvortex-scheduler-1": {
+      "id": "cc66e9459196b3d9adf584e67d8edf9ee647fec0eecd07e704f5ec994251ca1c",
+      "running": true,
+      "started_at": "2026-10-03T17:13:33.158757292Z"
+    },
+    "cvortex-frontend-1": {
+      "id": "9973fc9c34277d874fe22e970b315db15f95fccc20cfec9d5b2ee9cee37acb65",
+      "running": true,
+      "started_at": "2026-10-11T10:33:55.665968713Z"
+    },
+    "cvortex-postgres-1": {
+      "id": "6a949b61b901ae686a8e0eed1522bfa5773ad02e4e48a09f2845a84b8a931176",
+      "running": true,
+      "started_at": "2026-10-03T17:13:27.507907554Z"
+    },
+    "cvortex-redis-1": {
+      "id": "d5fd3156a9044a3e4b5d121bd5418134591e5cc6fa8e87e0b29c8812b821e705",
+      "running": true,
+      "started_at": "2026-10-03T08:21:42.51900318Z"
+    },
+    "cvortex-nginx-1": {
+      "id": "519172099d818163f04f1013f4b2bc6ce014f038dac1c131d59a6bb7e79fe963",
+      "running": true,
+      "started_at": "2026-10-03T08:21:48.235071752Z"
+    }
+  },
+  "primary_after": {
+    "cvortex-backend-1": {
+      "id": "2fe738a892df1699aa8ec1c25f6d91175d4dcc83596d4476f6f0f80b5cd5b9b1",
+      "running": true,
+      "started_at": "2026-10-04T07:22:50.182108545Z"
+    },
+    "cvortex-horizon-1": {
+      "id": "03c6c8de808e0f2680a7ca4ba19a459511d6598f7b9077a28acc6c6a9332343b",
+      "running": true,
+      "started_at": "2026-10-03T20:49:51.103982382Z"
+    },
+    "cvortex-scheduler-1": {
+      "id": "cc66e9459196b3d9adf584e67d8edf9ee647fec0eecd07e704f5ec994251ca1c",
+      "running": true,
+      "started_at": "2026-10-03T17:13:33.158757292Z"
+    },
+    "cvortex-frontend-1": {
+      "id": "9973fc9c34277d874fe22e970b315db15f95fccc20cfec9d5b2ee9cee37acb65",
+      "running": true,
+      "started_at": "2026-10-11T10:33:55.665968713Z"
+    },
+    "cvortex-postgres-1": {
+      "id": "6a949b61b901ae686a8e0eed1522bfa5773ad02e4e48a09f2845a84b8a931176",
+      "running": true,
+      "started_at": "2026-10-03T17:13:27.507907554Z"
+    },
+    "cvortex-redis-1": {
+      "id": "d5fd3156a9044a3e4b5d121bd5418134591e5cc6fa8e87e0b29c8812b821e705",
+      "running": true,
+      "started_at": "2026-10-03T08:21:42.51900318Z"
+    },
+    "cvortex-nginx-1": {
+      "id": "519172099d818163f04f1013f4b2bc6ce014f038dac1c131d59a6bb7e79fe963",
+      "running": true,
+      "started_at": "2026-10-03T08:21:48.235071752Z"
+    }
+  },
+  "primary_unchanged": true,
+  "time_moscow": "2026-10-11T22:45:26.645380+03:00"
+}

@@ -1,0 +1,23 @@
+time="2026-10-11T20:14:32+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-35e008f75ee9 Creating 
+ Container cvortexqa1011-backend-run-35e008f75ee9 Created 
+PHPUnit 12.5.35 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.25
+Configuration: /var/www/html/phpunit.xml
+
+{"message":"diagnostics.incident","context":{"service":"backend","environment":"local","event_name":"diagnostics.incident","error_code":"LLM_PROVIDER_RATE_LIMITED","component":"timestamp-tie","exception_class":"App\\AI\\Exceptions\\LlmProviderException","safe_stack":"DiagnosticsPostgresTest.php:101 App\\AI\\Exceptions\\LlmProviderException (throw site)\n[framework] TestCase.php:1318 Tests\\Feature\\DiagnosticsPostgresTest->test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties\n[framework] TestCase.php:1355 PHPUnit\\Framework\\TestCase->invokeTestMethod\n[framework] TestCase.php:521 PHPUnit\\Framework\\TestCase->runTest\n[framework] TestRunner.php:99 PHPUnit\\Framework\\TestCase->runBare\n[framework] TestCase.php:361 PHPUnit\\Framework\\TestRunner->run\n[framework] TestSuite.php:374 PHPUnit\\Framework\\TestCase->run\n[framework] TestSuite.php:374 PHPUnit\\Framework\\TestSuite->run\n[framework] TestSuite.php:374 PHPUnit\\Framework\\TestSuite->run\n[framework] TestRunner.php:64 PHPUnit\\Framework\\TestSuite->run\n[framework] Application.php:229 PHPUnit\\TextUI\\TestRunner->run\n[framework] phpunit:104 PHPUnit\\TextUI\\Application->run"},"level":400,"level_name":"ERROR","channel":"local","datetime":"2026-10-11T17:14:33.802518+00:00","extra":{}}
+[41;37mF[0m                                                                   1 / 1 (100%)
+
+Time: 00:00.272, Memory: 46.50 MB
+
+There was 1 failure:
+
+1) Tests\Feature\DiagnosticsPostgresTest::test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties
+Failed asserting that actual size 1 matches expected size 2.
+
+/var/www/html/tests/Feature/DiagnosticsPostgresTest.php:107
+
+[37;41mFAILURES![0m
+[37;41mTests: 1[0m[37;41m, Assertions: 1[0m[37;41m, Failures: 1[0m[37;41m.[0m
+

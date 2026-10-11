@@ -1,0 +1,898 @@
+{
+  "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "database": "cvortex_qa_synthetic",
+  "read_only": true,
+  "assertions": "PASS: synthetic domains, runtime role, forced RLS, raw source, approved short cover content hash and confirmed same-owner claim chain, unsupported standard cover BLOCK, injection SEMANTIC_REJECTED",
+  "data": {
+    "users": [
+      {
+        "id": "01m4nz8ppgyymc5tq4qh2wf1z7",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8ptet6nwgyx4vqb3pjgp",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8q4mzt8wz9hk85kpbxke",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8qcdnjfkncdxxv30vn76",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8qgaf9gj3cpyj93r4azb",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8rbrjeyp6y1db7zdwpv6",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8rfhf4r7372nbeymg734",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8rmc97w8gd12a81j25ra",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nz8rs1pabjcyg84rz17rr5",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "example.test"
+      },
+      {
+        "id": "01m4nzbhw1tnfndzxdsf50qt7c",
+        "role": "admin",
+        "status": "ACTIVE",
+        "email_domain": "qa.example.test"
+      },
+      {
+        "id": "01m4nzbhzpjd51n76h1tfc525e",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "qa.example.test"
+      },
+      {
+        "id": "01m4nzbj343j3whpadhpqqbbff",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "qa.example.test"
+      },
+      {
+        "id": "01m4p00g9wh0vpqexpmhd7fqrq",
+        "role": "user",
+        "status": "ACTIVE",
+        "email_domain": "qa.example.test"
+      }
+    ],
+    "roles": [
+      {
+        "rolname": "cvortex_qa_app",
+        "rolsuper": false,
+        "rolbypassrls": false
+      }
+    ],
+    "rls": [
+      {
+        "relname": "application_claim_usages",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "relname": "application_draft_items",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "relname": "career_facts",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "relname": "claims",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "relname": "vacancies",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "relname": "vacancy_snapshots",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      }
+    ],
+    "migrations": [
+      {
+        "migration": "2026_09_12_000001_create_access_core_tables"
+      },
+      {
+        "migration": "2026_09_13_000002_add_auth_generation_to_users"
+      },
+      {
+        "migration": "2026_09_13_000003_create_career_core_tables"
+      },
+      {
+        "migration": "2026_09_13_000004_reconcile_and_harden_career_core"
+      },
+      {
+        "migration": "2026_09_13_000005_enforce_career_source_idempotency"
+      },
+      {
+        "migration": "2026_09_19_000006_record_claim_resolution_choice"
+      },
+      {
+        "migration": "2026_09_19_000007_enforce_single_current_career_fact_replacement"
+      },
+      {
+        "migration": "2026_09_19_000008_create_vacancy_core_tables"
+      },
+      {
+        "migration": "2026_09_19_000009_remediate_vacancy_core_review_findings"
+      },
+      {
+        "migration": "2026_09_21_000010_allow_reappearing_vacancy_snapshot_content"
+      },
+      {
+        "migration": "2026_09_24_000011_reconcile_vacancy_aggregate_state"
+      },
+      {
+        "migration": "2026_09_24_000012_recover_completed_extraction_without_analysis"
+      },
+      {
+        "migration": "2026_09_24_000013_create_application_preparations"
+      },
+      {
+        "migration": "2026_09_24_225859_create_oauth_auth_codes_table"
+      },
+      {
+        "migration": "2026_09_24_225900_create_oauth_access_tokens_table"
+      },
+      {
+        "migration": "2026_09_24_225901_create_oauth_refresh_tokens_table"
+      },
+      {
+        "migration": "2026_09_24_225902_create_oauth_clients_table"
+      },
+      {
+        "migration": "2026_09_24_225903_create_oauth_device_codes_table"
+      },
+      {
+        "migration": "2026_09_27_000013_create_diagnostic_incidents"
+      },
+      {
+        "migration": "2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents"
+      },
+      {
+        "migration": "2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences"
+      },
+      {
+        "migration": "2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences"
+      },
+      {
+        "migration": "2026_10_01_000001_add_persisted_queue_recovery_deadlines"
+      },
+      {
+        "migration": "2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates"
+      },
+      {
+        "migration": "2026_10_04_000001_create_chatgpt_connections"
+      },
+      {
+        "migration": "2026_10_04_000002_create_vacancy_chat_and_analysis_drafts"
+      },
+      {
+        "migration": "2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome"
+      },
+      {
+        "migration": "2026_10_07_000001_add_oauth_generation_to_chatgpt_connections"
+      }
+    ],
+    "vacancies": [
+      {
+        "id": "01m4nzmw750drap171vva25rby",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "title": "QA Backend Engineer",
+        "analysis_status": "FAILED",
+        "error_code": "INVALID_EXTRACTION_RESULT"
+      },
+      {
+        "id": "01m4nzr43qa5zznc6c1z8v1978",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "title": "QA Verified Backend Engineer",
+        "analysis_status": "COMPLETED",
+        "error_code": null
+      },
+      {
+        "id": "01m4nzt7we7es116f1hycjtayk",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "title": "QA Verified Backend Engineer",
+        "analysis_status": "COMPLETED",
+        "error_code": null
+      },
+      {
+        "id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "title": "QA Verified Backend Engineer",
+        "analysis_status": "COMPLETED",
+        "error_code": null
+      }
+    ],
+    "vacancy_snapshots": [
+      {
+        "id": "01m4nzt8p8589ca7a9hyg5rdwd",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+        "version": 1,
+        "raw_text": "QA Verified Backend Engineer\nCompany: QA Synthetic\nLaravel is required.\n<img src=x onerror=\"window.qaXss=true\">",
+        "source_url": null,
+        "content_hash": "efd2f055c5b4f02c8ae94fe76f42f865a5770b5f0cf2d5f5fec14e9a08009c9e",
+        "imported_at": "2026-10-11T17:22:52+00:00",
+        "created_at": "2026-10-11T17:22:52",
+        "updated_at": "2026-10-11T17:22:52"
+      }
+    ],
+    "vacancy_requirements": [
+      {
+        "id": "01m4nztb08ntb4aw76my2q20x0",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_snapshot_id": "01m4nzt8p8589ca7a9hyg5rdwd",
+        "dimension": "TECHNICAL",
+        "importance": "MANDATORY",
+        "label": "Laravel",
+        "normalized_value": "laravel",
+        "source_excerpt": "Laravel is required",
+        "confidence": 0.95,
+        "extracted_by": "vacancy.requirement-extraction@1.0.0",
+        "candidate_hash": "bc3706b98768b1713cf0de9c540cbcf7cd197d754826e82a19ae7de63fc4159f",
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      }
+    ],
+    "vacancy_analyses": [
+      {
+        "id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+        "vacancy_snapshot_id": "01m4nzt8p8589ca7a9hyg5rdwd",
+        "career_signature": "6a33fe6ebedefa1fd0a12a8ff01d2a7d350144d32eac018861b179b2260951fe",
+        "recommendation": "STRONGLY_APPLY",
+        "key_reasons": [
+          "TECHNICAL: Every supported requirement in this dimension has confirmed candidate evidence."
+        ],
+        "material_gaps": [],
+        "uncertainties": [],
+        "analysis_version": "1.0.0",
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4p000znztrn15qkwmfacft9",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+        "vacancy_snapshot_id": "01m4nzt8p8589ca7a9hyg5rdwd",
+        "career_signature": "ea5a59c4cecaac41880acdf6d8852db40a21a3312c7aa667f72a69c4c08c9138",
+        "recommendation": "STRONGLY_APPLY",
+        "key_reasons": [
+          "TECHNICAL: Every supported requirement in this dimension has confirmed candidate evidence."
+        ],
+        "material_gaps": [],
+        "uncertainties": [],
+        "analysis_version": "1.0.0",
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      }
+    ],
+    "vacancy_match_dimensions": [
+      {
+        "id": "01m4nztb0d3jqqbaye2pk3jq1v",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "TECHNICAL",
+        "result": "MATCH",
+        "explanation": "Every supported requirement in this dimension has confirmed candidate evidence.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [
+          "01m4nztb08ntb4aw76my2q20x0"
+        ],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4nztb0eqm59rdx3kces9746",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "EXPERIENCE",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4nztb0eqm59rdx3kces9747",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "DOMAIN",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4nztb0eqm59rdx3kces9748",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "LANGUAGE",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4nztb0eqm59rdx3kces9749",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "LOCATION",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4nztb0eqm59rdx3kces974a",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "WORK_FORMAT",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4nztb0fz6d2yknbgwswvgjc",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4nztb0cp6yz68mqnymtzw6b",
+        "dimension": "SALARY",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4p000zrgw1f17x9w939zjdg",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "TECHNICAL",
+        "result": "MATCH",
+        "explanation": "Every supported requirement in this dimension has confirmed candidate evidence.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [
+          "01m4nztb08ntb4aw76my2q20x0"
+        ],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      },
+      {
+        "id": "01m4p000zsr6tkyakffatm4s24",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "EXPERIENCE",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      },
+      {
+        "id": "01m4p000ztft9kvvfdyzsefbkc",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "DOMAIN",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      },
+      {
+        "id": "01m4p000ztft9kvvfdyzsefbkd",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "LANGUAGE",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      },
+      {
+        "id": "01m4p000ztft9kvvfdyzsefbke",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "LOCATION",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      },
+      {
+        "id": "01m4p000zvdfvesk2baj6hqaq3",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "WORK_FORMAT",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      },
+      {
+        "id": "01m4p000zvdfvesk2baj6hqaq4",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "dimension": "SALARY",
+        "result": "NOT_APPLICABLE",
+        "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+        "origin": "DETERMINISTIC",
+        "vacancy_requirement_ids": [],
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      }
+    ],
+    "vacancy_match_evidence": [
+      {
+        "id": "01m4nztb0d3jqqbaye2pk3jq1w",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_match_dimension_id": "01m4nztb0d3jqqbaye2pk3jq1v",
+        "career_fact_id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+        "claim_id": null,
+        "created_at": "2026-10-11T17:22:54",
+        "updated_at": "2026-10-11T17:22:54"
+      },
+      {
+        "id": "01m4p000zsr6tkyakffatm4s23",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_match_dimension_id": "01m4p000zrgw1f17x9w939zjdg",
+        "career_fact_id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+        "claim_id": null,
+        "created_at": "2026-10-11T17:26:00",
+        "updated_at": "2026-10-11T17:26:00"
+      }
+    ],
+    "vacancy_llm_runs": [
+      {
+        "id": "01m4nzmxabxzk3t0t0d5q19s5s",
+        "workflow": "vacancy_requirement_extraction",
+        "provider": null,
+        "model": null,
+        "status": "FAILED",
+        "validation_result": "SEMANTIC_REJECTED",
+        "error_category": "SEMANTIC_REJECTED"
+      },
+      {
+        "id": "01m4nzr4ex9kg0pmb6fxt05g01",
+        "workflow": "vacancy_requirement_extraction",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      },
+      {
+        "id": "01m4nzt80b2hqbrh8sdrta31g3",
+        "workflow": "vacancy_requirement_extraction",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      },
+      {
+        "id": "01m4nztb04qhga800y33qpt750",
+        "workflow": "vacancy_requirement_extraction",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      }
+    ],
+    "application_preparations": [
+      {
+        "id": "01m4p001r8c3a7w89ckdyygar2",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "vacancy_id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+        "vacancy_snapshot_id": "01m4nzt8p8589ca7a9hyg5rdwd",
+        "vacancy_analysis_id": "01m4p000znztrn15qkwmfacft9",
+        "career_signature": "ea5a59c4cecaac41880acdf6d8852db40a21a3312c7aa667f72a69c4c08c9138",
+        "status": "DRAFT",
+        "created_at": "2026-10-11T17:26:01",
+        "updated_at": "2026-10-11T17:26:02"
+      }
+    ],
+    "application_draft_items": [
+      {
+        "id": "01m4p001zny48pyngb2xh1ysyb",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "preparation_id": "01m4p001r8c3a7w89ckdyygar2",
+        "vacancy_requirement_id": null,
+        "kind": "COVER_DRAFT",
+        "variant": "SHORT",
+        "section": null,
+        "before_text": null,
+        "content": "Built Laravel APIs.",
+        "reason": null,
+        "risk": null,
+        "status": "APPROVED",
+        "validation_result": "PASS",
+        "revision_number": 1,
+        "validated_content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validated_at": "2026-10-11T17:26:02+00:00",
+        "created_at": "2026-10-11T17:26:01",
+        "updated_at": "2026-10-11T17:26:02"
+      },
+      {
+        "id": "01m4p001zqd3gpg21qkmcsnhk8",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "preparation_id": "01m4p001r8c3a7w89ckdyygar2",
+        "vacancy_requirement_id": null,
+        "kind": "COVER_DRAFT",
+        "variant": "STANDARD",
+        "section": null,
+        "before_text": null,
+        "content": "Built Laravel APIs. Expert in Kubernetes for 10 years.",
+        "reason": null,
+        "risk": null,
+        "status": "BLOCKED",
+        "validation_result": "BLOCK",
+        "revision_number": 2,
+        "validated_content_hash": null,
+        "validated_at": "2026-10-11T17:26:02+00:00",
+        "created_at": "2026-10-11T17:26:01",
+        "updated_at": "2026-10-11T17:26:02"
+      },
+      {
+        "id": "01m4p001zhzrtm0c8z42sftxcg",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "preparation_id": "01m4p001r8c3a7w89ckdyygar2",
+        "vacancy_requirement_id": "01m4nztb08ntb4aw76my2q20x0",
+        "kind": "RESUME_RECOMMENDATION",
+        "variant": null,
+        "section": "Experience",
+        "before_text": "Built Laravel APIs.",
+        "content": "Built Laravel APIs.",
+        "reason": "Review the supported Claim against this vacancy requirement.",
+        "risk": "Keep candidate wording within the confirmed Claim.",
+        "status": "REJECTED",
+        "validation_result": "NOT_VALIDATED",
+        "revision_number": 1,
+        "validated_content_hash": null,
+        "validated_at": null,
+        "created_at": "2026-10-11T17:26:01",
+        "updated_at": "2026-10-11T17:26:02"
+      }
+    ],
+    "application_claim_usages": [
+      {
+        "id": "01m4p002577x9vwp4kywt8yjrj",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zny48pyngb2xh1ysyb",
+        "claim_id": "01m4nzmpvatpp0vr9mx3901z2b",
+        "assertion_text": "Built Laravel APIs.",
+        "created_at": "2026-10-11T17:26:02",
+        "updated_at": "2026-10-11T17:26:02"
+      },
+      {
+        "id": "01m4p001zm2jjx0yw1hkbdj78y",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zhzrtm0c8z42sftxcg",
+        "claim_id": "01m4nzmpvatpp0vr9mx3901z2b",
+        "assertion_text": "Built Laravel APIs.",
+        "created_at": "2026-10-11T17:26:01",
+        "updated_at": "2026-10-11T17:26:01"
+      }
+    ],
+    "application_approval_events": [
+      {
+        "id": "01m4p002584a9ppyn1xkn0exds",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zny48pyngb2xh1ysyb",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "action": "ACCEPTED",
+        "revision_number": 1,
+        "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validation_result": "PASS",
+        "created_at": "2026-10-11T17:26:02+00:00"
+      },
+      {
+        "id": "01m4p0027qqvdky3mnhq5by94p",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zny48pyngb2xh1ysyb",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "action": "APPROVED",
+        "revision_number": 1,
+        "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validation_result": "PASS",
+        "created_at": "2026-10-11T17:26:02+00:00"
+      },
+      {
+        "id": "01m4p002x94587p85en4pk681h",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zqd3gpg21qkmcsnhk8",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "action": "EDITED",
+        "revision_number": 2,
+        "content_hash": "67449a332daf094a1a9e4cff1aa2930443b24990b5f9a5a7814579092d5f94dd",
+        "validation_result": "BLOCK",
+        "created_at": "2026-10-11T17:26:02+00:00"
+      },
+      {
+        "id": "01m4p002zmdq3gry6rv92245jv",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zhzrtm0c8z42sftxcg",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "action": "REJECTED",
+        "revision_number": 1,
+        "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validation_result": "BLOCK",
+        "created_at": "2026-10-11T17:26:02+00:00"
+      }
+    ],
+    "application_draft_revisions": [
+      {
+        "id": "01m4p001zm2jjx0yw1hkbdj78z",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zhzrtm0c8z42sftxcg",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "revision_number": 1,
+        "action": "GENERATED",
+        "content": "Built Laravel APIs.",
+        "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validation_result": "PASS",
+        "claim_usages": [
+          {
+            "assertion": "Built Laravel APIs.",
+            "claim_ids": [
+              "01m4nzmpvatpp0vr9mx3901z2b"
+            ]
+          }
+        ],
+        "created_at": "2026-10-11T17:26:01+00:00"
+      },
+      {
+        "id": "01m4p001zqd3gpg21qkmcsnhk7",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zny48pyngb2xh1ysyb",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "revision_number": 1,
+        "action": "GENERATED",
+        "content": "Built Laravel APIs.",
+        "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validation_result": "PASS",
+        "claim_usages": [
+          {
+            "assertion": "Built Laravel APIs.",
+            "claim_ids": [
+              "01m4nzmpvatpp0vr9mx3901z2b"
+            ]
+          }
+        ],
+        "created_at": "2026-10-11T17:26:01+00:00"
+      },
+      {
+        "id": "01m4p001zsy4g18fzfqgdg0n5g",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zqd3gpg21qkmcsnhk8",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "revision_number": 1,
+        "action": "GENERATED",
+        "content": "Built Laravel APIs.",
+        "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+        "validation_result": "PASS",
+        "claim_usages": [
+          {
+            "assertion": "Built Laravel APIs.",
+            "claim_ids": [
+              "01m4nzmpvatpp0vr9mx3901z2b"
+            ]
+          }
+        ],
+        "created_at": "2026-10-11T17:26:01+00:00"
+      },
+      {
+        "id": "01m4p002x8sx5g6jn2r966dtk0",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "draft_item_id": "01m4p001zqd3gpg21qkmcsnhk8",
+        "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "revision_number": 2,
+        "action": "EDITED",
+        "content": "Built Laravel APIs. Expert in Kubernetes for 10 years.",
+        "content_hash": "67449a332daf094a1a9e4cff1aa2930443b24990b5f9a5a7814579092d5f94dd",
+        "validation_result": "BLOCK",
+        "claim_usages": [],
+        "created_at": "2026-10-11T17:26:02+00:00"
+      }
+    ],
+    "application_llm_runs": [
+      {
+        "id": "01m4p001z4p2e3rcng4g3qmsrh",
+        "workflow": "application_truth_review",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      },
+      {
+        "id": "01m4p001y8bmn8mzfw2cgaxn2p",
+        "workflow": "application_draft_generation",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      },
+      {
+        "id": "01m4p0024nq423n5j9kkp0zz0k",
+        "workflow": "application_truth_review",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      },
+      {
+        "id": "01m4p00275ys6nwkh1yh7z6qjd",
+        "workflow": "application_truth_review",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "COMPLETED",
+        "validation_result": "PASS",
+        "error_category": null
+      },
+      {
+        "id": "01m4p002x2rhfr0k9hwkdqgjw3",
+        "workflow": "application_truth_review",
+        "provider": "openai",
+        "model": "qa-deterministic",
+        "status": "FAILED",
+        "validation_result": "BLOCK",
+        "error_category": "BLOCK"
+      }
+    ],
+    "claims": [
+      {
+        "id": "01m4nzmpvatpp0vr9mx3901z2b",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "statement": "Built Laravel APIs.",
+        "truth_status": "PASS",
+        "created_at": "2026-10-11T17:19:50",
+        "updated_at": "2026-10-11T17:26:00",
+        "resolution_reason": "VALID_EVIDENCE_AMBIGUITY",
+        "resolution_requested_at": "2026-10-11T17:19:52+00:00",
+        "resolved_by": "01m4nzbhzpjd51n76h1tfc525e",
+        "resolved_at": "2026-10-11T17:26:00+00:00",
+        "resolved_career_fact_id": "01m4nzmpv7rtyhqgk7chtxa4p0"
+      }
+    ],
+    "claim_evidence": [
+      {
+        "id": "01m4nzmpvff727w7c6xksegy6j",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "claim_id": "01m4nzmpvatpp0vr9mx3901z2b",
+        "career_fact_id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+        "created_at": "2026-10-11T17:19:50",
+        "updated_at": "2026-10-11T17:19:50"
+      },
+      {
+        "id": "01m4nzmry0587jz2ma1919j2f6",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "claim_id": "01m4nzmpvatpp0vr9mx3901z2b",
+        "career_fact_id": "01m4nzmqcks4faeqy2rjhec3eh",
+        "created_at": "2026-10-11T17:19:52",
+        "updated_at": "2026-10-11T17:19:52"
+      }
+    ],
+    "career_facts": [
+      {
+        "id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "career_profile_id": "01m4nzmptx9tp41yw0yn13t7tx",
+        "career_source_id": null,
+        "supersedes_fact_id": null,
+        "provenance_type": "user_manual",
+        "fact_type": "skill",
+        "assertion_original": "Built Laravel APIs.",
+        "assertion_approved": "Built Laravel APIs.",
+        "source_excerpt": "Built Laravel APIs.",
+        "extracted_by": "user_manual",
+        "extraction_confidence": null,
+        "status": "CONFIRMED",
+        "reviewed_by": "01m4nzbhzpjd51n76h1tfc525e",
+        "reviewed_at": "2026-10-11T17:19:50+00:00",
+        "created_at": "2026-10-11T17:19:50",
+        "updated_at": "2026-10-11T17:19:50",
+        "candidate_hash": "b3a0b508a53d05a1227bf3eef9b590e23921af5ba636df1bc2d9262e3e759b94"
+      },
+      {
+        "id": "01m4nzmqcks4faeqy2rjhec3eh",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "career_profile_id": "01m4nzmptx9tp41yw0yn13t7tx",
+        "career_source_id": "01m4nzmq07w070t17rhy5tnqw3",
+        "supersedes_fact_id": null,
+        "provenance_type": "paste_extraction",
+        "fact_type": "experience",
+        "assertion_original": "Built Laravel APIs.",
+        "assertion_approved": "Built Laravel APIs.",
+        "source_excerpt": "Built Laravel APIs.",
+        "extracted_by": "career.fact-extraction@1.0.0",
+        "extraction_confidence": 0.95,
+        "status": "CONFIRMED",
+        "reviewed_by": "01m4nzbhzpjd51n76h1tfc525e",
+        "reviewed_at": "2026-10-11T17:19:52+00:00",
+        "created_at": "2026-10-11T17:19:50",
+        "updated_at": "2026-10-11T17:19:52",
+        "candidate_hash": "bca7249049f7eb2d5f12a68879a4cf68770fd4ccdee0bef2255c26ee55e9e194"
+      },
+      {
+        "id": "01m4nzmtazz5qbphd5z7bj4a0f",
+        "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+        "career_profile_id": "01m4nzmptx9tp41yw0yn13t7tx",
+        "career_source_id": "01m4nzmsj4ye9k8jek2m25zm4x",
+        "supersedes_fact_id": null,
+        "provenance_type": "paste_extraction",
+        "fact_type": "experience",
+        "assertion_original": "Built Laravel APIs.",
+        "assertion_approved": null,
+        "source_excerpt": "Built Laravel APIs.",
+        "extracted_by": "career.fact-extraction@1.0.0",
+        "extraction_confidence": 0.95,
+        "status": "REJECTED",
+        "reviewed_by": "01m4nzbhzpjd51n76h1tfc525e",
+        "reviewed_at": "2026-10-11T17:19:54+00:00",
+        "created_at": "2026-10-11T17:19:53",
+        "updated_at": "2026-10-11T17:19:54",
+        "candidate_hash": "bca7249049f7eb2d5f12a68879a4cf68770fd4ccdee0bef2255c26ee55e9e194"
+      }
+    ]
+  }
+}

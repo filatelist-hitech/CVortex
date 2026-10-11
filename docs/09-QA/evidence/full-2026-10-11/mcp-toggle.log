@@ -1,0 +1,11 @@
+time="2026-10-11T20:11:39+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-473cefeb405b Creating 
+ Container cvortexqa1011-backend-run-473cefeb405b Created 
+time="2026-10-11T20:11:40+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-8d8c4c2e7e39 Creating 
+ Container cvortexqa1011-backend-run-8d8c4c2e7e39 Created 
+MCP_ENABLED=false: 0 MCP/OAuth routes verified.
+time="2026-10-11T20:11:41+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-a7b52a0d98a2 Creating 
+ Container cvortexqa1011-backend-run-a7b52a0d98a2 Created 
+MCP_ENABLED=true: 20 MCP/OAuth routes verified.

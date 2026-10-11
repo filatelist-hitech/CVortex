@@ -1,0 +1,10 @@
+time="2026-10-11T20:22:09+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+time="2026-10-11T20:22:09+03:00" level=warning msg="Found orphan containers (cvortexqa1011-fakeprovider-1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+ Container cvortexqa1011-backend-run-ba3c333bfad8 Creating 
+ Container cvortexqa1011-backend-run-ba3c333bfad8 Created 
+
+  .
+
+  ──────────────────────────────────────────────────────────────────── Laravel  
+    PASS   ............................................................ 1 file  
+

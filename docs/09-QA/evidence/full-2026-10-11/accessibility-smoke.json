@@ -1,0 +1,27 @@
+{
+  "scope": "CDP accessible names, language/title, image alt and duplicate IDs; no WCAG conformance claim",
+  "pages": [
+    {
+      "path": "/?opportunity=01m4nzt8p5ffcp7v0w85w0yt4e#materials",
+      "dom": {
+        "lang": "ru",
+        "title": "CVortex",
+        "missingAlt": [],
+        "duplicateIds": []
+      },
+      "controls": 31,
+      "unnamed": []
+    },
+    {
+      "path": "/career",
+      "dom": {
+        "lang": "ru",
+        "title": "CVortex",
+        "missingAlt": [],
+        "duplicateIds": []
+      },
+      "controls": 32,
+      "unnamed": []
+    }
+  ]
+}

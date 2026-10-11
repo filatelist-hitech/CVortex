@@ -61,13 +61,26 @@ set -e
 
 applied=$(grep -h '^applied ' "$output_one" "$output_two" | wc -l | tr -d ' ')
 conflicts=$(grep -h '^conflict ' "$output_one" "$output_two" | wc -l | tr -d ' ')
-if [[ "$applied" != 1 || "$conflicts" != 1 ]]; then
+if [[ "$status_one" != 0 || "$status_two" != 0 || "$applied" != 1 || "$conflicts" != 1 ]]; then
   echo "career review race failed: statuses=$status_one/$status_two applied=$applied conflicts=$conflicts" >&2
   cat "$output_one" "$output_two" >&2
   exit 1
 fi
+winning_action=$(sed -n 's/^applied //p' "$output_one" "$output_two")
+case "$winning_action" in
+  confirm|reject) ;;
+  *) echo 'career review race returned an invalid winner' >&2; exit 1 ;;
+esac
 
 "${compose[@]}" exec -T -e DB_DATABASE="$database" postgres psql -U "$pg_user" -d "$database" -v ON_ERROR_STOP=1 \
   -c 'DROP TRIGGER pause_career_review_update ON career_facts; DROP FUNCTION pause_career_review_update()' >/dev/null
-"${compose[@]}" exec -T -e DB_DATABASE="$database" backend php tests/Support/verify_career_review_concurrency.php "$owner_id" "$fact_id"
-echo 'career-review-postgres-concurrency: PASS (one transition wins, competing transition rejected, one valid Claim)'
+verification=$("${compose[@]}" exec -T -e DB_DATABASE="$database" backend php tests/Support/verify_career_review_concurrency.php "$owner_id" "$fact_id" "$winning_action") || {
+  echo 'career review final verifier failed' >&2
+  exit 1
+}
+printf '%s\n' "$verification"
+if [[ "$verification" != "verified: $winning_action transition and valid Claim state" ]]; then
+  echo 'career review final verification missing or ambiguous' >&2
+  exit 1
+fi
+echo 'career-review-postgres-concurrency: PASS (one transition wins, competing transition rejected, valid Claim state)'

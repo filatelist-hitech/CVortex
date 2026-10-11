@@ -1,0 +1,38 @@
+{
+  "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "environment": "isolated local synthetic fixture + mocked provider",
+  "summary": [
+    {
+      "path": "/api/v1/career",
+      "n": 20,
+      "p50_ms": 16,
+      "p95_ms": 19,
+      "error_rate": 0,
+      "threshold": "NOT_DEFINED"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "n": 20,
+      "p50_ms": 21,
+      "p95_ms": 22,
+      "error_rate": 0,
+      "threshold": "NOT_DEFINED"
+    },
+    {
+      "path": "/api/v1/vacancies/{vacancy}",
+      "n": 20,
+      "p50_ms": 22,
+      "p95_ms": 24,
+      "error_rate": 0,
+      "threshold": "NOT_DEFINED"
+    },
+    {
+      "path": "/api/v1/applications/preparations/{preparation}",
+      "n": 20,
+      "p50_ms": 25,
+      "p95_ms": 26,
+      "error_rate": 0,
+      "threshold": "NOT_DEFINED"
+    }
+  ]
+}

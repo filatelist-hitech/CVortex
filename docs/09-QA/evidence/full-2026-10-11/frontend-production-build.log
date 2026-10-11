@@ -1,0 +1,37 @@
+time="2026-10-11T20:11:19+03:00" level=warning msg="volume \"cvortexqa1011_frontend_node_modules\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-frontend-run-a66eed64e9c5 Creating 
+ Container cvortexqa1011-frontend-run-a66eed64e9c5 Created 
+
+> frontend@0.1.0 build
+> next build
+
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.ts took 31ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 811ms
+  Running TypeScript ...
+  Finished TypeScript in 2.6s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/6) ...
+  Generating static pages using 7 workers (1/6) 
+  Generating static pages using 7 workers (2/6) 
+  Generating static pages using 7 workers (4/6) 
+✓ Generating static pages using 7 workers (6/6) in 286ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /career
+├ ○ /diagnostics
+└ ○ /register
+
+
+○  (Static)  prerendered as static content
+
+npm notice
+npm notice New major version of npm available! 11.19.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

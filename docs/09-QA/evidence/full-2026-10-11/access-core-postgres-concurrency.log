@@ -1,0 +1,7 @@
+time="2026-10-11T20:11:42+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-ce1ed87c2cff Creating 
+ Container cvortexqa1011-migration-run-ce1ed87c2cff Created 
+time="2026-10-11T20:11:46+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-32c3a5cf24e5 Creating 
+ Container cvortexqa1011-migration-run-32c3a5cf24e5 Created 
+access-core-postgres-concurrency: PASS (bootstrap, single-invitation registration, independent-invitation same-email registration, concurrent admin disable)

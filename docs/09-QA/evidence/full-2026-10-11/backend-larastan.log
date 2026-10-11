@@ -1,0 +1,9 @@
+time="2026-10-11T20:11:33+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-af35e7004d2a Creating 
+ Container cvortexqa1011-backend-run-af35e7004d2a Created 
+Note: Using configuration file /var/www/html/phpstan.neon.
+   0/135 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0%[1G[2K  19/135 [▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░]  14%[1G[2K  39/135 [▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░]  28%[1G[2K  59/135 [▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░]  43%[1G[2K  78/135 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░]  57%[1G[2K  97/135 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░]  71%[1G[2K 116/135 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░]  85%[1G[2K 135/135 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
+
+
+ [OK] No errors                                                                 
+

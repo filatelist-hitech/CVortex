@@ -1,0 +1,271 @@
+{
+  "historical_commit": "d53c545455930e282c212d111a5a3f514f144846",
+  "audit_source_sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "export_policy": "LF-normalized UTF-8 text under root .gitattributes. No whitespace trimming or error removal. Credentials/private snapshots excluded. Historical checked-in logs otherwise preserved.",
+  "artifacts": [
+    {
+      "file": "frontend-production-build.log",
+      "original_sha256": "a2bb2dc4edb76e84adbf5eeb9a1ca4d09f15960bae8258bb6272955cd239e764",
+      "original_bytes": 1262,
+      "export_sha256": "25955d898b80faa84c2ec7d3060d9f701d11ecfda58ac34700e5fa8e98bb26e2",
+      "export_bytes": 1259,
+      "transformation": "Three CRLF sequences become LF; pre-staging manifest hashed 1262-byte working copy, Git clean filter published 1259 bytes. Confirmed against original artifact and original Git blob."
+    },
+    {
+      "file": "provider.cjs",
+      "original_sha256": "04f03da33bb4d73475caa3229f5254fadd94ae5ca125f0112ff508925e34a1b1",
+      "original_bytes": 2102,
+      "export_sha256": "474feb9d6a908be95a9d32304e87b1cdac8714ce70160885d658f86b3b137379",
+      "export_bytes": 2047,
+      "transformation": "Remove catch-block console.log of fixture_error:e.message (55 bytes) to avoid accidental private error detail. Original and export compared during remediation; environment-safety.json retains original digest, not shipped digest."
+    }
+  ],
+  "commands": [
+    {
+      "id": "frontend-test",
+      "command": "docker compose exec -T frontend npm test",
+      "exit_code": 0,
+      "seconds": 7.81,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "frontend-test.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "01a925a0daa864d371e7316ecbe7625888835bd4e8f0cad0bfc17ffcdc4b3eb1"
+    },
+    {
+      "id": "frontend-lint",
+      "command": "docker compose exec -T frontend npm run lint",
+      "exit_code": 0,
+      "seconds": 4.54,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "frontend-lint.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "596cb56788cfc0dfab4886fb07703457a292cd1e556aca9d7ab6a3620fa71873"
+    },
+    {
+      "id": "frontend-types",
+      "command": "docker compose exec -T frontend npm run typecheck",
+      "exit_code": 0,
+      "seconds": 3.33,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "frontend-types.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "6395c2028d2efb2e4992400755df02dac270564d1495c7f1c6aa81f48f24e940"
+    },
+    {
+      "id": "frontend-production-build",
+      "command": "docker compose run --rm --no-deps -e NODE_ENV=production frontend npm run build",
+      "exit_code": 0,
+      "seconds": 5.84,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "frontend-production-build.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "25955d898b80faa84c2ec7d3060d9f701d11ecfda58ac34700e5fa8e98bb26e2"
+    },
+    {
+      "id": "backend-pint",
+      "command": "docker compose run --rm --no-deps backend composer lint",
+      "exit_code": 0,
+      "seconds": 7.65,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "backend-pint.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "290a2286d0c0817dff9860fde889f3fc0f8ed6f85f675595b5831e22ef33e8e7"
+    },
+    {
+      "id": "backend-larastan",
+      "command": "docker compose run --rm --no-deps backend composer analyse",
+      "exit_code": 0,
+      "seconds": 6.25,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "backend-larastan.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "f99426aa8f43185f5f7378b4f0e89a94667245c4611044d5d58b1d03dc65d9b9"
+    },
+    {
+      "id": "mcp-toggle",
+      "command": "bash scripts/test-mcp-gateway-toggle.sh",
+      "exit_code": 0,
+      "seconds": 2.31,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "mcp-toggle.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "a0aeb29da072b8abe8b1e3df8f5f6cf92b26fd618b9cdb31d3b7d2a34195d716"
+    },
+    {
+      "id": "nginx-log-safety",
+      "command": "bash scripts/test-nginx-access-log-safety.sh",
+      "exit_code": 1,
+      "seconds": 0.19,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "nginx-log-safety.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "b01-check",
+      "command": "node docs/07-Design/reference/build-reference.cjs --check",
+      "exit_code": 1,
+      "seconds": 0.08,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "b01-check.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "ff65c949c50b6941c836acfd72f4cc67dbe81d709e1755e106974b995c0d3ede"
+    },
+    {
+      "id": "b01-node-tests",
+      "command": "node --test docs/07-Design/reference/build-reference.test.cjs",
+      "exit_code": 0,
+      "seconds": 0.18,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "b01-node-tests.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "f625ab88ed3299d87e8bc36be8721c72b0f183497ccdbfb7f150ed19ed62b649"
+    },
+    {
+      "id": "access-core-postgres-concurrency",
+      "command": "bash scripts/test-access-core-postgres-concurrency.sh",
+      "exit_code": 0,
+      "seconds": 6.4,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "access-core-postgres-concurrency.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "dcfe85cfe59221e06614ef41a810ab7fe788b74ad87a4519805bd0b8738c2ae1"
+    },
+    {
+      "id": "career-core-postgres-upgrade",
+      "command": "bash scripts/test-career-core-postgres-upgrade.sh",
+      "exit_code": 0,
+      "seconds": 4.25,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "career-core-postgres-upgrade.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "71a2f637f1bd6dfde5e736da64a8ceeafd2809ccdd4ff8df6b6af0a7f87bbe54"
+    },
+    {
+      "id": "career-review-postgres-concurrency",
+      "command": "bash scripts/test-career-review-postgres-concurrency.sh",
+      "exit_code": 0,
+      "seconds": 4.0,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "career-review-postgres-concurrency.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "cdd1d3dd9fa8502bfa7666b0e76fc499028e48bbf6843d3355a3c1f66a13628c"
+    },
+    {
+      "id": "career-fact-supersession-postgres-concurrency",
+      "command": "bash scripts/test-career-fact-supersession-postgres-concurrency.sh",
+      "exit_code": 0,
+      "seconds": 3.99,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "career-fact-supersession-postgres-concurrency.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "b741de5258dffa47fbbba2547daac098122a67661cb0ad8215987ec6ae3032c0"
+    },
+    {
+      "id": "vacancy-postgres-concurrency",
+      "command": "bash scripts/test-vacancy-postgres-concurrency.sh",
+      "exit_code": 0,
+      "seconds": 18.11,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "vacancy-postgres-concurrency.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "1b9c958032e1dfec53f63f96e35dc5fa3278ad6d0e11484bbc1f9f89a5ce1808"
+    },
+    {
+      "id": "vacancy-postgres-duplicate-migration",
+      "command": "bash scripts/test-vacancy-postgres-duplicate-migration.sh",
+      "exit_code": 3,
+      "seconds": 1.64,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "vacancy-postgres-duplicate-migration.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "a9c99e49484f512e3d34a2e71425af5dce2aecfde1ba39485b30df7425b1fcac"
+    },
+    {
+      "id": "vacancy-postgres-revalidation",
+      "command": "bash scripts/test-vacancy-postgres-revalidation.sh",
+      "exit_code": 0,
+      "seconds": 7.23,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "vacancy-postgres-revalidation.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "b3eb9605a7598d724ca269a67d2591e13f0191593ba6eda8349d510768c1996d"
+    },
+    {
+      "id": "application-postgres-boundary",
+      "command": "bash scripts/test-application-postgres-boundary.sh",
+      "exit_code": 0,
+      "seconds": 10.16,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "application-postgres-boundary.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "97705980600eb3a91b637ce5f2251c219b8330c844531908b8fe4e9337b59d88"
+    },
+    {
+      "id": "chatgpt-postgres-boundary",
+      "command": "bash scripts/test-chatgpt-postgres-boundary.sh",
+      "exit_code": 0,
+      "seconds": 13.72,
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "log": "chatgpt-postgres-boundary.log",
+      "time": "not captured per-command; log timestamps where present",
+      "source_binding": "audit_source_sha + command; helper snapshot hash not captured at execution",
+      "evidence_sha256": "52a84b3bf74bb65d0841892438d64b9afb5d7af7d55a9217a21255597c6fc363"
+    },
+    {
+      "log": "backend-sqlite-canonical.log",
+      "reproduction_template": "docker compose exec -T backend vendor/bin/phpunit --log-junit storage/qa-sqlite.xml",
+      "historical_exact_command": "UNAVAILABLE",
+      "historical_exit_code": null,
+      "historical_timestamp": "UNAVAILABLE unless present in log/JUnit/checkpoint",
+      "source_binding": "historical exported helper/source and SHA; original shell invocation unavailable",
+      "evidence_sha256": "7ff5d864b923288a46d4a43ddbbbefbabe91d29ea11ad22068f7a8393400302a"
+    },
+    {
+      "log": "backend-postgres.log",
+      "reproduction_template": "Targeted PostgreSQL selection; exact historical invocation not captured",
+      "historical_exact_command": "UNAVAILABLE",
+      "historical_exit_code": null,
+      "historical_timestamp": "UNAVAILABLE unless present in log/JUnit/checkpoint",
+      "source_binding": "historical exported helper/source and SHA; original shell invocation unavailable",
+      "evidence_sha256": "e5ce1bc447362d2e74580b5bb9cea5e242d9ff7679df6b78bbb21b171670c62a"
+    },
+    {
+      "log": "truthguard-added.log",
+      "reproduction_template": "docker compose exec -T backend vendor/bin/phpunit tests/Feature/FunctionalAuditTruthGuardTest.php --log-junit storage/qa-added.xml",
+      "historical_exact_command": "UNAVAILABLE",
+      "historical_exit_code": null,
+      "historical_timestamp": "UNAVAILABLE unless present in log/JUnit/checkpoint",
+      "source_binding": "historical exported helper/source and SHA; original shell invocation unavailable",
+      "evidence_sha256": "eb7d284d39687f0089609e0004f0d910f1fdcf5b3434f9b6677e721488e456d6"
+    },
+    {
+      "log": "recovery-browser.json",
+      "reproduction_template": "node recovery-browser.cjs with QA fixture credentials from private local environment",
+      "historical_exact_command": "UNAVAILABLE",
+      "historical_exit_code": null,
+      "historical_timestamp": "UNAVAILABLE unless present in log/JUnit/checkpoint",
+      "source_binding": "historical exported helper/source and SHA; original shell invocation unavailable",
+      "evidence_sha256": "f1215ac08d3cca27e53aace8781cab5669c01a3db9f907a6655d252a608d9485"
+    }
+  ],
+  "limitations": "Historical timestamps/exit codes missing from original controls are unavailable, never fabricated. New execution records are separate remediation-runs.json."
+}

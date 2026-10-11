@@ -1,0 +1,3079 @@
+{
+  "summary": {
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "scenario_unit": "named backend case including data set, aggregated Vitest case, unique browser scenario, DB/control run or explicit acceptance gap; wrapper controls are counted separately from their constituent assertions",
+    "total": 539,
+    "results": {
+      "PASS": 525,
+      "FAIL": 5,
+      "BLOCKED": 7,
+      "NOT_RUN": 2
+    },
+    "mocked_provider_e2e": 7,
+    "unique_original_browser": 26,
+    "duplicates_removed": 1,
+    "scenario_assertions_not_counted": true,
+    "records": 432,
+    "weighted_units": 539
+  },
+  "scenarios": [
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_targeted_invitation_registers_normalized_email_once",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_target_mismatch_and_duplicate_email_do_not_consume_invitation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_invitation_token_is_hashed_and_not_serialized",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_invalid_targeted_invitation_email_is_rejected_without_side_effects",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_invitation_creation_rolls_back_when_creation_audit_fails_without_leaking_token",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_generic_invitation_cli_creates_usable_one_time_invitation_and_never_reveals_it_again",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_registration_rolls_back_user_invitation_and_audit_when_completion_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_normal_application_logs_are_redacted_for_credentials",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_disabled_user_loses_access_and_sole_admin_is_preserved",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_bootstrap_admin_rejects_invalid_email_without_side_effects",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_disabling_user_invalidates_multiple_database_sessions",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_disabling_and_reenabling_user_does_not_restore_a_pre_disable_session",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_expired_revoked_and_exhausted_invitations_are_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_http_registration_rejects_missing_csrf_before_any_user_is_created",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_http_registration_rejects_invalid_email_before_persistence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_login_errors_do_not_enumerate_and_disabled_account_is_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_login_rehashes_an_existing_password_during_hash_driver_migration",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_unknown_account_password_work_matches_each_supported_hash_driver",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_long_passwords_preserve_their_suffixes",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_login_rate_limit_is_configurable_deterministic_and_isolated_by_email_and_ip",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_login_regenerates_session_and_controller_uses_stateful_session_boundary",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_enable_cli_restores_authentication_without_creating_a_session",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_invitation_revoke_rolls_back_when_audit_persistence_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_bootstrap_rolls_back_when_audit_persistence_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_disable_rolls_back_status_sessions_and_audit_when_persistence_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_enable_rolls_back_status_and_audit_when_persistence_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_test_only_ownership_fixture_hides_foreign_resources_and_admin_has_no_bypass",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_audit_redacts_sensitive_metadata_and_refuses_mutation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_audit_query_boundary_rejects_bulk_update_and_query_delete",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_audit_query_boundary_rejects_forwarded_destructive_operations",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_audit_append_boundary_still_allows_creation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_bootstrap_admin_is_one_time_and_never_echoes_password",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_operator_invitation_command_shows_token_once_without_persisting_it",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_operator_can_capture_invitation_ulid_revoke_it_and_registration_is_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.AccessCoreTest:test_operator_can_revoke_an_invitation_and_a_rejected_rerevoke_changes_nothing",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_preview_preparation_saves_resumes_and_requires_explicit_approval",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_cross_user_preparation_and_item_access_are_not_found",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_client_cannot_inject_another_owners_claim_as_provenance",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_rejected_recommendation_remains_saved_and_cannot_be_approved",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_generated_recommendation_is_blocked_when_truth_guard_rejects_it",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_truth_guard_blocks_pass_when_review_omits_an_unsupported_edit_clause",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_truth_guard_does_not_trust_model_pass_for_a_fabricated_clause",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_truth_guard_fails_closed_on_malformed_claim_id_output",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_truth_review_provider_failures_are_recorded_once_for_edit_accept_and_approval",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_generation_truth_guard_failure_is_recorded_only_once_with_application_correlation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_unexpected_generation_failure_uses_the_same_code_in_api_and_diagnostics",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_approval_rejects_a_revision_changed_while_truth_validation_is_in_flight",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_active_runtime_skill_schemas_avoid_unsupported_openai_string_bounds",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_invalid_generated_output_is_recorded_with_application_run_correlation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_unexpected_generation_failure_uses_one_safe_internal_error_classification",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_generation_does_not_expose_untrusted_model_reason_or_risk_as_recommendation_facts",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_missing_generation_skill_returns_a_controlled_unavailable_response",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_supported_edit_revalidates_using_confirmed_context_only_and_keeps_injection_as_data",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationDraftTest:test_stale_career_blocks_generation_and_provider_failure_can_be_retried",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationPostgresSecurityTest:test_runtime_role_forces_rls_and_composite_owner_links",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationPostgresSecurityTest:test_stale_approval_cannot_win_against_a_concurrent_revision_on_postgres",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ApplicationPostgresSecurityTest:test_mcp_reads_obey_postgres_owner_scope_without_changing_product_rows",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_blank_provider_pricing_is_recorded_as_unknown",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_complete_owner_chain_blocks_cross_owner_source_profile_claim_and_nested_idor",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_api_review_flow_records_human_actions_and_keeps_one_candidate_pending",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_trusted_matching_query_exposes_only_current_owner_valid_confirmed_pass_data",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_superseding_confirmed_fact_preserves_history_and_invalidates_stale_claim",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_truth_guard_has_distinct_pass_block_and_valid_evidence_resolution_outcomes",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_manual_api_never_invokes_llm_and_records_actor_time_and_manual_provenance",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_unconfigured_ai_fails_extraction_safely_but_manual_entry_still_works",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_deprecated_fact_cannot_become_claim_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_candidate_persistence_identity_prevents_duplicate_retry_rows",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_model_policy_resolves_provider_and_model_from_configuration",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_provider_transport_types_do_not_leak_into_domain_or_application_services",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_configured_policy_drives_adapter_and_completed_llm_run_metadata",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_provider_refusal_incomplete_malformed_and_transport_fail_safely_with_run_metadata",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_retry_after_is_parsed_and_bounded_for_retryable_provider_responses",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_career_api_and_logs_redact_private_content_on_persistence_failure",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_provider_failure_response_and_logs_do_not_expose_private_source",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreRemediationTest:test_career_http_500_message_is_redacted_from_response_and_logs",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_career_retry_deadline_preserves_delayed_retry_then_recovers_one_orphan",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_stale_career_attempt_cannot_persist_after_recovery_reclaims_it",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_career_worker_cannot_claim_pending_source_before_retry_deadline",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_stale_career_running_source_is_recovered_but_fresh_work_is_held",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_legacy_pending_career_uses_latest_retry_timestamp_for_lock_window",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_extraction_keeps_untrusted_source_separate_and_creates_pending_evidence_only",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_queued_retryable_extraction_does_not_record_an_incident_without_log_context",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_queued_terminal_extraction_stays_owned_until_job_finalizes",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_authenticated_user_can_start_extraction_through_the_api",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_unauthenticated_career_access_is_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_schema_invalid_and_semantically_upgraded_output_fail_closed",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_unchecked_fact_categories_fail_closed_and_rejected_output_keeps_provider_metadata",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_completed_extraction_retry_is_idempotent",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_failed_extraction_can_retry_without_duplicate_facts_and_records_retry_count",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_skill_setup_failure_releases_source_for_retry",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_pending_fact_supports_confirm_edit_confirm_reject_and_deprecate_lifecycle",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_stale_pending_review_cannot_apply_a_second_transition",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_manual_fact_is_confirmed_with_user_manual_provenance_without_provider",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_truth_guard_blocks_missing_pending_invalid_provenance_and_cross_user_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_cross_user_career_source_fact_claim_and_run_data_are_not_exposed",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_adversarial_eval_fixtures_execute_through_the_real_validation_path",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.CareerCoreTest:test_openai_adapter_uses_responses_structured_output_without_storing_remote_state",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_host_identity_is_stable_across_instances_and_signins",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_pkce_connection_identity_and_issued_client_are_persisted_and_secrets_hidden",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_state_replay_invalid_callback_and_expiration_are_rejected_without_exchange",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_decline_consumes_state_and_never_exchanges_a_code",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_nonce_audience_signature_issuer_and_expiration_are_validated",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_valid_identity_without_sharing_scope_is_saved_but_cannot_infer",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_reconnect_rejects_different_account_and_callback_client",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_refresh_replaces_token_chain_once_and_respects_earliest_refresh_time",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_terminal_refresh_error_clears_tokens_but_transient_failure_preserves_them",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_current_model_catalog_and_responses_contract_without_api_key",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_connection_proof_rejects_a_model_policy_violation_before_provider_access",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_stream_interruption_failed_usage_limit_and_unsupported_capability",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_other_user_cannot_list_use_reconnect_or_delete_credentials",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_disconnect_retains_registration_and_reports_unconfirmed_revocation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_disconnect_invalidates_a_pending_reconnect_callback",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.ChatGptPlanTest:test_disconnect_invalidates_a_pending_initial_registration_callback",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsPostgresTest:test_runtime_role_can_group_and_admin_can_query_without_user_access",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsPostgresTest:test_runtime_role_rolls_back_status_when_audit_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsPostgresTest:test_runtime_provider_filter_retry_delay_and_noop_status_audit",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsPostgresTest:test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties",
+      "count": 1,
+      "result": "FAIL",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_internal_error_is_safe_correlated_and_grouped",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_unexpected_oauth_server_failure_is_recorded_without_exposing_internal_details",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_expected_oauth_authentication_error_is_not_recorded_as_incident",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_failed_jobs_command_reports_database_outage_with_safe_reference",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_recent_reference_ids_remain_searchable_after_repeated_failures",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_log_sink_failure_does_not_prevent_incident_recording",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_failure_of_both_diagnostic_sinks_returns_false_without_replacing_the_primary_exception",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_logged_api_exception_is_not_logged_again_when_incident_storage_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_readiness_probe_preserves_dependency_failure_when_diagnostics_also_fail",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_database_readiness_failure_is_recorded_as_critical",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_readiness_database_outage_is_recorded_as_critical_after_diagnostic_storage_failure",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_redis_readiness_failure_is_recorded_as_critical",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_readiness_redis_outage_is_recorded_as_critical",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_unique_job_locks_cover_all_bounded_provider_retry_delays",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_request_id_middleware_keeps_http_response_working_when_log_context_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_raw_log_success_marks_the_exception_before_a_postgres_failure",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_nested_secrets_are_redacted",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_closure_frame_names_keep_basename_and_line_without_absolute_paths",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_all_supported_application_log_channels_use_structured_redaction",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_every_selectable_non_null_log_channel_uses_the_redaction_tap",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_emergency_fallback_sanitizes_messages_context_and_exceptions",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_structured_logger_redacts_escaped_json_secret_values",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_global_reporter_preserves_non_http_and_original_failures",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_reporter_falls_back_to_laravel_logging_when_incident_reporting_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_structured_logger_keeps_safe_exception_frames_without_message_or_secrets",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_safe_stack_removes_absolute_paths_from_anonymous_class_names",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_anonymous_throwable_is_safely_named_in_stack_logs_and_incidents",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_incident_stderr_keeps_only_sanitized_exception_frames",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_controlled_error_does_not_infer_retryability_from_http_status",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_provider_error_contract_uses_failure_category_for_retryability",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_http_exception_response_preserves_only_safe_headers",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_throttled_api_responses_use_the_retryable_rate_limit_contract",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_admin_only_diagnostics_and_lifecycle",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_status_change_rolls_back_when_audit_recording_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_diagnostics_error_responses_match_the_openapi_error_shape",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_diagnostics_incident_detail_and_update_require_authentication",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_application_id_filter_search_and_detail_use_occurrence_correlation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_incident_list_prioritizes_active_severity_and_supports_relative_time_filter",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_provider_filter_matches_latest_provider_and_combines_with_other_filters",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_tied_occurrence_timestamps_use_descending_id_for_every_latest_view",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_provider_retry_delay_is_bounded_and_exposed_only_when_valid",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_repeated_status_transition_is_a_no_op_for_audit",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_status_transition_rolls_back_when_audit_write_fails",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_browser_report_ignores_untrusted_details_and_requires_auth",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_browser_report_returns_a_safe_failure_when_no_diagnostic_sink_accepts_it",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_terminal_llm_failures_stop_queue_jobs_and_transient_failures_use_bounded_retry_delays",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_unique_job_locks_cover_the_maximum_provider_retry_window",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_transient_queue_attempt_logs_warning_then_succeeds_without_error_incident",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_expected_missing_console_record_has_a_safe_operator_message",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_final_queue_failure_is_correlated",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_queue_execution_state_survives_log_context_setup_failure_and_clears_after_exception",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_retrying_queue_exception_is_not_recorded_as_a_console_incident_after_context_cleanup",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_sync_queue_restores_request_and_parent_job_log_context",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_sync_job_restores_request_log_context_after_success_and_exception",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_worker_jobs_clear_prior_context_after_success_and_exception",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.DiagnosticsTest:test_retention_prunes_old_detail_and_closed_incidents_but_keeps_open_group",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.HealthTest:test_liveness_is_independent_of_dependencies",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.HealthTest:test_readiness_reports_ready_when_dependencies_are_available",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.HealthTest:test_readiness_is_sanitized_when_a_dependency_is_unavailable",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.HealthTest:test_valid_request_id_is_reused",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.HealthTest:test_invalid_request_id_is_replaced",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_tool_list_preserves_reads_and_adds_one_controlled_draft_write",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_controlled_analysis_write_is_idempotent_owned_and_preserves_source_and_facts",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_mcp_draft_save_rejects_a_stale_context_signature",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_mcp_calls_cannot_submit_a_draft_or_use_a_generic_write_tool",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_authentication_scope_resource_audience_and_active_user_are_required",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_local_oauth_metadata_uses_one_configured_origin_independent_of_request_host",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_tunnel_resource_is_bound_across_pkce_code_refresh_and_mcp_requests",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_oauth_resource_discovery_and_grant_parameters_are_exact",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_oauth_registration_uses_structural_redirect_validation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_read_calls_are_bounded_and_do_not_mutate_product_state_without_an_llm_provider",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_failed_and_incomplete_analysis_exposes_bounded_source_as_untrusted_data",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_foreign_vacancy_and_context_are_not_found_for_other_users",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_vacancy_metadata_and_snapshot_are_read_in_one_transaction",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_application_context_holds_owner_and_vacancy_locks_through_all_reads",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_context_marks_relevant_facts_omitted_by_item_or_character_budget",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_context_output_has_hard_item_caps",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_completed_context_returns_the_signature_of_the_fact_snapshot",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_context_returns_the_same_snapshot_used_to_select_confirmed_facts",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_oauth_consent_uses_the_cvortex_view",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_oauth_issuer_is_added_to_success_and_error_redirects_only_for_approved_callbacks",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_invalid_bearer_logs_only_safe_authentication_metadata",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.McpGatewayTest:test_unexpected_tool_errors_return_a_safe_error_and_log_only_metadata",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.OpenAiResponsesProviderTest:test_http_status_maps_to_provider_failure_retryability",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.OpenAiResponsesProviderTest:test_retry_after_header_is_numeric_bounded_or_absent",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.OpenAiResponsesProviderTest:test_temporary_provider_responses_preserve_bounded_retry_after",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_paste_preserves_raw_snapshot_deduplicates_and_never_fetches_metadata_url",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_same_metadata_url_with_changed_text_creates_a_new_snapshot_version",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_changed_import_without_company_marker_clears_previous_company",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_historical_content_reappearance_creates_a_new_current_snapshot_version",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_superseded_snapshot_cannot_claim_the_current_vacancy_status",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_semantic_extraction_keeps_evidence_downgrades_preferred_and_ignores_noise",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_legitimate_instruction_related_technology_requirements_survive",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_instruction_directive_fails_closed_when_provider_suppresses_extraction",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_extraction_suppression_variants_fail_closed_but_technical_uses_survive",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_requirement_labels_must_identify_the_concrete_qualification_subject",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_modifier_career_fact_does_not_match_concrete_kubernetes_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_negated_concrete_subject_cannot_be_rescued_by_label_modifiers",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_connector_inside_technology_name_remains_part_of_negated_subject",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_compound_technical_subject_requires_one_bound_candidate_phrase",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_label_must_cover_the_complete_concrete_cue_subject",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_located_in_requirement_is_classified_as_location",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_compound_identity_and_access_subject_is_not_split_into_partial_label",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_no_need_for_subject_is_not_a_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_compound_experience_subject_requires_one_bound_candidate_phrase",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_experience_subject_preserves_connector_words_in_technology_names",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_duration_backed_experience_requires_a_bound_compound_subject",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_residency_and_industry_requirements_use_source_derived_dimensions",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_located_in_classification_is_bound_to_the_labeled_place",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_domain_parser_mention_is_not_industry_experience",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_residency_uses_only_explicit_candidate_location",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_resident_of_candidate_evidence_matches_source_location",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_historical_residence_does_not_supply_current_candidate_location",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_ongoing_location_intervals_match_the_current_place_without_the_date",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_full_residency_label_cannot_match_incidental_api_work",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_quoted_attack_examples_and_api_empty_result_wording_are_data",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_candidate_directed_subject_excludes_trailing_role_framing",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_known_instruction_attack_families_fail_closed",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_validator_accepts_reordered_labels_and_rejects_unsupported_structured_values",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_provider_dimension_is_reclassified_from_source_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_duration_and_salary_semantics_are_bound_to_source_expressions",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_salary_systems_experience_remains_a_technical_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_experience_normalized_value_requires_the_source_unit_and_supports_explicit_conversion",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_salary_matching_uses_overlapping_explicit_ranges",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_language_evidence_requires_a_proficiency_construction",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_native_language_evidence_satisfies_fluent_but_not_the_reverse",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_unqualified_unlisted_language_requirement_requires_language_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_ordered_cefr_levels_satisfy_only_equal_or_lower_requirements",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_language_subject_comes_from_label_when_source_mentions_another_language",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_language_level_source_grammar_rejects_incidental_english_and_accepts_proficiency",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_adjacent_evidence_is_counted_as_mandatory_or_preferred_gap",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_uncued_importance_negated_candidate_and_cyrillic_spanish_fail_safe",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_cyrillic_language_proficiency_matches_the_canonical_language",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_experience_subject_ignores_vacancy_sentence_framing",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_work_format_requires_arrangement_context_on_both_sides",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_remote_product_work_does_not_become_candidate_arrangement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_inability_statement_cannot_satisfy_a_structured_work_format_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_remote_technology_is_not_reclassified_as_work_format",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_negated_requirement_wording_is_not_persisted_as_a_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_contracted_source_negation_does_not_create_a_remote_work_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_required_to_source_negation_does_not_create_a_remote_work_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_must_work_wording_sets_mandatory_source_importance",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_must_be_predicate_does_not_replace_concrete_subject_label",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_clause_can_support_location_and_work_format_requirements",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_location_and_work_format_labels_bind_to_their_own_subjects",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_work_arrangement_location_allows_a_bounded_determiner",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_negation_for_another_subject_does_not_remove_a_supported_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_unquantified_experience_can_use_exact_confirmed_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_negated_structured_experience_evidence_cannot_satisfy_a_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_lack_statement_cannot_satisfy_a_direct_technical_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_location_sentence_punctuation_is_not_part_of_structured_value",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_natural_location_evidence_matches_without_accepting_incidental_mentions",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_historical_work_format_is_not_current_availability_but_current_statements_are",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_candidate_may_explicitly_accept_multiple_work_formats",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_technical_mentions_of_a_city_do_not_prove_candidate_location",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_experience_in_source_is_not_downgraded_to_a_technical_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_postfix_subject_experience_is_not_satisfied_by_proficiency_alone",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_product_subjects_with_industry_words_remain_technical_requirements",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_no_longer_required_subjects_are_not_persisted_as_mandatory",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_remote_work_platform_is_a_technical_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_stale_running_analysis_is_reclaimed_for_explicit_retry",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_vacancy_retry_deadline_preserves_delay_and_orphan_recovery_reserves_once",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_vacancy_worker_cannot_claim_pending_analysis_before_retry_deadline",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_duplicate_vacancy_job_before_retry_deadline_is_a_noop",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_concurrent_duplicate_vacancy_job_while_current_analysis_runs_is_a_noop",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_vacancy_job_does_not_swallow_safe_exception_after_claim_failure",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_stale_vacancy_attempt_cannot_persist_after_recovery_reclaims_it",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_legacy_pending_vacancy_keeps_its_original_unique_lock_window",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_duplicate_import_reclaims_stale_running_analysis",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_recent_running_analysis_is_not_reclaimed",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_location_evidence_preserves_comma_separated_city_and_country",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_requirement_label_must_name_the_subject_of_the_importance_cue",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_generic_role_label_cannot_stand_in_for_a_qualification_subject",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_real_qualification_subject_remains_accepted_when_role_framing_is_present",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_benign_api_empty_requirements_description_is_not_prompt_injection",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_active_requires_cue_binds_the_technical_label_and_importance",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_source_commercial_experience_cannot_be_downgraded_to_a_technical_skill",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_location_and_language_matching_require_dimension_specific_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_source_required_wording_overrides_provider_preferred_importance",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_source_importance_cues_are_bound_to_the_labeled_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_employer_phrasing_keeps_a_concrete_candidate_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_structured_matching_rejects_incidental_evidence_and_unknown_mandatory_blocks_apply",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_analysis_signature_is_derived_from_the_same_career_context_it_matches",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_short_skill_tokens_do_not_match_larger_words",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_experience_subject_parser_handles_bounded_duration_grammar_and_keeps_ambiguous_unknown",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_current_analysis_selection_filters_signature_and_uses_a_deterministic_tie_breaker",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_snapshot_model_rejects_updates_and_new_content_creates_a_new_record",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_match_represents_all_dimensions_and_uses_only_confirmed_valid_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_adjacent_technology_is_explained_without_upgrading_direct_experience",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_cross_user_access_is_hidden_and_analysis_becomes_stale_after_career_change",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_api_requires_authentication_and_bounds_text_and_url_input",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_api_persists_raw_vacancy_before_provider_failure_and_retry_keeps_the_same_snapshot",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_queued_retryable_vacancy_analysis_does_not_record_an_incident_without_log_context",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_queued_terminal_vacancy_analysis_stays_owned_until_job_finalizes",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_all_five_recommendation_classes_follow_explainable_policy",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_postgres_rejects_a_cross_owner_snapshot_requirement_chain",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml; pg-constraint-probe.json (equivalent DB control PASS, exact test not executed)"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_vacancy_api_and_logs_redact_private_text_on_persistence_failure",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_reanalysis_of_current_snapshot_is_idempotent_and_old_job_cannot_restore_pending",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_requirement_semantics_are_bound_to_one_labeled_clause",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_sibling_location_cannot_make_a_react_requirement_match",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_candidate_evidence_negation_is_local_to_the_relevant_occurrence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_marketing_and_system_requirements_do_not_become_candidate_requirements",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_marketing_requires_cannot_supply_a_matched_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyCoreTest:test_negated_adjacent_technology_and_contracted_remote_fact_are_not_evidence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_stream_persists_history_run_and_saves_source_backed_structured_draft",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_history_keeps_the_latest_user_and_assistant_turn_when_the_response_exceeds_the_budget",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_history_preserves_chronological_order_across_completed_turns",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_history_omits_turns_with_a_stale_career_signature",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_history_omits_turns_from_a_stale_vacancy_snapshot",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_history_limits_after_discarding_incomplete_runs",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_handcrafted_api_request_rejects_a_valid_slug_missing_from_the_owned_catalog",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_chat_api_requires_a_context_preview_fingerprint_before_catalog_or_persistence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_account_catalogs_are_connection_scoped_and_cannot_cross_authorize_a_model",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_model_policy_rejection_is_distinct_and_does_not_call_any_provider",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_stale_persisted_model_is_rejected_at_inference_without_provider_or_api_key_fallback",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_active_chat_cancellation_persists_interrupted_state_and_skips_inference",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_cancelling_during_stream_keeps_partial_output_and_does_not_complete_the_run",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_is_confirmed_only_owned_relevant_bounded_and_marks_untrusted_data",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_reads_vacancy_and_snapshot_under_the_vacancy_lock",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_does_not_select_a_confirmed_fact_for_only_common_words",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_does_not_select_a_confirmed_fact_for_generic_vacancy_language",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_requires_substantive_overlap_for_generic_single_terms",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_begin_holds_the_career_owner_lock_from_context_capture_through_turn_persistence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_matches_technical_skills_outside_the_short_allowlist_when_extraction_is_unavailable",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_scores_all_requirements_before_limiting_serialized_requirements",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_keeps_a_fact_matching_a_normalized_language_requirement",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_uses_structured_semantics_for_location_domain_and_experience",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_matches_confirmed_facts_for_technical_requirements_outside_the_allowlist",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_keeps_single_letter_c_technology_overlap",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_filters_generic_terms_after_punctuation_normalization",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_deduplicates_terms_after_punctuation_normalization",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_does_not_select_a_confirmed_fact_for_generic_russian_vacancy_language",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_does_not_select_a_confirmed_fact_for_only_numeric_overlap",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_context_signature_uses_the_same_career_snapshot_as_selected_facts",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_preview_is_the_exact_bounded_provider_input_and_stale_preview_is_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_interrupted_stream_is_persisted_and_cannot_be_saved",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_draft_save_is_idempotent_and_schema_snapshot_and_confirmed_fact_checks_fail_closed",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_draft_retry_returns_saved_result_after_career_context_changes",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_draft_save_holds_the_career_owner_lock_through_validation_and_persistence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_cross_user_cannot_read_threads_add_messages_save_or_approve_analysis",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_chat_run_does_not_mark_requirement_extraction_as_complete_and_duplicate_turn_is_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_one_confirmed_fact_can_support_multiple_requirements_but_not_repeat_within_a_match",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_draft_classification_uses_literal_source_section_headings",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_repeated_source_excerpt_under_conflicting_headings_remains_uncertain",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPlanChatTest:test_approval_rejects_a_draft_when_the_vacancy_source_exceeds_the_chat_context_limit",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-sqlite.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPostgresSecurityTest:test_runtime_role_rls_and_owner_context_fail_closed",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPostgresSecurityTest:test_http_and_queue_owner_context_is_cleared",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "PHPUNIT:Tests.Feature.VacancyPostgresSecurityTest:test_raw_snapshot_history_updates_are_rejected",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-postgres.xml"
+    },
+    {
+      "id": "QA-TRUTH:test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set \"confirmed\"",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-added.xml"
+    },
+    {
+      "id": "QA-TRUTH:test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set \"pending\"",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-added.xml"
+    },
+    {
+      "id": "QA-TRUTH:test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set \"rejected\"",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-added.xml"
+    },
+    {
+      "id": "QA-TRUTH:test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set \"deprecated\"",
+      "count": 1,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "qa-added.xml"
+    },
+    {
+      "id": "VITEST:9-suites",
+      "count": 108,
+      "result": "PASS",
+      "classification": "AUTOMATED_LOCAL_TEST",
+      "evidence": "frontend-test.log"
+    },
+    {
+      "id": "BROWSER:WEB-01-public-routes",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:AUTH-001-unauthorized",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:AUTH-CSRF-origin-and-token-fallback",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:AUTH-LOGIN-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:CAREER-MANUAL-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:CAREER-EXTRACT-PENDING-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:CAREER-REJECT-API",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:CAREER-REFRESH-persistence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:INPUT-002-prompt-injection-controlled-block",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:VACANCY-IMPORT-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:VACANCY-DUPLICATE-replay",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:CAREER-AMBIGUITY-resolution-API",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:VACANCY-REANALYZE-after-resolution",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:APPLICATION-GENERATE-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:APPLICATION-ACCEPT-APPROVE-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:APPLICATION-TRUTHGUARD-unsupported",
+      "count": 1,
+      "result": "PASS",
+      "classification": "MOCKED_PROVIDER_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:APPLICATION-REJECT-API",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:APPLICATION-REFRESH-persistence",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:AUTH-002-005-IDOR",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:API-negative-contracts",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:PERF-baseline",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:RESPONSIVE-and-keyboard",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:ADMIN-boundary",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:AUTH-LOGOUT-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:REGISTRATION-invited-browser",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "BROWSER:BROWSER-no-exceptions-no-egress",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "browser.json"
+    },
+    {
+      "id": "RECOVERY:RECOVERY-API-saved-results",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "recovery-browser.json",
+      "note": "CAREER gap entry inventories actions; separate expected-user-action FAIL below"
+    },
+    {
+      "id": "RECOVERY:RECOVERY-UI-reopen-results",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "recovery-browser.json",
+      "note": "CAREER gap entry inventories actions; separate expected-user-action FAIL below"
+    },
+    {
+      "id": "RECOVERY:A11Y-automated-semantic-smoke",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "recovery-browser.json",
+      "note": "CAREER gap entry inventories actions; separate expected-user-action FAIL below"
+    },
+    {
+      "id": "RECOVERY:CAREER-UI-ambiguity-resolution-gap",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "recovery-browser.json",
+      "note": "CAREER gap entry inventories actions; separate expected-user-action FAIL below"
+    },
+    {
+      "id": "RECOVERY:RECOVERY-no-exceptions-no-egress",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "recovery-browser.json",
+      "note": "CAREER gap entry inventories actions; separate expected-user-action FAIL below"
+    },
+    {
+      "id": "DB-CHAIN",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "database-evidence.json"
+    },
+    {
+      "id": "DB-FK-RLS",
+      "count": 1,
+      "result": "PASS",
+      "classification": "REAL_LOCAL_E2E",
+      "evidence": "pg-constraint-probe.json"
+    },
+    {
+      "id": "CONTROL:frontend-test",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "frontend-test.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:frontend-lint",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "frontend-lint.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:frontend-types",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "frontend-types.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:frontend-production-build",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "frontend-production-build.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:backend-pint",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "backend-pint.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:backend-larastan",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "backend-larastan.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:mcp-toggle",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "mcp-toggle.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:nginx-log-safety",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "nginx-log-safety-corrected.log",
+      "note": "Original invocation exit 1 used wrong host port; corrected QA URL PASS"
+    },
+    {
+      "id": "CONTROL:b01-check",
+      "count": 1,
+      "result": "FAIL",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "b01-check.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:b01-node-tests",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "b01-node-tests.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:access-core-postgres-concurrency",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "access-core-postgres-concurrency.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:career-core-postgres-upgrade",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "career-core-postgres-upgrade.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:career-review-postgres-concurrency",
+      "count": 1,
+      "result": "FAIL",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "career-review-postgres-concurrency.log",
+      "note": "Historical final verifier exception; wrapper exit 0/PASS is insufficient. New remediation execution is recorded separately; historical FAIL retained.",
+      "outcome_kind": "VERIFIER_EXCEPTION"
+    },
+    {
+      "id": "CONTROL:career-fact-supersession-postgres-concurrency",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "career-fact-supersession-postgres-concurrency.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:vacancy-postgres-concurrency",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "vacancy-postgres-concurrency.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:vacancy-postgres-duplicate-migration",
+      "count": 1,
+      "result": "FAIL",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "vacancy-postgres-duplicate-migration.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:vacancy-postgres-revalidation",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "vacancy-postgres-revalidation.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:application-postgres-boundary",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "application-postgres-boundary.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CONTROL:chatgpt-postgres-boundary",
+      "count": 1,
+      "result": "PASS",
+      "classification": "LOCAL_CONTROL",
+      "evidence": "chatgpt-postgres-boundary.log",
+      "note": "Original historical run retained; no successful rerun"
+    },
+    {
+      "id": "CAREER-UI-RESOLVE-EXPECTED-ACTION",
+      "count": 1,
+      "result": "FAIL",
+      "classification": "STATIC_AND_BROWSER_REVIEW",
+      "evidence": "career-actions.json; browser-generation-original.json; career-workspace.tsx",
+      "note": "API resolution PASS; UI lacks claim resolution control"
+    },
+    {
+      "id": "EXTERNAL-OPENAI",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "EXTERNAL_PROVIDER_E2E",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "No-live-AI restriction; no real credential/provider call"
+    },
+    {
+      "id": "EXTERNAL-CHATGPT-OAUTH",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "EXTERNAL_PROVIDER_E2E",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "No live OAuth/account integration; local fake tests only"
+    },
+    {
+      "id": "HUMAN-PREVIEW-ACCEPTANCE",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "ACCEPTANCE_GAP",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "No named real-user acceptance/feedback"
+    },
+    {
+      "id": "HUMAN-SCREEN-READER",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "ACCEPTANCE_GAP",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "No human audible screen-reader review"
+    },
+    {
+      "id": "HUMAN-NATIVE-200-ZOOM",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "ACCEPTANCE_GAP",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "No native browser zoom reviewer evidence"
+    },
+    {
+      "id": "HUMAN-FULL-STATE-MATRIX",
+      "count": 1,
+      "result": "BLOCKED",
+      "classification": "ACCEPTANCE_GAP",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "Mandatory 32 state/viewport rows plus interactions remain open"
+    },
+    {
+      "id": "M2-DOCX-PDF-PACKAGE",
+      "count": 1,
+      "result": "NOT_RUN",
+      "classification": "ACCEPTANCE_GAP",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "Outside implemented/authorized M1 scope"
+    },
+    {
+      "id": "M2-EMPLOYER-CONSISTENCY",
+      "count": 1,
+      "result": "NOT_RUN",
+      "classification": "ACCEPTANCE_GAP",
+      "evidence": "repository task and release gate; no runtime evidence",
+      "note": "Full M2 employer memory/contradiction workflow not implemented/authorized"
+    }
+  ]
+}

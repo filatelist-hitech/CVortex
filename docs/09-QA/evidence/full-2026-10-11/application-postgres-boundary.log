@@ -1,0 +1,206 @@
+application-postgres-boundary: fresh administrative migration
+time="2026-10-11T20:12:28+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-2bfd562c2779 Creating 
+ Container cvortexqa1011-migration-run-2bfd562c2779 Created 
+
+   INFO  Preparing database.  
+
+  Creating migration table ....................................... 6.39ms DONE
+
+   INFO  Running migrations.  
+
+  2026_09_12_000001_create_access_core_tables ................... 14.63ms DONE
+  2026_09_13_000002_add_auth_generation_to_users ................. 1.50ms DONE
+  2026_09_13_000003_create_career_core_tables ................... 19.74ms DONE
+  2026_09_13_000004_reconcile_and_harden_career_core ............ 35.42ms DONE
+  2026_09_13_000005_enforce_career_source_idempotency ............ 1.08ms DONE
+  2026_09_19_000006_record_claim_resolution_choice ............... 1.99ms DONE
+  2026_09_19_000007_enforce_single_current_career_fact_replacement  0.74ms DONE
+  2026_09_19_000008_create_vacancy_core_tables .................. 18.09ms DONE
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 2.94ms DONE
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 0.43ms DONE
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 1.11ms DONE
+  2026_09_24_000012_recover_completed_extraction_without_analysis  0.65ms DONE
+  2026_09_24_000013_create_application_preparations ............. 18.90ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 1.81ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 1.74ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 1.13ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 1.29ms DONE
+  2026_09_24_225903_create_oauth_device_codes_table .............. 1.77ms DONE
+  2026_09_27_000013_create_diagnostic_incidents .................. 5.29ms DONE
+  2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents  0.95ms DONE
+  2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences  0.39ms DONE
+  2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences .... 0.57ms DONE
+  2026_10_01_000001_add_persisted_queue_recovery_deadlines ....... 1.03ms DONE
+  2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates ... 0.61ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 1.94ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 14.35ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 1.54ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 0.60ms DONE
+
+application-postgres-boundary: runtime-role security suite
+time="2026-10-11T20:12:29+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-be859d759699 Creating 
+ Container cvortexqa1011-backend-run-be859d759699 Created 
+
+  [30;43;1m WARN [39;49;22m[39m Tests\Feature\ApplicationPostgresSecurityTest[39m
+  [33;1m![39;22m[90m [39m[90mruntime role forces rls and composite owner links[39m[90m [39m[33m→ file_get_conten[39m[90m…[39m [90m0.50s[39m  
+  [33;1m![39;22m[90m [39m[90mstale approval cannot win against a concurrent revision on postgres[39m[90m…[39m [90m0.27s[39m  
+  [33;1m![39;22m[90m [39m[90mmcp reads obey postgres owner scope without changing product rows[39m[90m [39m[33m→[39m[90m…[39m [90m0.33s[39m  
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [30;43;1m WARNINGS [39;49;22m [1mTests\Feature\ApplicationPostgresSecurityTest[22m [90m>[39m runtime role fo…   
+[39;1m  file_get_contents(/var/www/html/.env): Failed to open stream: No such file or directory[39;22m
+
+  at [32mvendor/vlucas/phpdotenv/src/Store/File/Reader.php[39m:[32m73[39m
+     69▕      */
+     70▕     private static function readFromFile(string $path, ?string $encoding = null)
+     71▕     {
+     72▕         /** @var Option<string> */
+  ➜  73▕         $content = Option::fromValue(@\file_get_contents($path), false);
+     74▕ 
+     75▕         return $content->flatMap(static function (string $content) use ($encoding) {
+     76▕             return Str::utf8($content, $encoding)->mapError(static function (string $error) {
+     77▕                 throw new InvalidEncodingException($error);
+
+      [2m+7 vendor frames [22m
+  [33m8   [39m[39;1mtests/Feature/ApplicationPostgresSecurityTest.php[39;22m:[39;1m32[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [30;43;1m WARNINGS [39;49;22m [1mTests\Feature\ApplicationPostgresSecurityTest[22m [90m>[39m stale approval…    
+[39;1m  file_get_contents(/var/www/html/.env): Failed to open stream: No such file or directory[39;22m
+
+  at [32mvendor/vlucas/phpdotenv/src/Store/File/Reader.php[39m:[32m73[39m
+     69▕      */
+     70▕     private static function readFromFile(string $path, ?string $encoding = null)
+     71▕     {
+     72▕         /** @var Option<string> */
+  ➜  73▕         $content = Option::fromValue(@\file_get_contents($path), false);
+     74▕ 
+     75▕         return $content->flatMap(static function (string $content) use ($encoding) {
+     76▕             return Str::utf8($content, $encoding)->mapError(static function (string $error) {
+     77▕                 throw new InvalidEncodingException($error);
+
+      [2m+7 vendor frames [22m
+  [33m8   [39m[39;1mtests/Feature/ApplicationPostgresSecurityTest.php[39;22m:[39;1m32[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [30;43;1m WARNINGS [39;49;22m [1mTests\Feature\ApplicationPostgresSecurityTest[22m [90m>[39m mcp reads obey…    
+[39;1m  file_get_contents(/var/www/html/.env): Failed to open stream: No such file or directory[39;22m
+
+  at [32mvendor/vlucas/phpdotenv/src/Store/File/Reader.php[39m:[32m73[39m
+     69▕      */
+     70▕     private static function readFromFile(string $path, ?string $encoding = null)
+     71▕     {
+     72▕         /** @var Option<string> */
+  ➜  73▕         $content = Option::fromValue(@\file_get_contents($path), false);
+     74▕ 
+     75▕         return $content->flatMap(static function (string $content) use ($encoding) {
+     76▕             return Str::utf8($content, $encoding)->mapError(static function (string $error) {
+     77▕                 throw new InvalidEncodingException($error);
+
+      [2m+7 vendor frames [22m
+  [33m8   [39m[39;1mtests/Feature/ApplicationPostgresSecurityTest.php[39;22m:[39;1m32[39;22m
+
+
+  [90mTests:[39m    [33;1m3 warnings[39;22m[90m (55 assertions)[39m
+  [90mDuration:[39m [39m1.20s[39m
+
+application-postgres-boundary: seed pre-existing parent data before migration rollback/re-up
+time="2026-10-11T20:12:31+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-6096cba27122 Creating 
+ Container cvortexqa1011-migration-run-6096cba27122 Created 
+application-postgres-boundary: rollback OAuth and application preparation migrations
+time="2026-10-11T20:12:33+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-e9adf23a22a4 Creating 
+ Container cvortexqa1011-migration-run-e9adf23a22a4 Created 
+
+   INFO  Rolling back migrations.  
+
+  2026_09_24_225903_create_oauth_device_codes_table .............. 5.34ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 2.04ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 1.03ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 2.98ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 2.09ms DONE
+  2026_09_24_000013_create_application_preparations ............. 15.39ms DONE
+
+application-postgres-boundary: migrate up again and rerun security suite
+time="2026-10-11T20:12:34+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-660184bd36b5 Creating 
+ Container cvortexqa1011-migration-run-660184bd36b5 Created 
+
+   INFO  Running migrations.  
+
+  2026_09_24_000013_create_application_preparations ............. 43.91ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 3.09ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 3.04ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 1.92ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 5.46ms DONE
+  2026_09_24_225903_create_oauth_device_codes_table .............. 5.04ms DONE
+
+time="2026-10-11T20:12:35+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-6157828fbb56 Creating 
+ Container cvortexqa1011-backend-run-6157828fbb56 Created 
+
+  [30;43;1m WARN [39;49;22m[39m Tests\Feature\ApplicationPostgresSecurityTest[39m
+  [33;1m![39;22m[90m [39m[90mruntime role forces rls and composite owner links[39m[90m [39m[33m→ file_get_conten[39m[90m…[39m [90m0.54s[39m  
+  [33;1m![39;22m[90m [39m[90mstale approval cannot win against a concurrent revision on postgres[39m[90m…[39m [90m0.29s[39m  
+  [33;1m![39;22m[90m [39m[90mmcp reads obey postgres owner scope without changing product rows[39m[90m [39m[33m→[39m[90m…[39m [90m0.40s[39m  
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [30;43;1m WARNINGS [39;49;22m [1mTests\Feature\ApplicationPostgresSecurityTest[22m [90m>[39m runtime role fo…   
+[39;1m  file_get_contents(/var/www/html/.env): Failed to open stream: No such file or directory[39;22m
+
+  at [32mvendor/vlucas/phpdotenv/src/Store/File/Reader.php[39m:[32m73[39m
+     69▕      */
+     70▕     private static function readFromFile(string $path, ?string $encoding = null)
+     71▕     {
+     72▕         /** @var Option<string> */
+  ➜  73▕         $content = Option::fromValue(@\file_get_contents($path), false);
+     74▕ 
+     75▕         return $content->flatMap(static function (string $content) use ($encoding) {
+     76▕             return Str::utf8($content, $encoding)->mapError(static function (string $error) {
+     77▕                 throw new InvalidEncodingException($error);
+
+      [2m+7 vendor frames [22m
+  [33m8   [39m[39;1mtests/Feature/ApplicationPostgresSecurityTest.php[39;22m:[39;1m32[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [30;43;1m WARNINGS [39;49;22m [1mTests\Feature\ApplicationPostgresSecurityTest[22m [90m>[39m stale approval…    
+[39;1m  file_get_contents(/var/www/html/.env): Failed to open stream: No such file or directory[39;22m
+
+  at [32mvendor/vlucas/phpdotenv/src/Store/File/Reader.php[39m:[32m73[39m
+     69▕      */
+     70▕     private static function readFromFile(string $path, ?string $encoding = null)
+     71▕     {
+     72▕         /** @var Option<string> */
+  ➜  73▕         $content = Option::fromValue(@\file_get_contents($path), false);
+     74▕ 
+     75▕         return $content->flatMap(static function (string $content) use ($encoding) {
+     76▕             return Str::utf8($content, $encoding)->mapError(static function (string $error) {
+     77▕                 throw new InvalidEncodingException($error);
+
+      [2m+7 vendor frames [22m
+  [33m8   [39m[39;1mtests/Feature/ApplicationPostgresSecurityTest.php[39;22m:[39;1m32[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [30;43;1m WARNINGS [39;49;22m [1mTests\Feature\ApplicationPostgresSecurityTest[22m [90m>[39m mcp reads obey…    
+[39;1m  file_get_contents(/var/www/html/.env): Failed to open stream: No such file or directory[39;22m
+
+  at [32mvendor/vlucas/phpdotenv/src/Store/File/Reader.php[39m:[32m73[39m
+     69▕      */
+     70▕     private static function readFromFile(string $path, ?string $encoding = null)
+     71▕     {
+     72▕         /** @var Option<string> */
+  ➜  73▕         $content = Option::fromValue(@\file_get_contents($path), false);
+     74▕ 
+     75▕         return $content->flatMap(static function (string $content) use ($encoding) {
+     76▕             return Str::utf8($content, $encoding)->mapError(static function (string $error) {
+     77▕                 throw new InvalidEncodingException($error);
+
+      [2m+7 vendor frames [22m
+  [33m8   [39m[39;1mtests/Feature/ApplicationPostgresSecurityTest.php[39;22m:[39;1m32[39;22m
+
+
+  [90mTests:[39m    [33;1m3 warnings[39;22m[90m (55 assertions)[39m
+  [90mDuration:[39m [39m1.32s[39m
+
+application-postgres-boundary: PASS (preserved users=6 facts=4 vacancies=6)

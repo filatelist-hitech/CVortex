@@ -1,0 +1,44 @@
+{
+  "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "branch": "docs/full-functional-qa-2026-10-11",
+  "time_moscow": "2026-10-11T22:37:59.677116+03:00",
+  "databases": {
+    "cvortex": {
+      "unchanged": true,
+      "snapshot_scope": "public tables except sessions/cache/cache_locks",
+      "before_digest": "f49f260d77bb4593adbe5564ea7bd7f4671038594ba2aeedaeea1191479d9c93",
+      "after_digest": "f49f260d77bb4593adbe5564ea7bd7f4671038594ba2aeedaeea1191479d9c93"
+    },
+    "cvortex_dev2": {
+      "unchanged": true,
+      "snapshot_scope": "public tables except sessions/cache/cache_locks",
+      "before_digest": "cc6349556ddb983107c5f003e3fee4edc0a7dbf8291c925b1d3e84df84822584",
+      "after_digest": "cc6349556ddb983107c5f003e3fee4edc0a7dbf8291c925b1d3e84df84822584"
+    },
+    "cvortex_test": {
+      "unchanged": true,
+      "snapshot_scope": "public tables except sessions/cache/cache_locks",
+      "before_digest": "44beadede45ee48d2e304c5d2a22c6f37f5c49a5c20d6590e9b8c2d504d9dbc5",
+      "after_digest": "44beadede45ee48d2e304c5d2a22c6f37f5c49a5c20d6590e9b8c2d504d9dbc5"
+    }
+  },
+  "primary_untracked_count": 802,
+  "primary_untracked_hashes_unchanged": true,
+  "primary_tracked_diff_empty": true,
+  "reruns": "No successful suite rerun; OFL failed check revalidated; reopened persisted results, new semantic accessibility smoke, DB chain/FK/RLS evidence supplemented",
+  "remaining": {
+    "external": "BLOCKED by no-live-AI authorization",
+    "human": "BLOCKED pending named reviewer; native zoom, audible screen reader and full manual matrix",
+    "exact_remaining_pg_test": "BLOCKED: RefreshDatabase destructive setup not authorized; equivalent FK probe PASS",
+    "M2": "NOT_RUN outside authorized implemented scope"
+  },
+  "completion": "Report/evidence closeout complete; CHANGES REQUIRED; no remediation started",
+  "final_primary_snapshots_unchanged": true,
+  "final_primary_tracked_and_staged_diff_empty": true,
+  "final_primary_802_untracked_hashes_unchanged": true,
+  "qa_resources": "stop-only; volumes, containers and private temp files retained",
+  "remaining_authorized_execution": [],
+  "blocked_and_out_of_scope": "see scenario-ledger.json and report; no external calls/human acceptance/M2 execution authorized",
+  "exact_repository_next": "b01-manual-accessibility-release-gate",
+  "recommended_next_bounded_task": "Repair full-functional QA proof gates (QA-001..003), only on separate authorization"
+}

@@ -1,0 +1,551 @@
+{
+  "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "checks": [
+    {
+      "id": "RECOVERY-API-saved-results",
+      "status": "PASS",
+      "actual": {
+        "vacancy_status": "COMPLETED",
+        "items": [
+          {
+            "id": "01m4p001zny48pyngb2xh1ysyb",
+            "kind": "COVER_DRAFT",
+            "variant": "SHORT",
+            "status": "APPROVED",
+            "validation": "PASS"
+          },
+          {
+            "id": "01m4p001zqd3gpg21qkmcsnhk8",
+            "kind": "COVER_DRAFT",
+            "variant": "STANDARD",
+            "status": "BLOCKED",
+            "validation": "BLOCK"
+          },
+          {
+            "id": "01m4p001zhzrtm0c8z42sftxcg",
+            "kind": "RESUME_RECOMMENDATION",
+            "variant": null,
+            "status": "REJECTED",
+            "validation": "NOT_VALIDATED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "RECOVERY-UI-reopen-results",
+      "status": "PASS",
+      "actual": "Saved preparation text visible in a new browser context; screenshot and API payload retained"
+    },
+    {
+      "id": "A11Y-automated-semantic-smoke",
+      "status": "PASS",
+      "actual": [
+        {
+          "path": "/?opportunity=01m4nzt8p5ffcp7v0w85w0yt4e#materials",
+          "dom": {
+            "lang": "ru",
+            "title": "CVortex",
+            "missingAlt": [],
+            "duplicateIds": []
+          },
+          "controls": 31,
+          "unnamed": []
+        },
+        {
+          "path": "/career",
+          "dom": {
+            "lang": "ru",
+            "title": "CVortex",
+            "missingAlt": [],
+            "duplicateIds": []
+          },
+          "controls": 32,
+          "unnamed": []
+        }
+      ]
+    },
+    {
+      "id": "CAREER-UI-ambiguity-resolution-gap",
+      "status": "PASS",
+      "actual": {
+        "actions": [
+          "UПрофильПользователь",
+          "СегодняНедоступно",
+          "РаботодателиНедоступно",
+          "НастройкиНедоступно",
+          "Извлечь факты для проверки",
+          "Добавить подтверждённый факт",
+          "Сохранить и проанализировать",
+          "QA Verified Backend EngineerCOMPLETED · STRONGLY_APPLY",
+          "QA Verified Backend EngineerCOMPLETED · STRONGLY_APPLY · stale",
+          "QA Verified Backend EngineerCOMPLETED · STRONGLY_APPLY · stale",
+          "QA Backend EngineerFAILED",
+          "ChatGPT plan connection",
+          "Preview context",
+          "Send",
+          "Preview analysis context",
+          "Analyze vacancy",
+          "Reload chat",
+          "Save edit and revalidate",
+          "Accept draft",
+          "Reject"
+        ],
+        "scope": "UI action inventory; source confirms no claim resolution control"
+      }
+    },
+    {
+      "id": "RECOVERY-no-exceptions-no-egress",
+      "status": "PASS",
+      "actual": {
+        "errors": [],
+        "external": []
+      }
+    }
+  ],
+  "apiEvidence": [
+    {
+      "path": "/api/v1/vacancies/01m4nzt8p5ffcp7v0w85w0yt4e",
+      "method": "GET",
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+          "title": "QA Verified Backend Engineer",
+          "company": "QA Synthetic",
+          "source_type": "PASTED_TEXT",
+          "source_url": null,
+          "analysis_status": "COMPLETED",
+          "error_code": null,
+          "analysis_run_stale": false,
+          "snapshot": {
+            "id": "01m4nzt8p8589ca7a9hyg5rdwd",
+            "version": 1,
+            "raw_text": "QA Verified Backend Engineer\nCompany: QA Synthetic\nLaravel is required.\n<img src=x onerror=\"window.qaXss=true\">",
+            "source_url": null,
+            "imported_at": "2026-10-11T17:22:52.000000Z"
+          },
+          "requirements": [
+            {
+              "id": "01m4nztb08ntb4aw76my2q20x0",
+              "dimension": "TECHNICAL",
+              "importance": "MANDATORY",
+              "label": "Laravel",
+              "normalized_value": "laravel",
+              "source_excerpt": "Laravel is required",
+              "confidence": 0.95,
+              "inference": "CVORTEX_EXTRACTION"
+            }
+          ],
+          "analysis": {
+            "id": "01m4p000znztrn15qkwmfacft9",
+            "recommendation": "STRONGLY_APPLY",
+            "key_reasons": [
+              "TECHNICAL: Every supported requirement in this dimension has confirmed candidate evidence."
+            ],
+            "material_gaps": [],
+            "uncertainties": [],
+            "analysis_version": "1.0.0",
+            "stale": false,
+            "dimensions": [
+              {
+                "dimension": "TECHNICAL",
+                "result": "MATCH",
+                "explanation": "Every supported requirement in this dimension has confirmed candidate evidence.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [
+                  "01m4nztb08ntb4aw76my2q20x0"
+                ],
+                "candidate_evidence": [
+                  {
+                    "type": "CareerFact",
+                    "id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+                    "statement": "Built Laravel APIs.",
+                    "status": "CONFIRMED",
+                    "provenance_type": "user_manual"
+                  }
+                ]
+              },
+              {
+                "dimension": "EXPERIENCE",
+                "result": "NOT_APPLICABLE",
+                "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [],
+                "candidate_evidence": []
+              },
+              {
+                "dimension": "DOMAIN",
+                "result": "NOT_APPLICABLE",
+                "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [],
+                "candidate_evidence": []
+              },
+              {
+                "dimension": "LANGUAGE",
+                "result": "NOT_APPLICABLE",
+                "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [],
+                "candidate_evidence": []
+              },
+              {
+                "dimension": "LOCATION",
+                "result": "NOT_APPLICABLE",
+                "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [],
+                "candidate_evidence": []
+              },
+              {
+                "dimension": "WORK_FORMAT",
+                "result": "NOT_APPLICABLE",
+                "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [],
+                "candidate_evidence": []
+              },
+              {
+                "dimension": "SALARY",
+                "result": "NOT_APPLICABLE",
+                "explanation": "The vacancy snapshot contains no supported requirement for this dimension.",
+                "origin": "DETERMINISTIC",
+                "vacancy_requirement_ids": [],
+                "candidate_evidence": []
+              }
+            ]
+          },
+          "run": {
+            "skill_id": "vacancy.requirement-extraction",
+            "skill_version": "1.0.0",
+            "prompt_version": "1.0.2",
+            "model_policy": "low_cost_structured_extraction",
+            "provider": "openai",
+            "model": "qa-deterministic",
+            "status": "COMPLETED",
+            "validation_result": "PASS",
+            "error_category": null
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/v1/applications/preparations/01m4p001r8c3a7w89ckdyygar2",
+      "method": "GET",
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "01m4p001r8c3a7w89ckdyygar2",
+          "vacancy_id": "01m4nzt8p5ffcp7v0w85w0yt4e",
+          "status": "DRAFT",
+          "stale": false,
+          "items": [
+            {
+              "id": "01m4p001zny48pyngb2xh1ysyb",
+              "kind": "COVER_DRAFT",
+              "variant": "SHORT",
+              "section": null,
+              "before": null,
+              "content": "Built Laravel APIs.",
+              "reason": null,
+              "risk": null,
+              "status": "APPROVED",
+              "validation_result": "PASS",
+              "revision_number": 1,
+              "claim_usages": [
+                {
+                  "assertion": "Built Laravel APIs.",
+                  "claim_ids": [
+                    "01m4nzmpvatpp0vr9mx3901z2b"
+                  ],
+                  "supporting_claims": [
+                    {
+                      "id": "01m4nzmpvatpp0vr9mx3901z2b",
+                      "statement": "Built Laravel APIs.",
+                      "truth_status": "PASS",
+                      "career_facts": [
+                        {
+                          "id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+                          "statement": "Built Laravel APIs.",
+                          "status": "CONFIRMED",
+                          "provenance_type": "user_manual",
+                          "source_excerpt": "Built Laravel APIs."
+                        },
+                        {
+                          "id": "01m4nzmqcks4faeqy2rjhec3eh",
+                          "statement": "Built Laravel APIs.",
+                          "status": "CONFIRMED",
+                          "provenance_type": "paste_extraction",
+                          "source_excerpt": "Built Laravel APIs."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "revisions": [
+                {
+                  "revision_number": 1,
+                  "action": "GENERATED",
+                  "content": "Built Laravel APIs.",
+                  "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+                  "validation_result": "PASS",
+                  "claim_usages": [
+                    {
+                      "assertion": "Built Laravel APIs.",
+                      "claim_ids": [
+                        "01m4nzmpvatpp0vr9mx3901z2b"
+                      ]
+                    }
+                  ],
+                  "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+                  "created_at": "2026-10-11T17:26:01.000000Z"
+                }
+              ],
+              "approvals": [
+                {
+                  "action": "ACCEPTED",
+                  "revision_number": 1,
+                  "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+                  "validation_result": "PASS",
+                  "created_at": "2026-10-11T17:26:02.000000Z"
+                },
+                {
+                  "action": "APPROVED",
+                  "revision_number": 1,
+                  "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+                  "validation_result": "PASS",
+                  "created_at": "2026-10-11T17:26:02.000000Z"
+                }
+              ]
+            },
+            {
+              "id": "01m4p001zqd3gpg21qkmcsnhk8",
+              "kind": "COVER_DRAFT",
+              "variant": "STANDARD",
+              "section": null,
+              "before": null,
+              "content": "Built Laravel APIs. Expert in Kubernetes for 10 years.",
+              "reason": null,
+              "risk": null,
+              "status": "BLOCKED",
+              "validation_result": "BLOCK",
+              "revision_number": 2,
+              "claim_usages": [],
+              "revisions": [
+                {
+                  "revision_number": 1,
+                  "action": "GENERATED",
+                  "content": "Built Laravel APIs.",
+                  "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+                  "validation_result": "PASS",
+                  "claim_usages": [
+                    {
+                      "assertion": "Built Laravel APIs.",
+                      "claim_ids": [
+                        "01m4nzmpvatpp0vr9mx3901z2b"
+                      ]
+                    }
+                  ],
+                  "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+                  "created_at": "2026-10-11T17:26:01.000000Z"
+                },
+                {
+                  "revision_number": 2,
+                  "action": "EDITED",
+                  "content": "Built Laravel APIs. Expert in Kubernetes for 10 years.",
+                  "content_hash": "67449a332daf094a1a9e4cff1aa2930443b24990b5f9a5a7814579092d5f94dd",
+                  "validation_result": "BLOCK",
+                  "claim_usages": [],
+                  "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+                  "created_at": "2026-10-11T17:26:02.000000Z"
+                }
+              ],
+              "approvals": [
+                {
+                  "action": "EDITED",
+                  "revision_number": 2,
+                  "content_hash": "67449a332daf094a1a9e4cff1aa2930443b24990b5f9a5a7814579092d5f94dd",
+                  "validation_result": "BLOCK",
+                  "created_at": "2026-10-11T17:26:02.000000Z"
+                }
+              ]
+            },
+            {
+              "id": "01m4p001zhzrtm0c8z42sftxcg",
+              "kind": "RESUME_RECOMMENDATION",
+              "variant": null,
+              "section": "Experience",
+              "before": "Built Laravel APIs.",
+              "content": "Built Laravel APIs.",
+              "reason": "Review the supported Claim against this vacancy requirement.",
+              "risk": "Keep candidate wording within the confirmed Claim.",
+              "status": "REJECTED",
+              "validation_result": "NOT_VALIDATED",
+              "revision_number": 1,
+              "claim_usages": [
+                {
+                  "assertion": "Built Laravel APIs.",
+                  "claim_ids": [
+                    "01m4nzmpvatpp0vr9mx3901z2b"
+                  ],
+                  "supporting_claims": [
+                    {
+                      "id": "01m4nzmpvatpp0vr9mx3901z2b",
+                      "statement": "Built Laravel APIs.",
+                      "truth_status": "PASS",
+                      "career_facts": [
+                        {
+                          "id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+                          "statement": "Built Laravel APIs.",
+                          "status": "CONFIRMED",
+                          "provenance_type": "user_manual",
+                          "source_excerpt": "Built Laravel APIs."
+                        },
+                        {
+                          "id": "01m4nzmqcks4faeqy2rjhec3eh",
+                          "statement": "Built Laravel APIs.",
+                          "status": "CONFIRMED",
+                          "provenance_type": "paste_extraction",
+                          "source_excerpt": "Built Laravel APIs."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "revisions": [
+                {
+                  "revision_number": 1,
+                  "action": "GENERATED",
+                  "content": "Built Laravel APIs.",
+                  "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+                  "validation_result": "PASS",
+                  "claim_usages": [
+                    {
+                      "assertion": "Built Laravel APIs.",
+                      "claim_ids": [
+                        "01m4nzmpvatpp0vr9mx3901z2b"
+                      ]
+                    }
+                  ],
+                  "actor_user_id": "01m4nzbhzpjd51n76h1tfc525e",
+                  "created_at": "2026-10-11T17:26:01.000000Z"
+                }
+              ],
+              "approvals": [
+                {
+                  "action": "REJECTED",
+                  "revision_number": 1,
+                  "content_hash": "5fb1339021baa99967e8a3b78645f5c72c146f7a9b3eeb93915358444260ff08",
+                  "validation_result": "BLOCK",
+                  "created_at": "2026-10-11T17:26:02.000000Z"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200,
+      "body": {
+        "data": {
+          "facts": [
+            {
+              "id": "01m4nzmtazz5qbphd5z7bj4a0f",
+              "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+              "career_profile_id": "01m4nzmptx9tp41yw0yn13t7tx",
+              "career_source_id": "01m4nzmsj4ye9k8jek2m25zm4x",
+              "supersedes_fact_id": null,
+              "provenance_type": "paste_extraction",
+              "fact_type": "experience",
+              "assertion_original": "Built Laravel APIs.",
+              "assertion_approved": null,
+              "source_excerpt": "Built Laravel APIs.",
+              "extracted_by": "career.fact-extraction@1.0.0",
+              "extraction_confidence": 0.95,
+              "status": "REJECTED",
+              "reviewed_by": "01m4nzbhzpjd51n76h1tfc525e",
+              "reviewed_at": "2026-10-11T17:19:54.000000Z",
+              "created_at": "2026-10-11T17:19:53.000000Z",
+              "updated_at": "2026-10-11T17:19:54.000000Z",
+              "candidate_hash": "bca7249049f7eb2d5f12a68879a4cf68770fd4ccdee0bef2255c26ee55e9e194"
+            },
+            {
+              "id": "01m4nzmpv7rtyhqgk7chtxa4p0",
+              "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+              "career_profile_id": "01m4nzmptx9tp41yw0yn13t7tx",
+              "career_source_id": null,
+              "supersedes_fact_id": null,
+              "provenance_type": "user_manual",
+              "fact_type": "skill",
+              "assertion_original": "Built Laravel APIs.",
+              "assertion_approved": "Built Laravel APIs.",
+              "source_excerpt": "Built Laravel APIs.",
+              "extracted_by": "user_manual",
+              "extraction_confidence": null,
+              "status": "CONFIRMED",
+              "reviewed_by": "01m4nzbhzpjd51n76h1tfc525e",
+              "reviewed_at": "2026-10-11T17:19:50.000000Z",
+              "created_at": "2026-10-11T17:19:50.000000Z",
+              "updated_at": "2026-10-11T17:19:50.000000Z",
+              "candidate_hash": "b3a0b508a53d05a1227bf3eef9b590e23921af5ba636df1bc2d9262e3e759b94"
+            },
+            {
+              "id": "01m4nzmqcks4faeqy2rjhec3eh",
+              "owner_id": "01m4nzbhzpjd51n76h1tfc525e",
+              "career_profile_id": "01m4nzmptx9tp41yw0yn13t7tx",
+              "career_source_id": "01m4nzmq07w070t17rhy5tnqw3",
+              "supersedes_fact_id": null,
+              "provenance_type": "paste_extraction",
+              "fact_type": "experience",
+              "assertion_original": "Built Laravel APIs.",
+              "assertion_approved": "Built Laravel APIs.",
+              "source_excerpt": "Built Laravel APIs.",
+              "extracted_by": "career.fact-extraction@1.0.0",
+              "extraction_confidence": 0.95,
+              "status": "CONFIRMED",
+              "reviewed_by": "01m4nzbhzpjd51n76h1tfc525e",
+              "reviewed_at": "2026-10-11T17:19:52.000000Z",
+              "created_at": "2026-10-11T17:19:50.000000Z",
+              "updated_at": "2026-10-11T17:19:52.000000Z",
+              "candidate_hash": "bca7249049f7eb2d5f12a68879a4cf68770fd4ccdee0bef2255c26ee55e9e194"
+            }
+          ],
+          "claims": [
+            {
+              "id": "01m4nzmpvatpp0vr9mx3901z2b",
+              "statement": "Built Laravel APIs.",
+              "truth_status": "PASS",
+              "fact_ids": [
+                "01m4nzmpv7rtyhqgk7chtxa4p0",
+                "01m4nzmqcks4faeqy2rjhec3eh"
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "id": "01m4nzmsj4ye9k8jek2m25zm4x",
+              "kind": "PASTED_TEXT",
+              "extraction_status": "COMPLETED",
+              "error_code": null,
+              "created_at": "2026-10-11T17:19:52.000000Z"
+            },
+            {
+              "id": "01m4nzmq07w070t17rhy5tnqw3",
+              "kind": "PASTED_TEXT",
+              "extraction_status": "COMPLETED",
+              "error_code": null,
+              "created_at": "2026-10-11T17:19:50.000000Z"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "external": []
+}
