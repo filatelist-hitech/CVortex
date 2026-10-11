@@ -1,0 +1,111 @@
+{
+  "runs": [
+    {
+      "id": "exact-current",
+      "git_sha": "67348a10b9ddbb8c663159a6402099f55df13675",
+      "command": [
+        "bash",
+        "scripts/test-vacancy-postgres-duplicate-migration.sh"
+      ],
+      "start_moscow": "2026-10-12T01:02:45.440861+03:00",
+      "end_moscow": "2026-10-12T01:03:11.271853+03:00",
+      "exit_code": 0,
+      "source_sha256": {
+        "scripts/test-vacancy-postgres-duplicate-migration.sh": "e610a3df21c911d189ce20bf0a97402dae84f117ffcf65e20bdf4db3895cf432",
+        "scripts/vacancy_migration_harness.py": "a726616c97e20acd5ab409094815a65125071634ac069ee5d87ec81a3cdac3d2",
+        "scripts/test_vacancy_migration_harness.py": "422b0fd31b2ee505cc8dc2fe06460b38577a0eacdcb975e7d025d44902c09909",
+        "scripts/fixtures/vacancy-duplicate-migration/legacy-schema.sql": "52ce45afe4950b07103ffaf512a9289f7576f36141e012f8d156addc1a9a1b71",
+        "scripts/fixtures/vacancy-duplicate-migration/legacy.sql": "81e97741b2a48718c274468a16a44dd1920ecb45f4dff9ba18cd255e5a423914",
+        "scripts/fixtures/vacancy-duplicate-migration/reconciled.sql": "c49e95bd5eb8ed982604b5e71538839e25012efdada5855a0c737e252bd192d1",
+        "scripts/fixtures/vacancy-duplicate-migration/repaired-schema.sql": "3b30ed46d66dbae8e301585662fd579066cfcc1d1e67a695abf39b96a9fe195e"
+      },
+      "log": "exact-current.log",
+      "raw_log_gzip": "exact-current.log.gz",
+      "log_sha256": "da144a55268aecc796d22680be6822fac048014ae25c187917be0ac394c617f4",
+      "result": "PASS",
+      "cleanup_pass": true,
+      "project": "qa002_2c50d8441d343763",
+      "database": "qa002_2c50d8441d343763_fixture",
+      "admin_role": "qa002_2c50d8441d343763_admin",
+      "runtime_role": "qa002_2c50d8441d343763_runtime",
+      "postgres_container_id": "e018e02a9227829cc7eedd31d942682622d0cada00ffecd23be8345b0384ccef",
+      "backend_image_id": "sha256:ac85dfca21d5504c14285ae0b1ea0273ef0cf64933021067e1b74c386e9d655a",
+      "volumes": [
+        "qa002_2c50d8441d343763_postgres_data",
+        "qa002_2c50d8441d343763_vendor"
+      ],
+      "network": "qa002_2c50d8441d343763_default",
+      "legacy_boundary": "2026_09_19_000008_create_vacancy_core_tables",
+      "before_counts": {
+        "users": 1,
+        "vacancies": 8,
+        "snapshots": 10,
+        "analyses": 5,
+        "llm_runs": 3
+      },
+      "after_counts": {
+        "users": 1,
+        "vacancies": 5,
+        "snapshots": 10,
+        "analyses": 5,
+        "llm_runs": 3
+      },
+      "migrations_ran": 28,
+      "wrong_schema_expected_exit": null
+    },
+    {
+      "id": "exact-controls",
+      "git_sha": "67348a10b9ddbb8c663159a6402099f55df13675",
+      "command": [
+        "bash",
+        "scripts/test-vacancy-postgres-duplicate-migration.sh",
+        "--regression-controls"
+      ],
+      "start_moscow": "2026-10-12T01:03:11.272218+03:00",
+      "end_moscow": "2026-10-12T01:03:36.966513+03:00",
+      "exit_code": 0,
+      "source_sha256": {
+        "scripts/test-vacancy-postgres-duplicate-migration.sh": "e610a3df21c911d189ce20bf0a97402dae84f117ffcf65e20bdf4db3895cf432",
+        "scripts/vacancy_migration_harness.py": "a726616c97e20acd5ab409094815a65125071634ac069ee5d87ec81a3cdac3d2",
+        "scripts/test_vacancy_migration_harness.py": "422b0fd31b2ee505cc8dc2fe06460b38577a0eacdcb975e7d025d44902c09909",
+        "scripts/fixtures/vacancy-duplicate-migration/legacy-schema.sql": "52ce45afe4950b07103ffaf512a9289f7576f36141e012f8d156addc1a9a1b71",
+        "scripts/fixtures/vacancy-duplicate-migration/legacy.sql": "81e97741b2a48718c274468a16a44dd1920ecb45f4dff9ba18cd255e5a423914",
+        "scripts/fixtures/vacancy-duplicate-migration/reconciled.sql": "c49e95bd5eb8ed982604b5e71538839e25012efdada5855a0c737e252bd192d1",
+        "scripts/fixtures/vacancy-duplicate-migration/repaired-schema.sql": "3b30ed46d66dbae8e301585662fd579066cfcc1d1e67a695abf39b96a9fe195e"
+      },
+      "log": "exact-controls.log",
+      "raw_log_gzip": "exact-controls.log.gz",
+      "log_sha256": "7a6d2c5f031fcd4cbc5cf340df707dfc2551f4485f8cab5c7b5c98fa9c74948f",
+      "result": "PASS",
+      "cleanup_pass": true,
+      "project": "qa002_2545e0fa4896ecbf",
+      "database": "qa002_2545e0fa4896ecbf_fixture",
+      "admin_role": "qa002_2545e0fa4896ecbf_admin",
+      "runtime_role": "qa002_2545e0fa4896ecbf_runtime",
+      "postgres_container_id": "944cbf71ddda9b08c7e100eb02fcd9b08b91cf0ef92c795de682ec5b5d364994",
+      "backend_image_id": "sha256:ac85dfca21d5504c14285ae0b1ea0273ef0cf64933021067e1b74c386e9d655a",
+      "volumes": [
+        "qa002_2545e0fa4896ecbf_postgres_data",
+        "qa002_2545e0fa4896ecbf_vendor"
+      ],
+      "network": "qa002_2545e0fa4896ecbf_default",
+      "legacy_boundary": "2026_09_19_000008_create_vacancy_core_tables",
+      "before_counts": {
+        "users": 1,
+        "vacancies": 8,
+        "snapshots": 10,
+        "analyses": 5,
+        "llm_runs": 3
+      },
+      "after_counts": {
+        "users": 1,
+        "vacancies": 5,
+        "snapshots": 10,
+        "analyses": 5,
+        "llm_runs": 3
+      },
+      "migrations_ran": 29,
+      "wrong_schema_expected_exit": 3
+    }
+  ]
+}

@@ -37,5 +37,7 @@
       "counts_and_row_digests_equal": true
     }
   },
-  "unchanged": true
+  "unchanged": true,
+  "exact_commit_runs_unchanged": true,
+  "tested_code_sha": "67348a10b9ddbb8c663159a6402099f55df13675"
 }

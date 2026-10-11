@@ -54,5 +54,19 @@
     "raw_sha256": "9f4a295565f32488a2029c363d9cb03fdec70f2316ac33a2556e55c970c397ef",
     "export_sha256": "9f4a295565f32488a2029c363d9cb03fdec70f2316ac33a2556e55c970c397ef",
     "transformation": "None; already LF and whitespace clean"
+  },
+  {
+    "path": "exact-current.log",
+    "raw_gzip": "exact-current.log.gz",
+    "raw_sha256": "8b19a85b8c2bd616e4dda2ee0346d349a29690723ab5c5327f1a01d890e362c8",
+    "export_sha256": "da144a55268aecc796d22680be6822fac048014ae25c187917be0ac394c617f4",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "exact-controls.log",
+    "raw_gzip": "exact-controls.log.gz",
+    "raw_sha256": "da5600cb2148041f2d6c30b01cd77a7668713511a923a4a0642dac625bc81d7a",
+    "export_sha256": "7a6d2c5f031fcd4cbc5cf340df707dfc2551f4485f8cab5c7b5c98fa9c74948f",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
   }
 ]

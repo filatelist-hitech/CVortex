@@ -26,6 +26,21 @@ seed. Named `000009`–`000012` repairs run separately, then reverse named batch
 rollback, same-path reapply, then all later migrations. No fixed migration counts.
 Implementation/security details: [testing contract](../../MIGRATION-TESTING.md).
 
+## Exact commit verification
+
+Code commit `67348a10b9ddbb8c663159a6402099f55df13675` was then tested with
+both invocations on 2026-10-12, Europe/Moscow. [Exact execution metadata](exact-runs.json)
+records commands, exit codes, times, source hashes and resource identities.
+[Current set](exact-current.log): **exit 0, 28/28 Ran, cleanup PASS**.
+[Regression controls](exact-controls.log): **exit 0, 29/29 Ran, cleanup PASS**;
+wrong-schema control exits 3 as required. Later changes only add documentation/evidence;
+executed source hashes are checked against final files.
+
+The final read-only development comparison also matches the pre-run snapshot.
+Seven new harness tests, eight historical evidence tests and two existing wrapper
+regressions PASS; [validation log](validation-final.log), [unit log](unit-final.log).
+Syntax/compilation, source/evidence/index integrity and scoped diff checks PASS.
+
 ## Executed candidate validation
 
 - [Current migration run](current.log): exit 0, 28/28 Ran, all reconciliation and
