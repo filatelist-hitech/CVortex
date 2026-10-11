@@ -1,6 +1,6 @@
 ---
 title: CVortex M1.3 — Vacancy Core
-status: changes-required-remediation-awaiting-review
+status: completed
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: project
@@ -199,3 +199,13 @@ On PASS: `NEXT.md = m1-4-application-draft`.
 ## STOP
 
 Do not implement resume/cover generation in this task.
+
+## Recovery lifecycle reconciliation — 2026-10-11
+
+PR #27 (`6a61925`) and #28 (`baf9834`) are MERGED into stage. Slice code and
+historical remediation/isolated PostgreSQL evidence are retained in
+[STATUS history](../state/STATUS-HISTORY-2026-10-11.md); fresh targeted SQLite
+VacancyCoreTest and exact-stage remote Quality passed in the
+[Recovery Report](../state/PROJECT_RECOVERY_REPORT.md). This corrects stale task
+lifecycle only. Historical checklist marks are not rewritten as a new manual
+review. Real provider success and Preview acceptance remain separate/unverified.

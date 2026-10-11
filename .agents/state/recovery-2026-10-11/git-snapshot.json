@@ -1,0 +1,1155 @@
+{
+  "head": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "branch": "stage",
+  "upstream": "origin/stage",
+  "tracked_changes": "",
+  "untracked_count": 802,
+  "untracked_groups": {
+    "docs/07-Design/archive/b01-pre-orbita-2026-10-10": 53,
+    "docs/07-Design/candidates/b01-personal-preview": 10,
+    "docs/07-Design/validation/application-port-2026-10-11": 739
+  },
+  "remote_heads": [
+    {
+      "sha": "89f30e3740cdd8ba72804e0a284438cb30491709",
+      "ref": "refs/heads/chore/application-workspace-reference-foundation"
+    },
+    {
+      "sha": "0af7635d7acba7f13f9285c693438b59234353ed",
+      "ref": "refs/heads/chore/m1-3-merge-state"
+    },
+    {
+      "sha": "9e8f25976c98d4daa1be7f05928562fbdb92a8b6",
+      "ref": "refs/heads/chore/m1.4-preview-env"
+    },
+    {
+      "sha": "7ecb3cf2d180f88c3d9c890a1794ad5c7563a7a7",
+      "ref": "refs/heads/docs/current-project-state-audit"
+    },
+    {
+      "sha": "fe822562e364ffb6d3968bfeca101ea403abb12d",
+      "ref": "refs/heads/docs/local-startup"
+    },
+    {
+      "sha": "653c9dca8a5f1d3a8cfbcff4fa6460176856fc89",
+      "ref": "refs/heads/docs/m1-4-merge-state"
+    },
+    {
+      "sha": "6ca25b09550b8315913f06382dff28f8d326aa06",
+      "ref": "refs/heads/docs/phase-08-task-spec"
+    },
+    {
+      "sha": "9267f15545cca70a245798a58179742789cf2737",
+      "ref": "refs/heads/docs/phase-09-auth-spec"
+    },
+    {
+      "sha": "176784ddd7961193d1194ee04f3fbfb6c17fd106",
+      "ref": "refs/heads/docs/user-docs-refresh"
+    },
+    {
+      "sha": "936e95bdc5e79fdb80d07502e5661322b4f94ad5",
+      "ref": "refs/heads/docs/ux-redesign-concepts"
+    },
+    {
+      "sha": "b977180eee88ce6d5b23b6285b359f191d4c7fdf",
+      "ref": "refs/heads/feature/b02-global-shell-navigation"
+    },
+    {
+      "sha": "6e4d53a6c8e2bfe2067e0dffde61a19d3eca23e9",
+      "ref": "refs/heads/feature/chatgpt-local-mcp-integration"
+    },
+    {
+      "sha": "c1ed44a372b2c98a1ec7d3a7ae2e1e0c8306f6a2",
+      "ref": "refs/heads/feature/error-center-ux"
+    },
+    {
+      "sha": "90b4cfb2282bb0825836f3834498d42f139ba0b2",
+      "ref": "refs/heads/feature/m1-2-career-core"
+    },
+    {
+      "sha": "4902a988c290c1fc4d8102fae6a1b156bc9eec5f",
+      "ref": "refs/heads/feature/m1.1-access-core"
+    },
+    {
+      "sha": "a52142e9613bf7f90f6d6462c77ef98fb73e63fd",
+      "ref": "refs/heads/feature/m1.3-vacancy-core"
+    },
+    {
+      "sha": "7b6cb8971264cec00b0f211645673d1bb6196aa8",
+      "ref": "refs/heads/feature/m1.4-application-draft"
+    },
+    {
+      "sha": "22e3ad2e9ce952a81018d88b6660aca7406d1164",
+      "ref": "refs/heads/feature/mcp-gateway-foundation"
+    },
+    {
+      "sha": "83ce35d1fa95820dfc8b4cb4b413bae2d4531329",
+      "ref": "refs/heads/feature/observability-error-center"
+    },
+    {
+      "sha": "2fc1bc8f12d6c392340c09c4381c10a76f4cada2",
+      "ref": "refs/heads/fix/local-postgres-readiness"
+    },
+    {
+      "sha": "ed43453c87fd3028b6b157f5be892b30df1d7869",
+      "ref": "refs/heads/fix/mcp-gateway-route-registration"
+    },
+    {
+      "sha": "11f7ccf9b0a90c498a21ae551bcd6954a576fdac",
+      "ref": "refs/heads/main"
+    },
+    {
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "ref": "refs/heads/stage"
+    },
+    {
+      "sha": "4ab817b5fcb9da543a78e99193bcbb05867c2838",
+      "ref": "refs/heads/task/m1-1-access-core-grill"
+    }
+  ],
+  "local_branches": [
+    {
+      "branch": "backup/stage-before-phase-03",
+      "sha": "199e10a66a4fda6b5c8ad3e03b6a20b8fa54ed1c",
+      "behind_stage": 86,
+      "ahead_stage": 1,
+      "prs": [],
+      "delta_from_merge_base": "5 files changed, 983 insertions(+), 9 deletions(-)",
+      "unique_log": "199e10a docs(research): complete Phase 02 research plan"
+    },
+    {
+      "branch": "chore/application-workspace-reference-foundation",
+      "sha": "89f30e3740cdd8ba72804e0a284438cb30491709",
+      "behind_stage": 1,
+      "ahead_stage": 2,
+      "prs": [],
+      "delta_from_merge_base": "294 files changed, 80879 insertions(+), 65 deletions(-)",
+      "unique_log": "89f30e3 research ui\n936e95b docs(design): reconcile application workspace references"
+    },
+    {
+      "branch": "chore/m1-1-state",
+      "sha": "4af9a8100e6ff5c238de03f0c3f73200bba09d56",
+      "behind_stage": 18,
+      "ahead_stage": 2,
+      "prs": [
+        24
+      ],
+      "delta_from_merge_base": "3 files changed, 6 insertions(+), 6 deletions(-)",
+      "unique_log": "4af9a81 docs(state): reference M1.2 task specification\na0fbabc docs(state): advance roadmap to M1.2"
+    },
+    {
+      "branch": "chore/m1-3-merge-state",
+      "sha": "0af7635d7acba7f13f9285c693438b59234353ed",
+      "behind_stage": 14,
+      "ahead_stage": 1,
+      "prs": [
+        28
+      ],
+      "delta_from_merge_base": "3 files changed, 11 insertions(+), 4 deletions(-)",
+      "unique_log": "0af7635 docs(state): record M1.3 merge completion"
+    },
+    {
+      "branch": "chore/m1.4-preview-env",
+      "sha": "9e8f25976c98d4daa1be7f05928562fbdb92a8b6",
+      "behind_stage": 10,
+      "ahead_stage": 1,
+      "prs": [
+        34
+      ],
+      "delta_from_merge_base": "4 files changed, 1455 insertions(+), 1 deletion(-)",
+      "unique_log": "9e8f259 m4env"
+    },
+    {
+      "branch": "chore/phase-00-ai-system-bootstrap",
+      "sha": "9ce6808242f5cd6717178b22850da8ba21bf1415",
+      "behind_stage": 88,
+      "ahead_stage": 19,
+      "prs": [
+        1
+      ],
+      "delta_from_merge_base": "39 files changed, 2208 insertions(+), 10 deletions(-)",
+      "unique_log": "9ce6808 refactor(github): source labels from canonical catalog\nf2b3f15 docs(github): strengthen pull request template\na40f5c3 docs(security): add vulnerability reporting policy"
+    },
+    {
+      "branch": "chore/phase-03-technical-research",
+      "sha": "4070362e651c47d3673880fe73fb5f5e66579b7f",
+      "behind_stage": 81,
+      "ahead_stage": 0,
+      "prs": [
+        6
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "docs/chatgpt-plan-chat",
+      "sha": "eb5655186a18415e4897d520f0a2d989c195e85c",
+      "behind_stage": 2,
+      "ahead_stage": 9,
+      "prs": [],
+      "delta_from_merge_base": "25 files changed, 680 insertions(+), 35 deletions(-)",
+      "unique_log": "eb56551 docs(mcp): update ChatGPT E2E status\n72e225a chore(git): merge remote MCP integration updates\n5bec6a4 fix(mcp): support tunnel resource binding and browser login"
+    },
+    {
+      "branch": "docs/current-project-state-audit",
+      "sha": "7ecb3cf2d180f88c3d9c890a1794ad5c7563a7a7",
+      "behind_stage": 4,
+      "ahead_stage": 3,
+      "prs": [
+        40
+      ],
+      "delta_from_merge_base": "3 files changed, 571 insertions(+)",
+      "unique_log": "7ecb3cf docs(audit): reconcile report with follow-up\n866eb4d docs(state): record and index project audit\n78059f5 docs(state): humanize project audit report"
+    },
+    {
+      "branch": "docs/figma-live-file-review",
+      "sha": "4d08449d674fc2810671d4800f8f9a99c2927096",
+      "behind_stage": 38,
+      "ahead_stage": 0,
+      "prs": [
+        15
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "docs/local-startup",
+      "sha": "fe822562e364ffb6d3968bfeca101ea403abb12d",
+      "behind_stage": 6,
+      "ahead_stage": 3,
+      "prs": [
+        38
+      ],
+      "delta_from_merge_base": "3 files changed, 81 insertions(+), 3 deletions(-)",
+      "unique_log": "fe82256 fix(docs): resolve port through compose\nb35b530 fix(docs): use readiness check and configured port\n1a95eaa docs(operations): document local startup recovery"
+    },
+    {
+      "branch": "docs/m1-2-roadmap-sync",
+      "sha": "631f2cb17c532a1b0edad507c33d1a06c74000af",
+      "behind_stage": 17,
+      "ahead_stage": 1,
+      "prs": [
+        25
+      ],
+      "delta_from_merge_base": "3 files changed, 5 insertions(+), 5 deletions(-)",
+      "unique_log": "631f2cb docs(roadmap): sync M1.1 project status"
+    },
+    {
+      "branch": "docs/m1-4-merge-state",
+      "sha": "653c9dca8a5f1d3a8cfbcff4fa6460176856fc89",
+      "behind_stage": 11,
+      "ahead_stage": 2,
+      "prs": [
+        32
+      ],
+      "delta_from_merge_base": "5 files changed, 30 insertions(+), 7 deletions(-)",
+      "unique_log": "653c9dc docs(state): block M2 planning pending preview evidence\nba1efd5 docs(state): record M1.4 merge and advance M2 pointer"
+    },
+    {
+      "branch": "docs/phase-05-architecture-freeze",
+      "sha": "0dbaa90cdb3b627e51d34565f35258ddc89ff1a7",
+      "behind_stage": 79,
+      "ahead_stage": 0,
+      "prs": [
+        7
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "docs/phase-06-design-baseline",
+      "sha": "97cd02db10ca33bfca0db3f0871661c4bcac1689",
+      "behind_stage": 51,
+      "ahead_stage": 0,
+      "prs": [
+        13
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "docs/phase-07-design-foundation",
+      "sha": "e8993877f4b5a6287f12b11556e73daa146c34a7",
+      "behind_stage": 45,
+      "ahead_stage": 0,
+      "prs": [
+        14
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "docs/user-docs-refresh",
+      "sha": "176784ddd7961193d1194ee04f3fbfb6c17fd106",
+      "behind_stage": 5,
+      "ahead_stage": 7,
+      "prs": [
+        39
+      ],
+      "delta_from_merge_base": "16 files changed, 712 insertions(+), 428 deletions(-)",
+      "unique_log": "176784d docs(vacancies): clarify offline matching limits\necaa616 fix(ai): forward draft pricing configuration\n4d6f2ea fix(ai): forward application draft model to containers"
+    },
+    {
+      "branch": "docs/ux-redesign-concepts",
+      "sha": "936e95bdc5e79fdb80d07502e5661322b4f94ad5",
+      "behind_stage": 1,
+      "ahead_stage": 1,
+      "prs": [
+        43
+      ],
+      "delta_from_merge_base": "26 files changed, 583 insertions(+), 65 deletions(-)",
+      "unique_log": "936e95b docs(design): reconcile application workspace references"
+    },
+    {
+      "branch": "feature/b02-global-shell-navigation",
+      "sha": "b977180eee88ce6d5b23b6285b359f191d4c7fdf",
+      "behind_stage": 1,
+      "ahead_stage": 10,
+      "prs": [
+        44
+      ],
+      "delta_from_merge_base": "800 files changed, 148312 insertions(+), 284 deletions(-)",
+      "unique_log": "b977180 chore(docs): trim archived review screenshots from PR\n8f29ed8 docs(project): record design consolidation delivery\n5ca53f6 docs(design): clarify validation checkpoint provenance"
+    },
+    {
+      "branch": "feature/chatgpt-local-mcp-integration",
+      "sha": "6e4d53a6c8e2bfe2067e0dffde61a19d3eca23e9",
+      "behind_stage": 2,
+      "ahead_stage": 53,
+      "prs": [
+        42
+      ],
+      "delta_from_merge_base": "96 files changed, 7141 insertions(+), 130 deletions(-)",
+      "unique_log": "6e4d53a docs(chatgpt): align MCP validation and project state\n63cfdfb fix(chat): match facts to technical requirements\n7525410 docs(state): record PR 42 review remediation delivery"
+    },
+    {
+      "branch": "feature/error-center-ux",
+      "sha": "c1ed44a372b2c98a1ec7d3a7ae2e1e0c8306f6a2",
+      "behind_stage": 7,
+      "ahead_stage": 63,
+      "prs": [
+        37
+      ],
+      "delta_from_merge_base": "66 files changed, 3988 insertions(+), 664 deletions(-)",
+      "unique_log": "c1ed44a fix(diagnostics): refresh expired retry guidance\n41592b5 fix(diagnostics): honor elapsed retry-after deadlines\n4306420 fix(queue): retain ownership through terminal failures"
+    },
+    {
+      "branch": "feature/m0-runnable-core",
+      "sha": "a340d2067983a328a1be1941abc5e300f59f39a8",
+      "behind_stage": 20,
+      "ahead_stage": 0,
+      "prs": [
+        21
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "feature/m1-2-career-core",
+      "sha": "90b4cfb2282bb0825836f3834498d42f139ba0b2",
+      "behind_stage": 16,
+      "ahead_stage": 6,
+      "prs": [
+        26
+      ],
+      "delta_from_merge_base": "75 files changed, 4785 insertions(+), 34 deletions(-)",
+      "unique_log": "90b4cfb docs(career): sync M1.2 delivery status\n6fb7161 fix(career): address PR review findings\n395767c fix(career): serialize fact supersession"
+    },
+    {
+      "branch": "feature/m1-4-application-draft",
+      "sha": "cc4e72153e8c6f10207f262f4a0c731fd18a6eee",
+      "behind_stage": 13,
+      "ahead_stage": 2,
+      "prs": [
+        30
+      ],
+      "delta_from_merge_base": "3 files changed, 674 insertions(+), 82 deletions(-)",
+      "unique_log": "cc4e721 fix(ci): handle empty PR metadata arrays\n16877d0 m1-4"
+    },
+    {
+      "branch": "feature/m1.1-access-core",
+      "sha": "4902a988c290c1fc4d8102fae6a1b156bc9eec5f",
+      "behind_stage": 19,
+      "ahead_stage": 15,
+      "prs": [
+        23
+      ],
+      "delta_from_merge_base": "48 files changed, 2239 insertions(+), 23 deletions(-)",
+      "unique_log": "4902a98 fix(auth): close final review findings\n128f074 fix(test): isolate same-origin harness data\ncce84cb fix(auth): close follow-up review findings"
+    },
+    {
+      "branch": "feature/m1.2-career-core",
+      "sha": "246a7ef8aa7dce97b359fe40a116499520ebdf49",
+      "behind_stage": 16,
+      "ahead_stage": 0,
+      "prs": [],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    },
+    {
+      "branch": "feature/m1.3-vacancy-core",
+      "sha": "a52142e9613bf7f90f6d6462c77ef98fb73e63fd",
+      "behind_stage": 15,
+      "ahead_stage": 44,
+      "prs": [
+        27
+      ],
+      "delta_from_merge_base": "69 files changed, 7599 insertions(+), 38 deletions(-)",
+      "unique_log": "a52142e docs(state): confirm PR 27 readiness\n5ccbbdd docs(state): record PR 27 merge gate\na85512b fix(vacancies): recover misclassified analysis states"
+    },
+    {
+      "branch": "feature/m1.4-application-draft",
+      "sha": "7b6cb8971264cec00b0f211645673d1bb6196aa8",
+      "behind_stage": 12,
+      "ahead_stage": 7,
+      "prs": [
+        31
+      ],
+      "delta_from_merge_base": "48 files changed, 3253 insertions(+), 15 deletions(-)",
+      "unique_log": "7b6cb89 docs(state): mark PR 31 ready for human merge\ndedd6c9 fix(applications): enforce claim-bound draft approval\n3f7d855 docs(state): record M1.4 green CI gate"
+    },
+    {
+      "branch": "feature/mcp-gateway-foundation",
+      "sha": "22e3ad2e9ce952a81018d88b6660aca7406d1164",
+      "behind_stage": 10,
+      "ahead_stage": 5,
+      "prs": [
+        33
+      ],
+      "delta_from_merge_base": "59 files changed, 5000 insertions(+), 43 deletions(-)",
+      "unique_log": "22e3ad2 docs(state): clarify preview validation pointer\nccb2db2 feat(mcp): make external gateway read-only\ne40e917 fix(mcp): harden OAuth and vacancy failure boundaries"
+    },
+    {
+      "branch": "feature/observability-error-center",
+      "sha": "83ce35d1fa95820dfc8b4cb4b413bae2d4531329",
+      "behind_stage": 8,
+      "ahead_stage": 16,
+      "prs": [
+        36
+      ],
+      "delta_from_merge_base": "74 files changed, 6123 insertions(+), 132 deletions(-)",
+      "unique_log": "83ce35d fix(diagnostics): close credential and severity gaps\n876c2a4 fix(diagnostics): serialize incident status updates\n1d13d1b fix(diagnostics): keep detail and filters current"
+    },
+    {
+      "branch": "fix/chatgpt-plugin-layout",
+      "sha": "bff5f133e951ae237a974cda7cd4967a4819f391",
+      "behind_stage": 2,
+      "ahead_stage": 6,
+      "prs": [],
+      "delta_from_merge_base": "19 files changed, 461 insertions(+), 30 deletions(-)",
+      "unique_log": "bff5f13 fix(plugins): support Codex marketplace ingestion\n004aa81 Merge branch 'stage' into fix/chatgpt-plugin-layout\n7357c00 docs(state): record README review remediation"
+    },
+    {
+      "branch": "fix/local-postgres-readiness",
+      "sha": "2fc1bc8f12d6c392340c09c4381c10a76f4cada2",
+      "behind_stage": 3,
+      "ahead_stage": 1,
+      "prs": [
+        41
+      ],
+      "delta_from_merge_base": "2 files changed, 18 insertions(+), 1 deletion(-)",
+      "unique_log": "2fc1bc8 docs(state): record local PostgreSQL recovery and test setup"
+    },
+    {
+      "branch": "fix/mcp-gateway-route-registration",
+      "sha": "ed43453c87fd3028b6b157f5be892b30df1d7869",
+      "behind_stage": 9,
+      "ahead_stage": 1,
+      "prs": [
+        35
+      ],
+      "delta_from_merge_base": "3 files changed, 7 insertions(+), 1 deletion(-)",
+      "unique_log": "ed43453 fix(test): refresh Laravel package discovery before route checks"
+    },
+    {
+      "branch": "main",
+      "sha": "11f7ccf9b0a90c498a21ae551bcd6954a576fdac",
+      "behind_stage": 85,
+      "ahead_stage": 1,
+      "prs": [
+        10
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": "11f7ccf Merge pull request #3 from filatelist-hitech/chore/phase-02-research-plan"
+    },
+    {
+      "branch": "stage",
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "behind_stage": 0,
+      "ahead_stage": 0,
+      "prs": [
+        11
+      ],
+      "delta_from_merge_base": "",
+      "unique_log": ""
+    }
+  ],
+  "pull_requests": [
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/b02-global-shell-navigation",
+      "headRefOid": "b977180eee88ce6d5b23b6285b359f191d4c7fdf",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "f06a6dba058589823bf3d3c8b693cb625170bc4b"
+      },
+      "mergedAt": "2026-10-11T15:56:57Z",
+      "number": 44,
+      "state": "MERGED",
+      "title": "feat(frontend): consolidate approved workspace design",
+      "updatedAt": "2026-10-11T15:56:58Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/44"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/ux-redesign-concepts",
+      "headRefOid": "936e95bdc5e79fdb80d07502e5661322b4f94ad5",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 43,
+      "state": "CLOSED",
+      "title": "docs(design): reconcile application workspace references",
+      "updatedAt": "2026-10-11T15:41:11Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/43"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/chatgpt-local-mcp-integration",
+      "headRefOid": "6e4d53a6c8e2bfe2067e0dffde61a19d3eca23e9",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "a62ff0899ea9a2dd2266eb5a972d618f803c9952"
+      },
+      "mergedAt": "2026-10-07T20:09:40Z",
+      "number": 42,
+      "state": "MERGED",
+      "title": "feat(chatgpt): add local plan chat and draft-save integration",
+      "updatedAt": "2026-10-07T20:09:40Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/42"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "fix/local-postgres-readiness",
+      "headRefOid": "2fc1bc8f12d6c392340c09c4381c10a76f4cada2",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "ec13ce68fd1200a0f307f00d8630588a9e3aa75a"
+      },
+      "mergedAt": "2026-10-03T20:07:32Z",
+      "number": 41,
+      "state": "MERGED",
+      "title": "[NEXT-01] docs(state): record local PostgreSQL recovery",
+      "updatedAt": "2026-10-03T20:07:32Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/41"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/current-project-state-audit",
+      "headRefOid": "7ecb3cf2d180f88c3d9c890a1794ad5c7563a7a7",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "2cf3b939276a70132e8b1b90d8b2523e77544707"
+      },
+      "mergedAt": "2026-10-03T16:59:24Z",
+      "number": 40,
+      "state": "MERGED",
+      "title": "docs(state): add current project-state audit report",
+      "updatedAt": "2026-10-03T16:59:24Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/40"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/user-docs-refresh",
+      "headRefOid": "176784ddd7961193d1194ee04f3fbfb6c17fd106",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "a599330bbaec5ff957bd6d6600136b97c2a83655"
+      },
+      "mergedAt": "2026-10-03T13:10:04Z",
+      "number": 39,
+      "state": "MERGED",
+      "title": "docs(user): refresh user and operator guides",
+      "updatedAt": "2026-10-03T13:10:04Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/39"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/local-startup",
+      "headRefOid": "fe822562e364ffb6d3968bfeca101ea403abb12d",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "dcfe07204229731ebfebd616d628a2e3fbdf9c78"
+      },
+      "mergedAt": "2026-10-03T09:00:45Z",
+      "number": 38,
+      "state": "MERGED",
+      "title": "docs(operations): document local startup and database recovery",
+      "updatedAt": "2026-10-03T09:00:45Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/38"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/error-center-ux",
+      "headRefOid": "c1ed44a372b2c98a1ec7d3a7ae2e1e0c8306f6a2",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "8e7ac27d22422b30375871dc0cc1107bc2fe8561"
+      },
+      "mergedAt": "2026-10-03T08:19:20Z",
+      "number": 37,
+      "state": "MERGED",
+      "title": "[observability-error-center] feat(diagnostics): prioritize operational decisions",
+      "updatedAt": "2026-10-03T08:19:21Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/37"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/observability-error-center",
+      "headRefOid": "83ce35d1fa95820dfc8b4cb4b413bae2d4531329",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "58aa91982533d57f2e9de1cda13debeb013a34fb"
+      },
+      "mergedAt": "2026-09-30T14:24:08Z",
+      "number": 36,
+      "state": "MERGED",
+      "title": "[observability-error-center] feat(diagnostics): add correlated Error Center",
+      "updatedAt": "2026-09-30T14:24:08Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/36"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "fix/mcp-gateway-route-registration",
+      "headRefOid": "ed43453c87fd3028b6b157f5be892b30df1d7869",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "e0c9849e851fceea75bdf3fdf8c09e6bbb579e49"
+      },
+      "mergedAt": "2026-09-27T11:01:20Z",
+      "number": 35,
+      "state": "MERGED",
+      "title": "fix(test): refresh Laravel package discovery",
+      "updatedAt": "2026-09-27T11:01:21Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/35"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/m1.4-preview-env",
+      "headRefOid": "9e8f25976c98d4daa1be7f05928562fbdb92a8b6",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 34,
+      "state": "OPEN",
+      "title": "m4env",
+      "updatedAt": "2026-09-26T20:23:53Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/34"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/mcp-gateway-foundation",
+      "headRefOid": "22e3ad2e9ce952a81018d88b6660aca7406d1164",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "e6bac9d52b69c7327ff05560c8ce02bcd39dd266"
+      },
+      "mergedAt": "2026-09-27T01:26:40Z",
+      "number": 33,
+      "state": "MERGED",
+      "title": "[feature-mcp-gateway-foundation] feat(mcp): make external gateway read-only",
+      "updatedAt": "2026-09-27T01:26:40Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/33"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/m1-4-merge-state",
+      "headRefOid": "653c9dca8a5f1d3a8cfbcff4fa6460176856fc89",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "98f656b48725feab55b956fd5960c4a5efc25c0f"
+      },
+      "mergedAt": "2026-09-24T21:41:47Z",
+      "number": 32,
+      "state": "MERGED",
+      "title": "[M1.4] docs(state): record merge and advance M2 pointer",
+      "updatedAt": "2026-09-24T21:41:47Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/32"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/m1.4-application-draft",
+      "headRefOid": "7b6cb8971264cec00b0f211645673d1bb6196aa8",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "8e08f45270d1adf7f6412db09c34e0c94d15772a"
+      },
+      "mergedAt": "2026-09-24T21:24:30Z",
+      "number": 31,
+      "state": "MERGED",
+      "title": "[M1.4] feat(applications): add truthful saved draft workflow",
+      "updatedAt": "2026-09-24T21:24:31Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/31"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/m1-4-application-draft",
+      "headRefOid": "cc4e72153e8c6f10207f262f4a0c731fd18a6eee",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "95c046f9f890d52dd425e55de0900b0f079b4583"
+      },
+      "mergedAt": "2026-09-24T16:19:41Z",
+      "number": 30,
+      "state": "MERGED",
+      "title": "docs(governance): define M1.4 application draft",
+      "updatedAt": "2026-09-24T16:19:46Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/30"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "m1-4-application-draft",
+      "headRefOid": "16877d08a7e1327a086b0865518b60ad43751649",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 29,
+      "state": "CLOSED",
+      "title": "docs(governance): define M1.4 application draft",
+      "updatedAt": "2026-09-24T16:15:35Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/29"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/m1-3-merge-state",
+      "headRefOid": "0af7635d7acba7f13f9285c693438b59234353ed",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "baf98347cce671a9a390a0e090266c47ac1f872c"
+      },
+      "mergedAt": "2026-09-24T12:52:51Z",
+      "number": 28,
+      "state": "MERGED",
+      "title": "docs(state): record M1.3 merge completion",
+      "updatedAt": "2026-09-24T12:52:51Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/28"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/m1.3-vacancy-core",
+      "headRefOid": "a52142e9613bf7f90f6d6462c77ef98fb73e63fd",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "6a619258c25ee55a05ecbe7dbe8df8430841e9c1"
+      },
+      "mergedAt": "2026-09-24T12:47:48Z",
+      "number": 27,
+      "state": "MERGED",
+      "title": "[M1.3] feat(vacancies): add explainable vacancy analysis",
+      "updatedAt": "2026-09-24T12:47:49Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/27"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/m1-2-career-core",
+      "headRefOid": "90b4cfb2282bb0825836f3834498d42f139ba0b2",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "7755e714f140a6a65dd74815f6723f8189827462"
+      },
+      "mergedAt": "2026-09-19T14:56:37Z",
+      "number": 26,
+      "state": "MERGED",
+      "title": "[M1.2] feat(career): establish truth-first career core",
+      "updatedAt": "2026-09-19T14:56:37Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/26"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/m1-2-roadmap-sync",
+      "headRefOid": "631f2cb17c532a1b0edad507c33d1a06c74000af",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "246a7ef8aa7dce97b359fe40a116499520ebdf49"
+      },
+      "mergedAt": "2026-09-13T12:06:35Z",
+      "number": 25,
+      "state": "MERGED",
+      "title": "docs(roadmap): sync M1.1 project status",
+      "updatedAt": "2026-09-13T12:06:39Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/25"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/m1-1-state",
+      "headRefOid": "4af9a8100e6ff5c238de03f0c3f73200bba09d56",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "5b68187c861a040653a4ad857c34fc6eb1a33400"
+      },
+      "mergedAt": "2026-09-13T11:50:27Z",
+      "number": 24,
+      "state": "MERGED",
+      "title": "docs(state): advance roadmap to M1.2",
+      "updatedAt": "2026-09-13T11:51:12Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/24"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/m1.1-access-core",
+      "headRefOid": "4902a988c290c1fc4d8102fae6a1b156bc9eec5f",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "c7c5d970624cfe731f62d55389f302603ec55c34"
+      },
+      "mergedAt": "2026-09-13T11:44:02Z",
+      "number": 23,
+      "state": "MERGED",
+      "title": "feat(auth): implement M1.1 access core",
+      "updatedAt": "2026-09-13T11:46:35Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/23"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "feature/m0-runnable-core",
+      "headRefOid": "a340d2067983a328a1be1941abc5e300f59f39a8",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "c194b10c5cd2bcfb2f9093d5906903a0c5c6ff18"
+      },
+      "mergedAt": "2026-09-12T19:03:02Z",
+      "number": 21,
+      "state": "MERGED",
+      "title": "feat(core): add reproducible M0 runtime",
+      "updatedAt": "2026-09-12T19:03:17Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/21"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/m1-1-access-core-grill",
+      "headRefOid": "49843f4ae6e0f0907520e630131d6ac97026848e",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "2525765703cfd26e20f5bfab3ebbc9304ab65582"
+      },
+      "mergedAt": "2026-09-12T17:47:40Z",
+      "number": 20,
+      "state": "MERGED",
+      "title": "docs(auth): harden M1.1 Access Core task",
+      "updatedAt": "2026-09-12T17:47:48Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/20"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/agent-operating-guardrails",
+      "headRefOid": "02a8d08dcaad7c2847810c64bcbb9b7cd1f98bcd",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "4ab817b5fcb9da543a78e99193bcbb05867c2838"
+      },
+      "mergedAt": "2026-09-12T15:38:51Z",
+      "number": 19,
+      "state": "MERGED",
+      "title": "chore(agents): enforce native routing and git preflight",
+      "updatedAt": "2026-09-12T15:39:01Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/19"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/value-driven-roadmap-alt",
+      "headRefOid": "f956950a279fa78c07a5f35f813d37a07f7ef933",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "06437cdc80f1e8f2fd887dd268b124e65b787841"
+      },
+      "mergedAt": "2026-09-12T13:04:43Z",
+      "number": 18,
+      "state": "MERGED",
+      "title": "docs(roadmap): adopt value-driven roadmap and executable M0",
+      "updatedAt": "2026-09-12T13:06:15Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/18"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-09-auth-spec",
+      "headRefOid": "9267f15545cca70a245798a58179742789cf2737",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 17,
+      "state": "CLOSED",
+      "title": "docs(auth): harden Phase 09 task specification",
+      "updatedAt": "2026-09-12T13:01:41Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/17"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-08-task-spec",
+      "headRefOid": "6ca25b09550b8315913f06382dff28f8d326aa06",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 16,
+      "state": "CLOSED",
+      "title": "docs(tasks): harden Phase 08 M0 contract",
+      "updatedAt": "2026-09-12T13:01:40Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/16"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/figma-live-file-review",
+      "headRefOid": "4d08449d674fc2810671d4800f8f9a99c2927096",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "0eb829cd40362a060cc1f64ce8aa027cb94481d3"
+      },
+      "mergedAt": "2026-09-12T08:58:56Z",
+      "number": 15,
+      "state": "MERGED",
+      "title": "docs(design): establish Phase 07 design foundation",
+      "updatedAt": "2026-09-12T08:59:00Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/15"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-07-design-foundation",
+      "headRefOid": "e8993877f4b5a6287f12b11556e73daa146c34a7",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "8cfe9a72875df8681a1cdd92344616e3fd1e920d"
+      },
+      "mergedAt": "2026-09-12T08:55:43Z",
+      "number": 14,
+      "state": "MERGED",
+      "title": "docs(design): complete phase 07 foundation",
+      "updatedAt": "2026-09-12T08:55:49Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/14"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-06-design-baseline",
+      "headRefOid": "97cd02db10ca33bfca0db3f0871661c4bcac1689",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "e74d5a7f801c84c441b18ab3b378f674cc38ad4b"
+      },
+      "mergedAt": "2026-09-12T07:55:01Z",
+      "number": 13,
+      "state": "MERGED",
+      "title": "docs(phase-06): finalize reviewed design baseline",
+      "updatedAt": "2026-09-12T07:55:35Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/13"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/state-reconciliation-cleanup",
+      "headRefOid": "490aac5da78a0b25032b82a59e30fac5d86d0556",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "5720c2da2a108374391cd3def41f716c78747cd0"
+      },
+      "mergedAt": "2026-09-12T02:44:57Z",
+      "number": 12,
+      "state": "MERGED",
+      "title": "docs(state): reconcile phase state and historical research markers",
+      "updatedAt": "2026-09-12T02:45:07Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/12"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "stage",
+      "headRefOid": "184697857842ecb89246755d7fbd248da362307d",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 11,
+      "state": "CLOSED",
+      "title": "Merge pull request #9 from filatelist-hitech/docs/phase-task-specs-06-12",
+      "updatedAt": "2026-09-12T02:37:54Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/11"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "main",
+      "headRefOid": "11f7ccf9b0a90c498a21ae551bcd6954a576fdac",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "number": 10,
+      "state": "CLOSED",
+      "title": "Merge pull request #3 from filatelist-hitech/chore/phase-02-research-plan",
+      "updatedAt": "2026-09-12T02:24:37Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/10"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-task-specs-06-12",
+      "headRefOid": "4f6e6a36ca4de2b8c20a8c0e636d8b1d0345b933",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "184697857842ecb89246755d7fbd248da362307d"
+      },
+      "mergedAt": "2026-09-12T02:22:58Z",
+      "number": 9,
+      "state": "MERGED",
+      "title": "docs(agents): add executable Phase 06–12 task specifications",
+      "updatedAt": "2026-09-12T02:23:06Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/9"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/agent-resource-efficiency",
+      "headRefOid": "39c8439d5fa8f957348d4f7239049408def83594",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "baa7f7291920ccd86b870a83515bf7b0ca9c294c"
+      },
+      "mergedAt": "2026-09-12T01:46:01Z",
+      "number": 8,
+      "state": "MERGED",
+      "title": "chore(agents): reduce Codex token and compute usage",
+      "updatedAt": "2026-09-12T01:46:15Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/8"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-05-architecture-freeze",
+      "headRefOid": "0dbaa90cdb3b627e51d34565f35258ddc89ff1a7",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "e3c023b4a1a90e254151674d0415447bede0e072"
+      },
+      "mergedAt": "2026-09-12T01:09:27Z",
+      "number": 7,
+      "state": "MERGED",
+      "title": "[Phase 05] docs(architecture): freeze architecture baseline",
+      "updatedAt": "2026-09-12T01:11:07Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/7"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/phase-03-technical-research",
+      "headRefOid": "4070362e651c47d3673880fe73fb5f5e66579b7f",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "dc69116b15c5c07bc6027b7a1176a3b7139370ac"
+      },
+      "mergedAt": "2026-09-12T00:27:32Z",
+      "number": 6,
+      "state": "MERGED",
+      "title": "research: complete Phase 03 technical research",
+      "updatedAt": "2026-09-12T00:27:44Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/6"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "docs/phase-04-product-integrations-hiring",
+      "headRefOid": "14116ebd900ec6d51e234d99efff0cdcfc29c1d7",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "2eff1a459f93557915345c29328397c38c83c55c"
+      },
+      "mergedAt": "2026-09-12T00:11:18Z",
+      "number": 5,
+      "state": "MERGED",
+      "title": "docs(research): complete Phase 04 product and hiring research",
+      "updatedAt": "2026-09-12T13:09:14Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/5"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/phase-02-research-plan",
+      "headRefOid": "b6abe76c756d3d868d32e48aa5e6b6f2a944786c",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "ceba59eacc00ba315affd54a83e345189a25f28e"
+      },
+      "mergedAt": "2026-09-11T23:41:32Z",
+      "number": 4,
+      "state": "MERGED",
+      "title": "docs(research): complete Phase 02 research plan",
+      "updatedAt": "2026-09-11T23:41:38Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/4"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "chore/phase-02-research-plan",
+      "headRefOid": "b6abe76c756d3d868d32e48aa5e6b6f2a944786c",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "11f7ccf9b0a90c498a21ae551bcd6954a576fdac"
+      },
+      "mergedAt": "2026-09-11T23:30:32Z",
+      "number": 3,
+      "state": "MERGED",
+      "title": "chore/phase 02 research plan",
+      "updatedAt": "2026-09-11T23:41:38Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/3"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/phase-01-project-knowledge-bootstrap",
+      "headRefOid": "04ecec1417384c325a4cc9a2d24ce650274fb082",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "d507aeec04bd7a9c1085d0a41565825972ecd550"
+      },
+      "mergedAt": "2026-09-11T23:14:12Z",
+      "number": 2,
+      "state": "MERGED",
+      "title": "docs(project): bootstrap Phase 01 knowledge base",
+      "updatedAt": "2026-09-11T23:14:15Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/2"
+    },
+    {
+      "baseRefName": "stage",
+      "headRefName": "chore/phase-00-ai-system-bootstrap",
+      "headRefOid": "9ce6808242f5cd6717178b22850da8ba21bf1415",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "dd992b85c5c4acebda49d79bfff3a8f02731fb49"
+      },
+      "mergedAt": "2026-09-11T22:50:33Z",
+      "number": 1,
+      "state": "MERGED",
+      "title": "chore: bootstrap CVortex AI system and repository governance",
+      "updatedAt": "2026-09-12T17:36:41Z",
+      "url": "https://github.com/filatelist-hitech/CVortex/pull/1"
+    }
+  ],
+  "audit_timezone": "Europe/Moscow",
+  "audit_date": "2026-10-11",
+  "output_worktree": "/Users/filatelist/Documents/it/CVortex-project-recovery",
+  "output_branch": "docs/project-recovery-2026-10-11",
+  "original_checkout_preserved": true,
+  "pr_review_threads": {
+    "34": {
+      "total": 0,
+      "unresolved": 0
+    },
+    "42": {
+      "total": 59,
+      "unresolved": 0
+    },
+    "44": {
+      "total": 0,
+      "unresolved": 0
+    }
+  },
+  "checks": {
+    "PR44": "Roadmap metadata / PR contract / m0-quality SUCCESS on b977180",
+    "stage_quality": {
+      "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "conclusion": "success",
+      "url": "https://github.com/filatelist-hitech/CVortex/actions/runs/38153409400"
+    },
+    "PR34": {
+      "mergeable": "CONFLICTING",
+      "governance": "Roadmap metadata / PR contract FAILURE",
+      "quality": "SUCCESS",
+      "assignees": [],
+      "labels": [],
+      "milestone": null
+    }
+  }
+}

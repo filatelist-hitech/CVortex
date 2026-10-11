@@ -1,0 +1,350 @@
+{
+  "date": "2026-10-11",
+  "timezone": "Europe/Moscow",
+  "source_sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "source_checkout": "/Users/filatelist/Documents/it/CVortex",
+  "docs_checkout": "/Users/filatelist/Documents/it/CVortex-project-recovery",
+  "commands": [
+    {
+      "command": "git status --porcelain=v1 --untracked-files=all; git diff --stat; git diff --cached --stat",
+      "status": "PASS",
+      "result": "0 tracked changes; 802 existing untracked files; saved byte hashes privately for preservation comparison",
+      "component": "git",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "git log -12 --format=\"%h %ad %s\" --date=short; git for-each-ref refs/heads refs/remotes; git worktree list",
+      "status": "PASS",
+      "result": "Inventories captured; another worktree has 2 tracked state edits and 2 untracked files; left unchanged",
+      "component": "git",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "git ls-remote --heads origin",
+      "status": "PASS",
+      "result": "24 heads; stage SHA matches audited HEAD",
+      "component": "git",
+      "layer": "remote",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "gh pr list --state all --limit 100 --json number,title,state,isDraft,baseRefName,headRefName,headRefOid,mergedAt,mergeCommit,url,updatedAt",
+      "status": "PASS",
+      "result": "43 PR: 36 MERGED, 6 CLOSED, 1 OPEN",
+      "component": "git",
+      "layer": "remote",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "gh pr view 44 --json number,state,mergedAt,mergeCommit,headRefOid,baseRefName,headRefName,statusCheckRollup,reviewDecision",
+      "status": "PASS",
+      "result": "PR44 MERGED; mergeCommit f06a6db; PR head b977180 governance/quality SUCCESS",
+      "component": "git",
+      "layer": "remote",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "gh pr view 34 --json number,mergeable,mergeStateStatus,baseRefOid,headRefOid,labels,assignees,milestone",
+      "status": "PASS",
+      "result": "CONFLICTING/DIRTY; metadata missing; governance failures observed separately",
+      "component": "git",
+      "layer": "remote",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "gh api graphql (repository PR34/42/44 reviewThreads; PR42 mergeCommit)",
+      "status": "PASS",
+      "result": "PR42 59/59 resolved; PR34 and PR44 0 threads",
+      "component": "git",
+      "layer": "remote",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "gh api repos/filatelist-hitech/CVortex/rulesets/22977384",
+      "status": "PASS",
+      "result": "active main/stage ruleset; governance required; approving review count 0; Quality not a required check",
+      "component": "governance",
+      "layer": "remote",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "gh run view 38153409400 --json status,conclusion,headSha,url",
+      "status": "PASS",
+      "result": "completed/success on f06a6dba058589823bf3d3c8b693cb625170bc4b",
+      "component": "quality",
+      "layer": "remote CI",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "bash scripts/check-agent-contract.sh docs --write --user-override",
+      "status": "PASS",
+      "result": "DOCS explicit recovery override on docs/project-recovery-2026-10-11",
+      "component": "docs",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose --env-file .env.example config --quiet",
+      "status": "PASS",
+      "result": "exit 0; rendered environment not printed",
+      "component": "infrastructure",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose ps --format json",
+      "status": "PASS",
+      "result": "7 running services; 5 report healthy; frontend override path observed",
+      "component": "runtime metadata",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "curl -sS --max-time 10 http://127.0.0.1:8080/api/v1/health/live",
+      "status": "PASS",
+      "result": "HTTP 200",
+      "component": "health/auth",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "curl -sS --max-time 10 http://127.0.0.1:8080/api/v1/health/ready",
+      "status": "PASS",
+      "result": "HTTP 200",
+      "component": "health/auth",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "curl -sS --max-time 10 http://127.0.0.1:8080/",
+      "status": "PASS",
+      "result": "HTTP 200",
+      "component": "health/auth",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "curl -sS --max-time 10 http://127.0.0.1:8080/api/v1/me",
+      "status": "PASS",
+      "result": "HTTP 401",
+      "component": "health/auth",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T backend php artisan horizon:status --no-ansi",
+      "status": "PASS",
+      "result": "Horizon is running",
+      "component": "queue",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T backend php artisan migrate:status --no-ansi",
+      "status": "PASS",
+      "result": "Read-only inspection: 27 Ran, 1 Pending (2026_10_07_000001_add_oauth_generation_to_chatgpt_connections); schema alignment FAIL",
+      "component": "schema",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T backend php artisan tinker --execute='dump(Illuminate\\Support\\Facades\\Schema::hasColumn(\"chatgpt_connections\", \"oauth_generation\"));'",
+      "status": "PASS",
+      "result": "false; read-only metadata, no private data",
+      "component": "schema",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T frontend printenv NEXT_PUBLIC_CVORTEX_WORKSPACE_DEMO",
+      "status": "PASS",
+      "result": "1; demoAllowed additionally requires loopback and query demo=b01",
+      "component": "frontend/runtime metadata",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T frontend npm test",
+      "status": "PASS",
+      "result": "108 tests in 9 files",
+      "component": "frontend",
+      "layer": "local synthetic/component",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T frontend npm run lint",
+      "status": "PASS",
+      "result": "exit 0, warnings 0",
+      "component": "frontend",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T frontend npm run typecheck",
+      "status": "PASS",
+      "result": "exit 0",
+      "component": "frontend",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "node --test docs/07-Design/reference/build-reference.test.cjs",
+      "status": "PASS",
+      "result": "2 tests",
+      "component": "token transformer",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "node apps/frontend/scripts/check-application-reference.cjs",
+      "status": "PASS",
+      "result": "260 checks, 252 rules; 6 licensed assets compare",
+      "component": "React/reference derivation",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "node docs/07-Design/reference/build-reference.cjs --check",
+      "status": "FAIL",
+      "result": "Current tokens and other stored hashes match; one tracked license asset mismatch",
+      "component": "B01 reference",
+      "layer": "local",
+      "error": "manifest source/hash drift: assets/OFL.txt",
+      "exit_code": 1
+    },
+    {
+      "command": "docker compose exec -T -e APP_ENV=testing -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= -e CACHE_STORE=array -e QUEUE_CONNECTION=sync -e SESSION_DRIVER=array -e MAIL_MAILER=array backend php vendor/bin/phpunit --filter 'AccessCoreTest|CareerCoreTest|ApplicationDraftTest|VacancyCoreTest|ChatGptPlanTest' --do-not-cache-result",
+      "status": "FAIL",
+      "result": "210 tests, 1394 assertions, 1 failure, 1 PostgreSQL-only skip",
+      "component": "backend",
+      "layer": "local SQLite + mocked HTTP",
+      "error": "CSRF test expected 419, actual 201; APP_ENV=testing bypasses CSRF",
+      "exit_code": 1
+    },
+    {
+      "command": "docker compose exec -T -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= -e CACHE_STORE=array -e QUEUE_CONNECTION=sync -e SESSION_DRIVER=array -e MAIL_MAILER=array backend php vendor/bin/phpunit --filter test_http_registration_rejects_missing_csrf_before_any_user_is_created --do-not-cache-result",
+      "status": "PASS",
+      "result": "1 test, 3 assertions; canonical runtime environment retained",
+      "component": "auth",
+      "layer": "local SQLite",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "docker compose exec -T -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= -e CACHE_STORE=array -e QUEUE_CONNECTION=sync -e SESSION_DRIVER=array -e MAIL_MAILER=array backend php vendor/bin/phpunit --filter 'AccessCoreTest|CareerCoreTest|ApplicationDraftTest|VacancyCoreTest|ChatGptPlanTest' --do-not-cache-result",
+      "status": "PASS",
+      "result": "210 tests, 1396 assertions, 1 skipped PostgreSQL-only test; runtime data untouched",
+      "component": "backend",
+      "layer": "local SQLite + mocked HTTP",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check (original checkout)",
+      "status": "PASS",
+      "result": "exit 0",
+      "component": "whitespace",
+      "layer": "local",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "bash scripts/check-agent-contract.sh implementation .agents/tasks/recovery-local-runtime-alignment.md",
+      "status": "PASS",
+      "result": "NEXT/task match; primary workflow resolves; read-only preflight, task not executed",
+      "component": "task continuity",
+      "layer": "local docs",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "targeted Python document/scope/preservation validation (final-document-checks.json)",
+      "status": "PASS",
+      "result": "13 current Markdown files; 86 local links; required report A-L and task sections; history byte identity; original 802 untracked SHA256 and source HEAD/branch/tracked state unchanged",
+      "component": "recovery documentation/preservation",
+      "layer": "local docs",
+      "error": null,
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check (recovery worktree)",
+      "status": "PASS",
+      "result": "exit 0; untracked Markdown whitespace also checked by targeted validator",
+      "component": "whitespace",
+      "layer": "local docs",
+      "error": null,
+      "exit_code": 0
+    }
+  ],
+  "not_run": [
+    {
+      "command": "local production build",
+      "status": "NOT_RUN",
+      "result": "Existing same-day delivery build and exact-SHA remote CI available; no new local build",
+      "component": "frontend"
+    },
+    {
+      "command": "full backend suite / Pint / Larastan locally",
+      "status": "NOT_RUN",
+      "result": "Targeted tests plus exact-SHA remote Quality; product code unchanged",
+      "component": "backend"
+    },
+    {
+      "command": "scripts/test-*-postgres-*.sh / PostgreSQL security suites",
+      "status": "NOT_RUN",
+      "result": "Scripts create/migrate/drop databases; outside this recovery scope",
+      "component": "database boundaries"
+    },
+    {
+      "command": "real authenticated Laravel browser flow / real provider retry",
+      "status": "NOT_RUN",
+      "result": "Human/user-content consent and separate bounded verification required",
+      "component": "Preview"
+    },
+    {
+      "command": "manual state/viewport / native200% zoom / audible AT",
+      "status": "NOT_RUN",
+      "result": "No human/AT assessment in this audit",
+      "component": "accessibility"
+    },
+    {
+      "command": "live Figma inspection",
+      "status": "NOT_RUN",
+      "result": "No Figma design access used",
+      "component": "design"
+    },
+    {
+      "command": "provider account/billing/quota check",
+      "status": "NOT_RUN",
+      "result": "No external provider account request; historical 429 only",
+      "component": "AI"
+    }
+  ]
+}
