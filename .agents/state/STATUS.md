@@ -1356,3 +1356,10 @@ manual limitations are recorded in the PR and
 `docs/07-Design/validation/application-port-2026-10-11/delivery-validation.json`.
 NEXT remains `b01-manual-accessibility-release-gate`; screen-reader, native 200% zoom,
 authenticated Laravel E2E and the production accessibility gate remain open/not tested.
+
+## PR evidence payload trim — 2026-10-11
+
+Removed the 53 PNG captures in archived `canonical-review-2026-10-10/` from the
+tracked PR payload. The local files remain on disk as untracked recovery evidence;
+JSON reports and integrity records remain tracked. Representative current-port
+screenshots and reproducible validation reports are unchanged.
