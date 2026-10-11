@@ -2,18 +2,18 @@
 title: CVortex Functional Defect Register
 status: open-findings
 created: 2026-10-11
-updated: 2026-10-11
+updated: 2026-10-12
 tags: [qa, defects, reproduction]
 ---
 
 # Functional defect register
 
-Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Четыре открытых находки; ничего автоматически не исправлялось. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
+Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Исторический audit выявил четыре открытых находки; тогда исправления не выполнялись. Текущий QA-002 repair приведён отдельно ниже. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
 
 | ID | Категория | Severity | Status | Проблема |
 |---|---|---|---|---|
 | QA-001 | Reference integrity | MEDIUM / P2 | OPEN / reproduced | B01 OFL.txt SHA-256 mismatch |
-| QA-002 | Test infrastructure | MEDIUM / P2 | OPEN / reproduced | Legacy migration harness rolls back wrong migrations |
+| QA-002 | Test infrastructure | MEDIUM / P2 | FIXED / local PostgreSQL verified; PR review pending | Deterministic pre-000009 boundary; isolated instance |
 | QA-003 | Test infrastructure | MEDIUM / P2 | OPEN / reproduced | Timestamp-tie fixture conflicts with exception deduplication |
 | QA-004 | Product functional UI | HIGH / P1 | OPEN / observed | USER_RESOLUTION_REQUIRED has no Career UI action |
 
@@ -46,6 +46,20 @@ Pinned upstream fixture: 4495 bytes, 93 CRLF sequences; tracked asset: 4401 byte
 **Recommended fix:** build a disposable pre-`2026_09_19_000009` schema from an explicit migration allowlist/boundary; assert relevant schema and absence of the uniqueness constraint before seeding legacy duplicates. Upgrade through the intended migrations, verify reconciliation/counts, then test only named rollback/reapply migrations where valid. Keep owned-DB cleanup guard, never point the harness at an existing data-bearing DB.
 
 **Regression criteria:** pass with today's complete migration set and an additional unrelated later migration; seeded duplicate fixture exists before remediation; duplicate aggregates reconcile correctly; counts/history/owner links preserved; named rollback/re-up succeeds; unexpected schema fails early with a clear diagnostic.
+
+**Current status — 2026-10-12:** FIXED / local PostgreSQL verified, awaiting PR review.
+Explicit owner IMPLEMENT override of NEXT; production migrations remain unchanged.
+The harness now owns an entirely separate disposable Compose/PostgreSQL instance,
+selects legacy paths through actual `000008`, asserts catalog preconditions before
+seed, applies named `000009`–`000012` repairs and rolls back/reapplies only those
+paths/batches before running later migrations. Counts `1/8/10/5/3 → 1/5/10/5/3`
+(users/vacancies/snapshots/analyses/runs); history, chronology, statuses/errors,
+unique index and owner relationships PASS. Future-migration and wrong-schema
+controls PASS; unsafe targets are blocked before Docker. Cleanup and read-only
+existing-development-DB preservation are verified. New evidence:
+[QA-002 run report](evidence/qa002-2026-10-12/README.md),
+[testing contract](MIGRATION-TESTING.md). The original FAIL/accounting above remain
+historical evidence and are not rewritten. Other QA findings remain open.
 
 ## QA-003 — same exception object is deduplicated before tie fixture exists
 

@@ -31,6 +31,13 @@ Completed Phases 00–07 remain historical foundation. The active implementation
 | Owner implementation override | `application-workspace-reference-port.md` | Exact canonical B01 React port; separately authorized on current B02 branch, 2026-10-11 |
 | Mandatory release gate | `b01-manual-accessibility-release-gate.md` | OPEN: manual state/viewport, keyboard, native zoom and human screen-reader evidence before production release |
 
+## QA-002 bounded owner override — 2026-10-12
+
+[QA-002 migration harness](qa-002-migration-harness.md): completed-local-verified;
+explicit owner IMPLEMENT override, one agent/sequential, separate fix branch/PR
+in stage. [Evidence](../../docs/09-QA/evidence/qa002-2026-10-12/README.md).
+NEXT and existing gates are preserved; no merge or next-task execution authorized.
+
 ## Recovery next action — 2026-10-11
 
 [RCV-01 — Local runtime alignment](recovery-local-runtime-alignment.md) is

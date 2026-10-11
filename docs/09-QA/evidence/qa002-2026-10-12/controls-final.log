@@ -1,0 +1,131 @@
+backend image: sha256:ac85dfca21d5504c14285ae0b1ea0273ef0cf64933021067e1b74c386e9d655a
+identity: project=qa002_04cb6a9f2be99766 db=qa002_04cb6a9f2be99766_fixture admin=qa002_04cb6a9f2be99766_admin runtime=qa002_04cb6a9f2be99766_runtime
+guard: owned fresh container=2756d0dfa96a50098d08b21b3bf5879aafb0e0df0eb87059c6683a4f8b24c017 volumes=qa002_04cb6a9f2be99766_postgres_data
+INFO  Preparing database.
+
+  Creating migration table ....................................... 5.77ms DONE
+
+   INFO  Running migrations.
+
+  2026_09_12_000001_create_access_core_tables .................... 6.95ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000002_add_auth_generation_to_users ................. 2.06ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000003_create_career_core_tables ................... 14.73ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000004_reconcile_and_harden_career_core ............ 30.94ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000005_enforce_career_source_idempotency ............ 1.51ms DONE
+INFO  Running migrations.
+
+  2026_09_19_000006_record_claim_resolution_choice ............... 4.48ms DONE
+INFO  Running migrations.
+
+  2026_09_19_000007_enforce_single_current_career_fact_replacement  1.41ms DONE
+INFO  Running migrations.
+
+  2026_09_19_000008_create_vacancy_core_tables .................. 20.76ms DONE
+legacy sequence: 2026_09_12_000001_create_access_core_tables, 2026_09_13_000002_add_auth_generation_to_users, 2026_09_13_000003_create_career_core_tables, 2026_09_13_000004_reconcile_and_harden_career_core, 2026_09_13_000005_enforce_career_source_idempotency, 2026_09_19_000006_record_claim_resolution_choice, 2026_09_19_000007_enforce_single_current_career_fact_replacement, 2026_09_19_000008_create_vacancy_core_tables
+QA002-11: expected wrong-schema FAIL exit=3; transaction rolled back
+QA002-01/02: legacy schema and remediation absence PASS
+legacy counts: 1|8|10|5|3
+INFO  Running migrations.
+
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 7.30ms DONE
+INFO  Running migrations.
+
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 1.35ms DONE
+INFO  Running migrations.
+
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 4.30ms DONE
+INFO  Running migrations.
+
+  2026_09_24_000012_recover_completed_extraction_without_analysis  2.05ms DONE
+QA002-08: unique index, RLS, trigger and owner relationships PASS
+reconciled counts: 1|5|10|5|3
+INFO  Rolling back migrations.
+
+  2026_09_24_000012_recover_completed_extraction_without_analysis  0.86ms DONE
+INFO  Rolling back migrations.
+
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 0.78ms DONE
+INFO  Rolling back migrations.
+
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 0.85ms DONE
+INFO  Rolling back migrations.
+
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 8.21ms DONE
+QA002-01/02: legacy schema and remediation absence PASS
+INFO  Running migrations.
+
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 5.57ms DONE
+INFO  Running migrations.
+
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 1.31ms DONE
+INFO  Running migrations.
+
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 4.63ms DONE
+INFO  Running migrations.
+
+  2026_09_24_000012_recover_completed_extraction_without_analysis  2.12ms DONE
+QA002-08: unique index, RLS, trigger and owner relationships PASS
+INFO  Running migrations.
+
+  2026_09_24_000013_create_application_preparations ............. 25.69ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 1.39ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 1.25ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 1.06ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 1.62ms DONE
+  2026_09_24_225903_create_oauth_device_codes_table .............. 1.57ms DONE
+  2026_09_27_000013_create_diagnostic_incidents .................. 4.20ms DONE
+  2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents  1.25ms DONE
+  2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences  0.51ms DONE
+  2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences .... 0.49ms DONE
+  2026_10_01_000001_add_persisted_queue_recovery_deadlines ....... 1.46ms DONE
+  2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates ... 0.72ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 2.55ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 12.71ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 1.03ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 0.51ms DONE
+  2099_01_01_000001_qa002_unrelated_control ...................... 0.90ms DONE
+QA002-08: unique index, RLS, trigger and owner relationships PASS
+
+  Migration name .............................................. Batch / Status
+  2026_09_12_000001_create_access_core_tables ........................ [1] Ran
+  2026_09_13_000002_add_auth_generation_to_users ..................... [2] Ran
+  2026_09_13_000003_create_career_core_tables ........................ [3] Ran
+  2026_09_13_000004_reconcile_and_harden_career_core ................. [4] Ran
+  2026_09_13_000005_enforce_career_source_idempotency ................ [5] Ran
+  2026_09_19_000006_record_claim_resolution_choice ................... [6] Ran
+  2026_09_19_000007_enforce_single_current_career_fact_replacement ... [7] Ran
+  2026_09_19_000008_create_vacancy_core_tables ....................... [8] Ran
+  2026_09_19_000009_remediate_vacancy_core_review_findings ........... [9] Ran
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ...... [10] Ran
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............... [11] Ran
+  2026_09_24_000012_recover_completed_extraction_without_analysis ... [12] Ran
+  2026_09_24_000013_create_application_preparations ................. [13] Ran
+  2026_09_24_225859_create_oauth_auth_codes_table ................... [13] Ran
+  2026_09_24_225900_create_oauth_access_tokens_table ................ [13] Ran
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............... [13] Ran
+  2026_09_24_225902_create_oauth_clients_table ...................... [13] Ran
+  2026_09_24_225903_create_oauth_device_codes_table ................. [13] Ran
+  2026_09_27_000013_create_diagnostic_incidents ..................... [13] Ran
+  2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents ... [13] Ran
+  2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences  [13] Ran
+  2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences ....... [13] Ran
+  2026_10_01_000001_add_persisted_queue_recovery_deadlines .......... [13] Ran
+  2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates ...... [13] Ran
+  2026_10_04_000001_create_chatgpt_connections ...................... [13] Ran
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ......... [13] Ran
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome .......... [13] Ran
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections ..... [13] Ran
+  2099_01_01_000001_qa002_unrelated_control ......................... [13] Ran
+
+
+final counts: 1|5|10|5|3; preserved fingerprint=5e9caf35f05be2bafc9b4ee96ee64247c3aceb799d57d5bbeb3b410e2c300af9
+cleanup: PASS (owned containers, volumes and network absent)
+vacancy-postgres-duplicate-migration: PASS (deterministic boundary; owned cleanup verified)

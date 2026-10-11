@@ -1,0 +1,12 @@
+test_cleanup_failures_and_incomplete_cleanup_are_fatal (test_vacancy_migration_harness.MigrationHarnessTest.test_cleanup_failures_and_incomplete_cleanup_are_fatal) ... ok
+test_external_targets_blocked_before_any_docker_command (test_vacancy_migration_harness.MigrationHarnessTest.test_external_targets_blocked_before_any_docker_command) ... ok
+test_foreign_container_mount_prevents_cleanup (test_vacancy_migration_harness.MigrationHarnessTest.test_foreign_container_mount_prevents_cleanup) ... ok
+test_later_migration_does_not_change_legacy_plan (test_vacancy_migration_harness.MigrationHarnessTest.test_later_migration_does_not_change_legacy_plan) ... ok
+test_main_never_passes_on_setup_sql_or_cleanup_failure (test_vacancy_migration_harness.MigrationHarnessTest.test_main_never_passes_on_setup_sql_or_cleanup_failure) ... ok
+test_missing_or_interleaved_boundary_is_rejected (test_vacancy_migration_harness.MigrationHarnessTest.test_missing_or_interleaved_boundary_is_rejected) ... ok
+test_ownership_shared_volume_and_network_guards (test_vacancy_migration_harness.MigrationHarnessTest.test_ownership_shared_volume_and_network_guards) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.504s
+
+OK

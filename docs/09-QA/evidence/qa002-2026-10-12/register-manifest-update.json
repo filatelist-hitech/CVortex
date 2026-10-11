@@ -1,0 +1,6 @@
+{
+  "reason": "Intentional current QA-002 status update; historical FAIL logs and accounting unchanged",
+  "path": "docs/09-QA/FUNCTIONAL-DEFECT-REGISTER.md",
+  "previous_sha256": "7f7f9778b33fd6e95a0b61e7e317109800a780f6432c22291eee5b0f54b278f7",
+  "current_sha256": "7f3349d3d41d8ab506c17d17bae6978ac746776ce0453e1e561bab212d7a63d4"
+}

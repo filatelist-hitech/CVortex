@@ -111,12 +111,20 @@ docker compose run --rm --no-deps -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory
 docker compose run --rm --no-deps -e DB_DATABASE=<disposable-db> backend php artisan test --filter=VacancyPostgresSecurityTest
 bash scripts/test-vacancy-postgres-revalidation.sh
 bash scripts/test-vacancy-postgres-concurrency.sh
+bash scripts/test-vacancy-postgres-duplicate-migration.sh
 docker compose run --rm --no-deps frontend npm test
 bash scripts/check-runtime-db-credentials.sh
 ```
 
 The feature suite covers snapshot/hash/version behavior, URL non-fetching, preferred/mandatory correction, marketing and instruction-family filtering, legitimate controls, exact and adjacent matching, PENDING exclusion, all seven dimensions, stale detection, cross-user denial, safe URL/size validation and absence of an ATS score field. PostgreSQL-only suites verify real runtime-role flags, forced RLS/fail-closed behavior, HTTP/job context cleanup, cross-owner raw SQL denial, snapshot triggers and independent-process import convergence. `test-vacancy-postgres-revalidation.sh` creates one uniquely named disposable database, verifies that a one-step rollback of the snapshot-history migration does not introduce a non-existent owner-wide constraint, then rolls back both current Vacancy remediation migrations, migrates them forward, and runs the security suite again without removing first-run rows; it verifies that preserved `users` rows survive both migration stages.
 
+The duplicate migration harness uses a fully separate disposable PostgreSQL instance
+and explicit pre-000009 paths, checks the actual legacy schema before seed, and
+rolls back only named Vacancy repairs before unrelated later migrations run.
+See [Migration testing](../09-QA/MIGRATION-TESTING.md) for isolation guards,
+regression controls and cleanup. It does not use the development Compose database.
+
 ## ChatGPT plan / controlled draft extension — 2026-10-04
+
 
 [ADR-0023](../03-ADR/ADR-0023-chatgpt-plan-chat.md) defines a distinct OAuth plan provider and one controlled MCP vacancy-analysis draft save. See [ChatGPT Plan Chat](../10-Operations/ChatGPT-Plan-Chat.md) for implemented context budgets, credentials, errors and user flow, and [MCP architecture](../02-Architecture/MCP-Gateway.md) for the adapter contract. API-key billing remains independent; MCP is not inference.

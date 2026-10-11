@@ -1,0 +1,42 @@
+identity: project=qa002_4c43448612bd78b9 db=qa002_4c43448612bd78b9_fixture admin=qa002_4c43448612bd78b9_admin runtime=qa002_4c43448612bd78b9_runtime
+guard: owned fresh container=34ee1f13d41e04d45269e642c66c7a3e537e94acd3e16f5c0a37ada1f2f6667a volumes=qa002_4c43448612bd78b9_postgres_data
+INFO  Preparing database.
+
+  Creating migration table ....................................... 5.87ms DONE
+
+   INFO  Running migrations.
+
+  2026_09_12_000001_create_access_core_tables .................... 9.22ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000002_add_auth_generation_to_users ................. 1.72ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000003_create_career_core_tables ................... 14.97ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000004_reconcile_and_harden_career_core ............ 31.61ms DONE
+INFO  Running migrations.
+
+  2026_09_13_000005_enforce_career_source_idempotency ............ 1.86ms DONE
+INFO  Running migrations.
+
+  2026_09_19_000006_record_claim_resolution_choice ............... 4.67ms DONE
+INFO  Running migrations.
+
+  2026_09_19_000007_enforce_single_current_career_fact_replacement  1.47ms DONE
+INFO  Running migrations.
+
+  2026_09_19_000008_create_vacancy_core_tables .................. 21.30ms DONE
+legacy sequence: 2026_09_12_000001_create_access_core_tables, 2026_09_13_000002_add_auth_generation_to_users, 2026_09_13_000003_create_career_core_tables, 2026_09_13_000004_reconcile_and_harden_career_core, 2026_09_13_000005_enforce_career_source_idempotency, 2026_09_19_000006_record_claim_resolution_choice, 2026_09_19_000007_enforce_single_current_career_fact_replacement, 2026_09_19_000008_create_vacancy_core_tables
+vacancy-postgres-duplicate-migration: FAIL: command failed (exit=3): ERROR:  column reference "table_name" is ambiguous
+LINE 1: ...STS (SELECT FROM information_schema.columns WHERE table_name...
+                                                             ^
+DETAIL:  It could refer to either a PL/pgSQL variable or a table column.
+QUERY:  NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='vacancy_snapshots'
+                   AND column_name='version' AND data_type='integer' AND is_nullable='NO') OR
+       NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='vacancy_snapshots'
+                   AND column_name='imported_at' AND data_type='timestamp with time zone' AND is_nullable='NO')
+CONTEXT:  PL/pgSQL function inline_code_block line 26 at IF
+
+cleanup: PASS (owned containers, volumes and network absent)
