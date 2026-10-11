@@ -1,0 +1,367 @@
+{
+  "container_id": "6a949b61b901ae686a8e0eed1522bfa5773ad02e4e48a09f2845a84b8a931176",
+  "project": "cvortex",
+  "mounts": [
+    {
+      "Type": "volume",
+      "Name": "cvortex_postgres_data",
+      "Destination": "/var/lib/postgresql"
+    },
+    {
+      "Type": "bind",
+      "Name": null,
+      "Destination": "/docker-entrypoint-initdb.d/10-runtime-role.sh"
+    }
+  ],
+  "databases": {
+    "cvortex": {
+      "tables": [
+        {
+          "table": "application_approval_events",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_claim_usages",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_draft_items",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_draft_revisions",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_llm_runs",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_preparations",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "audit_events",
+          "count": 8,
+          "digest": "b5aa26cc44b8403692ba6467e2e02956"
+        },
+        {
+          "table": "career_facts",
+          "count": 3,
+          "digest": "6b4e74d03e93a95a2f6967658cf0521d"
+        },
+        {
+          "table": "career_profiles",
+          "count": 1,
+          "digest": "98c01ad36996bf0fdf9bf6ec4abe8ac3"
+        },
+        {
+          "table": "career_sources",
+          "count": 1,
+          "digest": "42e13273dd4aaf75e5730fb6130949df"
+        },
+        {
+          "table": "claim_evidence",
+          "count": 3,
+          "digest": "09027b5677354f610b2d884e955857e7"
+        },
+        {
+          "table": "claims",
+          "count": 3,
+          "digest": "fec6971241b46a2c4b4c44b6a3971530"
+        },
+        {
+          "table": "diagnostic_incidents",
+          "count": 4,
+          "digest": "f4888761efb942590714b58faac5b2e0"
+        },
+        {
+          "table": "diagnostic_occurrences",
+          "count": 12,
+          "digest": "fa1f67bc8c698fbe721828aa60ffbe4f"
+        },
+        {
+          "table": "invitations",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "llm_runs",
+          "count": 1,
+          "digest": "387ae980c5d75cbeae7c89eac0c4e645"
+        },
+        {
+          "table": "migrations",
+          "count": 24,
+          "digest": "f5c7c7fedee4544ca3cae8cef1fdd5bc"
+        },
+        {
+          "table": "oauth_access_tokens",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "oauth_auth_codes",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "oauth_clients",
+          "count": 1,
+          "digest": "bddc7c6aec374a44c41088153c780f7e"
+        },
+        {
+          "table": "oauth_device_codes",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "oauth_refresh_tokens",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "sessions",
+          "count": 4,
+          "digest": "5b66cabb6d468061bb0d2d596c847399"
+        },
+        {
+          "table": "users",
+          "count": 1,
+          "digest": "f49c057941b344df96d452f8b243971b"
+        },
+        {
+          "table": "vacancies",
+          "count": 4,
+          "digest": "9633c19e4ca0697d0c6ac5dd36c3a379"
+        },
+        {
+          "table": "vacancy_analyses",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "vacancy_llm_runs",
+          "count": 9,
+          "digest": "24f9bf460dc1fd4cf621b66d29ed00cd"
+        },
+        {
+          "table": "vacancy_match_dimensions",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "vacancy_match_evidence",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "vacancy_requirements",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "vacancy_snapshots",
+          "count": 4,
+          "digest": "f4999b45eecb6a115bf664c2514fd9c0"
+        }
+      ],
+      "schema_sha256": "8d277d7c3813f796245eec065875fb9f75c005c2e957915dab65e7c76468ed8d"
+    },
+    "cvortex_test": {
+      "tables": [
+        {
+          "table": "application_approval_events",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_claim_usages",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_draft_items",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_draft_revisions",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "application_llm_runs",
+          "count": 9,
+          "digest": "27624df5716c98f04883dc6b744090c1"
+        },
+        {
+          "table": "application_preparations",
+          "count": 2,
+          "digest": "bac78310d73cfea2474d58a77dd51e92"
+        },
+        {
+          "table": "audit_events",
+          "count": 7,
+          "digest": "8d5a1834d18edb417ddb5c8bfe6746bc"
+        },
+        {
+          "table": "career_facts",
+          "count": 3,
+          "digest": "4c4d7af09b808746f6b99b12d7c9e932"
+        },
+        {
+          "table": "career_profiles",
+          "count": 2,
+          "digest": "583e1c58c57458ef9ebee46fc53cb78b"
+        },
+        {
+          "table": "career_sources",
+          "count": 6,
+          "digest": "64b3a95b402053750749dfc4898f691e"
+        },
+        {
+          "table": "chatgpt_connections",
+          "count": 2,
+          "digest": "c19a0d5838215f76c3045dc5c37b7728"
+        },
+        {
+          "table": "claim_evidence",
+          "count": 3,
+          "digest": "837352e0f5371e3bef5e6b578ab92b15"
+        },
+        {
+          "table": "claims",
+          "count": 3,
+          "digest": "109885400386f05231cce6556855847c"
+        },
+        {
+          "table": "diagnostic_incidents",
+          "count": 9,
+          "digest": "096bd8e3cc58b4d709be5d9132bd7ea9"
+        },
+        {
+          "table": "diagnostic_occurrences",
+          "count": 33,
+          "digest": "998205aad9d25f549c237508a5b5f120"
+        },
+        {
+          "table": "invitations",
+          "count": 1,
+          "digest": "9c62b6415c0f0beb97921a9c991a6d3e"
+        },
+        {
+          "table": "llm_runs",
+          "count": 18,
+          "digest": "9dc7c7f77b078fceaedc7128edf30c88"
+        },
+        {
+          "table": "migrations",
+          "count": 28,
+          "digest": "b21b1e66de42eddbb9127a23e2668846"
+        },
+        {
+          "table": "oauth_access_tokens",
+          "count": 3,
+          "digest": "537d4f2c0063f7ebb92e6a491f831c68"
+        },
+        {
+          "table": "oauth_auth_codes",
+          "count": 3,
+          "digest": "974195409e5766d7ccd5c6a3ff18e5c8"
+        },
+        {
+          "table": "oauth_clients",
+          "count": 7,
+          "digest": "ace8b3daffd555eb00eb1134ddb110d7"
+        },
+        {
+          "table": "oauth_device_codes",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "oauth_refresh_tokens",
+          "count": 3,
+          "digest": "69fde0605a6f1244e33919e24b941182"
+        },
+        {
+          "table": "sessions",
+          "count": 2,
+          "digest": "a6045fd4391d2b306c8e5915c47e0ec3"
+        },
+        {
+          "table": "users",
+          "count": 2,
+          "digest": "3ec2e2f0592a638d2561dbe530b1d0fe"
+        },
+        {
+          "table": "vacancies",
+          "count": 8,
+          "digest": "c9767a7fd362c5f5919b7b02b4550b15"
+        },
+        {
+          "table": "vacancy_analyses",
+          "count": 2,
+          "digest": "0f831250eb00d3f16ae0801108be5d14"
+        },
+        {
+          "table": "vacancy_analysis_draft_requirements",
+          "count": 42,
+          "digest": "3a5c3bc84a1d992ba919a5f1f4d19d93"
+        },
+        {
+          "table": "vacancy_analysis_drafts",
+          "count": 7,
+          "digest": "22f28c0b6f2aef1fe289597fe1a8a24a"
+        },
+        {
+          "table": "vacancy_chat_messages",
+          "count": 26,
+          "digest": "2d8633e3061b7a37014ccbdb3430718e"
+        },
+        {
+          "table": "vacancy_chat_threads",
+          "count": 7,
+          "digest": "2b895a05fd4fa8e1847e2cee08ecfe88"
+        },
+        {
+          "table": "vacancy_llm_runs",
+          "count": 49,
+          "digest": "2e838db1a1da803e9c0d2e5207b2ee60"
+        },
+        {
+          "table": "vacancy_match_dimensions",
+          "count": 14,
+          "digest": "8659b2fc2f47ba6ead5b2188395ef0d0"
+        },
+        {
+          "table": "vacancy_match_evidence",
+          "count": 0,
+          "digest": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        {
+          "table": "vacancy_requirements",
+          "count": 19,
+          "digest": "2743f7cbac33540aab73b260c145a10e"
+        },
+        {
+          "table": "vacancy_snapshots",
+          "count": 8,
+          "digest": "76dfaba848f8dd221cd605a43e41bd73"
+        }
+      ],
+      "schema_sha256": "96437822647c534962c501e8ac2dbb6b7d72d45747c34fe490132c2890930eeb"
+    },
+    "cvortex_dev2": {
+      "tables": [],
+      "schema_sha256": "eecd1a3cab6c14d496cdc5600f591e3a8ea96f0ac7d40ba6042195d90d7d2ab5"
+    }
+  }
+}
