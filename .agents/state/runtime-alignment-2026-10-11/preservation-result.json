@@ -1,0 +1,10 @@
+{
+  "data_preservation": "PASS",
+  "unchanged_data_tables": 35,
+  "unchanged_rows": 302,
+  "schema_only_diff": "one additive bigint NOT NULL DEFAULT 0 column",
+  "raw_control_verifier": "FAIL: PostgreSQL 18 adds the implied NOT NULL constraint, not excluded by initial verifier",
+  "corrected_constraint_aware_verifier": "PASS",
+  "preserved_preexisting_columns_policies_constraints_table_acl_rls": "PASS",
+  "backup_hash_recheck": "PASS"
+}

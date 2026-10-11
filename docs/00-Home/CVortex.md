@@ -3,7 +3,7 @@ title: CVortex
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-10-03
+updated: 2026-10-11
 tags: [cvortex, home, product]
 related:
   - "[[Documentation-Map]]"
@@ -15,6 +15,8 @@ related:
 ---
 
 # CVortex
+
+[Текущее состояние проекта и одна следующая задача](CURRENT-PROJECT-STATE.md) — проверено 2026-10-11; канонический state хранится в `.agents/state/`.
 
 **Поиск работы с опорой на ваш опыт.**
 

@@ -3,13 +3,13 @@ title: Карта документации
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-10-08
+updated: 2026-10-11
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
   - "[[User-Guide|Руководство пользователя]]"
   - "[[Process-Map|Карта процессов]]"
-  - "[[CURRENT-PROJECT-STATE|Аудит текущего состояния проекта]]"
+  - "[[CURRENT-PROJECT-STATE|Текущее состояние проекта]]"
   - "[[../01-Product/Vision|Видение продукта]]"
   - "[[../01-Product/Scope|Объём продукта]]"
   - "[[../01-Product/Roadmap|План развития]]"
@@ -25,7 +25,9 @@ related:
 - [[CVortex|О CVortex]]: возможности и текущие ограничения продукта.
 - [[User-Guide|Руководство пользователя]]: вход, факты о карьере, вакансии, черновики и защита данных.
 - [[Process-Map|Карта процессов]]: Preview, происхождение данных, локальный запуск и диагностика. Планы M2 выделены отдельно.
-- [[CURRENT-PROJECT-STATE|Аудит текущего состояния проекта]]: состояние реализации, runtime readiness, проверки и ограничения уверенности.
+- [Текущее состояние проекта](CURRENT-PROJECT-STATE.md): короткий dashboard с milestone, blockers, Git и одной next task; каноническое состояние — `.agents/state/`.
+- [Project Recovery Report](../../.agents/state/PROJECT_RECOVERY_REPORT.md): evidence матрицы фаз/реализации, Git/PR audit, проверки и recovery roadmap.
+- [Аудит 3 октября — история](PROJECT-STATE-AUDIT-2026-10-03.md): датированный отчёт, не текущий execution state.
 - [[../10-Operations/Local-Development|Локальная установка]]: требования, настройка, запуск, остановка, обновление и устранение проблем.
 - [[../10-Operations/M0-Runbook|Проверка и восстановление M0]]: состояние служб и действия оператора.
 - [[Error-Center-User-Guide|Разбор ошибок]]: действия пользователя и администратора при сбое.

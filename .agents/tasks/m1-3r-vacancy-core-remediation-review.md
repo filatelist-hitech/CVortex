@@ -1,6 +1,6 @@
 ---
 title: CVortex M1.3R — Vacancy Core Remediation Review
-status: ready
+status: historical-integrated
 milestone: m1-first-value
 slice: m1-3-vacancy-core
 owner: independent-reviewer
@@ -28,3 +28,10 @@ Verify all four findings against executable behavior:
 Re-run relevant full regressions, disposable PostgreSQL migration rollback/re-up, role/RLS inspection and the real concurrency harness. Confirm existing matching, provenance, stale-analysis, URL-metadata-only and no-ATS invariants remain intact.
 
 Return one evidence-backed `PASS` or `CHANGES REQUIRED` verdict and STOP. Only an independent `PASS` may authorize M1.4.
+
+## Recovery reconciliation — 2026-10-11
+
+This historical review contract belongs to the M1.3 delivery integrated through
+PR #27/#28. It is not the active NEXT task. Existing review/PG evidence is retained
+in [STATUS history](../state/STATUS-HISTORY-2026-10-11.md); no new independent
+review or current PostgreSQL PASS is asserted by this lifecycle correction.

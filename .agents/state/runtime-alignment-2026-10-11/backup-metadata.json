@@ -1,0 +1,14 @@
+{
+  "backup_id": "rcv-01-20261011-runtime-alignment",
+  "database": "cvortex_test",
+  "format": "PostgreSQL custom archive",
+  "bytes": 226093,
+  "sha256": "6f16e72b88e601cf915462d0586143a4a59979fbb61c388f62be394c200c33d8",
+  "directory_mode": "0700",
+  "file_mode": "0600",
+  "owner_matches_process": true,
+  "full_archive_decoding": "PASS",
+  "expected_tables_in_toc": "PASS",
+  "restore_to_database": "NOT_RUN",
+  "created_utc": "2026-10-11T16:34:41.001570+00:00"
+}

@@ -1,0 +1,9 @@
+--- schema-before
++++ schema-after
+@@ -304,5 +304,6 @@
+     created_at timestamp(0) without time zone,
+     updated_at timestamp(0) without time zone,
+     welcome_acknowledged_at timestamp(0) with time zone,
++    oauth_generation bigint DEFAULT '0'::bigint NOT NULL,
+     CONSTRAINT chatgpt_connections_status_check CHECK (((status)::text = ANY ((ARRAY['NOT_CONNECTED'::character varying, 'CONNECTED'::character varying, 'PLAN_PERMISSION_MISSING'::character varying, 'REAUTHENTICATION_REQUIRED'::character varying])::text[])))
+ );

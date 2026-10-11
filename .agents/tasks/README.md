@@ -27,9 +27,19 @@ Completed Phases 00–07 remain historical foundation. The active implementation
 | M1.3 | `m1-3-vacancy-core.md` | pasted vacancy receives explainable match/gaps/apply recommendation |
 | M1.4 | `m1-4-application-draft.md` | truthful resume recommendations + cover drafts can be reviewed/approved |
 | M2 planning | `m2-application-package-planning.md` | Preview 0.1 findings define one bounded application-package implementation task |
-| B02 frontend | `b02-global-shell-navigation.md` | Local visual remediation validated; awaiting owner review, 2026-10-11 |
+| B02 frontend | `b02-global-shell-navigation.md` | Owner accepted; integrated PR #44, 2026-10-11; release gate OPEN |
 | Owner implementation override | `application-workspace-reference-port.md` | Exact canonical B01 React port; separately authorized on current B02 branch, 2026-10-11 |
 | Mandatory release gate | `b01-manual-accessibility-release-gate.md` | OPEN: manual state/viewport, keyboard, native zoom and human screen-reader evidence before production release |
+
+## Recovery next action — 2026-10-11
+
+[RCV-01 — Local runtime alignment](recovery-local-runtime-alignment.md) is
+**completed-local-verified**. [Execution report](../state/LOCAL_RUNTIME_ALIGNMENT_REPORT.md):
+owner-authorized local `cvortex_test`, private backup, one existing migration,
+28/28 Ran, data preserved, targeted mocked tests/health PASS.
+NEXT is `b01-current-manifest-integrity-reconciliation`; a separate bounded spec
+and owner launch remain required. The current STOP forbids automatic execution.
+Then the existing manual release gate; neither gate was closed by RCV-01.
 
 Only the task named by `NEXT.md` is executable.
 
@@ -39,8 +49,11 @@ M2–M6 implementation detail stays at roadmap level until the previous value ch
 
 B01 «Орбита решения» is ACCEPTED under owner-approved ADR-0025. B02 was explicitly
 authorized after that closure. The owner rejected the initial visual composition;
-local visual remediation is awaiting owner review. No delivery/commit/PR occurred.
-NEXT names the mandatory manual/accessibility release gate. All outstanding B01
+local visual remediation and the exact React port received owner visual acceptance
+and were integrated through PR #44 (`f06a6db`). NEXT now names the bounded local
+integrity reconciliation recorded in the current [Recovery Report](../state/PROJECT_RECOVERY_REPORT.md)
+and canonical state files; RCV-01 local runtime alignment is complete.
+The mandatory manual/accessibility release gate remains OPEN. All outstanding B01
 manual outcomes remain NOT TESTED. Production release is blocked until its reference
 and applicable production checks pass. B03 is not authorized; Preview 0.1/M2 gates
 remain unchanged.

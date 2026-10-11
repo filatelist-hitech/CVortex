@@ -3,7 +3,7 @@ title: B02 — Global shell and navigation
 status: owner-accepted
 owner: project
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 tags: [task, frontend, navigation, design]
 related:
   - docs/07-Design/Concept-B-Reconciliation.md
@@ -28,10 +28,11 @@ git:
 
 This is an executable implementation contract only after a separate explicit
 implementation authorization and closure of B01's canonical reference review.
-It is currently prepared, is not the `.agents/state/NEXT.md` target, and does not
-authorize code changes. The owner approval recorded for the separate «Орбита
-решения» candidate and two-vacancy preview does not close the canonical B01 review
-or replace its active mapping.
+The contract was executed after owner authorization and ADR-0025 B01 acceptance.
+B02 and the exact canonical React port were integrated through PR #44 on
+2026-10-11 (`f06a6db`), with owner visual acceptance. This is historical execution
+authority, not permission to restart B02 or expand B03. The mandatory manual
+production accessibility gate remains OPEN; current NEXT is recorded separately.
 
 Roadmap source: [B02 — Global shell/navigation](../../docs/07-Design/Concept-B-Reconciliation.md#bounded-frontend-roadmap).
 
