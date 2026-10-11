@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "checks": 260,
+  "canonicalRules": 252,
+  "assets": {
+    "SpaceGrotesk.woff2": "8e085aa438094f11487a836652edd5c054fa6a96f63fc7c282105ee3a4b08c07",
+    "OFL.txt": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72",
+    "career-vortex-v1.png": "89ade98fd69cb8888732031b51235747fbc718ead8449ad8e00c10537106162a",
+    "lucide-LICENSE.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+    "font-source.json": "cccc834b5224ef400be6870b645a70b3c9835d1a40f5fc69d15e1c9047adc6f1",
+    "sources.json": "f830c638c0f6901c60b4e2ea0a0085ed0fb910d78687830194b61e9076b389b6"
+  }
+}

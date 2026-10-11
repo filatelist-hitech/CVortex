@@ -1,0 +1,425 @@
+{
+  "status": "PASS",
+  "browser": "145.0.7632.6",
+  "scope": "Ephemeral synthetic API fixtures only; no real authenticated Laravel/AI/DB writes",
+  "checks": [
+    "1440: no overflow",
+    "1440: reduced motion respected",
+    "1440: search preserves selection",
+    "1440: search filters Northstar",
+    "1440: Cedar blocks approval",
+    "1440: evidence opens",
+    "1440: Escape closes evidence",
+    "1440: evidence focus returns",
+    "1440: unsaved scenario guard",
+    "1440: unsupported edit blocked",
+    "1440: acceptance leaves exact approval pending",
+    "1440: approval never submits",
+    "1440: demo interactions have no API calls",
+    "1440: account is native modal",
+    "1440: no fake role switch",
+    "1440: account Escape and focus return",
+    "768: no overflow",
+    "768: reduced motion respected",
+    "768: search preserves selection",
+    "768: search filters Northstar",
+    "768: Cedar blocks approval",
+    "768: evidence opens",
+    "evidence traps backwards focus",
+    "evidence traps forward focus",
+    "768: Escape closes evidence",
+    "768: evidence focus returns",
+    "768: unsaved scenario guard",
+    "768: unsupported edit blocked",
+    "768: acceptance leaves exact approval pending",
+    "768: approval never submits",
+    "768: demo interactions have no API calls",
+    "768: account is native modal",
+    "768: no fake role switch",
+    "768: account Escape and focus return",
+    "tablet list traps backwards focus",
+    "tablet list Escape restores focus",
+    "390: no overflow",
+    "390: reduced motion respected",
+    "390: mobile list returns focus to selected vacancy",
+    "390: search preserves selection",
+    "390: search filters Northstar",
+    "390: Cedar blocks approval",
+    "390: evidence opens",
+    "390: Escape closes evidence",
+    "390: evidence focus returns",
+    "390: unsaved scenario guard",
+    "390: unsupported edit blocked",
+    "390: acceptance leaves exact approval pending",
+    "390: approval never submits",
+    "390: demo interactions have no API calls",
+    "390: account is native modal",
+    "390: no fake role switch",
+    "390: account Escape and focus return",
+    "390: navigation Escape returns focus",
+    "320: no overflow",
+    "320: reduced motion respected",
+    "320: mobile list returns focus to selected vacancy",
+    "320: search preserves selection",
+    "320: search filters Northstar",
+    "320: Cedar blocks approval",
+    "320: evidence opens",
+    "320: Escape closes evidence",
+    "320: evidence focus returns",
+    "320: unsaved scenario guard",
+    "320: unsupported edit blocked",
+    "320: acceptance leaves exact approval pending",
+    "320: approval never submits",
+    "320: demo interactions have no API calls",
+    "320: account is native modal",
+    "320: no fake role switch",
+    "320: account Escape and focus return",
+    "320: navigation Escape returns focus",
+    "supported edit changes exact text without approving",
+    "rejection blocks acceptance and approval",
+    "mobile Back restores workspace from evidence",
+    "mobile Forward restores evidence level",
+    "mobile refresh restores evidence deep link",
+    "Back restores overview",
+    "Forward restores requirements",
+    "pinned evidence remains same vacancy",
+    "preparation uses existing POST",
+    "preparation uses existing POST",
+    "live salary honestly unavailable",
+    "live has no synthetic company",
+    "live edit has an associated label",
+    "live unsaved tab guard",
+    "draft update remains PATCH",
+    "edited content preserved",
+    "draft update remains PATCH",
+    "accept is separate from approval",
+    "approval remains explicit POST",
+    "live approved result rendered",
+    "untrusted source remains plain text",
+    "preparation uses existing POST",
+    "preparation uses existing POST",
+    "Career has its own route",
+    "preparation uses existing POST",
+    "preparation uses existing POST",
+    "Career navigation reaches real workspace",
+    "user denied Diagnostics",
+    "no user Diagnostics request",
+    "admin Diagnostics available",
+    "admin utility uses real role",
+    "logout remains POST",
+    "logout removes authenticated workspace",
+    "credentials use POST",
+    "login enters Application Workspace",
+    "preparation uses existing POST",
+    "preparation uses existing POST",
+    "registration erases secret fragment",
+    "credentials use POST",
+    "invitation remains body-only",
+    "registration retains real auth flow",
+    "no submission or employer API",
+    "no external requests",
+    "no page exceptions",
+    "no unexpected console/hydration errors"
+  ],
+  "requests": [
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/applications/preparations/prep",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/applications/draft-items/draft",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/v1/applications/draft-items/draft",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/v1/applications/draft-items/draft/approve",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/chat",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/analysis-drafts",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/vacancies/live/chat",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/analysis-drafts",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/applications/preparations/prep",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/applications/preparations/prep",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/diagnostics/incidents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/auth/logout",
+      "method": "POST"
+    },
+    {
+      "path": "/sanctum/csrf-cookie",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/auth/login",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/vacancies/live/preparation",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/applications/preparations/prep",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/sanctum/csrf-cookie",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/auth/register",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    }
+  ],
+  "errors": [],
+  "external": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "unexpectedConsole": []
+}

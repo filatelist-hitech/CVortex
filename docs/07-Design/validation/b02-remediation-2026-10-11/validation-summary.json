@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-11",
+  "execution": "IMPLEMENT; explicit user override of NEXT; same related feature/b02-global-shell-navigation branch; base/target stage; no commit/push/PR",
+  "commands": [
+    {
+      "command": "docker compose exec -T frontend npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "docker compose exec -T frontend npm run lint",
+      "exitCode": 0,
+      "warnings": 0
+    },
+    {
+      "command": "docker compose exec -T frontend npm test",
+      "exitCode": 0,
+      "testsPassed": 94,
+      "existingWarnings": "Duplicate vacancy fixture keys remain; previously documented baseline."
+    },
+    {
+      "command": "docker compose exec -T -e NODE_ENV=production frontend npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node docs/07-Design/reference/build-reference.cjs --check",
+      "exitCode": 0
+    }
+  ],
+  "browserEvidence": "Local dev runtime on :8080, actual production React components, synthetic API fixtures, Chrome headless. Optimized build checked separately. No live authenticated Laravel, manual AT or owner acceptance claimed."
+}

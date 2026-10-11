@@ -1,0 +1,183 @@
+{
+  "status": "PASS_WITH_DOCUMENTED_DIFFERENCE",
+  "scope": "Computed-role comparisons support rendered review; not pixel equality or human acceptance",
+  "checks": [
+    {
+      "width": 1440,
+      "comparison": "h1 fontSize",
+      "canonical": "24px",
+      "production": "24px",
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "comparison": "h1 color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "comparison": "textarea background",
+      "canonical": "rgb(11, 18, 36)",
+      "production": "rgb(11, 18, 36)",
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "comparison": "textarea color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "comparison": "textarea borderRadius",
+      "canonical": "8px",
+      "production": "8px",
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "comparison": "textarea fontSize",
+      "canonical": "16px",
+      "production": "16px",
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "comparison": "header height",
+      "canonical": 91,
+      "production": 90,
+      "equal": false,
+      "severity": "MINOR",
+      "explanation": "Canonical includes a demo state selector; authenticated product header has no demo controls. 1px difference."
+    },
+    {
+      "width": 768,
+      "comparison": "h1 fontSize",
+      "canonical": "24px",
+      "production": "24px",
+      "equal": true
+    },
+    {
+      "width": 768,
+      "comparison": "h1 color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 768,
+      "comparison": "textarea background",
+      "canonical": "rgb(11, 18, 36)",
+      "production": "rgb(11, 18, 36)",
+      "equal": true
+    },
+    {
+      "width": 768,
+      "comparison": "textarea color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 768,
+      "comparison": "textarea borderRadius",
+      "canonical": "8px",
+      "production": "8px",
+      "equal": true
+    },
+    {
+      "width": 768,
+      "comparison": "textarea fontSize",
+      "canonical": "16px",
+      "production": "16px",
+      "equal": true
+    },
+    {
+      "width": 390,
+      "comparison": "h1 fontSize",
+      "canonical": "24px",
+      "production": "24px",
+      "equal": true
+    },
+    {
+      "width": 390,
+      "comparison": "h1 color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 390,
+      "comparison": "textarea background",
+      "canonical": "rgb(11, 18, 36)",
+      "production": "rgb(11, 18, 36)",
+      "equal": true
+    },
+    {
+      "width": 390,
+      "comparison": "textarea color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 390,
+      "comparison": "textarea borderRadius",
+      "canonical": "8px",
+      "production": "8px",
+      "equal": true
+    },
+    {
+      "width": 390,
+      "comparison": "textarea fontSize",
+      "canonical": "16px",
+      "production": "16px",
+      "equal": true
+    },
+    {
+      "width": 320,
+      "comparison": "h1 fontSize",
+      "canonical": "24px",
+      "production": "24px",
+      "equal": true
+    },
+    {
+      "width": 320,
+      "comparison": "h1 color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 320,
+      "comparison": "textarea background",
+      "canonical": "rgb(11, 18, 36)",
+      "production": "rgb(11, 18, 36)",
+      "equal": true
+    },
+    {
+      "width": 320,
+      "comparison": "textarea color",
+      "canonical": "rgb(247, 249, 252)",
+      "production": "rgb(247, 249, 252)",
+      "equal": true
+    },
+    {
+      "width": 320,
+      "comparison": "textarea borderRadius",
+      "canonical": "8px",
+      "production": "8px",
+      "equal": true
+    },
+    {
+      "width": 320,
+      "comparison": "textarea fontSize",
+      "canonical": "16px",
+      "production": "16px",
+      "equal": true
+    }
+  ]
+}

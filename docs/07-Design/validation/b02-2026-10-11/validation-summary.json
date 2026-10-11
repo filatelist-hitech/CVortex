@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-11",
+  "status": "PASS with documented limitations",
+  "b01": "ACCEPTED under ADR-0025",
+  "b02": "Completed locally; no commit/push/PR",
+  "branch": "feature/b02-global-shell-navigation",
+  "validation": [
+    {
+      "command": "docker compose exec -T frontend npm run lint",
+      "result": "exit 0; 0 errors, 2 no-location-assign-relative-destination warnings for deliberate native deep-link/history navigation"
+    },
+    {
+      "command": "docker compose exec -T frontend npm run typecheck",
+      "result": "PASS"
+    },
+    {
+      "command": "docker compose exec -T frontend npm test",
+      "result": "PASS: 7 files / 94 tests, including 9 new B02 regressions; duplicate-key warnings in existing vacancy fixtures"
+    },
+    {
+      "command": "docker compose exec -T -e NODE_ENV=production frontend npm run build",
+      "result": "PASS: /, /register, /diagnostics, /_not-found"
+    },
+    {
+      "command": "node docs/07-Design/reference/build-reference.cjs --check",
+      "result": "PASS; canonical tokens unchanged; generated documentation hashes refreshed"
+    },
+    {
+      "command": "node --test docs/07-Design/reference/build-reference.test.cjs",
+      "result": "PASS: 2/2"
+    },
+    {
+      "command": "B02 validate-browser.cjs with bundled Playwright and installed Chrome",
+      "result": "PASS: 135 checks / 15 screenshots; 320/390/768/1024/1440 CSS px; synthetic API fixtures"
+    },
+    {
+      "command": "Read-only live HTTP smoke on 127.0.0.1:8080",
+      "result": "PASS: public pages 200; unauthenticated me/diagnostics API 401"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS after all closeout writes"
+    }
+  ],
+  "limitations": [
+    "No live authenticated Laravel session; auth/role behavior exercised by existing tests and synthetic browser API responses",
+    "No human screen reader or full manual 200% zoom; mandatory release follow-up OPEN",
+    "Production visual regression fixtures/baseline retirement not introduced; B01 remains sole Application Workspace reference; B02 does not implement that workspace pattern",
+    "No backend/API/DB/dependency/canonical token changes; no real personal data or employer action",
+    "B03 unauthorized; STOP"
+  ],
+  "finalEvidenceIntegrity": "Browser source hashes match current four production files; historical B01 335 validation files unchanged; affected local links resolve"
+}

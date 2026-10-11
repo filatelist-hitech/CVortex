@@ -1,0 +1,705 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-10-11T09:29:05.609Z",
+  "scope": "Rendered production components; synthetic API fixtures; not live authenticated Laravel or manual AT/zoom evidence",
+  "browser": "148.0.7778.179",
+  "platform": "darwin",
+  "base": "http://127.0.0.1:8080",
+  "viewports": [
+    320,
+    390,
+    768,
+    1024,
+    1440
+  ],
+  "checks": [
+    "current destination Career",
+    "320: Today visible",
+    "320: Opportunities visible",
+    "320: Career visible",
+    "320: Employers visible",
+    "320: Settings visible",
+    "320: Today unavailable",
+    "320: Employers unavailable",
+    "320: Settings unavailable",
+    "320: no page overflow",
+    "320: controls fit viewport",
+    "320: identity readable",
+    "320: no admin utility for normal user",
+    "320: skip focus visible",
+    "320: skip reaches main",
+    "320: link focus visible",
+    "320: Tab reaches Career",
+    "current destination Opportunities",
+    "320: target reached",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Career",
+    "390: Today visible",
+    "390: Opportunities visible",
+    "390: Career visible",
+    "390: Employers visible",
+    "390: Settings visible",
+    "390: Today unavailable",
+    "390: Employers unavailable",
+    "390: Settings unavailable",
+    "390: no page overflow",
+    "390: controls fit viewport",
+    "390: identity readable",
+    "390: no admin utility for normal user",
+    "390: skip focus visible",
+    "390: skip reaches main",
+    "390: link focus visible",
+    "390: Tab reaches Career",
+    "current destination Opportunities",
+    "390: target reached",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Career",
+    "768: Today visible",
+    "768: Opportunities visible",
+    "768: Career visible",
+    "768: Employers visible",
+    "768: Settings visible",
+    "768: Today unavailable",
+    "768: Employers unavailable",
+    "768: Settings unavailable",
+    "768: no page overflow",
+    "768: controls fit viewport",
+    "768: identity readable",
+    "768: no admin utility for normal user",
+    "768: skip focus visible",
+    "768: skip reaches main",
+    "768: link focus visible",
+    "768: Tab reaches Career",
+    "current destination Opportunities",
+    "768: target reached",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Career",
+    "1024: Today visible",
+    "1024: Opportunities visible",
+    "1024: Career visible",
+    "1024: Employers visible",
+    "1024: Settings visible",
+    "1024: Today unavailable",
+    "1024: Employers unavailable",
+    "1024: Settings unavailable",
+    "1024: no page overflow",
+    "1024: controls fit viewport",
+    "1024: identity readable",
+    "1024: no admin utility for normal user",
+    "1024: skip focus visible",
+    "1024: skip reaches main",
+    "1024: link focus visible",
+    "1024: Tab reaches Career",
+    "current destination Opportunities",
+    "1024: target reached",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Career",
+    "1440: Today visible",
+    "1440: Opportunities visible",
+    "1440: Career visible",
+    "1440: Employers visible",
+    "1440: Settings visible",
+    "1440: Today unavailable",
+    "1440: Employers unavailable",
+    "1440: Settings unavailable",
+    "1440: no page overflow",
+    "1440: controls fit viewport",
+    "1440: identity readable",
+    "1440: no admin utility for normal user",
+    "1440: skip focus visible",
+    "1440: skip reaches main",
+    "1440: link focus visible",
+    "1440: Tab reaches Career",
+    "current destination Opportunities",
+    "1440: target reached",
+    "current destination Opportunities",
+    "current destination Career",
+    "current destination Opportunities",
+    "current destination Career",
+    "admin diagnostics current utility",
+    "diagnostics surface accessible",
+    "current destination Opportunities",
+    "diagnostics Back retains admin access",
+    "non-admin direct route denied",
+    "non-admin no diagnostics API read",
+    "logout remains POST",
+    "logout removes global navigation",
+    "credential submission remains POST",
+    "login mounts shared shell",
+    "invitation fragment removed from URL",
+    "registration outside global shell",
+    "refresh cannot recover erased invitation",
+    "credential submission remains POST",
+    "fragment submitted only in registration body",
+    "registration mounts existing authenticated surface",
+    "no unavailable destination requests",
+    "no external requests",
+    "no browser exceptions/hydration errors",
+    "no unexpected browser console errors"
+  ],
+  "screenshots": [
+    "320-career.png",
+    "320-opportunities.png",
+    "390-career.png",
+    "390-opportunities.png",
+    "768-career.png",
+    "768-opportunities.png",
+    "1024-career.png",
+    "1024-opportunities.png",
+    "1440-career.png",
+    "1440-opportunities.png",
+    "1440-admin-diagnostics.png",
+    "390-admin-diagnostics.png",
+    "390-diagnostics-denied.png",
+    "390-public-sign-in.png",
+    "390-public-register.png"
+  ],
+  "pageErrors": [],
+  "unexpectedConsoleErrors": [],
+  "expectedUnauthenticatedConsoleErrors": 8,
+  "externalRequests": [],
+  "apiRequests": [
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/diagnostics/incidents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/diagnostics/incidents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/auth/logout",
+      "method": "POST"
+    },
+    {
+      "path": "/sanctum/csrf-cookie",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/auth/login",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/sanctum/csrf-cookie",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/auth/register",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET"
+    }
+  ],
+  "sourceSha256": {
+    "workspace-shell.tsx": "0d4fc77e59fa4eef3146844b1aada856541d664fe82c2637823af00d4c2c8da7",
+    "access-shell.tsx": "79a7e871a34d5d972d0e01658dd67af2e860cfcfef5361367f028c2509cf1081",
+    "career-workspace.tsx": "4953a2e3525d857705b154ee677c7cbe875fa1235a05e9bee532b88a1c569421",
+    "globals.css": "9ec61eff5458b582464c4388a661dc083f1e32f49227187bf3a0efd1aa63c3ce"
+  }
+}
