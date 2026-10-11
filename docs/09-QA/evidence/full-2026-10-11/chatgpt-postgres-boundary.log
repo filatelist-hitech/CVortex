@@ -1,0 +1,34 @@
+time="2026-10-11T20:12:38+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-3d862023d150 Creating 
+ Container cvortexqa1011-migration-run-3d862023d150 Created 
+RLS and runtime-role isolation: PASS
+refresh worker: PASS
+refresh worker: PASS
+Concurrent refresh: one exchange, intact encrypted token chain: PASS
+draft worker: PASS
+draft worker: PASS
+Concurrent draft idempotency and source/fact preservation: PASS
+time="2026-10-11T20:12:40+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-dafa813725f9 Creating 
+ Container cvortexqa1011-migration-run-dafa813725f9 Created 
+Approval overlap barrier installed by table owner: PASS
+APPROVAL status=APPROVED analysis=01m4nz7me3p5jmnyhrjfsgrpq8 transaction=clean
+APPROVAL status=APPROVED analysis=01m4nz7me3p5jmnyhrjfsgrpq8 transaction=clean
+Approval canonical analysis, current confirmed fact matching and single-state invariants: PASS
+APPROVAL status=APPROVED analysis=01m4nz7me3p5jmnyhrjfsgrpq8 transaction=clean
+Approval canonical analysis, current confirmed fact matching and single-state invariants: PASS
+Normal, repeated and overlapping PostgreSQL approval: PASS
+Career mutation approval race fixture: PASS
+CAREER_APPROVAL analysis=01m4nz7qbyj72t5e0aqysswtb2 transaction=clean
+Concurrent Career Fact deprecation: PASS
+Career approval serialized before mutation; matching uses one signed confirmed-fact state: PASS
+PostgreSQL approval/Career Fact mutation serialization: PASS
+MCP metadata/snapshot read during re-import: PASS
+MCP metadata/snapshot read after re-import: PASS
+time="2026-10-11T20:12:50+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-07bdc02223e3 Creating 
+ Container cvortexqa1011-migration-run-07bdc02223e3 Created 
+time="2026-10-11T20:12:51+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-81d468a58af5 Creating 
+ Container cvortexqa1011-migration-run-81d468a58af5 Created 
+ChatGPT migrations rollback/reapply: PASS

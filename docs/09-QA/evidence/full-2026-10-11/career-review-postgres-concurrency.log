@@ -1,0 +1,21 @@
+time="2026-10-11T20:11:53+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-4d69431b63d6 Creating 
+ Container cvortexqa1011-migration-run-4d69431b63d6 Created 
+{"message":"diagnostics.incident","context":{"service":"backend","environment":"local","event_name":"diagnostics.incident","error_code":"INTERNAL_ERROR","component":"console","exception_class":"RuntimeException","request_id":"cli_01M4NZ68GWSV35A1T6YTFD6MGW","operation":"artisan","safe_stack":"verify_career_review_concurrency.php:16 RuntimeException (throw site)"},"level":400,"level_name":"ERROR","channel":"local","datetime":"2026-10-11T17:11:56.703666+00:00","extra":{}}
+{"message":"RuntimeException","context":{"service":"backend","environment":"local","exception":"RuntimeException","safe_stack":"verify_career_review_concurrency.php:16 RuntimeException (throw site)"},"level":400,"level_name":"ERROR","channel":"local","datetime":"2026-10-11T17:11:56.709757+00:00","extra":{}}
+
+   RuntimeException 
+
+  Review race did not preserve one confirmed fact and one valid Claim.
+
+  at tests/Support/verify_career_review_concurrency.php:16
+     12▕ $claims = Claim::query()->where('owner_id', $ownerId)->get();
+     13▕ if ($fact->status !== CareerFact::STATUS_CONFIRMED
+     14▕     || $claims->count() !== 1
+     15▕     || $claims->sole()->truth_status !== 'PASS') {
+  ➜  16▕     throw new RuntimeException('Review race did not preserve one confirmed fact and one valid Claim.');
+     17▕ }
+     18▕ echo 'verified: one confirmed transition and one PASS Claim'.PHP_EOL;
+     19▕
+
+career-review-postgres-concurrency: PASS (one transition wins, competing transition rejected, one valid Claim)

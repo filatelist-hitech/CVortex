@@ -1,0 +1,546 @@
+{
+  "summary": {
+    "total": 59,
+    "checked": 51,
+    "result_counts": {
+      "PASS": 47,
+      "FAIL": 3,
+      "BLOCKED": 7,
+      "NOT_RUN": 2
+    },
+    "definition": "Bounded audit inventory of 51 implemented functions/technical controls plus 8 external/human/M2 gaps; a checked function can still FAIL or be BLOCKED at one gate"
+  },
+  "functions": [
+    {
+      "id": "F01",
+      "group": "Auth",
+      "function": "Invited registration",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "AccessCoreTest; REGISTRATION-invited-browser",
+      "scope": "Targeted invite and normalized identity; no public registration"
+    },
+    {
+      "id": "F02",
+      "group": "Auth",
+      "function": "Login and denied credentials",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "AccessCoreTest; AUTH-LOGIN-browser",
+      "scope": "Real session browser; enumeration/disabled cases automated"
+    },
+    {
+      "id": "F03",
+      "group": "Auth",
+      "function": "CSRF / session fencing",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "AccessCoreTest; AUTH-CSRF-origin-and-token-fallback",
+      "scope": "419 cross-site; stale generations and long-password behavior automated"
+    },
+    {
+      "id": "F04",
+      "group": "Auth",
+      "function": "Role / diagnostics boundary",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "DiagnosticsTest; ADMIN-boundary",
+      "scope": "User 403; admin diagnostics 200 with no private-data bypass"
+    },
+    {
+      "id": "F05",
+      "group": "Auth",
+      "function": "Cross-user resource authorization",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "McpGatewayTest; AUTH-002-005-IDOR",
+      "scope": "Foreign vacancy/preparation/fact/item 404; foreign list empty"
+    },
+    {
+      "id": "F06",
+      "group": "Auth",
+      "function": "Logout",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "AUTH-LOGOUT-browser",
+      "scope": "204 logout followed by 401 /me"
+    },
+    {
+      "id": "F07",
+      "group": "Career",
+      "function": "Manual CONFIRMED fact",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CareerCoreTest; CAREER-MANUAL-browser",
+      "scope": "Real local manual fact with user_manual provenance"
+    },
+    {
+      "id": "F08",
+      "group": "Career",
+      "function": "Text extraction to PENDING",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CareerCoreRemediationTest; CAREER-EXTRACT-PENDING-browser",
+      "scope": "Local mocked provider; no automatic confirmation"
+    },
+    {
+      "id": "F09",
+      "group": "Career",
+      "function": "Confirm / edit-confirm",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CareerCoreTest; CAREER-EXTRACT-PENDING-browser",
+      "scope": "Browser confirm; edit-confirm backend suite"
+    },
+    {
+      "id": "F10",
+      "group": "Career",
+      "function": "Reject and terminal replay",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CareerCoreTest; CAREER-REJECT-API",
+      "scope": "Rejected fact cannot become confirmed via repeated review"
+    },
+    {
+      "id": "F11",
+      "group": "Career",
+      "function": "Deprecate / supersede",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CareerCoreRemediationTest; supersession concurrency log",
+      "scope": "Automated lifecycle and PostgreSQL race tests"
+    },
+    {
+      "id": "F12",
+      "group": "Career",
+      "function": "Source persistence / dedup",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CareerCoreTest; CAREER-REFRESH-persistence",
+      "scope": "Raw provenance, repeated-source behavior; refresh"
+    },
+    {
+      "id": "F13",
+      "group": "Career",
+      "function": "Claims / trusted confirmed-only evidence",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "qa-added.xml; database-evidence.json",
+      "scope": "Confirmed PASS; PENDING/REJECTED/DEPRECATED BLOCK"
+    },
+    {
+      "id": "F14",
+      "group": "Career",
+      "function": "Explicit ambiguity resolution API",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "CAREER-AMBIGUITY-resolution-API",
+      "scope": "Owned evidence selected; Truth Guard PASS"
+    },
+    {
+      "id": "F15",
+      "group": "Career",
+      "function": "Explicit ambiguity resolution UI",
+      "result": "FAIL",
+      "checked": true,
+      "evidence": "career-actions.json; career-workspace.tsx",
+      "scope": "No action for USER_RESOLUTION_REQUIRED; API workaround needed"
+    },
+    {
+      "id": "F16",
+      "group": "Vacancy",
+      "function": "Paste vacancy",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VACANCY-IMPORT-browser",
+      "scope": "Safe synthetic vacancy via real UI"
+    },
+    {
+      "id": "F17",
+      "group": "Vacancy",
+      "function": "Raw snapshot / hash / history",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "database-evidence.json; VacancyCoreTest",
+      "scope": "Immutable raw text, versioning and history"
+    },
+    {
+      "id": "F18",
+      "group": "Vacancy",
+      "function": "URL metadata / duplicates",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyCoreTest; VACANCY-DUPLICATE-replay",
+      "scope": "Metadata URL not fetched; duplicate convergence"
+    },
+    {
+      "id": "F19",
+      "group": "Vacancy",
+      "function": "Requirement extraction / normalization",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VACANCY-IMPORT-browser; VacancyCoreTest",
+      "scope": "Laravel TECHNICAL MANDATORY normalized; local mock"
+    },
+    {
+      "id": "F20",
+      "group": "Vacancy",
+      "function": "Prompt-injection fail closed",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "INPUT-002-prompt-injection-controlled-block",
+      "scope": "SEMANTIC_REJECTED, zero persisted requirements/analysis for attack"
+    },
+    {
+      "id": "F21",
+      "group": "Vacancy",
+      "function": "Reanalysis / freshness",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VACANCY-REANALYZE-after-resolution; VacancyCoreTest",
+      "scope": "Career signature and snapshot fences"
+    },
+    {
+      "id": "F22",
+      "group": "Vacancy",
+      "function": "Queue / retry / orphan recovery",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "vacancy-postgres-concurrency.log; VacancyCoreTest",
+      "scope": "Controlled failures and races; no real provider delivery proof"
+    },
+    {
+      "id": "F23",
+      "group": "Vacancy",
+      "function": "Provider/schema error handling",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "OpenAiResponsesProviderTest; VacancyCoreTest",
+      "scope": "Fake HTTP error, retry and invalid output regressions"
+    },
+    {
+      "id": "F24",
+      "group": "Matching",
+      "function": "Seven matching dimensions",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "database-evidence.json; VacancyCoreTest",
+      "scope": "TECHNICAL MATCH; six NOT_APPLICABLE for this source"
+    },
+    {
+      "id": "F25",
+      "group": "Matching",
+      "function": "Material gaps / mandatory preferred",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyCoreTest",
+      "scope": "Backend multi-requirement negative tests; main E2E material_gaps=[]"
+    },
+    {
+      "id": "F26",
+      "group": "Matching",
+      "function": "Clause-bound candidate evidence",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyCoreTest",
+      "scope": "Negation, incidental terms, language and requirement-scoped support"
+    },
+    {
+      "id": "F27",
+      "group": "Matching",
+      "function": "Stale analysis protection",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "VacancyCoreTest; VacancyPlanChatTest",
+      "scope": "Changed fact/snapshot cannot reuse stale matching"
+    },
+    {
+      "id": "F28",
+      "group": "Application",
+      "function": "Preparation persisted",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-GENERATE-browser; database-evidence.json",
+      "scope": "Saved snapshot/analysis/career signature; preparation remains DRAFT with mixed items"
+    },
+    {
+      "id": "F29",
+      "group": "Application",
+      "function": "Resume recommendation fields",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "ApplicationDraftTest; recovery-browser.json",
+      "scope": "Before/After/Reason/Evidence/Risk; mocked generation"
+    },
+    {
+      "id": "F30",
+      "group": "Application",
+      "function": "Accept distinct from approve",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "ApplicationDraftTest; frontend-test.log; APPLICATION-ACCEPT-APPROVE-browser",
+      "scope": "Browser accepted/approved SHORT cover; resume acceptance backend/frontend tests"
+    },
+    {
+      "id": "F31",
+      "group": "Application",
+      "function": "Edit with revalidation",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-TRUTHGUARD-unsupported; ApplicationDraftTest",
+      "scope": "Unsupported edit stores BLOCK and cannot approve"
+    },
+    {
+      "id": "F32",
+      "group": "Application",
+      "function": "Reject recommendation",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-REJECT-API",
+      "scope": "Rejected recommendation persists; cannot approve"
+    },
+    {
+      "id": "F33",
+      "group": "Application",
+      "function": "SHORT cover generation",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-GENERATE-browser; database-evidence.json",
+      "scope": "Mocked content supported by Claims"
+    },
+    {
+      "id": "F34",
+      "group": "Application",
+      "function": "STANDARD cover generation",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-GENERATE-browser; database-evidence.json",
+      "scope": "Original truthful draft generated; later deliberately blocked edit"
+    },
+    {
+      "id": "F35",
+      "group": "Application",
+      "function": "Truth Guard before approval",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "qa-added.xml; ApplicationDraftTest; database-evidence.json",
+      "scope": "Same-owner confirmed backing required; mock semantic reviewer scoped"
+    },
+    {
+      "id": "F36",
+      "group": "Application",
+      "function": "Approval / revision audit",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-ACCEPT-APPROVE-browser; qa-postgres.xml",
+      "scope": "Exact hash, actor, revision, events; no sending"
+    },
+    {
+      "id": "F37",
+      "group": "Application",
+      "function": "Saved flow refresh / reopen",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "APPLICATION-REFRESH-persistence; RECOVERY-UI-reopen-results",
+      "scope": "APPROVED SHORT, BLOCKED STANDARD, REJECTED recommendation reopen"
+    },
+    {
+      "id": "F38",
+      "group": "MCP",
+      "function": "Gateway on/off / discovery",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "mcp-toggle.log; McpGatewayTest",
+      "scope": "Disabled routes absent, enabled bounded contract available"
+    },
+    {
+      "id": "F39",
+      "group": "MCP",
+      "function": "OAuth / PKCE / scopes / resource",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "McpGatewayTest",
+      "scope": "Local automated tokens, redirects, scope and resource controls; no external consumer"
+    },
+    {
+      "id": "F40",
+      "group": "MCP",
+      "function": "Read-only owned context",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "McpGatewayTest; qa-postgres.xml",
+      "scope": "Read calls preserve product rows and owner scope"
+    },
+    {
+      "id": "F41",
+      "group": "MCP",
+      "function": "Bounded unapproved draft save",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "McpGatewayTest; VacancyPlanChatTest",
+      "scope": "No MCP approve/send; snapshot/signature fences and draft-write scope"
+    },
+    {
+      "id": "F42",
+      "group": "Frontend",
+      "function": "Build / frontend contracts",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "frontend-test.log; checks.json",
+      "scope": "108 tests; lint, TS and production build PASS"
+    },
+    {
+      "id": "F43",
+      "group": "Frontend",
+      "function": "Responsive / keyboard smoke",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "RESPONSIVE-and-keyboard; responsive-320.png",
+      "scope": "1440/768/390/320 overflow, Escape and focus return; screenshots only sampled"
+    },
+    {
+      "id": "F44",
+      "group": "Frontend",
+      "function": "Accessible-name DOM automation",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "accessibility-smoke.json",
+      "scope": "Materials + Career controls named; lang/title/alt/duplicate ID smoke only"
+    },
+    {
+      "id": "F45",
+      "group": "Frontend",
+      "function": "Performance / browser errors",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "performance.json; BROWSER-no-exceptions-no-egress",
+      "scope": "80 read requests; zero error; no defined SLO/load threshold"
+    },
+    {
+      "id": "F46",
+      "group": "PostgreSQL",
+      "function": "PostgreSQL application persistence",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "database-evidence.json",
+      "scope": "Read-only DB confirms snapshot, requirements, matching, cover, usages and approvals"
+    },
+    {
+      "id": "F47",
+      "group": "PostgreSQL",
+      "function": "Runtime RLS / owner FK",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "pg-constraint-probe.json; qa-postgres.xml",
+      "scope": "Foreign owner sees zero; cross-owner FK rejects insert; no commits"
+    },
+    {
+      "id": "F48",
+      "group": "PostgreSQL",
+      "function": "Concurrency / upgrade integrity",
+      "result": "PASS",
+      "checked": true,
+      "evidence": "access/career/vacancy/application/chatgpt PostgreSQL logs",
+      "scope": "Saved scripts PASS except separate legacy duplicate-migration harness"
+    },
+    {
+      "id": "F49",
+      "group": "Diagnostics",
+      "function": "Latest occurrence timestamp-tie regression",
+      "result": "BLOCKED",
+      "checked": true,
+      "evidence": "qa-postgres.xml; diagnostics-isolated-repro.log",
+      "scope": "Fixture dedup prevents intended assertion; 3 other PostgreSQL Diagnostics tests PASS"
+    },
+    {
+      "id": "F50",
+      "group": "Reference",
+      "function": "B01 asset provenance integrity",
+      "result": "FAIL",
+      "checked": true,
+      "evidence": "b01-provenance.json; b01-recovery-repro.log",
+      "scope": "OFL.txt byte SHA differs after normalization"
+    },
+    {
+      "id": "F51",
+      "group": "QA harness",
+      "function": "Legacy duplicate vacancy migration proof",
+      "result": "FAIL",
+      "checked": true,
+      "evidence": "vacancy-postgres-duplicate-migration.log",
+      "scope": "Fixed --step=4 no longer reaches pre-000009 schema"
+    },
+    {
+      "id": "F52",
+      "group": "External AI",
+      "function": "Real OpenAI extraction / generation",
+      "result": "BLOCKED",
+      "checked": false,
+      "evidence": "no live AI authorized",
+      "scope": "Mock results do not validate real OpenAI"
+    },
+    {
+      "id": "F53",
+      "group": "External AI",
+      "function": "Real ChatGPT OAuth / MCP consumer",
+      "result": "BLOCKED",
+      "checked": false,
+      "evidence": "no live integration authorized",
+      "scope": "Local contracts tested; external account/transport not verified"
+    },
+    {
+      "id": "F54",
+      "group": "Accessibility gate",
+      "function": "Human audible screen reader",
+      "result": "BLOCKED",
+      "checked": false,
+      "evidence": "b01-manual-accessibility-release-gate",
+      "scope": "A1 requires named human/AT evidence"
+    },
+    {
+      "id": "F55",
+      "group": "Accessibility gate",
+      "function": "Native 200% zoom / reflow",
+      "result": "BLOCKED",
+      "checked": false,
+      "evidence": "b01-manual-accessibility-release-gate",
+      "scope": "Z1 requires native browser zoom reviewer evidence"
+    },
+    {
+      "id": "F56",
+      "group": "Accessibility gate",
+      "function": "Full manual state/viewport matrix",
+      "result": "BLOCKED",
+      "checked": false,
+      "evidence": "b01-manual-accessibility-release-gate",
+      "scope": "32 cases and G/N/M/T/K interactions remain open"
+    },
+    {
+      "id": "F57",
+      "group": "Acceptance",
+      "function": "Preview real-user value and feedback",
+      "result": "BLOCKED",
+      "checked": false,
+      "evidence": "m1-4-application-draft completion criteria",
+      "scope": "Synthetic automation is not real-user acceptance"
+    },
+    {
+      "id": "F58",
+      "group": "M2",
+      "function": "DOCX / PDF application package",
+      "result": "NOT_RUN",
+      "checked": false,
+      "evidence": "Roadmap M2",
+      "scope": "Not implemented/authorized by this audit"
+    },
+    {
+      "id": "F59",
+      "group": "M2",
+      "function": "Full employer memory / contradiction flow",
+      "result": "NOT_RUN",
+      "checked": false,
+      "evidence": "Roadmap M2",
+      "scope": "MVP acceptance unavailable at M1 baseline"
+    }
+  ]
+}

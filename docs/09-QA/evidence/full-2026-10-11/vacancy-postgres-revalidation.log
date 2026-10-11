@@ -1,0 +1,110 @@
+vacancy-postgres-revalidation: fresh migration
+time="2026-10-11T20:12:20+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-2ac3dd9b70e4 Creating 
+ Container cvortexqa1011-migration-run-2ac3dd9b70e4 Created 
+
+   INFO  Preparing database.  
+
+  Creating migration table ....................................... 3.24ms DONE
+
+   INFO  Running migrations.  
+
+  2026_09_12_000001_create_access_core_tables .................... 6.05ms DONE
+  2026_09_13_000002_add_auth_generation_to_users ................. 0.72ms DONE
+  2026_09_13_000003_create_career_core_tables .................... 9.10ms DONE
+  2026_09_13_000004_reconcile_and_harden_career_core ............ 22.74ms DONE
+  2026_09_13_000005_enforce_career_source_idempotency ............ 0.71ms DONE
+  2026_09_19_000006_record_claim_resolution_choice ............... 1.86ms DONE
+  2026_09_19_000007_enforce_single_current_career_fact_replacement  0.46ms DONE
+  2026_09_19_000008_create_vacancy_core_tables .................. 13.43ms DONE
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 2.25ms DONE
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 0.38ms DONE
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 1.05ms DONE
+  2026_09_24_000012_recover_completed_extraction_without_analysis  0.37ms DONE
+  2026_09_24_000013_create_application_preparations ............. 14.46ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 2.12ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 1.81ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 1.07ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 1.11ms DONE
+  2026_09_24_225903_create_oauth_device_codes_table .............. 1.63ms DONE
+  2026_09_27_000013_create_diagnostic_incidents .................. 4.02ms DONE
+  2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents  0.82ms DONE
+  2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences  0.41ms DONE
+  2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences .... 0.41ms DONE
+  2026_10_01_000001_add_persisted_queue_recovery_deadlines ....... 0.83ms DONE
+  2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates ... 0.64ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 2.75ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 12.45ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 1.02ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 0.54ms DONE
+
+vacancy-postgres-revalidation: first suite
+time="2026-10-11T20:12:21+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-e71be221c61f Creating 
+ Container cvortexqa1011-backend-run-e71be221c61f Created 
+
+  [30;43;1m WARN [39;49;22m[39m Tests\Feature\VacancyPostgresSecurityTest[39m
+  [33;1m![39;22m[90m [39m[90mruntime role rls and owner context fail closed[39m[90m [39m[33m→ file_get_contents([39m[90m…[39m [90m0.35s[39m  
+  [33;1m![39;22m[90m [39m[90mhttp and queue owner context is cleared[39m[90m [39m[33m→ file_get_contents(/var/ww[39m[90m…[39m [90m0.15s[39m  
+  [33;1m![39;22m[90m [39m[90mraw snapshot history updates are rejected[39m[90m [39m[33m→ file_get_contents(/var/[39m[90m…[39m [90m0.12s[39m  
+
+  [90mTests:[39m    [33;1m3 warnings[39;22m[90m (44 assertions)[39m
+  [90mDuration:[39m [39m0.71s[39m
+
+vacancy-postgres-revalidation: rollback snapshot-history and aggregate-state migrations
+time="2026-10-11T20:12:23+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-79cf932826ca Creating 
+ Container cvortexqa1011-migration-run-79cf932826ca Created 
+
+   INFO  Rolling back migrations.  
+
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 5.48ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 1.55ms DONE
+
+time="2026-10-11T20:12:23+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-a0e6794f1ee1 Creating 
+ Container cvortexqa1011-migration-run-a0e6794f1ee1 Created 
+
+   INFO  Running migrations.  
+
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 5.08ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 1.03ms DONE
+
+vacancy-postgres-revalidation: rollback vacancy remediation migrations
+time="2026-10-11T20:12:24+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-13bf9bceecf2 Creating 
+ Container cvortexqa1011-migration-run-13bf9bceecf2 Created 
+
+   INFO  Rolling back migrations.  
+
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 5.32ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 2.01ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 12.81ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 1.88ms DONE
+
+vacancy-postgres-revalidation: migrate remediation up
+time="2026-10-11T20:12:25+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-b381ea9050ce Creating 
+ Container cvortexqa1011-migration-run-b381ea9050ce Created 
+
+   INFO  Running migrations.  
+
+  2026_10_04_000001_create_chatgpt_connections ................... 6.67ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 16.43ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 2.13ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 0.88ms DONE
+
+vacancy-postgres-revalidation: second suite
+time="2026-10-11T20:12:25+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-14f468d8c603 Creating 
+ Container cvortexqa1011-backend-run-14f468d8c603 Created 
+
+  [30;43;1m WARN [39;49;22m[39m Tests\Feature\VacancyPostgresSecurityTest[39m
+  [33;1m![39;22m[90m [39m[90mruntime role rls and owner context fail closed[39m[90m [39m[33m→ file_get_contents([39m[90m…[39m [90m0.43s[39m  
+  [33;1m![39;22m[90m [39m[90mhttp and queue owner context is cleared[39m[90m [39m[33m→ file_get_contents(/var/ww[39m[90m…[39m [90m0.17s[39m  
+  [33;1m![39;22m[90m [39m[90mraw snapshot history updates are rejected[39m[90m [39m[33m→ file_get_contents(/var/[39m[90m…[39m [90m0.14s[39m  
+
+  [90mTests:[39m    [33;1m3 warnings[39;22m[90m (44 assertions)[39m
+  [90mDuration:[39m [39m0.84s[39m
+
+vacancy-postgres-revalidation: PASS (users preserved=4; users after second suite=8)

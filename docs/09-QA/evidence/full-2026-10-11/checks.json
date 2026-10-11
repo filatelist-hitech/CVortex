@@ -1,0 +1,154 @@
+[
+  {
+    "id": "frontend-test",
+    "command": "docker compose exec -T frontend npm test",
+    "exit_code": 0,
+    "seconds": 7.81,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "frontend-test.log"
+  },
+  {
+    "id": "frontend-lint",
+    "command": "docker compose exec -T frontend npm run lint",
+    "exit_code": 0,
+    "seconds": 4.54,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "frontend-lint.log"
+  },
+  {
+    "id": "frontend-types",
+    "command": "docker compose exec -T frontend npm run typecheck",
+    "exit_code": 0,
+    "seconds": 3.33,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "frontend-types.log"
+  },
+  {
+    "id": "frontend-production-build",
+    "command": "docker compose run --rm --no-deps -e NODE_ENV=production frontend npm run build",
+    "exit_code": 0,
+    "seconds": 5.84,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "frontend-production-build.log"
+  },
+  {
+    "id": "backend-pint",
+    "command": "docker compose run --rm --no-deps backend composer lint",
+    "exit_code": 0,
+    "seconds": 7.65,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "backend-pint.log"
+  },
+  {
+    "id": "backend-larastan",
+    "command": "docker compose run --rm --no-deps backend composer analyse",
+    "exit_code": 0,
+    "seconds": 6.25,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "backend-larastan.log"
+  },
+  {
+    "id": "mcp-toggle",
+    "command": "bash scripts/test-mcp-gateway-toggle.sh",
+    "exit_code": 0,
+    "seconds": 2.31,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "mcp-toggle.log"
+  },
+  {
+    "id": "nginx-log-safety",
+    "command": "bash scripts/test-nginx-access-log-safety.sh",
+    "exit_code": 1,
+    "seconds": 0.19,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "nginx-log-safety.log"
+  },
+  {
+    "id": "b01-check",
+    "command": "node docs/07-Design/reference/build-reference.cjs --check",
+    "exit_code": 1,
+    "seconds": 0.08,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "b01-check.log"
+  },
+  {
+    "id": "b01-node-tests",
+    "command": "node --test docs/07-Design/reference/build-reference.test.cjs",
+    "exit_code": 0,
+    "seconds": 0.18,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "b01-node-tests.log"
+  },
+  {
+    "id": "access-core-postgres-concurrency",
+    "command": "bash scripts/test-access-core-postgres-concurrency.sh",
+    "exit_code": 0,
+    "seconds": 6.4,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "access-core-postgres-concurrency.log"
+  },
+  {
+    "id": "career-core-postgres-upgrade",
+    "command": "bash scripts/test-career-core-postgres-upgrade.sh",
+    "exit_code": 0,
+    "seconds": 4.25,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "career-core-postgres-upgrade.log"
+  },
+  {
+    "id": "career-review-postgres-concurrency",
+    "command": "bash scripts/test-career-review-postgres-concurrency.sh",
+    "exit_code": 0,
+    "seconds": 4.0,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "career-review-postgres-concurrency.log"
+  },
+  {
+    "id": "career-fact-supersession-postgres-concurrency",
+    "command": "bash scripts/test-career-fact-supersession-postgres-concurrency.sh",
+    "exit_code": 0,
+    "seconds": 3.99,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "career-fact-supersession-postgres-concurrency.log"
+  },
+  {
+    "id": "vacancy-postgres-concurrency",
+    "command": "bash scripts/test-vacancy-postgres-concurrency.sh",
+    "exit_code": 0,
+    "seconds": 18.11,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "vacancy-postgres-concurrency.log"
+  },
+  {
+    "id": "vacancy-postgres-duplicate-migration",
+    "command": "bash scripts/test-vacancy-postgres-duplicate-migration.sh",
+    "exit_code": 3,
+    "seconds": 1.64,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "vacancy-postgres-duplicate-migration.log"
+  },
+  {
+    "id": "vacancy-postgres-revalidation",
+    "command": "bash scripts/test-vacancy-postgres-revalidation.sh",
+    "exit_code": 0,
+    "seconds": 7.23,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "vacancy-postgres-revalidation.log"
+  },
+  {
+    "id": "application-postgres-boundary",
+    "command": "bash scripts/test-application-postgres-boundary.sh",
+    "exit_code": 0,
+    "seconds": 10.16,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "application-postgres-boundary.log"
+  },
+  {
+    "id": "chatgpt-postgres-boundary",
+    "command": "bash scripts/test-chatgpt-postgres-boundary.sh",
+    "exit_code": 0,
+    "seconds": 13.72,
+    "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+    "log": "chatgpt-postgres-boundary.log"
+  }
+]

@@ -1,0 +1,3296 @@
+[
+  {
+    "name": "test_targeted_invitation_registers_normalized_email_once",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "78",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "5",
+    "time": "0.241777"
+  },
+  {
+    "name": "test_target_mismatch_and_duplicate_email_do_not_consume_invitation",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "90",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "2",
+    "time": "0.131227"
+  },
+  {
+    "name": "test_invitation_token_is_hashed_and_not_serialized",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "107",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.008674"
+  },
+  {
+    "name": "test_invalid_targeted_invitation_email_is_rejected_without_side_effects",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "115",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.009338"
+  },
+  {
+    "name": "test_invitation_creation_rolls_back_when_creation_audit_fails_without_leaking_token",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "122",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "6",
+    "time": "0.011452"
+  },
+  {
+    "name": "test_generic_invitation_cli_creates_usable_one_time_invitation_and_never_reveals_it_again",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "142",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "7",
+    "time": "0.201661"
+  },
+  {
+    "name": "test_registration_rolls_back_user_invitation_and_audit_when_completion_fails",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "158",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "10",
+    "time": "0.144512"
+  },
+  {
+    "name": "test_normal_application_logs_are_redacted_for_credentials",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "182",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.317594"
+  },
+  {
+    "name": "test_disabled_user_loses_access_and_sole_admin_is_preserved",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "202",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "2",
+    "time": "0.224215"
+  },
+  {
+    "name": "test_bootstrap_admin_rejects_invalid_email_without_side_effects",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "213",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "4",
+    "time": "0.008628"
+  },
+  {
+    "name": "test_disabling_user_invalidates_multiple_database_sessions",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "220",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "7",
+    "time": "0.340251"
+  },
+  {
+    "name": "test_disabling_and_reenabling_user_does_not_restore_a_pre_disable_session",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "237",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "1",
+    "time": "0.124680"
+  },
+  {
+    "name": "test_expired_revoked_and_exhausted_invitations_are_rejected",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "247",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.031304"
+  },
+  {
+    "name": "test_http_registration_rejects_missing_csrf_before_any_user_is_created",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "266",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.014961"
+  },
+  {
+    "name": "test_http_registration_rejects_invalid_email_before_persistence",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "276",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "4",
+    "time": "0.018535"
+  },
+  {
+    "name": "test_login_errors_do_not_enumerate_and_disabled_account_is_rejected",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "286",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "6",
+    "time": "0.604877"
+  },
+  {
+    "name": "test_login_rehashes_an_existing_password_during_hash_driver_migration",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "297",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.131915"
+  },
+  {
+    "name": "test_unknown_account_password_work_matches_each_supported_hash_driver",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "318",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "6",
+    "time": "0.223465"
+  },
+  {
+    "name": "test_long_passwords_preserve_their_suffixes",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "331",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "2",
+    "time": "0.324112"
+  },
+  {
+    "name": "test_login_rate_limit_is_configurable_deterministic_and_isolated_by_email_and_ip",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "350",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "4",
+    "time": "0.318560"
+  },
+  {
+    "name": "test_login_regenerates_session_and_controller_uses_stateful_session_boundary",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "364",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.214071"
+  },
+  {
+    "name": "test_enable_cli_restores_authentication_without_creating_a_session",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "374",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "5",
+    "time": "0.220051"
+  },
+  {
+    "name": "test_invitation_revoke_rolls_back_when_audit_persistence_fails",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "384",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "4",
+    "time": "0.010322"
+  },
+  {
+    "name": "test_bootstrap_rolls_back_when_audit_persistence_fails",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "402",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "9",
+    "time": "0.130755"
+  },
+  {
+    "name": "test_disable_rolls_back_status_sessions_and_audit_when_persistence_fails",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "420",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "5",
+    "time": "0.111126"
+  },
+  {
+    "name": "test_enable_rolls_back_status_and_audit_when_persistence_fails",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "440",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "4",
+    "time": "0.110534"
+  },
+  {
+    "name": "test_test_only_ownership_fixture_hides_foreign_resources_and_admin_has_no_bypass",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "459",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "15",
+    "time": "0.349981"
+  },
+  {
+    "name": "test_audit_redacts_sensitive_metadata_and_refuses_mutation",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "482",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "3",
+    "time": "0.127469"
+  },
+  {
+    "name": "test_audit_query_boundary_rejects_bulk_update_and_query_delete",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "492",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "2",
+    "time": "0.008278"
+  },
+  {
+    "name": "test_audit_query_boundary_rejects_forwarded_destructive_operations",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "507",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "7",
+    "time": "0.007219"
+  },
+  {
+    "name": "test_audit_append_boundary_still_allows_creation",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "530",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "1",
+    "time": "0.007336"
+  },
+  {
+    "name": "test_bootstrap_admin_is_one_time_and_never_echoes_password",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "537",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "9",
+    "time": "0.123826"
+  },
+  {
+    "name": "test_operator_invitation_command_shows_token_once_without_persisting_it",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "553",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "6",
+    "time": "0.009761"
+  },
+  {
+    "name": "test_operator_can_capture_invitation_ulid_revoke_it_and_registration_is_rejected",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "565",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "7",
+    "time": "0.009408"
+  },
+  {
+    "name": "test_operator_can_revoke_an_invitation_and_a_rejected_rerevoke_changes_nothing",
+    "file": "/var/www/html/tests/Feature/AccessCoreTest.php",
+    "line": "585",
+    "class": "Tests\\Feature\\AccessCoreTest",
+    "classname": "Tests.Feature.AccessCoreTest",
+    "assertions": "6",
+    "time": "0.009418"
+  },
+  {
+    "name": "test_preview_preparation_saves_resumes_and_requires_explicit_approval",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "29",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "27",
+    "time": "0.209128"
+  },
+  {
+    "name": "test_cross_user_preparation_and_item_access_are_not_found",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "86",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "5",
+    "time": "0.245953"
+  },
+  {
+    "name": "test_client_cannot_inject_another_owners_claim_as_provenance",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "107",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "10",
+    "time": "0.232646"
+  },
+  {
+    "name": "test_rejected_recommendation_remains_saved_and_cannot_be_approved",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "136",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "9",
+    "time": "0.143205"
+  },
+  {
+    "name": "test_generated_recommendation_is_blocked_when_truth_guard_rejects_it",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "163",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "6",
+    "time": "0.133404"
+  },
+  {
+    "name": "test_truth_guard_blocks_pass_when_review_omits_an_unsupported_edit_clause",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "184",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "10",
+    "time": "0.143870"
+  },
+  {
+    "name": "test_truth_guard_does_not_trust_model_pass_for_a_fabricated_clause",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "214",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "30",
+    "time": "0.186712"
+  },
+  {
+    "name": "test_truth_guard_fails_closed_on_malformed_claim_id_output",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "285",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "8",
+    "time": "0.156765"
+  },
+  {
+    "name": "test_truth_review_provider_failures_are_recorded_once_for_edit_accept_and_approval",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "321",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "34",
+    "time": "0.296048"
+  },
+  {
+    "name": "test_generation_truth_guard_failure_is_recorded_only_once_with_application_correlation",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "386",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "8",
+    "time": "0.144451"
+  },
+  {
+    "name": "test_unexpected_generation_failure_uses_the_same_code_in_api_and_diagnostics",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "413",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "7",
+    "time": "0.148516"
+  },
+  {
+    "name": "test_approval_rejects_a_revision_changed_while_truth_validation_is_in_flight",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "445",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "8",
+    "time": "0.169084"
+  },
+  {
+    "name": "test_active_runtime_skill_schemas_avoid_unsupported_openai_string_bounds",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "511",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "4",
+    "time": "0.009787"
+  },
+  {
+    "name": "test_invalid_generated_output_is_recorded_with_application_run_correlation",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "529",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "29",
+    "time": "0.143343"
+  },
+  {
+    "name": "test_unexpected_generation_failure_uses_one_safe_internal_error_classification",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "577",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "11",
+    "time": "0.141258"
+  },
+  {
+    "name": "test_generation_does_not_expose_untrusted_model_reason_or_risk_as_recommendation_facts",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "611",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "5",
+    "time": "0.167305"
+  },
+  {
+    "name": "test_missing_generation_skill_returns_a_controlled_unavailable_response",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "632",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "10",
+    "time": "0.169122"
+  },
+  {
+    "name": "test_supported_edit_revalidates_using_confirmed_context_only_and_keeps_injection_as_data",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "659",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "20",
+    "time": "0.178019"
+  },
+  {
+    "name": "test_stale_career_blocks_generation_and_provider_failure_can_be_retried",
+    "file": "/var/www/html/tests/Feature/ApplicationDraftTest.php",
+    "line": "724",
+    "class": "Tests\\Feature\\ApplicationDraftTest",
+    "classname": "Tests.Feature.ApplicationDraftTest",
+    "assertions": "12",
+    "time": "0.154115"
+  },
+  {
+    "name": "test_runtime_role_forces_rls_and_composite_owner_links",
+    "file": "/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php",
+    "line": "39",
+    "class": "Tests\\Feature\\ApplicationPostgresSecurityTest",
+    "classname": "Tests.Feature.ApplicationPostgresSecurityTest",
+    "assertions": "0",
+    "time": "0.000000"
+  },
+  {
+    "name": "test_stale_approval_cannot_win_against_a_concurrent_revision_on_postgres",
+    "file": "/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php",
+    "line": "127",
+    "class": "Tests\\Feature\\ApplicationPostgresSecurityTest",
+    "classname": "Tests.Feature.ApplicationPostgresSecurityTest",
+    "assertions": "0",
+    "time": "0.000000"
+  },
+  {
+    "name": "test_mcp_reads_obey_postgres_owner_scope_without_changing_product_rows",
+    "file": "/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php",
+    "line": "181",
+    "class": "Tests\\Feature\\ApplicationPostgresSecurityTest",
+    "classname": "Tests.Feature.ApplicationPostgresSecurityTest",
+    "assertions": "0",
+    "time": "0.000000"
+  },
+  {
+    "name": "test_blank_provider_pricing_is_recorded_as_unknown",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "42",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "2",
+    "time": "0.006547"
+  },
+  {
+    "name": "test_complete_owner_chain_blocks_cross_owner_source_profile_claim_and_nested_idor",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "62",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "9",
+    "time": "0.235421"
+  },
+  {
+    "name": "test_api_review_flow_records_human_actions_and_keeps_one_candidate_pending",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "119",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "19",
+    "time": "0.128147"
+  },
+  {
+    "name": "test_trusted_matching_query_exposes_only_current_owner_valid_confirmed_pass_data",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "171",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "9",
+    "time": "0.228425"
+  },
+  {
+    "name": "test_superseding_confirmed_fact_preserves_history_and_invalidates_stale_claim",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "195",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "19",
+    "time": "0.143563"
+  },
+  {
+    "name": "test_truth_guard_has_distinct_pass_block_and_valid_evidence_resolution_outcomes",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "235",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "14",
+    "time": "0.287619"
+  },
+  {
+    "name": "test_manual_api_never_invokes_llm_and_records_actor_time_and_manual_provenance",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "275",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "6",
+    "time": "0.121390"
+  },
+  {
+    "name": "test_unconfigured_ai_fails_extraction_safely_but_manual_entry_still_works",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "292",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "8",
+    "time": "0.121749"
+  },
+  {
+    "name": "test_deprecated_fact_cannot_become_claim_evidence",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "329",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "1",
+    "time": "0.119665"
+  },
+  {
+    "name": "test_candidate_persistence_identity_prevents_duplicate_retry_rows",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "340",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "1",
+    "time": "0.124105"
+  },
+  {
+    "name": "test_model_policy_resolves_provider_and_model_from_configuration",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "364",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "2",
+    "time": "0.009586"
+  },
+  {
+    "name": "test_provider_transport_types_do_not_leak_into_domain_or_application_services",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "376",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "12",
+    "time": "0.007279"
+  },
+  {
+    "name": "test_configured_policy_drives_adapter_and_completed_llm_run_metadata",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "391",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "3",
+    "time": "0.127515"
+  },
+  {
+    "name": "test_provider_refusal_incomplete_malformed_and_transport_fail_safely_with_run_metadata",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "436",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "20",
+    "time": "0.576186"
+  },
+  {
+    "name": "test_retry_after_is_parsed_and_bounded_for_retryable_provider_responses",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "509",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "24",
+    "time": "0.128834"
+  },
+  {
+    "name": "test_career_api_and_logs_redact_private_content_on_persistence_failure",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "555",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "4",
+    "time": "0.112766"
+  },
+  {
+    "name": "test_provider_failure_response_and_logs_do_not_expose_private_source",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "579",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "5",
+    "time": "0.112186"
+  },
+  {
+    "name": "test_career_http_500_message_is_redacted_from_response_and_logs",
+    "file": "/var/www/html/tests/Feature/CareerCoreRemediationTest.php",
+    "line": "604",
+    "class": "Tests\\Feature\\CareerCoreRemediationTest",
+    "classname": "Tests.Feature.CareerCoreRemediationTest",
+    "assertions": "7",
+    "time": "0.112823"
+  },
+  {
+    "name": "test_career_retry_deadline_preserves_delayed_retry_then_recovers_one_orphan",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "39",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "19",
+    "time": "0.118642"
+  },
+  {
+    "name": "test_stale_career_attempt_cannot_persist_after_recovery_reclaims_it",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "102",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "8",
+    "time": "0.116007"
+  },
+  {
+    "name": "test_career_worker_cannot_claim_pending_source_before_retry_deadline",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "142",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.167338"
+  },
+  {
+    "name": "test_stale_career_running_source_is_recovered_but_fresh_work_is_held",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "169",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "5",
+    "time": "0.116452"
+  },
+  {
+    "name": "test_legacy_pending_career_uses_latest_retry_timestamp_for_lock_window",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "198",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.118714"
+  },
+  {
+    "name": "test_extraction_keeps_untrusted_source_separate_and_creates_pending_evidence_only",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "235",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "11",
+    "time": "0.114611"
+  },
+  {
+    "name": "test_queued_retryable_extraction_does_not_record_an_incident_without_log_context",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "263",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "5",
+    "time": "0.114054"
+  },
+  {
+    "name": "test_queued_terminal_extraction_stays_owned_until_job_finalizes",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "293",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "7",
+    "time": "0.116314"
+  },
+  {
+    "name": "test_authenticated_user_can_start_extraction_through_the_api",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "343",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.114789"
+  },
+  {
+    "name": "test_unauthenticated_career_access_is_rejected",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "362",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "3",
+    "time": "0.009283"
+  },
+  {
+    "name": "test_schema_invalid_and_semantically_upgraded_output_fail_closed",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "369",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "6",
+    "time": "0.220507"
+  },
+  {
+    "name": "test_unchecked_fact_categories_fail_closed_and_rejected_output_keeps_provider_metadata",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "394",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "2",
+    "time": "0.112780"
+  },
+  {
+    "name": "test_completed_extraction_retry_is_idempotent",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "432",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.128061"
+  },
+  {
+    "name": "test_failed_extraction_can_retry_without_duplicate_facts_and_records_retry_count",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "450",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.120265"
+  },
+  {
+    "name": "test_skill_setup_failure_releases_source_for_retry",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "470",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "5",
+    "time": "0.113224"
+  },
+  {
+    "name": "test_pending_fact_supports_confirm_edit_confirm_reject_and_deprecate_lifecycle",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "490",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "13",
+    "time": "0.121811"
+  },
+  {
+    "name": "test_stale_pending_review_cannot_apply_a_second_transition",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "520",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "3",
+    "time": "0.124662"
+  },
+  {
+    "name": "test_manual_fact_is_confirmed_with_user_manual_provenance_without_provider",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "539",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.114014"
+  },
+  {
+    "name": "test_truth_guard_blocks_missing_pending_invalid_provenance_and_cross_user_evidence",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "554",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "7",
+    "time": "0.219140"
+  },
+  {
+    "name": "test_cross_user_career_source_fact_claim_and_run_data_are_not_exposed",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "598",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "6",
+    "time": "0.223104"
+  },
+  {
+    "name": "test_adversarial_eval_fixtures_execute_through_the_real_validation_path",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "617",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "54",
+    "time": "2.423739"
+  },
+  {
+    "name": "test_openai_adapter_uses_responses_structured_output_without_storing_remote_state",
+    "file": "/var/www/html/tests/Feature/CareerCoreTest.php",
+    "line": "650",
+    "class": "Tests\\Feature\\CareerCoreTest",
+    "classname": "Tests.Feature.CareerCoreTest",
+    "assertions": "4",
+    "time": "0.011582"
+  },
+  {
+    "name": "test_host_identity_is_stable_across_instances_and_signins",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "47",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "4",
+    "time": "0.179377"
+  },
+  {
+    "name": "test_pkce_connection_identity_and_issued_client_are_persisted_and_secrets_hidden",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "57",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "17",
+    "time": "0.118210"
+  },
+  {
+    "name": "test_state_replay_invalid_callback_and_expiration_are_rejected_without_exchange",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "89",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "5",
+    "time": "0.214663"
+  },
+  {
+    "name": "test_decline_consumes_state_and_never_exchanges_a_code",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "102",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "4",
+    "time": "0.110699"
+  },
+  {
+    "name": "test_nonce_audience_signature_issuer_and_expiration_are_validated",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "112",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "7",
+    "time": "0.018681"
+  },
+  {
+    "name": "test_valid_identity_without_sharing_scope_is_saved_but_cannot_infer",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "122",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "2",
+    "time": "0.113752"
+  },
+  {
+    "name": "test_reconnect_rejects_different_account_and_callback_client",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "132",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "4",
+    "time": "0.117586"
+  },
+  {
+    "name": "test_refresh_replaces_token_chain_once_and_respects_earliest_refresh_time",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "147",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "7",
+    "time": "0.123754"
+  },
+  {
+    "name": "test_terminal_refresh_error_clears_tokens_but_transient_failure_preserves_them",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "163",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "5",
+    "time": "0.112724"
+  },
+  {
+    "name": "test_current_model_catalog_and_responses_contract_without_api_key",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "175",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "7",
+    "time": "0.107564"
+  },
+  {
+    "name": "test_connection_proof_rejects_a_model_policy_violation_before_provider_access",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "206",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "3",
+    "time": "0.109348"
+  },
+  {
+    "name": "test_stream_interruption_failed_usage_limit_and_unsupported_capability",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "219",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "4",
+    "time": "0.106649"
+  },
+  {
+    "name": "test_other_user_cannot_list_use_reconnect_or_delete_credentials",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "247",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "8",
+    "time": "0.207335"
+  },
+  {
+    "name": "test_disconnect_retains_registration_and_reports_unconfirmed_revocation",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "261",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "3",
+    "time": "0.106456"
+  },
+  {
+    "name": "test_disconnect_invalidates_a_pending_reconnect_callback",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "271",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "6",
+    "time": "0.106716"
+  },
+  {
+    "name": "test_disconnect_invalidates_a_pending_initial_registration_callback",
+    "file": "/var/www/html/tests/Feature/ChatGptPlanTest.php",
+    "line": "290",
+    "class": "Tests\\Feature\\ChatGptPlanTest",
+    "classname": "Tests.Feature.ChatGptPlanTest",
+    "assertions": "6",
+    "time": "0.107721"
+  },
+  {
+    "name": "test_runtime_role_can_group_and_admin_can_query_without_user_access",
+    "file": "/var/www/html/tests/Feature/DiagnosticsPostgresTest.php",
+    "line": "20",
+    "class": "Tests\\Feature\\DiagnosticsPostgresTest",
+    "classname": "Tests.Feature.DiagnosticsPostgresTest",
+    "assertions": "0",
+    "time": "0.006611"
+  },
+  {
+    "name": "test_runtime_role_rolls_back_status_when_audit_fails",
+    "file": "/var/www/html/tests/Feature/DiagnosticsPostgresTest.php",
+    "line": "41",
+    "class": "Tests\\Feature\\DiagnosticsPostgresTest",
+    "classname": "Tests.Feature.DiagnosticsPostgresTest",
+    "assertions": "0",
+    "time": "0.005966"
+  },
+  {
+    "name": "test_runtime_provider_filter_retry_delay_and_noop_status_audit",
+    "file": "/var/www/html/tests/Feature/DiagnosticsPostgresTest.php",
+    "line": "68",
+    "class": "Tests\\Feature\\DiagnosticsPostgresTest",
+    "classname": "Tests.Feature.DiagnosticsPostgresTest",
+    "assertions": "0",
+    "time": "0.005148"
+  },
+  {
+    "name": "test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties",
+    "file": "/var/www/html/tests/Feature/DiagnosticsPostgresTest.php",
+    "line": "94",
+    "class": "Tests\\Feature\\DiagnosticsPostgresTest",
+    "classname": "Tests.Feature.DiagnosticsPostgresTest",
+    "assertions": "0",
+    "time": "0.005598"
+  },
+  {
+    "name": "test_internal_error_is_safe_correlated_and_grouped",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "107",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "11",
+    "time": "0.009614"
+  },
+  {
+    "name": "test_unexpected_oauth_server_failure_is_recorded_without_exposing_internal_details",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "123",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "5",
+    "time": "0.009994"
+  },
+  {
+    "name": "test_expected_oauth_authentication_error_is_not_recorded_as_incident",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "138",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.006886"
+  },
+  {
+    "name": "test_failed_jobs_command_reports_database_outage_with_safe_reference",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "149",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "6",
+    "time": "0.007444"
+  },
+  {
+    "name": "test_recent_reference_ids_remain_searchable_after_repeated_failures",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "174",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.013237"
+  },
+  {
+    "name": "test_log_sink_failure_does_not_prevent_incident_recording",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "185",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.009823"
+  },
+  {
+    "name": "test_failure_of_both_diagnostic_sinks_returns_false_without_replacing_the_primary_exception",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "193",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "5",
+    "time": "0.009072"
+  },
+  {
+    "name": "test_logged_api_exception_is_not_logged_again_when_incident_storage_fails",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "206",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.008709"
+  },
+  {
+    "name": "test_readiness_probe_preserves_dependency_failure_when_diagnostics_also_fail",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "218",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "6",
+    "time": "0.007566"
+  },
+  {
+    "name": "test_database_readiness_failure_is_recorded_as_critical",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "229",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "6",
+    "time": "0.006836"
+  },
+  {
+    "name": "test_readiness_database_outage_is_recorded_as_critical_after_diagnostic_storage_failure",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "243",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "6",
+    "time": "0.008176"
+  },
+  {
+    "name": "test_redis_readiness_failure_is_recorded_as_critical",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "258",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "7",
+    "time": "0.008299"
+  },
+  {
+    "name": "test_readiness_redis_outage_is_recorded_as_critical",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "275",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.007304"
+  },
+  {
+    "name": "test_unique_job_locks_cover_all_bounded_provider_retry_delays",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "286",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "5",
+    "time": "0.006057"
+  },
+  {
+    "name": "test_request_id_middleware_keeps_http_response_working_when_log_context_fails",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "297",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.006832"
+  },
+  {
+    "name": "test_raw_log_success_marks_the_exception_before_a_postgres_failure",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "306",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "7",
+    "time": "0.008828"
+  },
+  {
+    "name": "test_nested_secrets_are_redacted",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "331",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "10",
+    "time": "0.006962"
+  },
+  {
+    "name": "test_closure_frame_names_keep_basename_and_line_without_absolute_paths",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "353",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.005714"
+  },
+  {
+    "name": "test_all_supported_application_log_channels_use_structured_redaction",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "362",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "40",
+    "time": "0.010781"
+  },
+  {
+    "name": "test_every_selectable_non_null_log_channel_uses_the_redaction_tap",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "434",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "10",
+    "time": "0.006443"
+  },
+  {
+    "name": "test_emergency_fallback_sanitizes_messages_context_and_exceptions",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "454",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.005385"
+  },
+  {
+    "name": "test_structured_logger_redacts_escaped_json_secret_values",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "477",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "2",
+    "time": "0.005220"
+  },
+  {
+    "name": "test_global_reporter_preserves_non_http_and_original_failures",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "493",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.005486"
+  },
+  {
+    "name": "test_reporter_falls_back_to_laravel_logging_when_incident_reporting_fails",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "516",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.007557"
+  },
+  {
+    "name": "test_structured_logger_keeps_safe_exception_frames_without_message_or_secrets",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "537",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "7",
+    "time": "0.005538"
+  },
+  {
+    "name": "test_safe_stack_removes_absolute_paths_from_anonymous_class_names",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "563",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.005554"
+  },
+  {
+    "name": "test_anonymous_throwable_is_safely_named_in_stack_logs_and_incidents",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "585",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "10",
+    "time": "0.006262"
+  },
+  {
+    "name": "test_incident_stderr_keeps_only_sanitized_exception_frames",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "622",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "1",
+    "time": "0.006128"
+  },
+  {
+    "name": "test_controlled_error_does_not_infer_retryability_from_http_status",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "642",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "9",
+    "time": "0.007546"
+  },
+  {
+    "name": "test_provider_error_contract_uses_failure_category_for_retryability",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "651",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "78",
+    "time": "0.011619"
+  },
+  {
+    "name": "test_http_exception_response_preserves_only_safe_headers",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "710",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "26",
+    "time": "0.008757"
+  },
+  {
+    "name": "test_throttled_api_responses_use_the_retryable_rate_limit_contract",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "742",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "11",
+    "time": "0.007006"
+  },
+  {
+    "name": "test_admin_only_diagnostics_and_lifecycle",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "752",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "14",
+    "time": "0.211230"
+  },
+  {
+    "name": "test_status_change_rolls_back_when_audit_recording_fails",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "775",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.107896"
+  },
+  {
+    "name": "test_diagnostics_error_responses_match_the_openapi_error_shape",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "798",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "18",
+    "time": "0.110312"
+  },
+  {
+    "name": "test_diagnostics_incident_detail_and_update_require_authentication",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "820",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "2",
+    "time": "0.009680"
+  },
+  {
+    "name": "test_application_id_filter_search_and_detail_use_occurrence_correlation",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "828",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "10",
+    "time": "0.209575"
+  },
+  {
+    "name": "test_incident_list_prioritizes_active_severity_and_supports_relative_time_filter",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "851",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "7",
+    "time": "0.112642"
+  },
+  {
+    "name": "test_provider_filter_matches_latest_provider_and_combines_with_other_filters",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "872",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "15",
+    "time": "0.116850"
+  },
+  {
+    "name": "test_tied_occurrence_timestamps_use_descending_id_for_every_latest_view",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "896",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "15",
+    "time": "0.122206"
+  },
+  {
+    "name": "test_provider_retry_delay_is_bounded_and_exposed_only_when_valid",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "934",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "10",
+    "time": "0.121273"
+  },
+  {
+    "name": "test_repeated_status_transition_is_a_no_op_for_audit",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "949",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "13",
+    "time": "0.115887"
+  },
+  {
+    "name": "test_status_transition_rolls_back_when_audit_write_fails",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "961",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.109897"
+  },
+  {
+    "name": "test_browser_report_ignores_untrusted_details_and_requires_auth",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "975",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "21",
+    "time": "0.117127"
+  },
+  {
+    "name": "test_browser_report_returns_a_safe_failure_when_no_diagnostic_sink_accepts_it",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1020",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "7",
+    "time": "0.112203"
+  },
+  {
+    "name": "test_terminal_llm_failures_stop_queue_jobs_and_transient_failures_use_bounded_retry_delays",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1032",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "43",
+    "time": "0.123628"
+  },
+  {
+    "name": "test_unique_job_locks_cover_the_maximum_provider_retry_window",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1129",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.009362"
+  },
+  {
+    "name": "test_transient_queue_attempt_logs_warning_then_succeeds_without_error_incident",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1139",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "11",
+    "time": "0.118057"
+  },
+  {
+    "name": "test_expected_missing_console_record_has_a_safe_operator_message",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1201",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.008395"
+  },
+  {
+    "name": "test_final_queue_failure_is_correlated",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1209",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "3",
+    "time": "0.007912"
+  },
+  {
+    "name": "test_queue_execution_state_survives_log_context_setup_failure_and_clears_after_exception",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1227",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "2",
+    "time": "0.006597"
+  },
+  {
+    "name": "test_retrying_queue_exception_is_not_recorded_as_a_console_incident_after_context_cleanup",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1243",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "7",
+    "time": "0.006542"
+  },
+  {
+    "name": "test_sync_queue_restores_request_and_parent_job_log_context",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1267",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.006238"
+  },
+  {
+    "name": "test_sync_queue_failure_is_recorded_once_when_it_bubbles_through_the_api_request",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1299",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "6",
+    "time": "0.008468"
+  },
+  {
+    "name": "test_sync_job_restores_request_log_context_after_success_and_exception",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1312",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "24",
+    "time": "0.008657"
+  },
+  {
+    "name": "test_worker_jobs_clear_prior_context_after_success_and_exception",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1352",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "20",
+    "time": "0.007009"
+  },
+  {
+    "name": "test_retention_prunes_old_detail_and_closed_incidents_but_keeps_open_group",
+    "file": "/var/www/html/tests/Feature/DiagnosticsTest.php",
+    "line": "1393",
+    "class": "Tests\\Feature\\DiagnosticsTest",
+    "classname": "Tests.Feature.DiagnosticsTest",
+    "assertions": "4",
+    "time": "0.007709"
+  },
+  {
+    "name": "test_liveness_is_independent_of_dependencies",
+    "file": "/var/www/html/tests/Feature/HealthTest.php",
+    "line": "11",
+    "class": "Tests\\Feature\\HealthTest",
+    "classname": "Tests.Feature.HealthTest",
+    "assertions": "3",
+    "time": "0.007581"
+  },
+  {
+    "name": "test_readiness_reports_ready_when_dependencies_are_available",
+    "file": "/var/www/html/tests/Feature/HealthTest.php",
+    "line": "19",
+    "class": "Tests\\Feature\\HealthTest",
+    "classname": "Tests.Feature.HealthTest",
+    "assertions": "3",
+    "time": "0.007053"
+  },
+  {
+    "name": "test_readiness_is_sanitized_when_a_dependency_is_unavailable",
+    "file": "/var/www/html/tests/Feature/HealthTest.php",
+    "line": "30",
+    "class": "Tests\\Feature\\HealthTest",
+    "classname": "Tests.Feature.HealthTest",
+    "assertions": "3",
+    "time": "0.008937"
+  },
+  {
+    "name": "test_valid_request_id_is_reused",
+    "file": "/var/www/html/tests/Feature/HealthTest.php",
+    "line": "41",
+    "class": "Tests\\Feature\\HealthTest",
+    "classname": "Tests.Feature.HealthTest",
+    "assertions": "2",
+    "time": "0.006783"
+  },
+  {
+    "name": "test_invalid_request_id_is_replaced",
+    "file": "/var/www/html/tests/Feature/HealthTest.php",
+    "line": "48",
+    "class": "Tests\\Feature\\HealthTest",
+    "classname": "Tests.Feature.HealthTest",
+    "assertions": "2",
+    "time": "0.006500"
+  },
+  {
+    "name": "test_tool_list_preserves_reads_and_adds_one_controlled_draft_write",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "67",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "28",
+    "time": "0.454754"
+  },
+  {
+    "name": "test_controlled_analysis_write_is_idempotent_owned_and_preserves_source_and_facts",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "91",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "22",
+    "time": "0.400681"
+  },
+  {
+    "name": "test_mcp_draft_save_rejects_a_stale_context_signature",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "131",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "5",
+    "time": "0.241344"
+  },
+  {
+    "name": "test_mcp_calls_cannot_submit_a_draft_or_use_a_generic_write_tool",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "149",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "5",
+    "time": "0.235922"
+  },
+  {
+    "name": "test_authentication_scope_resource_audience_and_active_user_are_required",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "170",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "20",
+    "time": "0.246112"
+  },
+  {
+    "name": "test_local_oauth_metadata_uses_one_configured_origin_independent_of_request_host",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "231",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "24",
+    "time": "0.111973"
+  },
+  {
+    "name": "test_tunnel_resource_is_bound_across_pkce_code_refresh_and_mcp_requests",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "264",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "47",
+    "time": "1.068630"
+  },
+  {
+    "name": "test_oauth_resource_discovery_and_grant_parameters_are_exact",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "346",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "27",
+    "time": "0.119723"
+  },
+  {
+    "name": "test_oauth_registration_uses_structural_redirect_validation",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "388",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "56",
+    "time": "0.130816"
+  },
+  {
+    "name": "test_read_calls_are_bounded_and_do_not_mutate_product_state_without_an_llm_provider",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "431",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "17",
+    "time": "0.411456"
+  },
+  {
+    "name": "test_failed_and_incomplete_analysis_exposes_bounded_source_as_untrusted_data",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "464",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "16",
+    "time": "0.299542"
+  },
+  {
+    "name": "test_foreign_vacancy_and_context_are_not_found_for_other_users",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "502",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "6",
+    "time": "0.342147"
+  },
+  {
+    "name": "test_vacancy_metadata_and_snapshot_are_read_in_one_transaction",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "515",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "5",
+    "time": "0.229971"
+  },
+  {
+    "name": "test_application_context_holds_owner_and_vacancy_locks_through_all_reads",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "536",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "18",
+    "time": "0.228457"
+  },
+  {
+    "name": "test_context_marks_relevant_facts_omitted_by_item_or_character_budget",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "557",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "20",
+    "time": "0.684158"
+  },
+  {
+    "name": "test_context_output_has_hard_item_caps",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "585",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "6",
+    "time": "0.234106"
+  },
+  {
+    "name": "test_completed_context_returns_the_signature_of_the_fact_snapshot",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "615",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "5",
+    "time": "0.252611"
+  },
+  {
+    "name": "test_context_returns_the_same_snapshot_used_to_select_confirmed_facts",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "645",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "7",
+    "time": "0.225237"
+  },
+  {
+    "name": "test_oauth_consent_uses_the_cvortex_view",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "675",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "4",
+    "time": "0.212793"
+  },
+  {
+    "name": "test_oauth_issuer_is_added_to_success_and_error_redirects_only_for_approved_callbacks",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "693",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "3",
+    "time": "0.109376"
+  },
+  {
+    "name": "test_invalid_bearer_logs_only_safe_authentication_metadata",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "719",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "3",
+    "time": "0.111389"
+  },
+  {
+    "name": "test_unexpected_tool_errors_return_a_safe_error_and_log_only_metadata",
+    "file": "/var/www/html/tests/Feature/McpGatewayTest.php",
+    "line": "736",
+    "class": "Tests\\Feature\\McpGatewayTest",
+    "classname": "Tests.Feature.McpGatewayTest",
+    "assertions": "7",
+    "time": "0.223881"
+  },
+  {
+    "name": "test_http_status_maps_to_provider_failure_retryability",
+    "file": "/var/www/html/tests/Feature/OpenAiResponsesProviderTest.php",
+    "line": "15",
+    "class": "Tests\\Feature\\OpenAiResponsesProviderTest",
+    "classname": "Tests.Feature.OpenAiResponsesProviderTest",
+    "assertions": "12",
+    "time": "0.007646"
+  },
+  {
+    "name": "test_retry_after_header_is_numeric_bounded_or_absent",
+    "file": "/var/www/html/tests/Feature/OpenAiResponsesProviderTest.php",
+    "line": "47",
+    "class": "Tests\\Feature\\OpenAiResponsesProviderTest",
+    "classname": "Tests.Feature.OpenAiResponsesProviderTest",
+    "assertions": "8",
+    "time": "0.006701"
+  },
+  {
+    "name": "test_temporary_provider_responses_preserve_bounded_retry_after",
+    "file": "/var/www/html/tests/Feature/OpenAiResponsesProviderTest.php",
+    "line": "74",
+    "class": "Tests\\Feature\\OpenAiResponsesProviderTest",
+    "classname": "Tests.Feature.OpenAiResponsesProviderTest",
+    "assertions": "10",
+    "time": "0.006653"
+  },
+  {
+    "name": "test_paste_preserves_raw_snapshot_deduplicates_and_never_fetches_metadata_url",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "44",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "8",
+    "time": "0.112362"
+  },
+  {
+    "name": "test_same_metadata_url_with_changed_text_creates_a_new_snapshot_version",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "64",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.137087"
+  },
+  {
+    "name": "test_changed_import_without_company_marker_clears_previous_company",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "80",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.113368"
+  },
+  {
+    "name": "test_historical_content_reappearance_creates_a_new_current_snapshot_version",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "95",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "8",
+    "time": "0.117188"
+  },
+  {
+    "name": "test_superseded_snapshot_cannot_claim_the_current_vacancy_status",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "123",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.115501"
+  },
+  {
+    "name": "test_semantic_extraction_keeps_evidence_downgrades_preferred_and_ignores_noise",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "142",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "9",
+    "time": "0.116717"
+  },
+  {
+    "name": "test_legitimate_instruction_related_technology_requirements_survive",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "173",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.119232"
+  },
+  {
+    "name": "test_instruction_directive_fails_closed_when_provider_suppresses_extraction",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "199",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.114244"
+  },
+  {
+    "name": "test_extraction_suppression_variants_fail_closed_but_technical_uses_survive",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "223",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "24",
+    "time": "0.006701"
+  },
+  {
+    "name": "test_requirement_labels_must_identify_the_concrete_qualification_subject",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "266",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "15",
+    "time": "0.009159"
+  },
+  {
+    "name": "test_modifier_career_fact_does_not_match_concrete_kubernetes_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "334",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.118605"
+  },
+  {
+    "name": "test_negated_concrete_subject_cannot_be_rescued_by_label_modifiers",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "351",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.120338"
+  },
+  {
+    "name": "test_connector_inside_technology_name_remains_part_of_negated_subject",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "368",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.124375"
+  },
+  {
+    "name": "test_compound_technical_subject_requires_one_bound_candidate_phrase",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "388",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.121778"
+  },
+  {
+    "name": "test_label_must_cover_the_complete_concrete_cue_subject",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "408",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.007832"
+  },
+  {
+    "name": "test_located_in_requirement_is_classified_as_location",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "435",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006603"
+  },
+  {
+    "name": "test_compound_identity_and_access_subject_is_not_split_into_partial_label",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "446",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.007216"
+  },
+  {
+    "name": "test_no_need_for_subject_is_not_a_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "465",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006576"
+  },
+  {
+    "name": "test_compound_experience_subject_requires_one_bound_candidate_phrase",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "475",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.120527"
+  },
+  {
+    "name": "test_experience_subject_preserves_connector_words_in_technology_names",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "497",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.119862"
+  },
+  {
+    "name": "test_duration_backed_experience_requires_a_bound_compound_subject",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "513",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.127255"
+  },
+  {
+    "name": "test_residency_and_industry_requirements_use_source_derived_dimensions",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "536",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "10",
+    "time": "0.009015"
+  },
+  {
+    "name": "test_located_in_classification_is_bound_to_the_labeled_place",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "567",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.007041"
+  },
+  {
+    "name": "test_domain_parser_mention_is_not_industry_experience",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "584",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.146690"
+  },
+  {
+    "name": "test_residency_uses_only_explicit_candidate_location",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "606",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.121873"
+  },
+  {
+    "name": "test_resident_of_candidate_evidence_matches_source_location",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "627",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.121254"
+  },
+  {
+    "name": "test_historical_residence_does_not_supply_current_candidate_location",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "642",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.123033"
+  },
+  {
+    "name": "test_ongoing_location_intervals_match_the_current_place_without_the_date",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "664",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.449227"
+  },
+  {
+    "name": "test_full_residency_label_cannot_match_incidental_api_work",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "686",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.122030"
+  },
+  {
+    "name": "test_quoted_attack_examples_and_api_empty_result_wording_are_data",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "701",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.007341"
+  },
+  {
+    "name": "test_candidate_directed_subject_excludes_trailing_role_framing",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "723",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "15",
+    "time": "0.008691"
+  },
+  {
+    "name": "test_known_instruction_attack_families_fail_closed",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "762",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "22",
+    "time": "0.006710"
+  },
+  {
+    "name": "test_validator_accepts_reordered_labels_and_rejects_unsupported_structured_values",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "799",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.007316"
+  },
+  {
+    "name": "test_provider_dimension_is_reclassified_from_source_evidence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "835",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006970"
+  },
+  {
+    "name": "test_duration_and_salary_semantics_are_bound_to_source_expressions",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "854",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.006944"
+  },
+  {
+    "name": "test_salary_systems_experience_remains_a_technical_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "898",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006640"
+  },
+  {
+    "name": "test_experience_normalized_value_requires_the_source_unit_and_supports_explicit_conversion",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "908",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "11",
+    "time": "0.131828"
+  },
+  {
+    "name": "test_salary_matching_uses_overlapping_explicit_ranges",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "961",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "31",
+    "time": "0.569645"
+  },
+  {
+    "name": "test_language_evidence_requires_a_proficiency_construction",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1026",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "12",
+    "time": "0.195663"
+  },
+  {
+    "name": "test_native_language_evidence_satisfies_fluent_but_not_the_reverse",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1070",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.234403"
+  },
+  {
+    "name": "test_unqualified_unlisted_language_requirement_requires_language_evidence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1091",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.239078"
+  },
+  {
+    "name": "test_ordered_cefr_levels_satisfy_only_equal_or_lower_requirements",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1118",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.344138"
+  },
+  {
+    "name": "test_language_subject_comes_from_label_when_source_mentions_another_language",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1135",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.119017"
+  },
+  {
+    "name": "test_language_level_source_grammar_rejects_incidental_english_and_accepts_proficiency",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1150",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "26",
+    "time": "0.179702"
+  },
+  {
+    "name": "test_adjacent_evidence_is_counted_as_mandatory_or_preferred_gap",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1190",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "15",
+    "time": "0.142766"
+  },
+  {
+    "name": "test_uncued_importance_negated_candidate_and_cyrillic_spanish_fail_safe",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1230",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "12",
+    "time": "0.148950"
+  },
+  {
+    "name": "test_cyrillic_language_proficiency_matches_the_canonical_language",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1270",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.121479"
+  },
+  {
+    "name": "test_experience_subject_ignores_vacancy_sentence_framing",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1286",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.123112"
+  },
+  {
+    "name": "test_work_format_requires_arrangement_context_on_both_sides",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1302",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "13",
+    "time": "0.141496"
+  },
+  {
+    "name": "test_remote_product_work_does_not_become_candidate_arrangement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1350",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.134076"
+  },
+  {
+    "name": "test_inability_statement_cannot_satisfy_a_structured_work_format_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1367",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.122101"
+  },
+  {
+    "name": "test_remote_technology_is_not_reclassified_as_work_format",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1384",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.122252"
+  },
+  {
+    "name": "test_negated_requirement_wording_is_not_persisted_as_a_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1404",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.007229"
+  },
+  {
+    "name": "test_contracted_source_negation_does_not_create_a_remote_work_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1413",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "7",
+    "time": "0.006880"
+  },
+  {
+    "name": "test_required_to_source_negation_does_not_create_a_remote_work_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1427",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.006643"
+  },
+  {
+    "name": "test_must_work_wording_sets_mandatory_source_importance",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1443",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.006307"
+  },
+  {
+    "name": "test_must_be_predicate_does_not_replace_concrete_subject_label",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1455",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.006757"
+  },
+  {
+    "name": "test_clause_can_support_location_and_work_format_requirements",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1475",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.006368"
+  },
+  {
+    "name": "test_location_and_work_format_labels_bind_to_their_own_subjects",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1487",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.006123"
+  },
+  {
+    "name": "test_work_arrangement_location_allows_a_bounded_determiner",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1499",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.006300"
+  },
+  {
+    "name": "test_negation_for_another_subject_does_not_remove_a_supported_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1511",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.006513"
+  },
+  {
+    "name": "test_unquantified_experience_can_use_exact_confirmed_evidence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1523",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.123573"
+  },
+  {
+    "name": "test_negated_structured_experience_evidence_cannot_satisfy_a_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1539",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.121416"
+  },
+  {
+    "name": "test_lack_statement_cannot_satisfy_a_direct_technical_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1556",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.120400"
+  },
+  {
+    "name": "test_location_sentence_punctuation_is_not_part_of_structured_value",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1573",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.119522"
+  },
+  {
+    "name": "test_natural_location_evidence_matches_without_accepting_incidental_mentions",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1589",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "36",
+    "time": "1.411486"
+  },
+  {
+    "name": "test_historical_work_format_is_not_current_availability_but_current_statements_are",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1620",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.589099"
+  },
+  {
+    "name": "test_candidate_may_explicitly_accept_multiple_work_formats",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1643",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.123239"
+  },
+  {
+    "name": "test_technical_mentions_of_a_city_do_not_prove_candidate_location",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1659",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.128138"
+  },
+  {
+    "name": "test_experience_in_source_is_not_downgraded_to_a_technical_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1675",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.118408"
+  },
+  {
+    "name": "test_postfix_subject_experience_is_not_satisfied_by_proficiency_alone",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1696",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.118647"
+  },
+  {
+    "name": "test_product_subjects_with_industry_words_remain_technical_requirements",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1717",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.230966"
+  },
+  {
+    "name": "test_no_longer_required_subjects_are_not_persisted_as_mandatory",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1742",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.007248"
+  },
+  {
+    "name": "test_remote_work_platform_is_a_technical_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1755",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006626"
+  },
+  {
+    "name": "test_stale_running_analysis_is_reclaimed_for_explicit_retry",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1765",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "9",
+    "time": "0.115677"
+  },
+  {
+    "name": "test_vacancy_retry_deadline_preserves_delay_and_orphan_recovery_reserves_once",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1787",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "16",
+    "time": "0.113667"
+  },
+  {
+    "name": "test_vacancy_worker_cannot_claim_pending_analysis_before_retry_deadline",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1845",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.113153"
+  },
+  {
+    "name": "test_duplicate_vacancy_job_before_retry_deadline_is_a_noop",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1869",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "9",
+    "time": "0.113279"
+  },
+  {
+    "name": "test_concurrent_duplicate_vacancy_job_while_current_analysis_runs_is_a_noop",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1908",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "9",
+    "time": "0.113375"
+  },
+  {
+    "name": "test_vacancy_job_does_not_swallow_safe_exception_after_claim_failure",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1944",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.110687"
+  },
+  {
+    "name": "test_stale_vacancy_attempt_cannot_persist_after_recovery_reclaims_it",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "1971",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "9",
+    "time": "0.114519"
+  },
+  {
+    "name": "test_legacy_pending_vacancy_keeps_its_original_unique_lock_window",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2009",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.112077"
+  },
+  {
+    "name": "test_duplicate_import_reclaims_stale_running_analysis",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2049",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.114294"
+  },
+  {
+    "name": "test_recent_running_analysis_is_not_reclaimed",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2076",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.113684"
+  },
+  {
+    "name": "test_location_evidence_preserves_comma_separated_city_and_country",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2090",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.120271"
+  },
+  {
+    "name": "test_requirement_label_must_name_the_subject_of_the_importance_cue",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2107",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.007199"
+  },
+  {
+    "name": "test_generic_role_label_cannot_stand_in_for_a_qualification_subject",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2117",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006430"
+  },
+  {
+    "name": "test_real_qualification_subject_remains_accepted_when_role_framing_is_present",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2128",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006473"
+  },
+  {
+    "name": "test_benign_api_empty_requirements_description_is_not_prompt_injection",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2140",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "1",
+    "time": "0.006268"
+  },
+  {
+    "name": "test_active_requires_cue_binds_the_technical_label_and_importance",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2148",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.006217"
+  },
+  {
+    "name": "test_source_commercial_experience_cannot_be_downgraded_to_a_technical_skill",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2163",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.120836"
+  },
+  {
+    "name": "test_location_and_language_matching_require_dimension_specific_evidence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2179",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.135536"
+  },
+  {
+    "name": "test_source_required_wording_overrides_provider_preferred_importance",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2204",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.118203"
+  },
+  {
+    "name": "test_source_importance_cues_are_bound_to_the_labeled_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2226",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.118572"
+  },
+  {
+    "name": "test_employer_phrasing_keeps_a_concrete_candidate_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2258",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.007437"
+  },
+  {
+    "name": "test_structured_matching_rejects_incidental_evidence_and_unknown_mandatory_blocks_apply",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2275",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "7",
+    "time": "0.134494"
+  },
+  {
+    "name": "test_analysis_signature_is_derived_from_the_same_career_context_it_matches",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2312",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.120818"
+  },
+  {
+    "name": "test_short_skill_tokens_do_not_match_larger_words",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2336",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.130213"
+  },
+  {
+    "name": "test_experience_subject_parser_handles_bounded_duration_grammar_and_keeps_ambiguous_unknown",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2358",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "20",
+    "time": "0.285597"
+  },
+  {
+    "name": "test_current_analysis_selection_filters_signature_and_uses_a_deterministic_tie_breaker",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2427",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "6",
+    "time": "0.117617"
+  },
+  {
+    "name": "test_snapshot_model_rejects_updates_and_new_content_creates_a_new_record",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2449",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.118060"
+  },
+  {
+    "name": "test_match_represents_all_dimensions_and_uses_only_confirmed_valid_evidence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2472",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "7",
+    "time": "0.144014"
+  },
+  {
+    "name": "test_adjacent_technology_is_explained_without_upgrading_direct_experience",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2512",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.136854"
+  },
+  {
+    "name": "test_cross_user_access_is_hidden_and_analysis_becomes_stale_after_career_change",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2530",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.233651"
+  },
+  {
+    "name": "test_api_requires_authentication_and_bounds_text_and_url_input",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2546",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.114386"
+  },
+  {
+    "name": "test_api_persists_raw_vacancy_before_provider_failure_and_retry_keeps_the_same_snapshot",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2556",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "21",
+    "time": "0.121998"
+  },
+  {
+    "name": "test_queued_retryable_vacancy_analysis_does_not_record_an_incident_without_log_context",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2607",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.115786"
+  },
+  {
+    "name": "test_queued_terminal_vacancy_analysis_stays_owned_until_job_finalizes",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2639",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "7",
+    "time": "0.113859"
+  },
+  {
+    "name": "test_all_five_recommendation_classes_follow_explainable_policy",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2688",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.143139"
+  },
+  {
+    "name": "test_postgres_rejects_a_cross_owner_snapshot_requirement_chain",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2718",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "0",
+    "time": "0.011286"
+  },
+  {
+    "name": "test_vacancy_api_and_logs_redact_private_text_on_persistence_failure",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2742",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "4",
+    "time": "0.114609"
+  },
+  {
+    "name": "test_reanalysis_of_current_snapshot_is_idempotent_and_old_job_cannot_restore_pending",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2764",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "5",
+    "time": "0.123529"
+  },
+  {
+    "name": "test_requirement_semantics_are_bound_to_one_labeled_clause",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2785",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "20",
+    "time": "0.008434"
+  },
+  {
+    "name": "test_sibling_location_cannot_make_a_react_requirement_match",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2820",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.115815"
+  },
+  {
+    "name": "test_candidate_evidence_negation_is_local_to_the_relevant_occurrence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2840",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "30",
+    "time": "3.401740"
+  },
+  {
+    "name": "test_marketing_and_system_requirements_do_not_become_candidate_requirements",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2877",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "24",
+    "time": "0.009180"
+  },
+  {
+    "name": "test_marketing_requires_cannot_supply_a_matched_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2911",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "3",
+    "time": "0.129640"
+  },
+  {
+    "name": "test_negated_adjacent_technology_and_contracted_remote_fact_are_not_evidence",
+    "file": "/var/www/html/tests/Feature/VacancyCoreTest.php",
+    "line": "2928",
+    "class": "Tests\\Feature\\VacancyCoreTest",
+    "classname": "Tests.Feature.VacancyCoreTest",
+    "assertions": "2",
+    "time": "0.284264"
+  },
+  {
+    "name": "test_stream_persists_history_run_and_saves_source_backed_structured_draft",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "48",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "21",
+    "time": "0.155358"
+  },
+  {
+    "name": "test_history_keeps_the_latest_user_and_assistant_turn_when_the_response_exceeds_the_budget",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "82",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "6",
+    "time": "0.129105"
+  },
+  {
+    "name": "test_history_preserves_chronological_order_across_completed_turns",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "100",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.136023"
+  },
+  {
+    "name": "test_history_omits_turns_with_a_stale_career_signature",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "120",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "3",
+    "time": "0.129368"
+  },
+  {
+    "name": "test_history_omits_turns_from_a_stale_vacancy_snapshot",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "138",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "3",
+    "time": "0.120358"
+  },
+  {
+    "name": "test_history_limits_after_discarding_incomplete_runs",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "156",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "50",
+    "time": "0.207670"
+  },
+  {
+    "name": "test_handcrafted_api_request_rejects_a_valid_slug_missing_from_the_owned_catalog",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "179",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "6",
+    "time": "0.125951"
+  },
+  {
+    "name": "test_chat_api_requires_a_context_preview_fingerprint_before_catalog_or_persistence",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "196",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "6",
+    "time": "0.139140"
+  },
+  {
+    "name": "test_account_catalogs_are_connection_scoped_and_cannot_cross_authorize_a_model",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "211",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "8",
+    "time": "0.278733"
+  },
+  {
+    "name": "test_model_policy_rejection_is_distinct_and_does_not_call_any_provider",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "240",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "5",
+    "time": "0.168455"
+  },
+  {
+    "name": "test_stale_persisted_model_is_rejected_at_inference_without_provider_or_api_key_fallback",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "256",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "4",
+    "time": "0.131785"
+  },
+  {
+    "name": "test_active_chat_cancellation_persists_interrupted_state_and_skips_inference",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "275",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "8",
+    "time": "0.133932"
+  },
+  {
+    "name": "test_cancelling_during_stream_keeps_partial_output_and_does_not_complete_the_run",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "294",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "10",
+    "time": "0.141151"
+  },
+  {
+    "name": "test_context_is_confirmed_only_owned_relevant_bounded_and_marks_untrusted_data",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "317",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "6",
+    "time": "0.254253"
+  },
+  {
+    "name": "test_context_reads_vacancy_and_snapshot_under_the_vacancy_lock",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "339",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "3",
+    "time": "0.140022"
+  },
+  {
+    "name": "test_context_does_not_select_a_confirmed_fact_for_only_common_words",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "369",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.137369"
+  },
+  {
+    "name": "test_context_does_not_select_a_confirmed_fact_for_generic_vacancy_language",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "383",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.134219"
+  },
+  {
+    "name": "test_context_requires_substantive_overlap_for_generic_single_terms",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "397",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "4",
+    "time": "0.132871"
+  },
+  {
+    "name": "test_begin_holds_the_career_owner_lock_from_context_capture_through_turn_persistence",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "415",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "9",
+    "time": "0.130538"
+  },
+  {
+    "name": "test_context_matches_technical_skills_outside_the_short_allowlist_when_extraction_is_unavailable",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "461",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "1",
+    "time": "0.131666"
+  },
+  {
+    "name": "test_context_scores_all_requirements_before_limiting_serialized_requirements",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "479",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "3",
+    "time": "0.143839"
+  },
+  {
+    "name": "test_context_keeps_a_fact_matching_a_normalized_language_requirement",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "509",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "5",
+    "time": "0.152174"
+  },
+  {
+    "name": "test_context_uses_structured_semantics_for_location_domain_and_experience",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "555",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.136537"
+  },
+  {
+    "name": "test_context_matches_confirmed_facts_for_technical_requirements_outside_the_allowlist",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "581",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "1",
+    "time": "0.132295"
+  },
+  {
+    "name": "test_context_keeps_single_letter_c_technology_overlap",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "603",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "1",
+    "time": "0.132406"
+  },
+  {
+    "name": "test_context_filters_generic_terms_after_punctuation_normalization",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "615",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.134850"
+  },
+  {
+    "name": "test_context_deduplicates_terms_after_punctuation_normalization",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "628",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.132395"
+  },
+  {
+    "name": "test_context_does_not_select_a_confirmed_fact_for_generic_russian_vacancy_language",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "641",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.129851"
+  },
+  {
+    "name": "test_context_does_not_select_a_confirmed_fact_for_only_numeric_overlap",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "655",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.125992"
+  },
+  {
+    "name": "test_context_signature_uses_the_same_career_snapshot_as_selected_facts",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "669",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "6",
+    "time": "0.119762"
+  },
+  {
+    "name": "test_preview_is_the_exact_bounded_provider_input_and_stale_preview_is_rejected",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "695",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "11",
+    "time": "0.131191"
+  },
+  {
+    "name": "test_interrupted_stream_is_persisted_and_cannot_be_saved",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "722",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "3",
+    "time": "0.128586"
+  },
+  {
+    "name": "test_draft_save_is_idempotent_and_schema_snapshot_and_confirmed_fact_checks_fail_closed",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "733",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "10",
+    "time": "0.258961"
+  },
+  {
+    "name": "test_draft_retry_returns_saved_result_after_career_context_changes",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "760",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "2",
+    "time": "0.188289"
+  },
+  {
+    "name": "test_draft_save_holds_the_career_owner_lock_through_validation_and_persistence",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "775",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "12",
+    "time": "0.143532"
+  },
+  {
+    "name": "test_cross_user_cannot_read_threads_add_messages_save_or_approve_analysis",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "820",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "6",
+    "time": "0.251113"
+  },
+  {
+    "name": "test_chat_run_does_not_mark_requirement_extraction_as_complete_and_duplicate_turn_is_rejected",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "837",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "4",
+    "time": "0.147214"
+  },
+  {
+    "name": "test_one_confirmed_fact_can_support_multiple_requirements_but_not_repeat_within_a_match",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "849",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "3",
+    "time": "0.133598"
+  },
+  {
+    "name": "test_draft_classification_uses_literal_source_section_headings",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "865",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "1",
+    "time": "0.138311"
+  },
+  {
+    "name": "test_repeated_source_excerpt_under_conflicting_headings_remains_uncertain",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "876",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "1",
+    "time": "0.124141"
+  },
+  {
+    "name": "test_approval_rejects_a_draft_when_the_vacancy_source_exceeds_the_chat_context_limit",
+    "file": "/var/www/html/tests/Feature/VacancyPlanChatTest.php",
+    "line": "888",
+    "class": "Tests\\Feature\\VacancyPlanChatTest",
+    "classname": "Tests.Feature.VacancyPlanChatTest",
+    "assertions": "4",
+    "time": "0.124809"
+  },
+  {
+    "name": "test_runtime_role_rls_and_owner_context_fail_closed",
+    "file": "/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php",
+    "line": "45",
+    "class": "Tests\\Feature\\VacancyPostgresSecurityTest",
+    "classname": "Tests.Feature.VacancyPostgresSecurityTest",
+    "assertions": "0",
+    "time": "0.000000"
+  },
+  {
+    "name": "test_http_and_queue_owner_context_is_cleared",
+    "file": "/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php",
+    "line": "112",
+    "class": "Tests\\Feature\\VacancyPostgresSecurityTest",
+    "classname": "Tests.Feature.VacancyPostgresSecurityTest",
+    "assertions": "0",
+    "time": "0.000000"
+  },
+  {
+    "name": "test_raw_snapshot_history_updates_are_rejected",
+    "file": "/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php",
+    "line": "128",
+    "class": "Tests\\Feature\\VacancyPostgresSecurityTest",
+    "classname": "Tests.Feature.VacancyPostgresSecurityTest",
+    "assertions": "0",
+    "time": "0.000000"
+  }
+]

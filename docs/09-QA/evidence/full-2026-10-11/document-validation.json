@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "secret_scan": "PASS: no configured credential values, provider-key/private-key/token patterns, or test password values; synthetic canaries intentional",
+  "private_data_scan": "PASS: local user-home/worktree/temp paths normalized; account identifiers use reserved synthetic domains",
+  "scope": "Heuristic and known-value scan, not a universal secret-detection guarantee; only synthetic fixture API/DB bodies preserved",
+  "documents_links": "PASS",
+  "counts": "PASS: 539 scenarios and 59 functions",
+  "product_tracked_diff_empty": true,
+  "tracked_changes": [
+    ".agents/state/STATUS.md"
+  ],
+  "pre_existing_untracked_test_files_retained": true
+}

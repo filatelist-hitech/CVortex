@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/var/www/html/phpunit.xml" tests="4" assertions="12" errors="0" failures="0" skipped="0" time="0.689037">
+    <testsuite name="Feature" tests="4" assertions="12" errors="0" failures="0" skipped="0" time="0.689037">
+      <testsuite name="Tests\Feature\FunctionalAuditTruthGuardTest" file="/var/www/html/tests/Feature/FunctionalAuditTruthGuardTest.php" tests="4" assertions="12" errors="0" failures="0" skipped="0" time="0.689037">
+        <testsuite name="Tests\Feature\FunctionalAuditTruthGuardTest::test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence" tests="4" assertions="12" errors="0" failures="0" skipped="0" time="0.689037">
+          <testcase name="test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set &quot;confirmed&quot;" file="/var/www/html/tests/Feature/FunctionalAuditTruthGuardTest.php" line="31" class="Tests\Feature\FunctionalAuditTruthGuardTest" classname="Tests.Feature.FunctionalAuditTruthGuardTest" assertions="3" time="0.306565"/>
+          <testcase name="test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set &quot;pending&quot;" file="/var/www/html/tests/Feature/FunctionalAuditTruthGuardTest.php" line="31" class="Tests\Feature\FunctionalAuditTruthGuardTest" classname="Tests.Feature.FunctionalAuditTruthGuardTest" assertions="3" time="0.119001"/>
+          <testcase name="test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set &quot;rejected&quot;" file="/var/www/html/tests/Feature/FunctionalAuditTruthGuardTest.php" line="31" class="Tests\Feature\FunctionalAuditTruthGuardTest" classname="Tests.Feature.FunctionalAuditTruthGuardTest" assertions="3" time="0.128801"/>
+          <testcase name="test_existing_claim_cannot_retain_eligibility_without_confirmed_backing_evidence with data set &quot;deprecated&quot;" file="/var/www/html/tests/Feature/FunctionalAuditTruthGuardTest.php" line="31" class="Tests\Feature\FunctionalAuditTruthGuardTest" classname="Tests.Feature.FunctionalAuditTruthGuardTest" assertions="3" time="0.134672"/>
+        </testsuite>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

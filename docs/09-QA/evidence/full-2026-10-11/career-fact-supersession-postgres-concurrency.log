@@ -1,0 +1,5 @@
+time="2026-10-11T20:11:57+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-fbcacd1ea48e Creating 
+ Container cvortexqa1011-migration-run-fbcacd1ea48e Created 
+verified: one race winner, index rejection, Claim/Truth Guard, trusted query, A-B-C history
+career-fact-supersession-postgres-concurrency: PASS (independent concurrent workers, one controlled conflict, unique index, trusted query, claims, history chain)

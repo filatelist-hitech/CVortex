@@ -1,0 +1,49 @@
+time="2026-10-11T20:12:01+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-96c9eb834706 Creating 
+ Container cvortexqa1011-migration-run-96c9eb834706 Created 
+time="2026-10-11T20:12:01+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-6246281c6598 Creating 
+ Container cvortexqa1011-backend-run-6246281c6598 Created 
+time="2026-10-11T20:12:03+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-e1118508faf1 Creating 
+ Container cvortexqa1011-backend-run-e1118508faf1 Created 
+verified: one Vacancy aggregate, two changed-content snapshots, versions 1 and 2
+time="2026-10-11T20:12:04+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-37916737150c Creating 
+ Container cvortexqa1011-backend-run-37916737150c Created 
+time="2026-10-11T20:12:05+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-691b5f1a2c81 Creating 
+ Container cvortexqa1011-backend-run-691b5f1a2c81 Created 
+time="2026-10-11T20:12:07+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-e2b21c1a622d Creating 
+ Container cvortexqa1011-backend-run-e2b21c1a622d Created 
+stale-job-executed
+time="2026-10-11T20:12:08+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-2962658a2f34 Creating 
+ Container cvortexqa1011-backend-run-2962658a2f34 Created 
+verified-current=01m4nz6jdpy6rp595n5keyn4fb status=COMPLETED
+time="2026-10-11T20:12:10+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-c6b7671a207d Creating 
+ Container cvortexqa1011-backend-run-c6b7671a207d Created 
+analysis-completed
+time="2026-10-11T20:12:11+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-9e141e7d3a07 Creating 
+ Container cvortexqa1011-backend-run-9e141e7d3a07 Created 
+verified-current=01m4nz6nra17gj5jfbv8z7cw8q status=COMPLETED
+time="2026-10-11T20:12:11+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-bb4a9fff7fad Creating 
+ Container cvortexqa1011-backend-run-bb4a9fff7fad Created 
+time="2026-10-11T20:12:13+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-ddf93b9b505f Creating 
+ Container cvortexqa1011-backend-run-ddf93b9b505f Created 
+time="2026-10-11T20:12:13+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-79432efc4fca Creating 
+ Container cvortexqa1011-backend-run-79432efc4fca Created 
+time="2026-10-11T20:12:14+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-94e7436e2413 Creating 
+ Container cvortexqa1011-backend-run-94e7436e2413 Created 
+verified-current=01m4nz6nra17gj5jfbv8z7cw8q status=COMPLETED
+time="2026-10-11T20:12:15+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-f97bb875a83d Creating 
+ Container cvortexqa1011-backend-run-f97bb875a83d Created 
+vacancy-postgres-concurrency: PASS (import, reanalysis and single-dispatch Vacancy/Career orphan recovery races converged)

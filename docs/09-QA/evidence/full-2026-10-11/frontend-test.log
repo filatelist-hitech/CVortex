@@ -1,0 +1,30 @@
+
+> frontend@0.1.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.0 [39m[90m/app[39m
+
+ [32m✓[39m src/__tests__/instrumentation-client.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/application-motion.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 117[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/report-browser-error.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/chatgpt-connection.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 484[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/vacancy-chat.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 741[2mms[22m[39m
+   [32m✓[39m vacancy chat [2m(7)[22m
+     [33m[2m✓[22m[39m requires a selected connection and keeps persisted model output inert[33m 329[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/workspace-shell.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 710[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/application-workspace.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 1649[2mms[22m[39m
+   [32m✓[39m canonical Application Workspace [2m(11)[22m
+     [33m[2m✓[22m[39m separates acceptance from approval and never sends an API write in demo[33m 461[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/page.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 1780[2mms[22m[39m
+ [32m✓[39m src/app/__tests__/diagnostics.test.tsx [2m([22m[2m53 tests[22m[2m)[22m[33m 3185[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m108 passed[39m[22m[90m (108)[39m
+[2m   Start at [22m 17:11:04
+[2m   Duration [22m 7.31s[2m (environment 40%, transform 28%, tests 22%, setup 5%, import 5%)[22m
+
+[2m  Transform [22m [33mtransforming modules took 11.12s[39m[2m · 28% of tracked time, re-done on every run[22m
+[2m            [22m [2mpersist transforms across runs with [22m[33mfsModuleCache: true[39m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#caching-between-reruns[22m
+

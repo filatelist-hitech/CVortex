@@ -1,0 +1,10 @@
+PASS WEB-01-public-routes
+PASS AUTH-001-unauthorized
+PASS AUTH-CSRF-origin-and-token-fallback
+PASS AUTH-LOGIN-browser
+PASS CAREER-MANUAL-browser
+PASS CAREER-EXTRACT-PENDING-browser
+PASS CAREER-REJECT-API
+PASS CAREER-REFRESH-persistence
+FAIL VACANCY-IMPORT-browser poll timeout
+poll timeout

@@ -1,0 +1,25 @@
+{
+  "actions": [
+    "UПрофильПользователь",
+    "СегодняНедоступно",
+    "РаботодателиНедоступно",
+    "НастройкиНедоступно",
+    "Извлечь факты для проверки",
+    "Добавить подтверждённый факт",
+    "Сохранить и проанализировать",
+    "QA Verified Backend EngineerCOMPLETED · STRONGLY_APPLY",
+    "QA Verified Backend EngineerCOMPLETED · STRONGLY_APPLY · stale",
+    "QA Verified Backend EngineerCOMPLETED · STRONGLY_APPLY · stale",
+    "QA Backend EngineerFAILED",
+    "ChatGPT plan connection",
+    "Preview context",
+    "Send",
+    "Preview analysis context",
+    "Analyze vacancy",
+    "Reload chat",
+    "Save edit and revalidate",
+    "Accept draft",
+    "Reject"
+  ],
+  "hasAmbiguityBadge": false
+}

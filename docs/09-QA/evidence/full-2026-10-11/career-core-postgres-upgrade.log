@@ -1,0 +1,17 @@
+time="2026-10-11T20:11:48+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-9640f8c510dd Creating 
+ Container cvortexqa1011-migration-run-9640f8c510dd Created 
+time="2026-10-11T20:11:49+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-a364595f0e3d Creating 
+ Container cvortexqa1011-migration-run-a364595f0e3d Created 
+time="2026-10-11T20:11:50+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-0016f225433c Creating 
+ Container cvortexqa1011-migration-run-0016f225433c Created 
+career-upgrade-runtime: PASS
+time="2026-10-11T20:11:51+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-6e8fd1791750 Creating 
+ Container cvortexqa1011-migration-run-6e8fd1791750 Created 
+time="2026-10-11T20:11:52+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-e3898b737292 Creating 
+ Container cvortexqa1011-migration-run-e3898b737292 Created 
+career-core-postgres-upgrade: PASS (legacy data, extraction, manual entry, non-destructive rollback/re-up)

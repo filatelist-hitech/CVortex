@@ -1,0 +1,55 @@
+vacancy-postgres-duplicate-migration: prepare pre-remediation schema
+time="2026-10-11T20:12:19+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-ed19c9b2a79a Creating 
+ Container cvortexqa1011-migration-run-ed19c9b2a79a Created 
+
+   INFO  Preparing database.  
+
+  Creating migration table ....................................... 4.47ms DONE
+
+   INFO  Running migrations.  
+
+  2026_09_12_000001_create_access_core_tables ................... 14.49ms DONE
+  2026_09_13_000002_add_auth_generation_to_users ................. 0.94ms DONE
+  2026_09_13_000003_create_career_core_tables ................... 17.98ms DONE
+  2026_09_13_000004_reconcile_and_harden_career_core ............ 40.02ms DONE
+  2026_09_13_000005_enforce_career_source_idempotency ............ 1.13ms DONE
+  2026_09_19_000006_record_claim_resolution_choice ............... 2.10ms DONE
+  2026_09_19_000007_enforce_single_current_career_fact_replacement  0.60ms DONE
+  2026_09_19_000008_create_vacancy_core_tables .................. 14.53ms DONE
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 2.64ms DONE
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 0.42ms DONE
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 1.31ms DONE
+  2026_09_24_000012_recover_completed_extraction_without_analysis  0.36ms DONE
+  2026_09_24_000013_create_application_preparations ............. 15.52ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 1.49ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 1.09ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 0.86ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 1.32ms DONE
+  2026_09_24_225903_create_oauth_device_codes_table .............. 1.50ms DONE
+  2026_09_27_000013_create_diagnostic_incidents .................. 3.96ms DONE
+  2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents  0.92ms DONE
+  2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences  0.42ms DONE
+  2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences .... 0.38ms DONE
+  2026_10_01_000001_add_persisted_queue_recovery_deadlines ....... 0.84ms DONE
+  2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates ... 0.53ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 2.02ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 11.28ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 1.10ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 0.44ms DONE
+
+time="2026-10-11T20:12:19+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-migration-run-e22e3c6f6eb6 Creating 
+ Container cvortexqa1011-migration-run-e22e3c6f6eb6 Created 
+
+   INFO  Rolling back migrations.  
+
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 2.57ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 1.05ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ...... 5.35ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 1.13ms DONE
+
+vacancy-postgres-duplicate-migration: seed legacy duplicate aggregates
+INSERT 0 1
+ERROR:  duplicate key value violates unique constraint "vacancies_owner_source_url_unique"
+DETAIL:  Key (owner_id, source_url)=(00000000000000000000000001, https://jobs.example.test/pending) already exists.

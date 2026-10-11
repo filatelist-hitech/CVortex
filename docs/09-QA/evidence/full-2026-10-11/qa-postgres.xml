@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/var/www/html/phpunit.xml" tests="10" assertions="122" errors="0" failures="1" skipped="0" time="2.377760">
+    <testsuite name="Feature" tests="10" assertions="122" errors="0" failures="1" skipped="0" time="2.377760">
+      <testsuite name="Tests\Feature\ApplicationPostgresSecurityTest" file="/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php" tests="3" assertions="55" errors="0" failures="0" skipped="0" time="1.129599">
+        <testcase name="test_runtime_role_forces_rls_and_composite_owner_links" file="/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php" line="39" class="Tests\Feature\ApplicationPostgresSecurityTest" classname="Tests.Feature.ApplicationPostgresSecurityTest" assertions="39" time="0.543381"/>
+        <testcase name="test_stale_approval_cannot_win_against_a_concurrent_revision_on_postgres" file="/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php" line="127" class="Tests\Feature\ApplicationPostgresSecurityTest" classname="Tests.Feature.ApplicationPostgresSecurityTest" assertions="6" time="0.268796"/>
+        <testcase name="test_mcp_reads_obey_postgres_owner_scope_without_changing_product_rows" file="/var/www/html/tests/Feature/ApplicationPostgresSecurityTest.php" line="181" class="Tests\Feature\ApplicationPostgresSecurityTest" classname="Tests.Feature.ApplicationPostgresSecurityTest" assertions="10" time="0.317422"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\DiagnosticsPostgresTest" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" tests="4" assertions="23" errors="0" failures="1" skipped="0" time="0.687837">
+        <testcase name="test_runtime_role_can_group_and_admin_can_query_without_user_access" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="20" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="7" time="0.282631"/>
+        <testcase name="test_runtime_role_rolls_back_status_when_audit_fails" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="41" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="5" time="0.134219"/>
+        <testcase name="test_runtime_provider_filter_retry_delay_and_noop_status_audit" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="68" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="10" time="0.138443"/>
+        <testcase name="test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="94" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="1" time="0.132544">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Feature\DiagnosticsPostgresTest::test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties
+Failed asserting that actual size 1 matches expected size 2.
+
+/var/www/html/tests/Feature/DiagnosticsPostgresTest.php:107</failure>
+        </testcase>
+      </testsuite>
+      <testsuite name="Tests\Feature\VacancyPostgresSecurityTest" file="/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php" tests="3" assertions="44" errors="0" failures="0" skipped="0" time="0.560323">
+        <testcase name="test_runtime_role_rls_and_owner_context_fail_closed" file="/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php" line="45" class="Tests\Feature\VacancyPostgresSecurityTest" classname="Tests.Feature.VacancyPostgresSecurityTest" assertions="36" time="0.276817"/>
+        <testcase name="test_http_and_queue_owner_context_is_cleared" file="/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php" line="112" class="Tests\Feature\VacancyPostgresSecurityTest" classname="Tests.Feature.VacancyPostgresSecurityTest" assertions="3" time="0.149127"/>
+        <testcase name="test_raw_snapshot_history_updates_are_rejected" file="/var/www/html/tests/Feature/VacancyPostgresSecurityTest.php" line="128" class="Tests\Feature\VacancyPostgresSecurityTest" classname="Tests.Feature.VacancyPostgresSecurityTest" assertions="5" time="0.134380"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

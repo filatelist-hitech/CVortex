@@ -1,0 +1,9 @@
+{
+  "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "result": "PASS",
+  "sql": "BEGIN;\nDO $$ BEGIN\n  INSERT INTO vacancy_requirements (id,owner_id,vacancy_snapshot_id,dimension,importance,label,normalized_value,source_excerpt,confidence,extracted_by,candidate_hash,created_at,updated_at)\n  VALUES ('000000000000000000000000qa','01m4nzbj343j3whpadhpqqbbff','01m4nzt8p8589ca7a9hyg5rdwd','TECHNICAL','MANDATORY','Laravel','laravel','Laravel is required.',1,'synthetic','qa-cross-owner-rollback',now(),now());\n  RAISE EXCEPTION 'cross-owner insert unexpectedly succeeded';\nEXCEPTION WHEN foreign_key_violation THEN RAISE NOTICE 'PASS cross-owner snapshot requirement FK rejects write'; END $$;\nROLLBACK;\nBEGIN TRANSACTION READ ONLY;\nSET LOCAL ROLE cvortex_qa_app;\nSELECT set_config('cvortex.owner_id','01m4nzbj343j3whpadhpqqbbff',true);\nSELECT 'user-b-visible-vacancy=' || count(*) FROM vacancies WHERE id='01m4nzt8p5ffcp7v0w85w0yt4e';\nSELECT 'user-b-visible-preparation=' || count(*) FROM application_preparations WHERE id='01m4p001r8c3a7w89ckdyygar2';\nSELECT set_config('cvortex.owner_id','',true);\nSELECT 'unset-owner-visible-vacancy=' || count(*) FROM vacancies;\nROLLBACK;\n",
+  "stdout": "BEGIN\nDO\nROLLBACK\nBEGIN\nSET\n01m4nzbj343j3whpadhpqqbbff\nuser-b-visible-vacancy=0\nuser-b-visible-preparation=0\n\nunset-owner-visible-vacancy=0\nROLLBACK\n",
+  "stderr": "NOTICE:  PASS cross-owner snapshot requirement FK rejects write\n",
+  "committed_mutations": false,
+  "scope": "DB FK and runtime RLS supplement; exact RefreshDatabase PHPUnit test not rerun"
+}

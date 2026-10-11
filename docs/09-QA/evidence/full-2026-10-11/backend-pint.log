@@ -1,0 +1,11 @@
+time="2026-10-11T20:11:25+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+ Container cvortexqa1011-backend-run-3dd98b55af26 Creating 
+ Container cvortexqa1011-backend-run-3dd98b55af26 Created 
+
+  ............................................................................
+  ............................................................................
+  .............................................................
+
+  ──────────────────────────────────────────────────────────────────── Laravel  
+    PASS   ......................................................... 213 files  
+

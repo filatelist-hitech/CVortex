@@ -1,5 +1,9 @@
 # CVortex Project State
 
+## Interrupted full functional QA audit closeout — 2026-10-11
+
+Explicit user override; one native reviewer, sequential, no live AI/product changes/Git publication. Recovered audit evidence at baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`; completed reports in `docs/09-QA/`. Bounded inventory: 59 functions/controls, 51 checked; scenario/control ledger 539 (526 PASS, 4 FAIL, 7 BLOCKED, 2 NOT_RUN; 7 mocked provider E2E within PASS). Verdict CHANGES REQUIRED: one Career ambiguity-resolution UI defect, B01 OFL byte-integrity drift and two test infrastructure defects. Existing canonical backend/frontend/PG evidence retained without successful reruns; fresh persisted-results reopen, semantic accessibility smoke, read-only DB chain and rolled-back FK/RLS negative probe PASS; failed OFL check reproduced. Primary DB snapshots and all 802 pre-existing untracked-file hashes match. Preview 0.1/MVP 0.2 not accepted; mandatory human/external gates remain open. See `docs/09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md` and recovery checkpoint for evidence and resource disposition. NEXT/BLOCKERS authority unchanged: `b01-manual-accessibility-release-gate`. No remediation authorized; STOP.
+
 ## PR #42 finalization — 2026-10-07
 
 Final self-review completed on feature head `63cfdfbd1317d4e6784c8e26cd8e45f44a74099b`. The bounded integration includes local ChatGPT plan OAuth/chat, exact context preview/fingerprint, bounded persisted history and cancellation, MCP reads plus `mcp:draft:write`-scoped unapproved draft-save, snapshot/career-signature fences, and human approval. No P0/P1 finding or unresolved review thread remains (live count 0). Truth-first, owner isolation, untrusted-source handling and OAuth lifecycle/concurrency controls were reviewed.

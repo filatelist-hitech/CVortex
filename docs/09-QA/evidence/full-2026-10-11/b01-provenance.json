@@ -1,0 +1,12 @@
+{
+  "expected_sha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72",
+  "actual_sha256": "18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943",
+  "upstream_bytes": 4495,
+  "tracked_bytes": 4401,
+  "upstream_CRLF": 93,
+  "tracked_CRLF": 0,
+  "text_equal_after_newline_and_trailing_whitespace_normalization": true,
+  "pinned_source": "https://raw.githubusercontent.com/floriankarsten/space-grotesk/03507d024a01282884232081fc6011c09ff4e849/OFL.txt",
+  "tracked_commit": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "modified_by_audit": false
+}

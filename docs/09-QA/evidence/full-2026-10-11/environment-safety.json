@@ -1,0 +1,363 @@
+{
+  "sha": "f06a6dba058589823bf3d3c8b693cb625170bc4b",
+  "compose_project": "cvortexqa1011",
+  "private_fixture_mode": "0o600",
+  "containers": [
+    {
+      "name": "cvortexqa1011-backend-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": "local",
+        "DB_HOST": "postgres",
+        "DB_DATABASE": "cvortex_qa_synthetic",
+        "DB_USERNAME": "cvortex_qa_app",
+        "DB_RUNTIME_ROLE": "cvortex_qa_app",
+        "POSTGRES_DB": null,
+        "REDIS_HOST": "redis",
+        "REDIS_DB": "0",
+        "REDIS_CACHE_DB": "1",
+        "AI_PROVIDER": "openai",
+        "OPENAI_BASE_URL": "http://fakeprovider:8000/v1",
+        "HORIZON_PREFIX": "cvortex_qa_1011:",
+        "MAIL_MAILER": "array"
+      },
+      "provider_credential": "synthetic-canary",
+      "networks": [
+        "cvortexqa1011_edge",
+        "cvortexqa1011_internal"
+      ],
+      "mounts": [
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_private_storage/_data",
+          "destination": "/var/www/html/storage/app/private"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/apps/backend",
+          "destination": "/var/www/html"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/runtime-ai",
+          "destination": "/runtime-ai"
+        },
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_backend_vendor/_data",
+          "destination": "/var/www/html/vendor"
+        }
+      ],
+      "ports": {
+        "9000/tcp": null
+      }
+    },
+    {
+      "name": "cvortexqa1011-horizon-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": "local",
+        "DB_HOST": "postgres",
+        "DB_DATABASE": "cvortex_qa_synthetic",
+        "DB_USERNAME": "cvortex_qa_app",
+        "DB_RUNTIME_ROLE": "cvortex_qa_app",
+        "POSTGRES_DB": null,
+        "REDIS_HOST": "redis",
+        "REDIS_DB": "0",
+        "REDIS_CACHE_DB": "1",
+        "AI_PROVIDER": "openai",
+        "OPENAI_BASE_URL": "http://fakeprovider:8000/v1",
+        "HORIZON_PREFIX": "cvortex_qa_1011:",
+        "MAIL_MAILER": "array"
+      },
+      "provider_credential": "synthetic-canary",
+      "networks": [
+        "cvortexqa1011_egress",
+        "cvortexqa1011_internal"
+      ],
+      "mounts": [
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/apps/backend",
+          "destination": "/var/www/html"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/runtime-ai",
+          "destination": "/runtime-ai"
+        },
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_backend_vendor/_data",
+          "destination": "/var/www/html/vendor"
+        },
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_private_storage/_data",
+          "destination": "/var/www/html/storage/app/private"
+        }
+      ],
+      "ports": {
+        "9000/tcp": null
+      }
+    },
+    {
+      "name": "cvortexqa1011-scheduler-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": "local",
+        "DB_HOST": "postgres",
+        "DB_DATABASE": "cvortex_qa_synthetic",
+        "DB_USERNAME": "cvortex_qa_app",
+        "DB_RUNTIME_ROLE": "cvortex_qa_app",
+        "POSTGRES_DB": null,
+        "REDIS_HOST": "redis",
+        "REDIS_DB": "0",
+        "REDIS_CACHE_DB": "1",
+        "AI_PROVIDER": "none",
+        "OPENAI_BASE_URL": "https://api.openai.com/v1",
+        "HORIZON_PREFIX": "cvortex_qa_1011:",
+        "MAIL_MAILER": "array"
+      },
+      "provider_credential": "empty",
+      "networks": [
+        "cvortexqa1011_internal"
+      ],
+      "mounts": [
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_backend_vendor/_data",
+          "destination": "/var/www/html/vendor"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/apps/backend",
+          "destination": "/var/www/html"
+        }
+      ],
+      "ports": {
+        "9000/tcp": null
+      }
+    },
+    {
+      "name": "cvortexqa1011-postgres-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": null,
+        "DB_HOST": null,
+        "DB_DATABASE": null,
+        "DB_USERNAME": null,
+        "DB_RUNTIME_ROLE": null,
+        "POSTGRES_DB": "cvortex_qa_synthetic",
+        "REDIS_HOST": null,
+        "REDIS_DB": null,
+        "REDIS_CACHE_DB": null,
+        "AI_PROVIDER": null,
+        "OPENAI_BASE_URL": null,
+        "HORIZON_PREFIX": null,
+        "MAIL_MAILER": null
+      },
+      "provider_credential": "empty",
+      "networks": [
+        "cvortexqa1011_internal"
+      ],
+      "mounts": [
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_postgres_data/_data",
+          "destination": "/var/lib/postgresql"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/infra/postgres/init-runtime-role.sh",
+          "destination": "/docker-entrypoint-initdb.d/10-runtime-role.sh"
+        }
+      ],
+      "ports": {
+        "5432/tcp": null
+      }
+    },
+    {
+      "name": "cvortexqa1011-redis-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": null,
+        "DB_HOST": null,
+        "DB_DATABASE": null,
+        "DB_USERNAME": null,
+        "DB_RUNTIME_ROLE": null,
+        "POSTGRES_DB": null,
+        "REDIS_HOST": null,
+        "REDIS_DB": null,
+        "REDIS_CACHE_DB": null,
+        "AI_PROVIDER": null,
+        "OPENAI_BASE_URL": null,
+        "HORIZON_PREFIX": null,
+        "MAIL_MAILER": null
+      },
+      "provider_credential": "empty",
+      "networks": [
+        "cvortexqa1011_internal"
+      ],
+      "mounts": [],
+      "ports": {
+        "6379/tcp": null
+      }
+    },
+    {
+      "name": "cvortexqa1011-fakeprovider-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": null,
+        "DB_HOST": null,
+        "DB_DATABASE": null,
+        "DB_USERNAME": null,
+        "DB_RUNTIME_ROLE": null,
+        "POSTGRES_DB": null,
+        "REDIS_HOST": null,
+        "REDIS_DB": null,
+        "REDIS_CACHE_DB": null,
+        "AI_PROVIDER": null,
+        "OPENAI_BASE_URL": null,
+        "HORIZON_PREFIX": null,
+        "MAIL_MAILER": null
+      },
+      "provider_credential": "empty",
+      "networks": [
+        "cvortexqa1011_internal"
+      ],
+      "mounts": [
+        {
+          "type": "bind",
+          "source": "${QA_ARTIFACTS}/provider.cjs",
+          "destination": "/fixture/provider.cjs"
+        }
+      ],
+      "ports": {}
+    },
+    {
+      "name": "cvortexqa1011-frontend-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": null,
+        "DB_HOST": null,
+        "DB_DATABASE": null,
+        "DB_USERNAME": null,
+        "DB_RUNTIME_ROLE": null,
+        "POSTGRES_DB": null,
+        "REDIS_HOST": null,
+        "REDIS_DB": null,
+        "REDIS_CACHE_DB": null,
+        "AI_PROVIDER": null,
+        "OPENAI_BASE_URL": null,
+        "HORIZON_PREFIX": null,
+        "MAIL_MAILER": null
+      },
+      "provider_credential": "empty",
+      "networks": [
+        "cvortexqa1011_edge"
+      ],
+      "mounts": [
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_frontend_next/_data",
+          "destination": "/app/.next"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/apps/frontend",
+          "destination": "/app"
+        },
+        {
+          "type": "volume",
+          "source": "/var/lib/docker/volumes/cvortexqa1011_frontend_node_modules/_data",
+          "destination": "/app/node_modules"
+        }
+      ],
+      "ports": {}
+    },
+    {
+      "name": "cvortexqa1011-nginx-1",
+      "compose_project": "cvortexqa1011",
+      "env": {
+        "APP_ENV": null,
+        "DB_HOST": null,
+        "DB_DATABASE": null,
+        "DB_USERNAME": null,
+        "DB_RUNTIME_ROLE": null,
+        "POSTGRES_DB": null,
+        "REDIS_HOST": null,
+        "REDIS_DB": null,
+        "REDIS_CACHE_DB": null,
+        "AI_PROVIDER": null,
+        "OPENAI_BASE_URL": null,
+        "HORIZON_PREFIX": null,
+        "MAIL_MAILER": null
+      },
+      "provider_credential": "empty",
+      "networks": [
+        "cvortexqa1011_edge"
+      ],
+      "mounts": [
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/infra/nginx/log-format.conf",
+          "destination": "/etc/nginx/conf.d/00-log-format.conf"
+        },
+        {
+          "type": "bind",
+          "source": "${QA_WORKTREE}/infra/nginx/nginx.conf",
+          "destination": "/etc/nginx/conf.d/default.conf"
+        }
+      ],
+      "ports": {
+        "80/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18081"
+          }
+        ]
+      }
+    }
+  ],
+  "networks": [
+    {
+      "name": "cvortexqa1011_internal",
+      "internal": true,
+      "containers": [
+        "cvortexqa1011-redis-1",
+        "cvortexqa1011-fakeprovider-1",
+        "cvortexqa1011-backend-1",
+        "cvortexqa1011-postgres-1",
+        "cvortexqa1011-horizon-1",
+        "cvortexqa1011-scheduler-1"
+      ]
+    },
+    {
+      "name": "cvortexqa1011_edge",
+      "internal": false,
+      "containers": [
+        "cvortexqa1011-nginx-1",
+        "cvortexqa1011-backend-1",
+        "cvortexqa1011-frontend-1"
+      ]
+    },
+    {
+      "name": "cvortexqa1011_egress",
+      "internal": true,
+      "containers": [
+        "cvortexqa1011-horizon-1"
+      ]
+    }
+  ],
+  "mock_implementation": {
+    "uses": "node:http createServer only",
+    "outbound_clients": false,
+    "sha256": "04f03da33bb4d73475caa3229f5254fadd94ae5ca125f0112ff508925e34a1b1"
+  },
+  "primary_snapshots": {
+    "databases_equal": true,
+    "coverage": "all public tables excluding sessions, cache, cache_locks; count and per-table aggregate digest; not forensic storage proof"
+  },
+  "network_limitation": "edge internal=false includes backend/frontend/nginx: Docker-wide no-egress not enforced; Horizon only internal networks, deterministic mock has no outbound client; browser recorded external=[]"
+}

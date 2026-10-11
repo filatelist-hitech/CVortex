@@ -1,0 +1,14 @@
+time="2026-10-11T20:20:46+03:00" level=warning msg="volume \"cvortexqa1011_backend_vendor\" already exists but was not created by Docker Compose. Use `external: true` to use an existing volume"
+time="2026-10-11T20:20:46+03:00" level=warning msg="Found orphan containers (cvortexqa1011-fakeprovider-1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+ Container cvortexqa1011-backend-run-d88a255233ca Creating 
+ Container cvortexqa1011-backend-run-d88a255233ca Created 
+PHPUnit 12.5.35 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.25
+Configuration: /var/www/html/phpunit.xml
+
+....                                                                4 / 4 (100%)
+
+Time: 00:00.695, Memory: 56.50 MB
+
+[30;42mOK (4 tests, 12 assertions)[0m
