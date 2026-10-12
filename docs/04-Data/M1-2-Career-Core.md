@@ -54,6 +54,29 @@ Career source rows persist internal `next_attempt_at` and `dispatch_recovery_at`
 
 Creating a confirmed fact whose exact approved wording already has a same-owner Claim links the new evidence to that Claim. If the valid evidence assigns different fact types, the application records `USER_RESOLUTION_REQUIRED` immediately and exposes the resolution action. Extraction categories without deterministic semantic validation fail closed; manual confirmation remains available for those types.
 
+### Career UI evidence resolution
+
+For `USER_RESOLUTION_REQUIRED`, open **«Выбрать источник утверждения»** in the
+Claim card. The UI lists only linked, confirmed facts whose approved assertion
+matches the Claim, with type, source excerpt and manual/extracted provenance.
+Confirmed superseding replacements exclude their predecessor. Choose one radio
+option, then press **«Подтвердить источник утверждения»**. No fact is preselected;
+page hydration and opening options send no mutation.
+
+The UI uses existing GET `fact_ids` and PATCH `career_fact_id`; backend owner-chain,
+confirmation, exact support and supersession validation remain authoritative.
+A failed request retains selection and unresolved UI; retry is explicit. Refreshing
+options preserves the choice, but disables confirmation when it is no longer eligible.
+A successful response updates the Claim from its actual truth_status; a returned
+BLOCK is displayed as blocked. Repeated valid resolutions are accepted by the
+existing backend contract, without creating facts or promoting pending facts.
+
+After resolving, reload/open the dependent vacancy and use its existing reanalysis
+control when marked stale. Reopen materials and run their normal validation/generation.
+Accepting a draft and approving its exact text are separate user actions; evidence
+resolution does not approve or send an application. [QA-004 validation](../09-QA/evidence/qa004-2026-10-12/README.md)
+is synthetic browser/mocked-provider evidence, not live provider or manual AT acceptance.
+
 Supersession is serialized by locking the source `CareerFact` row and rechecking its confirmed state, provenance and replacement relation inside the transaction. PostgreSQL also enforces a partial unique index on `career_facts.supersedes_fact_id` for `CONFIRMED` replacements. This permits a historical chain (`A → B → C`) because each parent has at most one confirmed child, while preventing two simultaneous current replacements of the same fact. A losing request receives HTTP 409; old Claims are blocked and the replacement Claim is evaluated in the same transaction.
 
 ## Runtime AI boundary
