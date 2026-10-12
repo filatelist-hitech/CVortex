@@ -1,0 +1,3 @@
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error mounting "/host_mnt/Users/filatelist/.codex/worktrees/qa003-diagnostics-fixture/CVortex/.env.example" to rootfs at "/var/www/html/.env": create mountpoint for /var/www/html/.env mount: mountpoint "/run/host_virtiofs/Users/filatelist/.codex/worktrees/qa003-diagnostics-fixture/CVortex/apps/backend/.env" is outside of rootfs "/var/lib/docker/rootfs/overlayfs/db033d2d1c3aabfd72d4af08abf92679fbb9c7ff64c99457937491e9afe3274b"
+
+Run 'docker run --help' for more information

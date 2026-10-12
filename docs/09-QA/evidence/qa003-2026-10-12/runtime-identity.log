@@ -1,0 +1,12 @@
+{
+    "driver": "pgsql",
+    "identity": {
+        "database": "qa003_isolated",
+        "role": "cvortex_app"
+    },
+    "runtime_role": "cvortex_app",
+    "laravel": "13.31.0",
+    "php": "8.4.25",
+    "log_level": "debug",
+    "ai_provider": null
+}

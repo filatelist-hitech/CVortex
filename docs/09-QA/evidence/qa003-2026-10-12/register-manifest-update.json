@@ -1,0 +1,7 @@
+{
+  "reason": "Current QA-003 status changed in the mutable defect register; update only its digest, preserve historical logs/results/accounting and all other manifest entries.",
+  "file": "docs/09-QA/FUNCTIONAL-DEFECT-REGISTER.md",
+  "before_sha256": "7f7f9778b33fd6e95a0b61e7e317109800a780f6432c22291eee5b0f54b278f7",
+  "after_sha256": "73939806c6c203162675d7a848aa0706e4eeb39d6e9d73e42effaa434576ab33",
+  "validated_code_sha": "10d9b575b63cd44ad183af8287c322d4ff804191"
+}
