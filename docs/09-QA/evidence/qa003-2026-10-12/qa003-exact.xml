@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Feature\DiagnosticsPostgresTest" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" tests="1" assertions="17" errors="0" failures="0" skipped="0" time="0.336278">
+    <testcase name="test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="96" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="17" time="0.336278"/>
+  </testsuite>
+</testsuites>
