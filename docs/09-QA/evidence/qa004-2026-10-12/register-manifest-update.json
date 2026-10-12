@@ -1,0 +1,6 @@
+{
+  "file": "docs/09-QA/FUNCTIONAL-DEFECT-REGISTER.md",
+  "previous_sha256": "7f7f9778b33fd6e95a0b61e7e317109800a780f6432c22291eee5b0f54b278f7",
+  "current_sha256": "4f5281b05afa5f481bbeffd39c0989ec90105ff781a6853723a0baaff8798c39",
+  "reason": "Append QA-004 bounded fix evidence and update its current status; historical audit results and evidence hashes unchanged"
+}

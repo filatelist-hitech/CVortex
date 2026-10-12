@@ -1,5 +1,27 @@
 # CVortex — проверенное текущее состояние
 
+## QA-004 — Career Claim resolution UI, 2026-10-12
+
+Bounded IMPLEMENT, explicit owner override of NEXT. Base `origin/stage` = `5cfe18d`;
+separate branch `fix/qa-004-career-claim-resolution-ui` and managed worktree.
+Career now exposes explicit supporting-fact selection, existing PATCH, controlled
+errors/retry and backend-authoritative result. No production backend/schema changes.
+
+Local validation: frontend 131 tests, lint/typecheck/production build PASS;
+Career/Claim API 52 tests / 417 assertions and Application 19 / 253 PASS
+(SQLite in-memory), targeted Pint/PHPStan PASS. Browser: isolated PostgreSQL
+`cvortex_qa004_synthetic`, runtime role `qa004_app` without superuser/BYPASSRLS,
+Redis/Horizon + deterministic local provider; 15 scenarios PASS, including actual
+keyboard resolution, persistence, reanalysis → generation → explicit acceptance/
+approval, CSRF419 and cross-owner404. Responsive 320/390/768/1440 smoke PASS.
+[Task](../tasks/qa-004-career-claim-resolution-ui.md),
+[evidence/limits](../../docs/09-QA/evidence/qa004-2026-10-12/README.md).
+
+QA-004 FIXED / locally verified, awaiting PR review/integration. NEXT/BLOCKERS unchanged;
+QA-001–003, live-provider readiness, Preview 0.1 and manual accessibility gates
+remain outside scope. No development DB writes, automatic approval/submission or merge.
+STOP at QA-004; the next intended task remains `b01-current-manifest-integrity-reconciliation`.
+
 ## PR #46 evidence remediation candidate — 2026-10-12
 
 Explicit owner override, primary mode IMPLEMENT, существующая PR branch `docs/full-functional-qa-2026-10-11`. Исправлены механизм manifest LF export, historical false-PASS accounting, mapping восьми реализованных workflows, export provenance и Documentation Map. Career verification helpers теперь проверяют реального победителя confirm/reject, owner/Claim/evidence и требуют успешной финальной проверки; exceptions/incomplete output не становятся PASS. Product code/ADRs/schema, QA-001–QA-004 и RCV-01 не изменены.

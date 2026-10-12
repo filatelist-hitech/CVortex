@@ -154,7 +154,7 @@ describe("access shell", () => {
   it("executes the visible first-value extraction and review flow", async () => {
     type TestFact = { id: string; fact_type: string; assertion_original: string; assertion_approved: string | null; source_excerpt: string; provenance_type: "paste_extraction"; status: "PENDING" | "CONFIRMED" | "REJECTED" };
     const facts: TestFact[] = [];
-    const claims: Array<{ id: string; statement: string; truth_status: "PASS" }> = [];
+    const claims: Array<{ id: string; statement: string; truth_status: "PASS"; fact_ids: string[] }> = [];
     const sources: Array<{ id: string; extraction_status: "COMPLETED"; error_code: null }> = [];
     let finishExtraction: (() => void) | undefined;
     const extractionGate = new Promise<void>((resolve) => { finishExtraction = resolve; });
@@ -183,7 +183,7 @@ describe("access shell", () => {
         else {
           fact.status = "CONFIRMED";
           fact.assertion_approved = body.action === "edit_confirm" ? body.assertion ?? null : fact.assertion_original;
-          claims.push({ id: `claim-${id}`, statement: fact.assertion_approved ?? fact.assertion_original, truth_status: "PASS" });
+          claims.push({ id: `claim-${id}`, statement: fact.assertion_approved ?? fact.assertion_original, truth_status: "PASS", fact_ids: [fact.id] });
         }
         return Response.json({ data: fact });
       }
@@ -209,7 +209,7 @@ describe("access shell", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Отклонить" })[0]);
     await waitFor(() => expect(screen.queryByText("Rejected source.", { selector: ".pending-card .assertion" })).not.toBeInTheDocument());
     expect(screen.getByText("Still pending.", { selector: ".pending-card .assertion" })).toBeInTheDocument();
-    expect(screen.getAllByText("PASS")).toHaveLength(2);
+    expect(screen.getAllByText("Подтверждено фактами")).toHaveLength(2);
   });
 
   it("renders explainable vacancy analysis while keeping raw source text inert", async () => {
