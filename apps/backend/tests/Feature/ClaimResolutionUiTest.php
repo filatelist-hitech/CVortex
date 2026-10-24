@@ -6,6 +6,7 @@ use App\Models\CareerFact;
 use App\Models\Claim;
 use App\Models\User;
 use App\Services\CareerFactService;
+use App\Services\TrustedCareerQuery;
 use App\Services\TruthGuard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -117,5 +118,27 @@ class ClaimResolutionUiTest extends TestCase
         $this->actingAs($owner)->patchJson('/api/v1/career/claims/'.$claim->id.'/resolve', ['career_fact_id' => $selected->id])
             ->assertOk()->assertJsonPath('data.truth_status', TruthGuard::BLOCK);
         $this->assertSame(TruthGuard::BLOCK, app(TruthGuard::class)->evaluate($claim->fresh()));
+    }
+
+    public function test_unresolved_ambiguous_claim_blocks_downstream_matching_until_explicit_resolution(): void
+    {
+        [$owner, $claim, $selected] = $this->ambiguity();
+        $truthGuard = app(TruthGuard::class);
+        $trustedQuery = app(TrustedCareerQuery::class);
+
+        $this->assertSame(TruthGuard::USER_RESOLUTION_REQUIRED, $truthGuard->evaluate($claim));
+
+        $beforeMatching = $trustedQuery->forMatching($owner);
+        $this->assertEmpty($beforeMatching['claims'], 'Unresolved ambiguous claim must be blocked from downstream matching.');
+
+        $this->actingAs($owner)->patchJson('/api/v1/career/claims/'.$claim->id.'/resolve', [
+            'career_fact_id' => $selected->id,
+        ])->assertOk()->assertJsonPath('data.truth_status', TruthGuard::PASS);
+
+        $this->assertSame(TruthGuard::PASS, $truthGuard->evaluate($claim->fresh()));
+
+        $afterMatching = $trustedQuery->forMatching($owner);
+        $this->assertCount(1, $afterMatching['claims'], 'Explicitly resolved claim must unlock downstream matching.');
+        $this->assertSame($claim->id, $afterMatching['claims'][0]->id);
     }
 }
