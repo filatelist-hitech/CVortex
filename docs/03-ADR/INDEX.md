@@ -54,8 +54,6 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0022](ADR-0022-local-diagnostics.md) | Local structured diagnostics and grouped incidents | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-09-27 | Operations / security | — | — |
 | [ADR-0023](ADR-0023-chatgpt-plan-chat.md) | Local CVortex chat using ChatGPT plan usage | accepted | — | 2026-10-04 | AI / access | Amends ADR-0021 draft-write scope | — |
 | [ADR-0024](ADR-0024-git-design-reference-workflow.md) | Git-reviewed Design References for Application Workspace | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-07 | Design / workflow | ADR-0013; amends ADR-0014 Figma role | — |
-| [ADR-0025](ADR-0025-b01-reference-acceptance-release-gate.md) | B01 Reference Acceptance Release Gate | accepted | OWNER_CONSTRAINT | 2026-10-11 | Design / accessibility | Amends ADR-0024 timing | — |
-| [ADR-0026](ADR-0026-gemini-llm-provider-integration.md) | Google Gemini LLM Provider Integration | accepted | RESEARCH_BACKED_DECISION | 2026-10-24 | AI / providers | — | — |
 
 ## Freeze rule
 
