@@ -76,6 +76,6 @@ test.describe("Access Control & Role Boundaries", () => {
 
     // The diagnostics workspace must be loaded
     await expect(page.locator(".diagnostics-shell")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Журнал инцидентов" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Error Center" })).toBeVisible();
   });
 });

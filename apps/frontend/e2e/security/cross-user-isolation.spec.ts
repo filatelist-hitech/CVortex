@@ -119,7 +119,7 @@ test.describe("Security — Multi-User Isolation & Threat Boundaries", () => {
     await page.route("**/api/v1/vacancies", async (route) => {
       if (route.request().method() === "POST") {
         const body = route.request().postDataJSON();
-        storedText = body.raw_text;
+        storedText = body.source_text;
         await route.fulfill({
           status: 201,
           contentType: "application/json",

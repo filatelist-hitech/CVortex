@@ -51,6 +51,7 @@ jobs:
         run: docker compose up --detach --wait postgres redis backend frontend nginx
       - name: Install Playwright browsers with deps
         run: |
+          sudo chown -R $USER:$USER apps/frontend
           cd apps/frontend
           npm ci
           npx playwright install --with-deps chromium

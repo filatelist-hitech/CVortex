@@ -17,6 +17,14 @@ test.describe("Career Workspace — Facts, Reviews and Truth Guard", () => {
         }),
       });
     });
+
+    await page.route("**/api/v1/vacancies", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: [] }),
+      });
+    });
   });
 
   test("smoke: displays career workspace panels and empty states @smoke @critical", async ({ page }) => {
@@ -171,7 +179,7 @@ test.describe("Career Workspace — Facts, Reviews and Truth Guard", () => {
     await page.getByLabel("Текст об опыте или резюме").fill("Some resume text to extract...");
     await page.getByRole("button", { name: "Извлечь факты для проверки" }).click();
 
-    const errorAlert = page.locator(".alert.error, [role='alert']");
+    const errorAlert = page.locator(".alert.error").filter({ hasText: "Ошибка операции" });
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText("Сервис анализа временно недоступен");
   });

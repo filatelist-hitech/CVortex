@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Http;
 
 class OpenAiResponsesProvider
 {
-    public function generateResolved(LlmRequest $request, ResolvedModel $resolved): LlmResponse
+    public function generateResolved(LlmRequest $request, ResolvedModel $resolved, ?string $apiKeyOverride = null): LlmResponse
     {
-        $apiKey = (string) config('ai.providers.openai.api_key');
+        $apiKey = $apiKeyOverride !== null && trim($apiKeyOverride) !== ''
+            ? trim($apiKeyOverride)
+            : (string) config('ai.providers.openai.api_key');
         $model = $resolved->model;
         if ($apiKey === '' || $model === '') {
             throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED, 'The OpenAI provider is not fully configured.', 'openai', $model);
