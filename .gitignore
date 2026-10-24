@@ -87,6 +87,7 @@ research/design-redesign/**/*.png
 # Codex import dumps and context
 docs/codex_import/
 docs/CODEX_CONTEXT.md
+scripts/import_codex_*.py
 
 # --- Obsidian local workspace state ---
 # Project documentation remains plain Markdown in Git.
