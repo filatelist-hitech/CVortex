@@ -1,0 +1,52 @@
+PHPUnit 12.5.35 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.25
+Configuration: /var/www/html/phpunit.xml
+
+[31;1mE[0m                                                                   1 / 1 (100%)
+
+Time: 00:00.297, Memory: 40.50 MB
+
+There was 1 error:
+
+1) Tests\Feature\DiagnosticsPostgresTest::test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties
+Illuminate\Database\QueryException: SQLSTATE[42P01]: Undefined table: 7 ERROR:  relation "users" does not exist
+LINE 1: insert into "users" ("email", "password", "id", "updated_at"...
+                    ^ (Connection: pgsql, Host: cvortex-qa003-20261012, Port: 5432, Database: qa003_isolated, SQL: insert into "users" ("email", "password", "id", "updated_at", "created_at") values (01M4RVX9W0KTY6GDGZZE6T0KEW@example.test, $2y$04$QWDkIgoBvwMyxZu2YtHP7Ok287epH9n07/RonyicHQvaXDMfKR7nK, 01m4rvx9w5e08cmah1sdekcqrh, 2026-10-12 20:12:20, 2026-10-12 20:12:20))
+
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:857
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:813
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:590
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:554
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:4220
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:2336
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1614
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1407
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1258
+/var/www/html/vendor/laravel/framework/src/Illuminate/Support/helpers.php:393
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1257
+/var/www/html/tests/Feature/DiagnosticsPostgresTest.php:133
+/var/www/html/tests/Feature/DiagnosticsPostgresTest.php:99
+
+Caused by
+PDOException: SQLSTATE[42P01]: Undefined table: 7 ERROR:  relation "users" does not exist
+LINE 1: insert into "users" ("email", "password", "id", "updated_at"...
+                    ^
+
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:601
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:846
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:813
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:590
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:554
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:4220
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:2336
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1614
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1407
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1258
+/var/www/html/vendor/laravel/framework/src/Illuminate/Support/helpers.php:393
+/var/www/html/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1257
+/var/www/html/tests/Feature/DiagnosticsPostgresTest.php:133
+/var/www/html/tests/Feature/DiagnosticsPostgresTest.php:99
+
+[37;41mERRORS![0m
+[37;41mTests: 1[0m[37;41m, Assertions: 0[0m[37;41m, Errors: 1[0m[37;41m.[0m

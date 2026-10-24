@@ -35,6 +35,8 @@ class DiagnosticsPostgresTest extends TestCase
         $this->assertSame(2, DB::table('diagnostic_incidents')->where('id', $incidentId)->value('occurrence_count'));
         $this->assertSame(2, DB::table('diagnostic_occurrences')->where('incident_id', $incidentId)->count());
         $this->as($other)->getJson('/api/v1/diagnostics/incidents?search='.$reference)->assertForbidden();
+        $this->as($other)->getJson('/api/v1/diagnostics/incidents/'.$incidentId)->assertForbidden();
+        $this->as($other)->patchJson('/api/v1/diagnostics/incidents/'.$incidentId, ['status' => 'RESOLVED'])->assertForbidden();
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?search='.$reference)->assertOk()->assertJsonPath('data.total', 1);
     }
 
@@ -98,11 +100,15 @@ class DiagnosticsPostgresTest extends TestCase
         }
         $admin = $this->user('admin');
         $reference = 'req_'.Str::ulid();
-        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $this->assertSame(config('database.runtime_role'), DB::selectOne('SELECT current_user AS role')->role);
+        $firstException = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $secondException = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
         $recorder = app(IncidentRecorder::class);
-        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'timestamp-tie', exception: $exception);
-        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'timestamp-tie', exception: $exception);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'timestamp-tie', exception: $firstException);
+        $recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'timestamp-tie', exception: $secondException);
+        $this->assertSame(1, DB::table('diagnostic_incidents')->where('component', 'timestamp-tie')->count());
         $id = DB::table('diagnostic_incidents')->where('component', 'timestamp-tie')->value('id');
+        $this->assertSame(2, DB::table('diagnostic_incidents')->where('id', $id)->value('occurrence_count'));
         $ids = DB::table('diagnostic_occurrences')->where('incident_id', $id)->orderBy('id')->pluck('id');
         $this->assertCount(2, $ids);
         $timestamp = now()->subMinute()->startOfSecond();
@@ -115,6 +121,7 @@ class DiagnosticsPostgresTest extends TestCase
             'llm_run_id' => (string) Str::ulid(), 'application_id' => (string) Str::ulid(),
             'attempt' => 2, 'retry_after_seconds' => 42,
         ]);
+        $this->assertSame(2, DB::table('diagnostic_occurrences')->where('incident_id', $id)->where('created_at', $timestamp)->count());
 
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=newer&search='.$reference)->assertOk()
             ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.latest_provider', 'newer');
@@ -125,7 +132,32 @@ class DiagnosticsPostgresTest extends TestCase
             ->assertJsonPath('data.occurrences.0.provider', 'newer')
             ->assertJsonPath('data.occurrences.0.request_id', $reference)
             ->assertJsonPath('data.occurrences.0.attempt', 2)
-            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42);
+            ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42)
+            ->assertJsonPath('data.occurrences.1.id', $ids[0]);
+    }
+
+    public function test_runtime_role_deduplicates_the_same_throwable_object(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('PostgreSQL runtime-role boundary only.');
+        }
+        $this->assertSame(config('database.runtime_role'), DB::selectOne('SELECT current_user AS role')->role);
+        $exception = new LlmProviderException(LlmProviderException::RATE_LIMITED, retryAfterSeconds: 42);
+        $reference = 'req_'.Str::ulid();
+        $recorder = app(IncidentRecorder::class);
+        $context = ['request_id' => $reference, 'provider' => 'openai'];
+        $this->assertTrue($recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'same-throwable', exception: $exception, context: $context));
+        $this->assertTrue(IncidentRecorder::wasRecorded($exception));
+        $this->assertTrue($recorder->record('LLM_PROVIDER_RATE_LIMITED', 'Rate limited.', 'same-throwable', exception: $exception, context: $context));
+
+        $id = DB::table('diagnostic_incidents')->where('component', 'same-throwable')->value('id');
+        $this->assertNotNull($id);
+        $this->assertSame(1, DB::table('diagnostic_incidents')->where('component', 'same-throwable')->count());
+        $this->assertSame(1, DB::table('diagnostic_incidents')->where('id', $id)->value('occurrence_count'));
+        $this->assertSame(1, DB::table('diagnostic_occurrences')->where('incident_id', $id)->count());
+        $this->assertDatabaseHas('diagnostic_occurrences', [
+            'incident_id' => $id, 'request_id' => $reference, 'provider' => 'openai', 'retry_after_seconds' => 42,
+        ]);
     }
 
     private function user(string $role): User
