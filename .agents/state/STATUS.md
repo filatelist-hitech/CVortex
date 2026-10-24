@@ -46,6 +46,28 @@ QA-001–003, live-provider readiness, Preview 0.1 and manual accessibility gate
 remain outside scope. No development DB writes, automatic approval/submission or merge.
 STOP at QA-004; the next intended task remains `b01-manual-accessibility-release-gate`.
 
+## QA-002 — deterministic migration harness, 2026-10-12
+
+Explicit owner IMPLEMENT override of `NEXT=b01-current-manifest-integrity-reconciliation`;
+base/target `stage`, branch `fix/qa-002-migration-harness`, one agent/sequential.
+Native Git write preflight with task + `--user-override` PASS. NEXT remains unchanged.
+
+The test selects paths through `000008`, checks actual pre-000009 schema, seeds
+legacy duplicate history, applies `000009`–`000012`, checks data/status/owner/schema
+invariants, and rolls back/reapplies only those named repairs before later migrations.
+Every invocation owns a fresh Compose project, PostgreSQL container, database,
+ephemeral credentials, volumes and internal network. External targets are blocked;
+cleanup checks ownership and cannot silently PASS on failure.
+
+Local PostgreSQL current-set run PASS (28/28 Ran); separate future-migration and
+wrong-schema controls PASS. Seven harness unit tests, shell/Python syntax and
+scoped diff checks PASS. Counts `1/8/10/5/3 → 1/5/10/5/3`; history retained,
+owned cleanup verified. Read-only schema/count/row digests for existing `cvortex`,
+`cvortex_test`, `cvortex_dev2` unchanged. Product migrations, QA-001/003/004 and
+historical QA logs/accounting are preserved. [Evidence](../../docs/09-QA/evidence/qa002-2026-10-12/README.md).
+Task is locally verified; governed PR delivery/CI is recorded in the final report.
+Existing B01/Preview/provider/M2 blockers are unchanged. No merge. STOP.
+
 ## QA-001 B01 integrity — local implementation verified, 2026-10-12
 
 Owner explicitly authorized IMPLEMENT, one agent/sequential, scoped commit/push/PR;

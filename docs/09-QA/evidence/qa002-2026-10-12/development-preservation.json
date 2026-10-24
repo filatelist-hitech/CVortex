@@ -1,0 +1,43 @@
+{
+  "container_id": "6a949b61b901ae686a8e0eed1522bfa5773ad02e4e48a09f2845a84b8a931176",
+  "project": "cvortex",
+  "mounts": [
+    {
+      "Type": "volume",
+      "Name": "cvortex_postgres_data",
+      "Destination": "/var/lib/postgresql"
+    },
+    {
+      "Type": "bind",
+      "Name": null,
+      "Destination": "/docker-entrypoint-initdb.d/10-runtime-role.sh"
+    }
+  ],
+  "read_only": true,
+  "databases": {
+    "cvortex": {
+      "table_count": 31,
+      "rows": 83,
+      "before_schema_sha256": "8d277d7c3813f796245eec065875fb9f75c005c2e957915dab65e7c76468ed8d",
+      "after_schema_sha256": "8d277d7c3813f796245eec065875fb9f75c005c2e957915dab65e7c76468ed8d",
+      "counts_and_row_digests_equal": true
+    },
+    "cvortex_test": {
+      "table_count": 36,
+      "rows": 328,
+      "before_schema_sha256": "96437822647c534962c501e8ac2dbb6b7d72d45747c34fe490132c2890930eeb",
+      "after_schema_sha256": "96437822647c534962c501e8ac2dbb6b7d72d45747c34fe490132c2890930eeb",
+      "counts_and_row_digests_equal": true
+    },
+    "cvortex_dev2": {
+      "table_count": 0,
+      "rows": 0,
+      "before_schema_sha256": "eecd1a3cab6c14d496cdc5600f591e3a8ea96f0ac7d40ba6042195d90d7d2ab5",
+      "after_schema_sha256": "eecd1a3cab6c14d496cdc5600f591e3a8ea96f0ac7d40ba6042195d90d7d2ab5",
+      "counts_and_row_digests_equal": true
+    }
+  },
+  "unchanged": true,
+  "exact_commit_runs_unchanged": true,
+  "tested_code_sha": "67348a10b9ddbb8c663159a6402099f55df13675"
+}

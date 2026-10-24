@@ -1,0 +1,72 @@
+[
+  {
+    "path": "controls.log",
+    "raw_gzip": "controls.log.gz",
+    "raw_sha256": "9aea34bdb230d4412f711ddaac67b3ac065fb72aef86d8844cdde93dba2f2933",
+    "export_sha256": "6ef8ebe202a68f04c8c969ec188d61ebf342377f356cc3ce36892c6085264470",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "current.log",
+    "raw_gzip": "current.log.gz",
+    "raw_sha256": "8f44bd60c8415b2943c6fcecf6500b5180159360899804fd0993314c9f4439d7",
+    "export_sha256": "480d465d1c5ec7bdb2ede9aceb7d471705246e550e0e8a7f07112c0fe70f3540",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "setup-schema-assertion-fail.log",
+    "raw_gzip": "setup-schema-assertion-fail.log.gz",
+    "raw_sha256": "35a49e02a89b64616cdaa9de5553a266e1b5e6be2f005e1d6d544f8ca57e2554",
+    "export_sha256": "90cf58b64f59ab0483c58f3e8fb52522f95cda04f6138069ae747b1a5c7430a8",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "evidence-integrity.log",
+    "raw_gzip": "evidence-integrity.log.gz",
+    "raw_sha256": "0bfe07ad102e50571884596fcfafced1afaf71ea944b3861cd491d564b2bedf3",
+    "export_sha256": "0bfe07ad102e50571884596fcfafced1afaf71ea944b3861cd491d564b2bedf3",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "controls-final.log",
+    "raw_gzip": "controls-final.log.gz",
+    "raw_sha256": "61574b7b7ae4249a20deb196e78665ca43583931ddd2084fb1a2380dd04b6131",
+    "export_sha256": "3fbd2f7b62c72c8c660a7c16e0539453bece5097105007fcfa6561fb01afacb8",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "unit.log",
+    "raw_gzip": "unit.log.gz",
+    "raw_sha256": "15a8546f0c519a7b2c1a532faf609caa24c445522851386cbc6645200bf27924",
+    "export_sha256": "15a8546f0c519a7b2c1a532faf609caa24c445522851386cbc6645200bf27924",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "unit-final.log",
+    "raw_gzip": "unit-final.log.gz",
+    "raw_sha256": "2d8a735b9db0ce412a627419f580e7e1e8f030fcaa8b71017e94c7b8edc3ec57",
+    "export_sha256": "2d8a735b9db0ce412a627419f580e7e1e8f030fcaa8b71017e94c7b8edc3ec57",
+    "transformation": "None; already LF and whitespace clean"
+  },
+  {
+    "path": "validation-final.log",
+    "raw_gzip": "validation-final.log.gz",
+    "raw_sha256": "9f4a295565f32488a2029c363d9cb03fdec70f2316ac33a2556e55c970c397ef",
+    "export_sha256": "9f4a295565f32488a2029c363d9cb03fdec70f2316ac33a2556e55c970c397ef",
+    "transformation": "None; already LF and whitespace clean"
+  },
+  {
+    "path": "exact-current.log",
+    "raw_gzip": "exact-current.log.gz",
+    "raw_sha256": "8b19a85b8c2bd616e4dda2ee0346d349a29690723ab5c5327f1a01d890e362c8",
+    "export_sha256": "da144a55268aecc796d22680be6822fac048014ae25c187917be0ac394c617f4",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  },
+  {
+    "path": "exact-controls.log",
+    "raw_gzip": "exact-controls.log.gz",
+    "raw_sha256": "da5600cb2148041f2d6c30b01cd77a7668713511a923a4a0642dac625bc81d7a",
+    "export_sha256": "7a6d2c5f031fcd4cbc5cf340df707dfc2551f4485f8cab5c7b5c98fa9c74948f",
+    "transformation": "Remove trailing line whitespace; LF newline preserved"
+  }
+]
