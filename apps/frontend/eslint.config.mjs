@@ -31,6 +31,13 @@ const eslintConfig = defineConfig([
       ...reactHooks.configs.flat.recommended.rules,
     },
   },
+  {
+    files: ["e2e/**/*.{ts,tsx,js}"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-empty-pattern": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -25,16 +25,65 @@ readiness этим не доказана. Production mutations и другие D
   отдельными authorized tasks. Сначала current reference integrity.
 - **Владелец:** нужен human reviewer/AT session; screenshots/DOM/AX недостаточны.
 
-## 2. QA-001 current B01 integrity — resolved locally, review pending
+## 2. QA-004 — Career Claim resolution race conditions (RACE-01–RACE-08)
 
-- Canonical `--check` PASS; 10/10 Node tests PASS, including QA001-01…08.
-- OFL tracked bytes unchanged; upstream CRLF SHA and stored LF SHA separated,
-  with offline normalization/provenance verification in both check/write modes.
-- [Current status/evidence](../../docs/09-QA/QA-001-RECONCILIATION.md).
-  Historical FAIL and evidence manifest remain intact.
-- Independent PR review/integration remains pending. No manual release gate closure.
+- **Причина:** В `career-workspace.tsx` функция `refresh()` выполняет несинхронизированный
+  GET-запрос и безусловно перезаписывает стейт через `setOverview(result.data)` без проверки
+  последовательности (request ID / sequence token) или AbortController.
+  Устаревший GET после успешного PATCH resolution возвращает интерфейс к состоянию
+  `USER_RESOLUTION_REQUIRED` (RACE-01); устаревший GET с PASS перезаписывает более новый
+  BLOCK (RACE-02); фоновый polling с интервалом 1500ms перекрывает форму отправки (RACE-06);
+  размонтирование компонента вызывает недопустимый commit состояния размонтированного
+  компонента (RACE-07). Коммит `b09a081` исправил только код ошибки `RESOURCE_NOT_FOUND`
+  и memoize, не устранив гонки.
+- **Влияние:** Сквозной пользовательский сценарий Cross-task integration: FAIL.
+  Интерфейс Career Workspace нестабилен и подвержен ложному отображению неразрешённых
+  утверждений либо ложному PASS.
+- **Разрешение:** Отдельная bounded задача remediation: внедрение sequence token /
+  AbortController для отмены/игнорирования устаревших ответов `refresh()`, блокировка
+  затирания локального стейта разрешения устаревшими GET-ответами.
 
-## 3. Preview 0.1 → M2 product gate
+## 3. QA-002 — Migration harness lifecycle safety & isolation gaps
+
+- **Причина:** Независимое ревью выявило критические замечания к `scripts/vacancy_migration_harness.py`:
+  - `R1 MAJOR`: инвентаризация контейнеров `inspect_owned` использует `docker container ls -q`
+    без флага `-a`, в результате чего остановленные контейнеры не учитываются. Собственный
+    остановленный контейнер блокирует cleanup, а контейнер с неверным run-token может обойти guard.
+  - `R2 MAJOR`: фикстура `reconciled.sql` проверяет только скалярные counts и статусы,
+    но не валидирует полные FK-связи aggregate mapping `vacancy → snapshots → analyses → LLM runs`,
+    и не содержит negative control для предотвращения ошибочной перепривязки к другому агрегату.
+  - `R3 MINOR`: `scripts/qa_evidence.py` не проверяет QA-002 evidence package.
+- **Влияние:** Запуск PostgreSQL lifecycle harness заблокирован (`BLOCKED`). На хосте активен
+  shared development PostgreSQL (`cvortex-postgres-1`) с существующими данными (`cvortex_test`),
+  которые запрещено считать disposable.
+- **Разрешение:** Устранить замечания R1, R2, R3 в harness и подтвердить гарантированную
+  disposable изоляцию до запуска реального lifecycle.
+
+## 4. QA-003 — Diagnostics timestamp-tie negative control gap
+
+- **Причина:** Регрессионный тест в `DiagnosticsPostgresTest.php` не содержит строгого
+  отрицательного контроля: SQL-контроль показал, что без условия `id DESC` выборка в PostgreSQL
+  при одинаковых timestamps возвращает строки в порядке вставки (совпадающем с ID), что
+  приводит к ложному PASS при удалении обязательного tie-breaker из контроллера.
+  Кроме того, в CI используется SQLite, где данный тест пропускается (`SKIP`).
+  Успешный CI не подтверждает прохождение на PostgreSQL, а запуск на изолированном PostgreSQL
+  не подтверждён (`SKIP` не является `PASS`). Не проверяется tie для `latest_operation` (LOW).
+- **Влияние:** Статус QA-003 на stage: `BLOCKED`. Контракт детерминированной сортировки
+  не защищён от регрессий.
+- **Разрешение:** Добавить строгий negative control (мутационный тест, инвертирующий порядок ID
+  или явно требующий `id DESC`), обеспечить запуск на изолированном PostgreSQL.
+
+## 5. QA-001 — non-blocking review follow-ups (PASS on stage)
+
+- PR #47 объединён в `stage`, canonical `--check` PASS, 10/10 Node тестов PASS,
+  8/8 Python evidence regressions PASS. Исходный hash mismatch устранён.
+- Сохраняются открытыми non-blocking замечания:
+  - `REVIEW-QA001-01 (MINOR)`: полнота покрытия постоянными параметризованными тестами
+    отдельных guard-веток (metadata SHA/length, path, base64 errors).
+  - `REVIEW-QA001-02 (INFORMATIONAL)`: документационное разграничение snapshot integrity
+    и upstream authenticity в README. Локальная snapshot integrity не доказывает подлинность upstream.
+
+## 6. Preview 0.1 → M2 product gate
 
 - **Причина:** repository не содержит полной real-user acceptance и feedback
   по m1-4 Preview completion checklist. Synthetic UI и unit tests этого не доказывают.

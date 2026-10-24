@@ -1,5 +1,108 @@
 # CVortex — проверенное текущее состояние
 
+## Playwright E2E UI Coverage & Quality Automation — 2026-10-24
+
+Mode: IMPLEMENT; branch: `chore/playwright-e2e-coverage`; task: `.agents/tasks/playwright-e2e-coverage.md`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Playwright Automation Infrastructure (`apps/frontend/`)**:
+   - Configured `playwright.config.ts` targeting local Docker Compose stack (`http://127.0.0.1:8080`) with Desktop Chromium (1440×900) and Mobile Chrome (Pixel 7 emulation, 393×851).
+   - Added npm test scripts: `test:e2e`, `test:e2e:smoke`, `test:e2e:critical`, `test:e2e:ui`, `test:e2e:report`.
+   - Built reusable test harness and fixtures (`apps/frontend/e2e/fixtures/test-fixtures.ts`) with synthetic run-scoped auth (`qa-*@test.cvortex`), automated WCAG 2.1 AA audits via `@axe-core/playwright`, and role-based helpers.
+   - Configured CI job `e2e-tests` in `.github/workflows/quality.yml` with host dependency installation, Chromium headless test execution, and Playwright report artifact uploading.
+
+2. **Test Suites & Verification Results (64 tests across 8 suites, 100% PASS)**:
+   - `e2e/auth/login.spec.ts`: 10/10 PASS (Desktop + Mobile) — form rendering, valid auth, invalid password safe failure, nonexistent user handling, HTML5 boundary validation, session persistence, logout flow.
+   - `e2e/auth/register.spec.ts`: 6/6 PASS — invite-only gate enforcement, successful registration with valid token, invalid token rejection, password mismatch validation.
+   - `e2e/auth/access-control.spec.ts`: 8/8 PASS — role-based route access, admin-only Error Center diagnostics, regular user 403 denial, unauthenticated visitor login redirect.
+   - `e2e/career/career-facts.spec.ts`: 8/8 PASS — career workspace panels, manual fact creation, fact review/confirmation, extraction provider error handling with safe localized messaging.
+   - `e2e/vacancies/vacancies.spec.ts`: 8/8 PASS — vacancy workspace rendering, vacancy creation via paste, client-side validation on empty input, Truth Guard invariant enforcing human approval separation before AI draft approval.
+   - `e2e/security/cross-user-isolation.spec.ts`: 6/6 PASS — multi-user career facts isolation, vacancy isolation, prompt injection resistance without privilege escalation.
+   - `e2e/diagnostics/diagnostics.spec.ts`: 6/6 PASS — admin incidents log, detailed sanitized technical context, status update to RESOLVED.
+   - `e2e/responsive/responsive-navigation.spec.ts`: 6/6 PASS — mobile navigation drawer, 390px viewport without horizontal overflow, 320px compact layout preservation.
+   - `e2e/accessibility/a11y-audit.spec.ts`: 6/6 PASS — automated axe-core WCAG 2.1 AA scans on auth and career pages, modal focus trap, Escape key dismissal.
+   - Vitest component/unit tests: 10/10 files (133/133 tests) PASS without regressions.
+   - TypeScript (`tsc --noEmit`) and ESLint (`eslint`): 0 errors.
+
+3. **Documentation Delivered**:
+   - `docs/09-QA/playwright-coverage-matrix.md`: 30+ scenarios across 8 areas mapped to priority (P0–P2), type, route, and coverage status.
+   - `docs/09-QA/playwright-architecture.md`: layout, fixtures, browser targets, configuration, and invariants.
+   - `docs/09-QA/playwright-test-strategy.md`: Truth-first, multi-user isolation, deterministic AI boundaries.
+   - `docs/09-QA/playwright-local-setup.md`: prerequisites, local test running instructions, environment overrides.
+   - `docs/09-QA/playwright-ci.md`: GitHub Actions workflow, artifact retention, timeout policies.
+   - `docs/09-QA/playwright-known-gaps.md`: honest audit of unimplemented UI features (file uploads, URL scraping, Career Tracks UI, Settings BYOK, Interview prep, Document export).
+
+---
+
+## Post-Merge Targeted Regression — stage SHA 8dce209b7c1c86747753a97083dcf3eb0360db3f, 2026-10-24
+
+Mode: VERIFY ONLY / DOCUMENTATION ONLY; one agent/sequential. Проверенный HEAD ветки `stage`:
+`8dce209b7c1c86747753a97083dcf3eb0360db3f` (синхронизирован с `origin/stage`).
+Все четыре PR #47 (QA-001), #50 (QA-004), #49 (QA-003) и #48 (QA-002) объединены в `stage`.
+GitHub Actions CI Quality (`m0-quality`) и Governance checks (`PR contract`, `Roadmap metadata`)
+для данного SHA завершились успешно (PASS).
+Фактическая независимая проверка на интегрированном дереве установила, что объединение в stage
+не устранило открытые дефекты автоматически:
+
+- **QA-001 (B01 OFL integrity): PASS.**
+  Канонический checker `node docs/07-Design/reference/build-reference.cjs --check` PASS (exit 0);
+  10/10 тестов Node (`build-reference.test.cjs`, включая QA001-01…08) PASS; 8/8 Python evidence
+  regressions PASS. Нормализованный `OFL.txt` (4401 байт, 0 CRLF, 1 хвостовой пробел удалён)
+  соответствует утверждённой политике `lf-trim-trailing-horizontal-whitespace`. Stored SHA-256
+  (`18a4de52...`) отделён от upstream SHA-256 (`564ce565...`). Исходный hash mismatch устранён.
+  Сохраняются открытыми non-blocking review findings: `REVIEW-QA001-01` (покрытие guard-веток
+  постоянными параметризованными тестами) и `REVIEW-QA001-02` (документационное разграничение
+  snapshot integrity и upstream authenticity в README). Локальная snapshot integrity не доказывает
+  подлинность upstream.
+
+- **QA-002 (Migration harness boundary & isolation): BLOCKED.**
+  Селективный выбор миграций до границы `000008` реализован, 7/7 unit-тестов harness PASS.
+  Unit-тесты не доказывают безопасность полного lifecycle. Критические замечания независимого
+  ревью остаются открытыми:
+  - `R1 MAJOR`: инвентаризация `inspect_owned` использует `docker container ls -q` без `-a`,
+    пропуская остановленные контейнеры, что блокирует cleanup или пропускает неверный token;
+  - `R2 MAJOR`: assertions в `reconciled.sql` проверяют только скалярные counts/статусы,
+    но не проверяют полные FK-связи `vacancy → snapshots → analyses → LLM runs` и не содержат
+    negative control для предотвращения ошибочной перепривязки к другому агрегату того же владельца;
+  - `R3 MINOR`: verifier `scripts/qa_evidence.py` не проверяет QA-002 evidence package.
+  PostgreSQL lifecycle execution заблокирован (`BLOCKED`) до устранения проблем безопасности
+  harness и подтверждения disposable isolation (на хосте активен `cvortex-postgres-1` с `cvortex_test`).
+
+- **QA-003 (Deterministic timestamp ordering): BLOCKED.**
+  Разделение объекта `LlmProviderException` на два экземпляра устранило сбой WeakMap deduplication
+  в фикстуре `DiagnosticsPostgresTest::test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties`.
+  Однако регрессионный тест пока не гарантирует обнаружение удаления обязательного `id DESC`:
+  SQL-контроль показал, что при одинаковых timestamps физический порядок строк в PostgreSQL
+  совпадает с порядком ID, создавая риск ложного PASS; строгий negative control отсутствует.
+  Timestamp-tie для `latest_operation` не проверяется (LOW). В CI используется SQLite,
+  поэтому PostgreSQL-специфичный тест пропускается (`SKIP`). Успешный CI не подтверждает
+  прохождение этого теста на PostgreSQL. Выполнение на изолированном PostgreSQL не подтверждено
+  (`SKIP` не является `PASS`).
+
+- **QA-004 (Career Claim resolution UI & Truth Guard): FAIL.**
+  Компонент эксплицитного выбора подтверждающего факта добавлен (`CareerClaim.tsx`, 25/25 component
+  tests PASS). Backend Truth Guard downstream enforcement работает: unresolved Claim блокирует
+  генерацию на уровне API (`422 Unprocessable` / `stale` / `BLOCK`, 12/12 `ClaimResolutionUiTest`,
+  19/19 `ApplicationDraftTest` PASS [MOCKED]).
+  Однако в `career-workspace.tsx` обнаружен открытый блокирующий дефект состояний гонки (RACE-01–RACE-08):
+  функция `refresh()` выполняет несинхронизированный GET и затирает стейт (`setOverview`).
+  Устаревший GET после PATCH resolution возвращает UI к `USER_RESOLUTION_REQUIRED` (RACE-01);
+  устаревший GET с PASS перезаписывает более новый BLOCK (RACE-02); фоновый polling перекрывает
+  PATCH (RACE-06); размонтирование производит недопустимый commit (RACE-07).
+  Коммит `b09a081` добавил лишь обработку `RESOURCE_NOT_FOUND` и memoize, но саму проблему гонок не устранил.
+  Статус UI-компонента и интеграции — FAIL.
+
+- **Cross-task integration: FAIL.**
+  Сквозной пользовательский сценарий `AMBIGUOUS CLAIM → USER_RESOLUTION_REQUIRED → DOWNSTREAM BLOCK → EXPLICIT RESOLUTION → TRUTH GUARD REVALIDATION → GENERATION → HUMAN APPROVAL → REFRESH → PERSISTENCE`
+  на backend boundary работает с synthetic/mock данными (`PASS [MOCKED]`), но на уровне UI
+  подвержен регрессии при устаревшем ответе GET/polling (`FAIL`). Полный end-to-end сценарий не прошёл.
+
+- **Release Gates и ограничения:**
+  - Production Accessibility Release Gate (ADR-0025, K1/Z1/A1): `OPEN / BLOCKED`.
+  - Preview 0.1 → M2 Gate: `BLOCKED` (реальный пользовательский сценарий не подтверждён).
+  - Реальные интеграции с OpenAI API и ChatGPT OAuth не подтверждены (`NOT_VERIFIED / BLOCKED`).
+  - Все выполненные тесты AI провайдеров маркированы как MOCKED и не доказывают работу реального LLM.
+
 ## QA-003 — diagnostics timestamp-tie fixture repair, 2026-10-12
 
 Explicit bounded owner IMPLEMENT override of
