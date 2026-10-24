@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Models\UserAiSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 
 class AiSettingsController extends Controller
 {
@@ -20,7 +19,7 @@ class AiSettingsController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $setting = $user && Schema::hasTable('user_ai_settings')
+        $setting = $user
             ? UserAiSetting::query()->where('owner_id', $user->id)->first()
             : null;
 
@@ -38,6 +37,7 @@ class AiSettingsController extends Controller
 
         $validated = $request->validate([
             'selected_provider' => ['nullable', 'string', 'in:openai,gemini,system_default'],
+            'default_provider' => ['nullable', 'string', 'in:openai,gemini,system_default'],
             'gemini_api_key' => ['nullable', 'string', 'max:512'],
             'clear_gemini_key' => ['nullable', 'boolean'],
             'gemini_model' => ['nullable', 'string', 'max:128'],
@@ -48,12 +48,12 @@ class AiSettingsController extends Controller
 
         $setting = UserAiSetting::query()->firstOrNew(['owner_id' => $user->id]);
 
-        if (array_key_exists('selected_provider', $validated)) {
-            $provider = $validated['selected_provider'];
-            $setting->selected_provider = ($provider === 'system_default' || $provider === null) ? null : $provider;
+        $selectedProvider = $validated['selected_provider'] ?? $validated['default_provider'] ?? null;
+        if ($request->has('selected_provider') || $request->has('default_provider')) {
+            $setting->selected_provider = ($selectedProvider === 'system_default' || $selectedProvider === null) ? null : $selectedProvider;
         }
 
-        if (! empty($validated['clear_gemini_key'])) {
+        if (! empty($validated['clear_gemini_key']) || ($request->has('gemini_api_key') && $request->input('gemini_api_key') === null)) {
             $setting->gemini_api_key = null;
         } elseif (isset($validated['gemini_api_key']) && trim($validated['gemini_api_key']) !== '') {
             $setting->gemini_api_key = trim($validated['gemini_api_key']);
@@ -63,7 +63,7 @@ class AiSettingsController extends Controller
             $setting->gemini_model = filled($validated['gemini_model']) ? trim((string) $validated['gemini_model']) : null;
         }
 
-        if (! empty($validated['clear_openai_key'])) {
+        if (! empty($validated['clear_openai_key']) || ($request->has('openai_api_key') && $request->input('openai_api_key') === null)) {
             $setting->openai_api_key = null;
         } elseif (isset($validated['openai_api_key']) && trim($validated['openai_api_key']) !== '') {
             $setting->openai_api_key = trim($validated['openai_api_key']);
@@ -89,25 +89,37 @@ class AiSettingsController extends Controller
         ]);
 
         $user = $request->user();
-        $setting = $user && Schema::hasTable('user_ai_settings')
+        $setting = $user
             ? UserAiSetting::query()->where('owner_id', $user->id)->first()
             : null;
 
         $provider = $validated['provider'];
         $model = $validated['model'] ?? null;
 
-        if ($provider === 'gemini') {
-            $apiKey = isset($validated['api_key']) && trim($validated['api_key']) !== ''
-                ? trim($validated['api_key'])
-                : $setting?->gemini_api_key;
+        try {
+            if ($provider === 'gemini') {
+                $apiKey = isset($validated['api_key']) && trim($validated['api_key']) !== ''
+                    ? trim($validated['api_key'])
+                    : $setting?->gemini_api_key;
 
-            $result = $this->gemini->testConnection($apiKey, $model);
-        } else {
-            $apiKey = isset($validated['api_key']) && trim($validated['api_key']) !== ''
-                ? trim($validated['api_key'])
-                : $setting?->openai_api_key;
+                $result = $this->gemini->testConnection($apiKey, $model);
+            } else {
+                $apiKey = isset($validated['api_key']) && trim($validated['api_key']) !== ''
+                    ? trim($validated['api_key'])
+                    : $setting?->openai_api_key;
 
-            $result = $this->openai->testConnection($apiKey, $model);
+                $result = $this->openai->testConnection($apiKey, $model);
+            }
+        } catch (\Throwable $e) {
+            $result = [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => $provider,
+                'model' => (string) $model,
+                'error_code' => 'INTERNAL_ERROR',
+                'message' => 'Connection test failed: '.$e->getMessage(),
+                'recommendation' => 'Check provider settings and credentials.',
+            ];
         }
 
         return response()->json($result);
@@ -127,10 +139,42 @@ class AiSettingsController extends Controller
         $selectedProvider = $setting?->selected_provider;
         $activeProvider = $selectedProvider ?: $defaultProvider;
 
+        $geminiModel = $setting?->gemini_model ?: (string) config('ai.providers.gemini.default_model', 'gemini-1.5-flash');
+        $openaiModel = $setting?->openai_model ?: (string) config('ai.providers.openai.default_model', 'gpt-4o-mini');
+
+        $geminiAvailableModelObjects = config('ai.providers.gemini.available_models', [
+            ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
+            ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],
+            ['id' => 'gemini-2.0-flash', 'name' => 'Gemini 2.0 Flash (Next-gen Fast)'],
+        ]);
+        /** @var list<string> $geminiAvailableModelIds */
+        $geminiAvailableModelIds = array_column((array) $geminiAvailableModelObjects, 'id');
+
+        $openaiAvailableModelObjects = [
+            ['id' => 'gpt-4o-mini', 'name' => 'GPT-4o mini'],
+            ['id' => 'gpt-4o', 'name' => 'GPT-4o'],
+        ];
+        $openaiAvailableModelIds = array_column($openaiAvailableModelObjects, 'id');
+
+        $maskKey = function (?string $key): ?string {
+            if ($key === null || trim($key) === '') {
+                return null;
+            }
+            $len = strlen($key);
+            if ($len <= 8) {
+                return str_repeat('•', $len);
+            }
+
+            return substr($key, 0, 6).'...'.substr($key, -4);
+        };
+
+        $geminiMaskedKey = $maskKey($setting?->gemini_api_key);
+        $openaiMaskedKey = $maskKey($setting?->openai_api_key);
+
         return [
             'selected_provider' => $selectedProvider ?? 'system_default',
             'active_provider' => $activeProvider,
-            'default_provider' => $defaultProvider,
+            'default_provider' => $activeProvider,
             'providers' => [
                 'gemini' => [
                     'id' => 'gemini',
@@ -138,12 +182,12 @@ class AiSettingsController extends Controller
                     'configured' => $hasUserGeminiKey || $hasSystemGeminiKey,
                     'has_user_key' => $hasUserGeminiKey,
                     'has_system_key' => $hasSystemGeminiKey,
-                    'model' => $setting?->gemini_model ?: config('ai.providers.gemini.default_model', 'gemini-1.5-flash'),
-                    'available_models' => config('ai.providers.gemini.available_models', [
-                        ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
-                        ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],
-                        ['id' => 'gemini-2.0-flash', 'name' => 'Gemini 2.0 Flash (Next-gen Fast)'],
-                    ]),
+                    'has_key' => $hasUserGeminiKey,
+                    'masked_key' => $geminiMaskedKey,
+                    'model' => $geminiModel,
+                    'default_model' => $geminiModel,
+                    'available_models' => $geminiAvailableModelObjects,
+                    'env_key_configured' => $hasSystemGeminiKey,
                 ],
                 'openai' => [
                     'id' => 'openai',
@@ -151,12 +195,27 @@ class AiSettingsController extends Controller
                     'configured' => $hasUserOpenAiKey || $hasSystemOpenAiKey,
                     'has_user_key' => $hasUserOpenAiKey,
                     'has_system_key' => $hasSystemOpenAiKey,
-                    'model' => $setting?->openai_model ?: config('ai.providers.openai.default_model', 'gpt-4o-mini'),
-                    'available_models' => [
-                        ['id' => 'gpt-4o-mini', 'name' => 'GPT-4o mini'],
-                        ['id' => 'gpt-4o', 'name' => 'GPT-4o'],
-                    ],
+                    'has_key' => $hasUserOpenAiKey,
+                    'masked_key' => $openaiMaskedKey,
+                    'model' => $openaiModel,
+                    'default_model' => $openaiModel,
+                    'available_models' => $openaiAvailableModelObjects,
+                    'env_key_configured' => $hasSystemOpenAiKey,
                 ],
+            ],
+            'gemini' => [
+                'has_key' => $hasUserGeminiKey,
+                'masked_key' => $geminiMaskedKey,
+                'default_model' => $geminiModel,
+                'available_models' => $geminiAvailableModelIds,
+                'env_key_configured' => $hasSystemGeminiKey,
+            ],
+            'openai' => [
+                'has_key' => $hasUserOpenAiKey,
+                'masked_key' => $openaiMaskedKey,
+                'default_model' => $openaiModel,
+                'available_models' => $openaiAvailableModelIds,
+                'env_key_configured' => $hasSystemOpenAiKey,
             ],
         ];
     }

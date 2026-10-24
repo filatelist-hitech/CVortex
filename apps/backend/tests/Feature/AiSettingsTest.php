@@ -228,8 +228,45 @@ class AiSettingsTest extends TestCase
 
         $response->assertOk();
         $this->assertTrue($response->json('success'));
+        $this->assertSame('healthy', $response->json('status'));
         $this->assertSame('gemini', $response->json('provider'));
         $this->assertSame('gemini-1.5-flash', $response->json('model'));
+
+        // Test OpenAI connection success
+        Http::fake([
+            'https://api.openai.com/v1/models/gpt-4o-mini' => Http::response(['id' => 'gpt-4o-mini'], 200),
+        ]);
+
+        $openAiResponse = $this->postJson('/api/v1/ai/test-connection', [
+            'provider' => 'openai',
+            'api_key' => 'test-openai-probe-key',
+            'model' => 'gpt-4o-mini',
+        ]);
+
+        $openAiResponse->assertOk();
+        $this->assertTrue($openAiResponse->json('success'));
+        $this->assertSame('healthy', $openAiResponse->json('status'));
+        $this->assertSame('openai', $openAiResponse->json('provider'));
+    }
+
+    public function test_test_connection_endpoint_openai_error_returns_structured_error(): void
+    {
+        $this->asUser($this->userA);
+
+        Http::fake([
+            'https://api.openai.com/v1/models/gpt-4o-mini' => Http::response(['error' => ['message' => 'Invalid key']], 401),
+        ]);
+
+        $openAiErrorResponse = $this->postJson('/api/v1/ai/test-connection', [
+            'provider' => 'openai',
+            'api_key' => 'bad-key',
+            'model' => 'gpt-4o-mini',
+        ]);
+
+        $openAiErrorResponse->assertOk();
+        $this->assertFalse($openAiErrorResponse->json('success'));
+        $this->assertSame('failed', $openAiErrorResponse->json('status'));
+        $this->assertSame('INVALID_CREDENTIALS', $openAiErrorResponse->json('error_code'));
     }
 
     public function test_end_to_end_career_extraction_with_gemini_provider_preserves_truth_guard(): void

@@ -97,13 +97,22 @@ export default function AiProviderSettings() {
         body: JSON.stringify(payload),
       });
 
-      setTestResult({
-        status: "healthy",
-        provider,
-        model: res.model,
-        latency_ms: res.latency_ms,
-        message: res.message || "Подключение успешно проверено.",
-      });
+      if (res.success === false || res.status === "failed") {
+        setTestResult({
+          status: "failed",
+          provider,
+          model: res.model || model,
+          message: res.message || res.error_code || "Проверка подключения не удалась.",
+        });
+      } else {
+        setTestResult({
+          status: "healthy",
+          provider,
+          model: res.model,
+          latency_ms: res.latency_ms,
+          message: res.message || "Подключение успешно проверено.",
+        });
+      }
     } catch (err) {
       setTestResult({
         status: "failed",
@@ -287,7 +296,7 @@ export default function AiProviderSettings() {
               <label htmlFor={geminiKeyId}>
                 Персональный API-ключ Gemini
                 <small className="help-text">
-                  Шифруется при сохранении (AES-256-GCM) и никогда не передаётся в браузер в открытом виде.
+                  Шифруется при сохранении (AES-256-CBC) и никогда не передаётся в браузер в открытом виде.
                 </small>
               </label>
 
@@ -417,7 +426,7 @@ export default function AiProviderSettings() {
               <label htmlFor={openaiKeyId}>
                 Персональный API-ключ OpenAI
                 <small className="help-text">
-                  Шифруется при сохранении (AES-256-GCM) и никогда не передаётся в браузер в открытом виде.
+                  Шифруется при сохранении (AES-256-CBC) и никогда не передаётся в браузер в открытом виде.
                 </small>
               </label>
 

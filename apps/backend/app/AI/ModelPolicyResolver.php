@@ -8,7 +8,6 @@ use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\ModelSelectionException;
 use App\Models\User;
 use App\Models\UserAiSetting;
-use Illuminate\Support\Facades\Schema;
 
 class ModelPolicyResolver
 {
@@ -37,11 +36,12 @@ class ModelPolicyResolver
     public function resolve(ModelPolicy $policy, ?User $user = null): ResolvedModel
     {
         $user ??= auth()->user();
-        if ($user instanceof User && Schema::hasTable('user_ai_settings')) {
-            $userSetting = UserAiSetting::query()->where('owner_id', $user->id)->first();
-            if ($userSetting && filled($userSetting->selected_provider)) {
-                return $this->resolveForUserProvider($policy, $userSetting->selected_provider, $userSetting);
-            }
+        $userSetting = ($user instanceof User)
+            ? UserAiSetting::query()->where('owner_id', $user->id)->first()
+            : null;
+
+        if ($userSetting && filled($userSetting->selected_provider)) {
+            return $this->resolveForUserProvider($policy, $userSetting->selected_provider, $userSetting);
         }
 
         $mapping = config('ai.model_policies.'.$policy->id);
@@ -57,6 +57,12 @@ class ModelPolicyResolver
             );
         }
 
+        $byokKey = match ($mapping['provider']) {
+            'gemini' => $userSetting?->gemini_api_key,
+            'openai' => $userSetting?->openai_api_key,
+            default => null,
+        };
+
         return new ResolvedModel(
             policyId: $policy->id,
             provider: $mapping['provider'],
@@ -65,6 +71,7 @@ class ModelPolicyResolver
                 ? $mapping['input_cost_micros_per_million_tokens'] : null,
             outputCostMicrosPerMillionTokens: is_int($mapping['output_cost_micros_per_million_tokens'] ?? null)
                 ? $mapping['output_cost_micros_per_million_tokens'] : null,
+            apiKey: $byokKey,
         );
     }
 
@@ -87,6 +94,7 @@ class ModelPolicyResolver
                     ? (int) config('ai.model_policies.'.$policy->id.'.input_cost_micros_per_million_tokens') : null,
                 outputCostMicrosPerMillionTokens: is_int(config('ai.model_policies.'.$policy->id.'.output_cost_micros_per_million_tokens'))
                     ? (int) config('ai.model_policies.'.$policy->id.'.output_cost_micros_per_million_tokens') : null,
+                apiKey: $setting->gemini_api_key,
             );
         }
 
@@ -106,6 +114,7 @@ class ModelPolicyResolver
                     ? $mapping['input_cost_micros_per_million_tokens'] : null,
                 outputCostMicrosPerMillionTokens: is_int($mapping['output_cost_micros_per_million_tokens'] ?? null)
                     ? $mapping['output_cost_micros_per_million_tokens'] : null,
+                apiKey: $setting->openai_api_key,
             );
         }
 

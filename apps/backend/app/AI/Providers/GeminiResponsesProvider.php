@@ -277,6 +277,7 @@ class GeminiResponsesProvider
         if ($key === '') {
             return [
                 'success' => false,
+                'status' => 'failed',
                 'provider' => 'gemini',
                 'model' => $targetModel,
                 'error_code' => 'NOT_CONFIGURED',
@@ -311,6 +312,7 @@ class GeminiResponsesProvider
         } catch (Throwable $e) {
             return [
                 'success' => false,
+                'status' => 'failed',
                 'provider' => 'gemini',
                 'model' => $targetModel,
                 'latency_ms' => $this->elapsedMilliseconds($startedAt),
@@ -339,6 +341,7 @@ class GeminiResponsesProvider
 
             return [
                 'success' => false,
+                'status' => 'failed',
                 'provider' => 'gemini',
                 'model' => $targetModel,
                 'latency_ms' => $latencyMs,
@@ -350,6 +353,7 @@ class GeminiResponsesProvider
 
         return [
             'success' => true,
+            'status' => 'healthy',
             'provider' => 'gemini',
             'model' => $targetModel,
             'latency_ms' => $latencyMs,

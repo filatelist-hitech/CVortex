@@ -1,36 +1,47 @@
 <?php
 
+$aiProvider = env('AI_PROVIDER', 'openai');
+$geminiExtractionModel = env('GEMINI_CAREER_EXTRACTION_MODEL', 'gemini-1.5-flash');
+$geminiDraftModel = env('GEMINI_APPLICATION_DRAFT_MODEL', 'gemini-1.5-flash');
+$geminiInputCost = env('GEMINI_INPUT_COST_MICROS_PER_MILLION_TOKENS');
+$geminiOutputCost = env('GEMINI_OUTPUT_COST_MICROS_PER_MILLION_TOKENS');
+
+$openaiExtractionModel = env('OPENAI_CAREER_EXTRACTION_MODEL');
+$openaiDraftModel = env('OPENAI_APPLICATION_DRAFT_MODEL');
+$openaiExtractionInputCost = env('OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS');
+$openaiExtractionOutputCost = env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS');
+$openaiDraftInputCost = env('OPENAI_APPLICATION_INPUT_COST_MICROS_PER_MILLION_TOKENS');
+$openaiDraftOutputCost = env('OPENAI_APPLICATION_OUTPUT_COST_MICROS_PER_MILLION_TOKENS');
+
+$isGemini = $aiProvider === 'gemini';
+
 return [
     'asset_root' => env('AI_ASSET_ROOT', is_dir('/runtime-ai') ? '/runtime-ai' : base_path('../../runtime-ai')),
-    'default_provider' => env('AI_PROVIDER', 'openai'),
+    'default_provider' => $aiProvider,
     'model_policies' => [
         'user_selected_chatgpt_plan' => [
             'provider' => 'openai_chatgpt_plan',
             'selection' => 'account_catalog',
         ],
         'low_cost_structured_extraction' => [
-            'provider' => env('AI_PROVIDER', 'none'),
-            'model' => env('AI_PROVIDER') === 'gemini'
-                ? env('GEMINI_CAREER_EXTRACTION_MODEL', 'gemini-1.5-flash')
-                : env('OPENAI_CAREER_EXTRACTION_MODEL'),
-            'input_cost_micros_per_million_tokens' => env('AI_PROVIDER') === 'gemini'
-                ? (filled(env('GEMINI_INPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('GEMINI_INPUT_COST_MICROS_PER_MILLION_TOKENS') : null)
-                : (filled(env('OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('OPENAI_CAREER_INPUT_COST_MICROS_PER_MILLION_TOKENS') : null),
-            'output_cost_micros_per_million_tokens' => env('AI_PROVIDER') === 'gemini'
-                ? (filled(env('GEMINI_OUTPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('GEMINI_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null)
-                : (filled(env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('OPENAI_CAREER_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null),
+            'provider' => $aiProvider,
+            'model' => $isGemini ? $geminiExtractionModel : $openaiExtractionModel,
+            'input_cost_micros_per_million_tokens' => $isGemini
+                ? (filled($geminiInputCost) ? (int) $geminiInputCost : null)
+                : (filled($openaiExtractionInputCost) ? (int) $openaiExtractionInputCost : null),
+            'output_cost_micros_per_million_tokens' => $isGemini
+                ? (filled($geminiOutputCost) ? (int) $geminiOutputCost : null)
+                : (filled($openaiExtractionOutputCost) ? (int) $openaiExtractionOutputCost : null),
         ],
         'standard_semantic_generation' => [
-            'provider' => env('AI_PROVIDER', 'none'),
-            'model' => env('AI_PROVIDER') === 'gemini'
-                ? env('GEMINI_APPLICATION_DRAFT_MODEL', 'gemini-1.5-flash')
-                : env('OPENAI_APPLICATION_DRAFT_MODEL'),
-            'input_cost_micros_per_million_tokens' => env('AI_PROVIDER') === 'gemini'
-                ? (filled(env('GEMINI_INPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('GEMINI_INPUT_COST_MICROS_PER_MILLION_TOKENS') : null)
-                : (filled(env('OPENAI_APPLICATION_INPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('OPENAI_APPLICATION_INPUT_COST_MICROS_PER_MILLION_TOKENS') : null),
-            'output_cost_micros_per_million_tokens' => env('AI_PROVIDER') === 'gemini'
-                ? (filled(env('GEMINI_OUTPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('GEMINI_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null)
-                : (filled(env('OPENAI_APPLICATION_OUTPUT_COST_MICROS_PER_MILLION_TOKENS')) ? (int) env('OPENAI_APPLICATION_OUTPUT_COST_MICROS_PER_MILLION_TOKENS') : null),
+            'provider' => $aiProvider,
+            'model' => $isGemini ? $geminiDraftModel : $openaiDraftModel,
+            'input_cost_micros_per_million_tokens' => $isGemini
+                ? (filled($geminiInputCost) ? (int) $geminiInputCost : null)
+                : (filled($openaiDraftInputCost) ? (int) $openaiDraftInputCost : null),
+            'output_cost_micros_per_million_tokens' => $isGemini
+                ? (filled($geminiOutputCost) ? (int) $geminiOutputCost : null)
+                : (filled($openaiDraftOutputCost) ? (int) $openaiDraftOutputCost : null),
         ],
     ],
     'providers' => [
@@ -46,8 +57,8 @@ return [
             'timeout_seconds' => (int) env('GEMINI_TIMEOUT_SECONDS', 45),
             'test_model' => env('GEMINI_TEST_MODEL', 'gemini-1.5-flash'),
             'default_model' => env('GEMINI_DEFAULT_MODEL', 'gemini-1.5-flash'),
-            'extraction_model' => env('GEMINI_CAREER_EXTRACTION_MODEL', 'gemini-1.5-flash'),
-            'generation_model' => env('GEMINI_APPLICATION_DRAFT_MODEL', 'gemini-1.5-flash'),
+            'extraction_model' => $geminiExtractionModel,
+            'generation_model' => $geminiDraftModel,
             'available_models' => [
                 ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
                 ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],

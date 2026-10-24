@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\ApplicationPreparationController;
 use App\Http\Controllers\AuthController;
@@ -37,13 +36,7 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/settings', [AiSettingsController::class, 'update']);
             Route::middleware('throttle:10,1')->post('/test-connection', [AiSettingsController::class, 'testConnection']);
         });
-        Route::prefix('admin')->group(function (): void {
-            Route::get('/settings', [AdminSettingsController::class, 'index']);
-            Route::patch('/settings', [AdminSettingsController::class, 'update']);
-            Route::post('/settings/reset', [AdminSettingsController::class, 'reset']);
-            Route::post('/settings/test', [AdminSettingsController::class, 'test']);
-            Route::get('/settings/environment', [AdminSettingsController::class, 'environment']);
-        });
+
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::middleware('throttle:diagnostics-report')->post('/diagnostics/report', [DiagnosticsController::class, 'report']);
         Route::get('/diagnostics/incidents', [DiagnosticsController::class, 'index']);

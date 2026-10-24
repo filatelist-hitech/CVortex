@@ -10,5 +10,6 @@ final readonly class ResolvedModel
         public string $model,
         public ?int $inputCostMicrosPerMillionTokens = null,
         public ?int $outputCostMicrosPerMillionTokens = null,
+        public ?string $apiKey = null,
     ) {}
 }

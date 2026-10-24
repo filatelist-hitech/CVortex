@@ -14,7 +14,7 @@ class OpenAiResponsesProvider
 {
     public function generateResolved(LlmRequest $request, ResolvedModel $resolved, ?string $apiKey = null): LlmResponse
     {
-        $apiKey = $apiKey ?: (string) config('ai.providers.openai.api_key');
+        $apiKey = ($apiKey !== null && trim($apiKey) !== '') ? trim($apiKey) : (string) config('ai.providers.openai.api_key');
         $model = $resolved->model;
         if ($apiKey === '' || $model === '') {
             throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED, 'The OpenAI provider is not fully configured.', 'openai', $model);
@@ -244,16 +244,24 @@ class OpenAiResponsesProvider
      */
     public function testConnection(?string $apiKey = null, ?string $model = null): array
     {
-        $apiKey = $apiKey ?: (string) config('ai.providers.openai.api_key');
-        $model = $model ?: (string) config('ai.providers.openai.default_model', 'gpt-4o-mini');
+        $key = ($apiKey !== null && trim($apiKey) !== '')
+            ? trim($apiKey)
+            : (string) config('ai.providers.openai.api_key');
 
-        if ($apiKey === '' || $model === '') {
-            throw new LlmProviderException(
-                LlmProviderException::NOT_CONFIGURED,
-                'The OpenAI API key is missing. Configure it in environment or AI settings.',
-                'openai',
-                $model
-            );
+        $targetModel = ($model !== null && trim($model) !== '')
+            ? trim($model)
+            : (string) config('ai.providers.openai.default_model', 'gpt-4o-mini');
+
+        if ($key === '') {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => 'openai',
+                'model' => $targetModel,
+                'error_code' => 'NOT_CONFIGURED',
+                'message' => 'The OpenAI API key is missing. Configure it in environment or AI settings.',
+                'recommendation' => 'Enter a valid OpenAI API key or configure OPENAI_API_KEY.',
+            ];
         }
 
         $startedAt = hrtime(true);
@@ -261,53 +269,51 @@ class OpenAiResponsesProvider
 
         try {
             $response = Http::baseUrl($baseUrl)
-                ->withToken($apiKey)
+                ->withToken($key)
                 ->acceptJson()
                 ->timeout(10)
-                ->get('/models/'.$model);
-        } catch (ConnectionException $exception) {
-            throw new LlmProviderException(
-                LlmProviderException::TRANSPORT,
-                'The OpenAI provider could not be reached.',
-                'openai',
-                $model,
-                $exception
-            );
+                ->get('/models/'.$targetModel);
+        } catch (\Throwable $exception) {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => 'openai',
+                'model' => $targetModel,
+                'latency_ms' => $this->elapsedMilliseconds($startedAt),
+                'error_code' => 'TRANSPORT_ERROR',
+                'message' => 'Unable to reach OpenAI endpoint.',
+                'recommendation' => 'Check your internet connection and proxy/DNS settings.',
+            ];
         }
 
-        if ($response->status() === 401 || $response->status() === 403) {
-            throw new LlmProviderException(
-                LlmProviderException::INVALID_CONFIGURATION,
-                'Invalid OpenAI API key or unauthorized model access: '.$response->body(),
-                'openai',
-                $model
-            );
-        }
-
-        if ($response->status() === 429) {
-            throw new LlmProviderException(
-                LlmProviderException::RATE_LIMITED,
-                'OpenAI API rate limit exceeded.',
-                'openai',
-                $model
-            );
-        }
+        $latencyMs = $this->elapsedMilliseconds($startedAt);
 
         if (! $response->successful()) {
-            throw new LlmProviderException(
-                LlmProviderException::PROVIDER,
-                'OpenAI API returned error: '.$response->body(),
-                'openai',
-                $model
-            );
+            $status = $response->status();
+            [$errorCode, $recommendation] = match (true) {
+                $status === 401 || $status === 403 => ['INVALID_CREDENTIALS', 'Verify that your OpenAI API key is valid and has model access.'],
+                $status === 429 => ['RATE_LIMITED', 'OpenAI quota or rate limit exceeded. Check your plan quota on OpenAI platform.'],
+                $status >= 500 => ['PROVIDER_UNAVAILABLE', 'OpenAI service is temporarily unavailable. Retry later.'],
+                default => ['PROVIDER_ERROR', 'The OpenAI provider returned an unexpected error.'],
+            };
+
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => 'openai',
+                'model' => $targetModel,
+                'latency_ms' => $latencyMs,
+                'error_code' => $errorCode,
+                'message' => 'Connection test failed: '.$errorCode,
+                'recommendation' => $recommendation,
+            ];
         }
 
-        $latencyMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
-
         return [
+            'success' => true,
             'status' => 'healthy',
             'provider' => 'openai',
-            'model' => $model,
+            'model' => $targetModel,
             'latency_ms' => $latencyMs,
             'message' => 'OpenAI connection test successful.',
         ];
