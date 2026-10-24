@@ -3,7 +3,7 @@ title: Карта документации
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-10-11
+updated: 2026-10-12
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
@@ -63,7 +63,7 @@ related:
 | `06-AI/` | Сервисы ИИ, модели, сценарии и оценка ИИ | В работе |
 | `07-Design/` | Дизайн-система, токены и передача макетов | В работе |
 | `08-Security/` | Модель угроз и меры защиты | В работе |
-| `09-QA/` | [Functional audit](../09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), [coverage matrix](../09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), [defect register](../09-QA/FUNCTIONAL-DEFECT-REGISTER.md) и проверяемый evidence package | Датированные локальные проверки; provider/human/release gates видимы отдельно |
+| `09-QA/` | [Functional audit](../09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), [coverage matrix](../09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), [исторический defect register](../09-QA/FUNCTIONAL-DEFECT-REGISTER.md), [текущий статус QA-001](../09-QA/QA-001-RECONCILIATION.md) и проверяемый evidence package | Датированные локальные проверки; provider/human/release gates видимы отдельно |
 | `10-Operations/` | Локальный запуск, обслуживание и диагностика | В работе |
 | `11-Research/` | Исследования, результаты которых включены в документацию | Зарезервировано |
 | `99-Archive/` | Устаревшие и заменённые документы | Зарезервировано |
