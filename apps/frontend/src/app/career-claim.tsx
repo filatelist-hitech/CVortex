@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "./access-shell";
 
 export type Fact = {
@@ -37,18 +37,28 @@ function resolutionError(caught: unknown): string {
   return "Не удалось подтвердить источник. Выбор сохранён. Обновите варианты или повторите подтверждение позже.";
 }
 
-export default function CareerClaim({ claim, facts, onResolved, onRefresh }: {
+export default function CareerClaim({ claim, facts, onResolved, onRefresh, onMutating }: {
   claim: Claim;
   facts: Fact[];
   onResolved: (resolved: Pick<Claim, "truth_status">) => void;
   onRefresh: () => Promise<void>;
+  onMutating?: (busy: boolean) => void;
 }) {
   const [selected, setSelected] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const inFlight = useRef(false);
+  const isMounted = useRef(true);
   const announcement = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const eligible = useMemo(() => facts.filter((fact) => claim.fact_ids?.includes(fact.id)
     && fact.status === "CONFIRMED"
     && (fact.assertion_approved ?? fact.assertion_original) === claim.statement
@@ -59,8 +69,10 @@ export default function CareerClaim({ claim, facts, onResolved, onRefresh }: {
   async function resolve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inFlight.current || !selectionAvailable || claim.truth_status !== "USER_RESOLUTION_REQUIRED") return;
+    const initialClaimId = claim.id;
     inFlight.current = true;
     setBusy(true);
+    onMutating?.(true);
     setError("");
     setSuccess(false);
     try {
@@ -71,16 +83,21 @@ export default function CareerClaim({ claim, facts, onResolved, onRefresh }: {
       if (result?.data?.id !== claim.id || !["PASS", "BLOCK", "USER_RESOLUTION_REQUIRED"].includes(status)) {
         throw new Error("Invalid resolution response");
       }
+      if (!isMounted.current || claim.id !== initialClaimId) return;
       onResolved({ truth_status: status });
       if (status === "PASS") setSuccess(true);
       else setError("Источник выбран, но проверка утверждения не пройдена. Обновите варианты и проверьте факты.");
     } catch (caught) {
+      if (!isMounted.current || claim.id !== initialClaimId) return;
       setError(resolutionError(caught));
     } finally {
       inFlight.current = false;
-      setBusy(false);
-      // The form can disappear after a successful mutation; retain focus on its result.
-      requestAnimationFrame(() => announcement.current?.focus());
+      onMutating?.(false);
+      if (isMounted.current) {
+        setBusy(false);
+        // The form can disappear after a successful mutation; retain focus on its result.
+        requestAnimationFrame(() => announcement.current?.focus());
+      }
     }
   }
 

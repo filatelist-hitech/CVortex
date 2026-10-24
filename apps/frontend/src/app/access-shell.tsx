@@ -72,7 +72,10 @@ export async function api(path: string, options: RequestInit = {}) {
     },
     ...options,
     });
-  } catch {
+  } catch (caught) {
+    if (caught && typeof caught === "object" && "name" in caught && (caught as { name: string }).name === "AbortError") {
+      throw caught;
+    }
     throw new ApiError("Не удалось подключиться. Проверьте сеть. [NETWORK_ERROR] Можно повторить запрос.", true, "NETWORK_ERROR");
   }
   if (!response.ok) {
@@ -149,7 +152,7 @@ export default function AccessShell({ registrationRoute = false, destination = "
     return <WorkspaceShell email={user.email} role={user.role} destination={destination} onSignOut={onSignOut}>
       {destination === "diagnostics"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell diagnostics-shell"><Diagnostics /></main>
-        : <CareerWorkspace />}
+        : <CareerWorkspace key={user.id} userId={user.id} />}
     </WorkspaceShell>;
   }
 
