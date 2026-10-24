@@ -45,14 +45,14 @@ function Icon({ name }: { name: string }) {
 export default function WorkspaceShell({ email, role, destination, onSignOut, children }: {
   email: string;
   role: string;
-  destination: "career" | "diagnostics" | "vacancies";
+  destination: "career" | "diagnostics" | "vacancies" | "admin-settings";
   onSignOut: () => Promise<void>;
   children: ReactNode;
 }) {
   const hash = useSyncExternalStore(subscribeLocation, currentHash, serverHash);
   const compact = useSyncExternalStore(subscribeCompact, compactSnapshot, serverCompact);
   const active = destination === "career" ? hash === "#vacancy-title" ? "opportunities" : "career" : null;
-  const currentLabel = destination === "diagnostics" ? "Диагностика" : active === "opportunities" ? "Вакансии" : "Карьера";
+  const currentLabel = destination === "diagnostics" ? "Диагностика" : destination === "admin-settings" ? "Настройки системы" : active === "opportunities" ? "Вакансии" : "Карьера";
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const menuTrigger = useRef<HTMLElement>(null);
@@ -103,6 +103,7 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
       <div className="workspace-account" role="group" aria-label="Управление аккаунтом">
         <span className="workspace-identity">{email}</span>
         {role === "admin" && <Link className="workspace-link" href="/diagnostics" aria-current={destination === "diagnostics" ? "page" : undefined} onClick={closeAccount}>Диагностика</Link>}
+        {role === "admin" && <Link className="workspace-link" href="/admin/settings" aria-current={destination === "admin-settings" ? "page" : undefined} onClick={closeAccount}>Настройки системы</Link>}
         <button type="button" className="secondary" disabled={signingOut} onClick={() => void signOut()}>{signingOut ? "Выход…" : "Выйти"}</button>
         {error && <p className="error" role="alert">{error}</p>}
       </div>

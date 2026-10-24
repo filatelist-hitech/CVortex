@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Settings;
+
+use App\Models\SystemSetting;
+use App\Settings\Exceptions\SettingConcurrencyException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
+class SettingsRepository
+{
+    public function get(string $key): ?SystemSetting
+    {
+        return SystemSetting::query()->where('key', $key)->first();
+    }
+
+    /**
+     * @return Collection<string, SystemSetting>
+     */
+    public function all(): Collection
+    {
+        return SystemSetting::query()->get()->keyBy('key');
+    }
+
+    public function save(string $key, mixed $value, bool $isSecret, ?string $userId = null, ?int $expectedVersion = null): SystemSetting
+    {
+        return DB::transaction(function () use ($key, $value, $isSecret, $userId, $expectedVersion): SystemSetting {
+            /** @var SystemSetting|null $setting */
+            $setting = SystemSetting::query()->where('key', $key)->lockForUpdate()->first();
+
+            if ($setting !== null) {
+                if ($expectedVersion !== null && $setting->version !== $expectedVersion) {
+                    throw new SettingConcurrencyException;
+                }
+
+                $setting->setDecodedValue($value, $isSecret);
+                $setting->updated_by = $userId;
+                $setting->version++;
+                $setting->save();
+
+                return $setting;
+            }
+
+            $newSetting = new SystemSetting([
+                'key' => $key,
+                'updated_by' => $userId,
+                'version' => 1,
+            ]);
+            $newSetting->setDecodedValue($value, $isSecret);
+            $newSetting->save();
+
+            return $newSetting;
+        });
+    }
+
+    public function delete(string $key): bool
+    {
+        return (bool) SystemSetting::query()->where('key', $key)->delete();
+    }
+}

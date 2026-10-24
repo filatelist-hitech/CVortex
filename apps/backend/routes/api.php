@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ApplicationPreparationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CareerController;
@@ -29,6 +30,13 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/connections/{id}/welcome', [$controller, 'acknowledgeWelcome']);
             Route::delete('/connections/{id}', [$controller, 'disconnect']);
             Route::post('/connections/{id}/proof', [$controller, 'proof']);
+        });
+        Route::prefix('admin')->group(function (): void {
+            Route::get('/settings', [AdminSettingsController::class, 'index']);
+            Route::patch('/settings', [AdminSettingsController::class, 'update']);
+            Route::post('/settings/reset', [AdminSettingsController::class, 'reset']);
+            Route::post('/settings/test', [AdminSettingsController::class, 'test']);
+            Route::get('/settings/environment', [AdminSettingsController::class, 'environment']);
         });
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::middleware('throttle:diagnostics-report')->post('/diagnostics/report', [DiagnosticsController::class, 'report']);

@@ -1,5 +1,47 @@
 # CVortex — проверенное текущее состояние
 
+## Runtime Configuration & Admin System Settings — 2026-10-25
+
+Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Architecture & Invariant Enforcement**:
+   - Enforced architectural baseline **Option C**: bootstrap and infrastructure configuration remains in `.env` (immutable by application), while runtime settings live in code (`SettingDefinitionRegistry`) with database overrides in `system_settings`.
+   - Adopted and accepted `docs/03-ADR/ADR-0027-runtime-system-settings.md` and registered in `docs/03-ADR/INDEX.md`.
+   - Documented operational manual in `docs/10-Operations/Runtime-Configuration.md`.
+   - Updated `.env.example` with clear section headers distinguishing `BOOTSTRAP/ENV_ONLY` from `RUNTIME_FALLBACK`.
+
+2. **Backend Engine (`apps/backend/app/Settings/`)**:
+   - Created migration `2026_10_24_000001_create_system_settings_table.php` (ULID, key UNIQUE, JSON value, encrypted_value text, version integer for optimistic concurrency, updated_by FK to users).
+   - Implemented `SettingDefinitionRegistry` with typed definitions across groups (`general`, `auth`, `ai_models`, `ai_providers`, `email`, `storage`, `limits`).
+   - Implemented `SettingsResolver` with strict 4-tier precedence: Hard environment lock → Database override → Config/ENV fallback → Application default.
+   - Enforced zero secret leakage: encrypted at rest via AES-256-CBC (`Crypt`), masked in API responses, excluded from audit logs (`redacted: true`), excluded from standard logs.
+   - Implemented `SettingTestService` for live connectivity tests (OpenAI API latency/ping, SMTP HELO, storage disk write/read/delete) with audit logging.
+   - Built `AdminSettingsController` with endpoints:
+     - `GET /api/v1/admin/settings` (list all settings with secrets masked)
+     - `PATCH /api/v1/admin/settings` (batch update with optimistic locking)
+     - `POST /api/v1/admin/settings/reset` (reset override to fallback/default)
+     - `POST /api/v1/admin/settings/test` (connectivity testing)
+     - `GET /api/v1/admin/settings/environment` (read-only diagnostics without exposing `APP_KEY`)
+   - Wired dynamic settings into core services (`AppServiceProvider`, rate limits, `ModelPolicyResolver`, `OpenAiResponsesProvider`, `InvitationService`, character extraction limits).
+
+3. **Frontend Control Plane (`apps/frontend/`)**:
+   - Built modern Admin UI `apps/frontend/src/app/admin-settings.tsx` with category navigation (Общие, Аутентификация, Модели ИИ, Провайдеры ИИ, Почта и SMTP, Файлы и шаблоны, Лимиты и хранение, Среда и диагностика).
+   - Implemented search filter, source badges (`badge-db`, `badge-env`, `badge-locked`, `badge-default`), staged editing with sticky Discard/Save bar, secret masking & replacement, override reset, and test ping buttons with latency reporting.
+   - Created route `apps/frontend/src/app/admin/settings/page.tsx` and integrated route guard in `access-shell.tsx` (403 for non-admins).
+   - Added navigation links to "Настройки системы" in `workspace-shell.tsx` and `app-shell.tsx`.
+   - Designed responsive styling in `apps/frontend/src/app/globals.css` using `--cv-*` design tokens.
+
+4. **Verification**:
+   - Backend PHPUnit: 19/19 tests PASS (482 assertions) across `SettingDefinitionRegistryTest`, `SettingsResolverTest`, and `AdminSettingsApiTest`.
+   - Backend Pint: 0 style issues across 237 files.
+   - Frontend Vitest: 9/9 tests PASS in `admin-settings.test.tsx`.
+   - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
+   - Frontend ESLint: 0 errors, 0 warnings.
+   - Playwright E2E: 10/10 tests PASS across Desktop Chromium and Mobile Chrome in `e2e/admin/system-settings.spec.ts`.
+
+---
+
 ## QA-004 — Career Claim resolution race conditions eliminated (PR #53) — 2026-10-25
 
 Mode: IMPLEMENT; branch: `fix/qa-004-claim-resolution-race-conditions`; target: `stage` (PR #53 squashed and merged as commit `679c3fcdca1effe26c253a4f3052b275c6c3abe9`). One agent / sequential execution.
@@ -32,6 +74,44 @@ Mode: IMPLEMENT; branch: `fix/qa-004-claim-resolution-race-conditions`; target: 
 
 Status on `stage`: QA-004 is **PASS / RESOLVED**.
 
+---
+
+## Google Gemini LLM Provider Integration — 2026-10-24
+
+Mode: IMPLEMENT; branch: `feature/gemini-llm-provider`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Research & Architecture Baseline**:
+   - Researched official Google Gemini REST API v1beta and recorded findings in `research/technical/12-GOOGLE-GEMINI-INTEGRATION.md`.
+   - Authored and accepted `docs/03-ADR/ADR-0026-gemini-llm-provider-integration.md` amending ADR-0010 and ADR-0011.
+   - Updated `docs/03-ADR/INDEX.md` and `docs/06-AI/Phase-06-AI-Design.md`.
+
+2. **Backend Provider Implementation**:
+   - Built native `App\AI\Providers\GeminiResponsesProvider` using Laravel HTTP Client (`Illuminate\Support\Facades\Http`) without community SDKs.
+   - Implemented `generateResolved` with native OpenAPI 3.0 structured JSON output (`generationConfig.responseSchema`, automatic schema sanitization stripping `$schema` and `$id`), system instructions, token usage metadata, and deterministic cost calculation.
+   - Implemented finish-reason mapping (SAFETY → REFUSAL, MAX_TOKENS → INCOMPLETE, MALFORMED_OUTPUT) and HTTP status error normalization (429/408/5xx retryable, 400/401/403 non-retryable INVALID_CONFIGURATION).
+   - Implemented zero unannounced/silent fallback invariant: if Gemini fails, the error is returned directly as `LlmProviderException`.
+   - Implemented multi-user BYOK settings storage (`user_ai_settings`) with PostgreSQL RLS isolation (`user_ai_settings_owner_isolation`) and encrypted-at-rest API keys (`'encrypted'` cast; hidden from serialization).
+   - Extended `ConfiguredLlmProvider` and `ModelPolicyResolver` to dynamically route to the user-selected provider or default provider.
+   - Created `AiSettingsController` exposing `GET /api/v1/ai/settings`, `PATCH /api/v1/ai/settings`, and non-mutating rate-limited `POST /api/v1/ai/test-connection`.
+   - Updated `OpenAiResponsesProvider` with BYOK dynamic key support and `testConnection`.
+
+3. **Frontend Settings Workspace (`apps/frontend/`)**:
+   - Created `apps/frontend/src/app/settings/page.tsx` and `apps/frontend/src/app/ai-provider-settings.tsx`.
+   - Implemented provider selector (Gemini vs OpenAI), masked API key display, key deletion/replacement, default model selector, live connection test with latency/status reporting, and settings persistence.
+   - Integrated `/settings` route into `access-shell.tsx`, `workspace-shell.tsx`, and `application/app-shell.tsx`.
+   - Added accessible responsive styles to `apps/frontend/src/app/globals.css`.
+
+4. **Verification**:
+   - Backend PHPUnit: 19/19 tests PASS (123 assertions) across `GeminiResponsesProviderTest`, `OpenAiResponsesProviderTest`, and `AiSettingsTest` (including Truth Guard PENDING invariant preservation).
+   - Backend Pint: 0 style issues across all modified files.
+   - Backend PHPStan: 0 errors (`[OK] No errors`).
+   - Frontend Vitest: 11/11 test files (139/139 tests) PASS, including `ai-provider-settings.test.tsx` (6/6 PASS).
+   - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
+   - Frontend ESLint: 0 errors, 0 warnings.
+
+---
+>>>>>>> fd88db1 (feat(admin): implement runtime configuration and admin system settings)
 
 ## Playwright E2E UI Coverage & Quality Automation — 2026-10-24
 
