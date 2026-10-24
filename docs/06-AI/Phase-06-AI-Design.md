@@ -64,3 +64,13 @@ Semantic detection may use a model; status, linkage, provenance validity, owners
 [ADR-0023](../03-ADR/ADR-0023-chatgpt-plan-chat.md) defines a distinct OAuth plan provider and one controlled MCP vacancy-analysis draft save. See [ChatGPT Plan Chat](../10-Operations/ChatGPT-Plan-Chat.md) for implemented context budgets, credentials, errors and user flow, and [MCP architecture](../02-Architecture/MCP-Gateway.md) for the adapter contract. API-key billing remains independent; MCP is not inference.
 
 The implemented ModelPolicyResolver.resolveSelected path reads user_selected_chatgpt_plan (selection=account_catalog) and retains the account's selected slug in the thread/run. It does not use a static entitlement list or invent API monetary cost. StreamingProvider is separate from structured API-key LlmProvider; no OAuth details enter vacancy matching/draft services. ChatGptConnection is the owner credential aggregate (no previous reusable OAuth credential store existed); existing API-key config remains unchanged.
+
+## Google Gemini Provider and BYOK routing — 2026-10-24
+
+[ADR-0026](../03-ADR/ADR-0026-gemini-llm-provider-integration.md) integrates Google Gemini (`gemini`) as an equal, first-class LLM provider alongside OpenAI (`openai`) without disrupting existing OpenAI workflows.
+
+- **Adapter**: `GeminiResponsesProvider` uses official Gemini REST API v1beta via Laravel HTTP Client (`Illuminate\Support\Facades\Http`) without external community SDKs.
+- **Structured output**: Supports native `generationConfig.responseSchema` with sanitized OpenAPI 3.0 schemas (stripping `$schema` and `$id`).
+- **BYOK and Routing**: `UserAiSetting` stores encrypted-at-rest API keys with multi-user PostgreSQL RLS. `ModelPolicyResolver` routes policies to the user-selected or system provider.
+- **Fail-closed & Zero silent fallback**: If a provider fails (e.g. rate limit, transport error, safety refusal), errors are surfaced deterministically as `LlmProviderException` without silent fallback to another provider.
+- **Invariants**: Truth Guard invariants remain strictly preserved (`PENDING` facts, explicit human confirmation required).

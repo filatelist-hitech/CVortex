@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CareerWorkspace from "./career-workspace";
 import Diagnostics from "./diagnostics";
+import AdminSystemSettings from "./admin-settings";
 import WorkspaceShell from "./workspace-shell";
+import AiProviderSettings from "./ai-provider-settings";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
@@ -97,7 +99,7 @@ export async function api(path: string, options: RequestInit = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export default function AccessShell({ registrationRoute = false, destination = "vacancies" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" | "vacancies" }) {
+export default function AccessShell({ registrationRoute = false, destination = "vacancies" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" | "vacancies" | "settings" | "admin-settings" }) {
   const router = useRouter();
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
@@ -143,12 +145,16 @@ export default function AccessShell({ registrationRoute = false, destination = "
       setUser(null);
       router.replace("/");
     };
-    if (destination === "diagnostics" && user.role !== "admin") {
-      return <main className="shell"><section className="status-card"><h1>Доступ запрещён</h1><p>Диагностика доступна только администраторам.</p><Link href="/">Вернуться к рабочему пространству</Link></section></main>;
+    if ((destination === "diagnostics" || destination === "admin-settings") && user.role !== "admin") {
+      return <main className="shell"><section className="status-card"><h1>Доступ запрещён</h1><p>{destination === "admin-settings" ? "Настройки системы доступны только администраторам." : "Диагностика доступна только администраторам."}</p><Link href="/">Вернуться к рабочему пространству</Link></section></main>;
     }
     return <WorkspaceShell email={user.email} role={user.role} destination={destination} onSignOut={onSignOut}>
       {destination === "diagnostics"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell diagnostics-shell"><Diagnostics /></main>
+        : destination === "admin-settings"
+        ? <main id="workspace-content" tabIndex={-1} className="career-shell admin-settings-shell"><AdminSystemSettings /></main>
+        : destination === "settings"
+        ? <main id="workspace-content" tabIndex={-1} className="career-shell"><AiProviderSettings /></main>
         : <CareerWorkspace />}
     </WorkspaceShell>;
   }

@@ -1,5 +1,41 @@
 # CVortex — проверенное текущее состояние
 
+## Google Gemini LLM Provider Integration — 2026-10-24
+
+Mode: IMPLEMENT; branch: `feature/gemini-llm-provider`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Research & Architecture Baseline**:
+   - Researched official Google Gemini REST API v1beta and recorded findings in `research/technical/12-GOOGLE-GEMINI-INTEGRATION.md`.
+   - Authored and accepted `docs/03-ADR/ADR-0026-gemini-llm-provider-integration.md` amending ADR-0010 and ADR-0011.
+   - Updated `docs/03-ADR/INDEX.md` and `docs/06-AI/Phase-06-AI-Design.md`.
+
+2. **Backend Provider Implementation**:
+   - Built native `App\AI\Providers\GeminiResponsesProvider` using Laravel HTTP Client (`Illuminate\Support\Facades\Http`) without community SDKs.
+   - Implemented `generateResolved` with native OpenAPI 3.0 structured JSON output (`generationConfig.responseSchema`, automatic schema sanitization stripping `$schema` and `$id`), system instructions, token usage metadata, and deterministic cost calculation.
+   - Implemented finish-reason mapping (SAFETY → REFUSAL, MAX_TOKENS → INCOMPLETE, MALFORMED_OUTPUT) and HTTP status error normalization (429/408/5xx retryable, 400/401/403 non-retryable INVALID_CONFIGURATION).
+   - Implemented zero unannounced/silent fallback invariant: if Gemini fails, the error is returned directly as `LlmProviderException`.
+   - Implemented multi-user BYOK settings storage (`user_ai_settings`) with PostgreSQL RLS isolation (`user_ai_settings_owner_isolation`) and encrypted-at-rest API keys (`'encrypted'` cast; hidden from serialization).
+   - Extended `ConfiguredLlmProvider` and `ModelPolicyResolver` to dynamically route to the user-selected provider or default provider.
+   - Created `AiSettingsController` exposing `GET /api/v1/ai/settings`, `PATCH /api/v1/ai/settings`, and non-mutating rate-limited `POST /api/v1/ai/test-connection`.
+   - Updated `OpenAiResponsesProvider` with BYOK dynamic key support and `testConnection`.
+
+3. **Frontend Settings Workspace (`apps/frontend/`)**:
+   - Created `apps/frontend/src/app/settings/page.tsx` and `apps/frontend/src/app/ai-provider-settings.tsx`.
+   - Implemented provider selector (Gemini vs OpenAI), masked API key display, key deletion/replacement, default model selector, live connection test with latency/status reporting, and settings persistence.
+   - Integrated `/settings` route into `access-shell.tsx`, `workspace-shell.tsx`, and `application/app-shell.tsx`.
+   - Added accessible responsive styles to `apps/frontend/src/app/globals.css`.
+
+4. **Verification**:
+   - Backend PHPUnit: 19/19 tests PASS (123 assertions) across `GeminiResponsesProviderTest`, `OpenAiResponsesProviderTest`, and `AiSettingsTest` (including Truth Guard PENDING invariant preservation).
+   - Backend Pint: 0 style issues across all modified files.
+   - Backend PHPStan: 0 errors (`[OK] No errors`).
+   - Frontend Vitest: 11/11 test files (139/139 tests) PASS, including `ai-provider-settings.test.tsx` (6/6 PASS).
+   - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
+   - Frontend ESLint: 0 errors, 0 warnings.
+
+---
+
 ## Playwright E2E UI Coverage & Quality Automation — 2026-10-24
 
 Mode: IMPLEMENT; branch: `chore/playwright-e2e-coverage`; task: `.agents/tasks/playwright-e2e-coverage.md`. One agent / sequential execution.
