@@ -44,9 +44,12 @@ NEXT and existing gates are preserved; no merge or next-task execution authorize
 **completed-local-verified**. [Execution report](../state/LOCAL_RUNTIME_ALIGNMENT_REPORT.md):
 owner-authorized local `cvortex_test`, private backup, one existing migration,
 28/28 Ran, data preserved, targeted mocked tests/health PASS.
-NEXT is `b01-current-manifest-integrity-reconciliation`; a separate bounded spec
-and owner launch remain required. The current STOP forbids automatic execution.
-Then the existing manual release gate; neither gate was closed by RCV-01.
+QA-001 was explicitly launched by the owner on 2026-10-12. The previously absent
+[bounded spec](b01-current-manifest-integrity-reconciliation.md) now records the
+scope; implementation/local validation are complete, independent PR review pending.
+[Current defect status/evidence](../../docs/09-QA/QA-001-RECONCILIATION.md).
+NEXT points to the existing manual release gate after QA-001 review/integration;
+no automatic execution, human accessibility PASS or production release is authorized.
 
 Only the task named by `NEXT.md` is executable.
 

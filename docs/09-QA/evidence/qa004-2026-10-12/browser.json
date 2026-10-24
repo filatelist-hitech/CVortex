@@ -1,0 +1,366 @@
+{
+  "classification": "MOCKED_E2E: real UI, Laravel, PostgreSQL, Redis/Horizon; local deterministic HTTP provider",
+  "checks": [
+    {
+      "id": "login-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "manual-confirmed-fact-via-UI",
+      "status": "PASS"
+    },
+    {
+      "id": "baseline-vacancy-via-UI",
+      "status": "PASS"
+    },
+    {
+      "id": "extracted-pending-and-explicit-confirm-via-UI",
+      "status": "PASS"
+    },
+    {
+      "id": "no-auto-resolution-on-page-open",
+      "status": "PASS"
+    },
+    {
+      "id": "source-options-and-responsive-smoke",
+      "status": "PASS"
+    },
+    {
+      "id": "network-error-choice-preserved-and-no-auto-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "keyboard-only-resolution-correct-PATCH",
+      "status": "PASS"
+    },
+    {
+      "id": "resolution-persists-after-refresh-no-fact-mutation",
+      "status": "PASS"
+    },
+    {
+      "id": "revalidation-via-existing-vacancy-UI",
+      "status": "PASS"
+    },
+    {
+      "id": "application-generation-after-resolution-via-UI",
+      "status": "PASS"
+    },
+    {
+      "id": "human-acceptance-and-approval-remain-explicit",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-owner-UI-has-no-private-evidence",
+      "status": "PASS"
+    },
+    {
+      "id": "CSRF-and-cross-owner-resolution-negative-probes",
+      "status": "PASS"
+    },
+    {
+      "id": "no-browser-errors-no-external-requests-no-auto-submit",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "path": "/api/v1/me",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/v1/auth/login",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career/facts/manual",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "POST",
+      "status": 202
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/analysis-drafts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/chat",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career/extractions",
+      "method": "POST",
+      "status": 202
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/preparation",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/applications/preparations/01m4rwr56ms42ywms26y2mn1y7",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career/facts/01m4rwr7kz5r6cxvkw19ft6cd4/review",
+      "method": "PATCH",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/analysis-drafts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/chat",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/analysis-drafts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/chat",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career/claims/01m4rwr2zkjqbejyqng93m436e/resolve",
+      "method": "PATCH",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/career",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/analysis-drafts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/chat",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/analysis-drafts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/chat",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/reanalyze",
+      "method": "POST",
+      "status": 202
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/preparation",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/applications/preparations/01m4rwre1j9cvw4m5d6cxpvn79",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/applications/preparations/01m4rwre1j9cvw4m5d6cxpvn79/generate",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/applications/draft-items/01m4rwrep87102kc12r6951gx9",
+      "method": "PATCH",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/applications/draft-items/01m4rwrep87102kc12r6951gx9/approve",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/vacancies/01m4rwr3jec451pq2vah2f215y/preparation",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/applications/preparations/01m4rwre1j9cvw4m5d6cxpvn79",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "external": [],
+  "manual_accessibility": "OPEN / NOT TESTED",
+  "live_provider": "NOT VERIFIED"
+}

@@ -2,18 +2,9 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "./access-shell";
+import CareerClaim, { type Claim, type Fact } from "./career-claim";
 import VacancyWorkspace from "./vacancy-workspace";
 
-type Fact = {
-  id: string;
-  fact_type: string;
-  assertion_original: string;
-  assertion_approved: string | null;
-  source_excerpt: string;
-  provenance_type: "paste_extraction" | "user_manual";
-  status: "PENDING" | "CONFIRMED" | "REJECTED" | "DEPRECATED";
-};
-type Claim = { id: string; statement: string; truth_status: "PASS" | "BLOCK" | "USER_RESOLUTION_REQUIRED" };
 type Source = { id: string; extraction_status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED"; error_code: string | null };
 const extractionLabels = { PENDING: "В очереди", RUNNING: "Выполняется", COMPLETED: "Завершено", FAILED: "Ошибка" };
 const provenanceLabels = { paste_extraction: "Из текста", user_manual: "Добавлено вручную" };
@@ -94,7 +85,7 @@ export default function CareerWorkspace() {
     {overview && <>
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Требуется ваша проверка</p><h2>Факты на проверке</h2></div><span className="count">{pending.length}</span></div>{pending.length === 0 ? <p className="empty">Нет фактов на проверке. Вставьте текст выше или добавьте факт вручную.</p> : <div className="fact-list">{pending.map((fact) => <article className="fact-card pending-card" key={fact.id}><div className="fact-meta"><span className="badge pending-badge">Ожидает подтверждения</span><span>{fact.fact_type}</span></div><p className="assertion">{fact.assertion_original}</p><details open><summary>Источник факта</summary><blockquote>{fact.source_excerpt}</blockquote><p className="muted">Происхождение: {provenanceLabels[fact.provenance_type]}</p></details><label>Изменить перед подтверждением<textarea rows={3} value={edits[fact.id] ?? fact.assertion_original} onChange={(event) => setEdits((current) => ({ ...current, [fact.id]: event.target.value }))} /></label><div className="actions"><button disabled={busy !== ""} onClick={() => void review(fact, "confirm")}>Подтвердить</button><button className="secondary" disabled={busy !== ""} onClick={() => void review(fact, "edit_confirm")}>Изменить и подтвердить</button><button className="danger" disabled={busy !== ""} onClick={() => void review(fact, "reject")}>Отклонить</button></div></article>)}</div>}</section>
       <section className="review-section"><div className="section-title"><div><p className="eyebrow">Подтверждено вами</p><h2>Подтверждённые факты</h2></div><span className="count confirmed-count">{confirmed.length}</span></div>{confirmed.length === 0 ? <p className="empty">Подтверждённых фактов пока нет.</p> : <div className="fact-list">{confirmed.map((fact) => <article className="fact-card confirmed-card" key={fact.id}><div className="fact-meta"><span className="badge confirmed-badge">Подтверждён</span><span>{fact.fact_type}</span></div><p className="assertion">{fact.assertion_approved ?? fact.assertion_original}</p><details><summary>Источник и происхождение</summary><blockquote>{fact.source_excerpt}</blockquote><p className="muted">{provenanceLabels[fact.provenance_type]}</p></details></article>)}</div>}</section>
-      <section className="review-section"><div className="section-title"><div><p className="eyebrow">Truth Guard</p><h2>Утверждения</h2></div></div>{overview.claims.length === 0 ? <p className="empty">Утверждения появляются только после вашего подтверждения.</p> : <ul className="claim-list">{overview.claims.map((claim) => <li key={claim.id}><span className={`badge ${claim.truth_status === "PASS" ? "confirmed-badge" : "blocked-badge"}`}>{claim.truth_status}</span><span>{claim.statement}</span></li>)}</ul>}</section>
+      <section className="review-section"><div className="section-title"><div><p className="eyebrow">Truth Guard</p><h2>Утверждения</h2></div></div>{overview.claims.length === 0 ? <p className="empty">Утверждения появляются только после вашего подтверждения.</p> : <ul className="claim-list">{overview.claims.map((claim) => <CareerClaim key={claim.id} claim={claim} facts={overview.facts} onResolved={(resolved) => setOverview((current) => current ? { ...current, claims: current.claims.map((item) => item.id === claim.id ? { ...item, truth_status: resolved.truth_status } : item) } : current)} onRefresh={refresh} />)}</ul>}</section>
       <VacancyWorkspace />
     </>}
   </main>;
