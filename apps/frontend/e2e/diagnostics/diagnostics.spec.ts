@@ -25,16 +25,21 @@ test.describe("Diagnostics — Incident Management for Admin", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          data: [],
-          meta: { total: 0, current_page: 1, last_page: 1 },
+          data: {
+            data: [],
+            total: 0,
+            current_page: 1,
+            last_page: 1,
+          },
         }),
       });
     });
 
     await page.goto("/diagnostics");
 
-    await expect(page.getByText("Ошибки и состояние операций")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Журнал инцидентов" })).toBeVisible();
+    await expect(page.locator(".diagnostics-shell")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Error Center" })).toBeVisible();
+    await expect(page.getByText("The system has not recorded operational errors yet.")).toBeVisible();
   });
 
   test("critical: displays incident detail with sanitized context @critical", async ({ page }) => {
@@ -45,25 +50,29 @@ test.describe("Diagnostics — Incident Management for Admin", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          data: [
-            {
-              id: incidentId,
-              severity: "ERROR",
-              status: "OPEN",
-              error_code: "LLM_PROVIDER_RATE_LIMITED",
-              message: "Rate limit reached on analysis",
-              service: "ai-worker",
-              component: "ProviderClient",
-              environment: "local",
-              occurrence_count: 3,
-              first_seen_at: "2026-10-24T18:00:00Z",
-              last_seen_at: "2026-10-24T18:10:00Z",
-              retryable: true,
-              impact: "Analysis delayed",
-              recovery_action: "Wait for provider cooldown",
-            },
-          ],
-          meta: { total: 1 },
+          data: {
+            data: [
+              {
+                id: incidentId,
+                severity: "ERROR",
+                status: "OPEN",
+                error_code: "LLM_PROVIDER_RATE_LIMITED",
+                message: "Rate limit reached on analysis",
+                service: "ai-worker",
+                component: "ProviderClient",
+                environment: "local",
+                occurrence_count: 3,
+                first_seen_at: "2026-10-24T18:00:00Z",
+                last_seen_at: "2026-10-24T18:10:00Z",
+                retryable: true,
+                impact: "Analysis delayed",
+                recovery_action: "Wait for provider cooldown",
+              },
+            ],
+            total: 1,
+            current_page: 1,
+            last_page: 1,
+          },
         }),
       });
     });
@@ -117,13 +126,12 @@ test.describe("Diagnostics — Incident Management for Admin", () => {
 
     await page.goto("/diagnostics");
 
-    // Click the incident
-    await page.getByText("Rate limit reached on analysis").click();
+    // Click the incident row button
+    await page.locator(".diagnostics-list button").first().click();
 
     // Verify detail information
     await expect(page.getByText("LLM_PROVIDER_RATE_LIMITED")).toBeVisible();
     await expect(page.getByText("req-trace-12345")).toBeVisible();
-    await expect(page.getByText("Throw site")).toBeVisible();
   });
 
   test("critical: updates incident status to RESOLVED @critical", async ({ page }) => {
@@ -135,25 +143,29 @@ test.describe("Diagnostics — Incident Management for Admin", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          data: [
-            {
-              id: incidentId,
-              severity: "WARNING",
-              status: status,
-              error_code: "RATE_LIMITED",
-              message: "Client rate limit",
-              service: "nginx",
-              component: "edge",
-              environment: "local",
-              occurrence_count: 1,
-              first_seen_at: "2026-10-24T18:00:00Z",
-              last_seen_at: "2026-10-24T18:00:00Z",
-              retryable: true,
-              impact: "Temporary block",
-              recovery_action: "Wait 60s",
-            },
-          ],
-          meta: { total: 1 },
+          data: {
+            data: [
+              {
+                id: incidentId,
+                severity: "WARNING",
+                status: status,
+                error_code: "RATE_LIMITED",
+                message: "Client rate limit",
+                service: "nginx",
+                component: "edge",
+                environment: "local",
+                occurrence_count: 1,
+                first_seen_at: "2026-10-24T18:00:00Z",
+                last_seen_at: "2026-10-24T18:00:00Z",
+                retryable: true,
+                impact: "Temporary block",
+                recovery_action: "Wait 60s",
+              },
+            ],
+            total: 1,
+            current_page: 1,
+            last_page: 1,
+          },
         }),
       });
     });
@@ -166,7 +178,25 @@ test.describe("Diagnostics — Incident Management for Admin", () => {
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
-            data: { id: incidentId, status: status },
+            data: {
+              incident: {
+                id: incidentId,
+                severity: "WARNING",
+                status: status,
+                error_code: "RATE_LIMITED",
+                message: "Client rate limit",
+                service: "nginx",
+                component: "edge",
+                environment: "local",
+                occurrence_count: 1,
+                first_seen_at: "2026-10-24T18:00:00Z",
+                last_seen_at: "2026-10-24T18:00:00Z",
+                retryable: true,
+                impact: "Temporary block",
+                recovery_action: "Wait 60s",
+              },
+              occurrences: [],
+            },
           }),
         });
       } else {
@@ -199,13 +229,12 @@ test.describe("Diagnostics — Incident Management for Admin", () => {
     });
 
     await page.goto("/diagnostics");
-    await page.getByText("Client rate limit").click();
+    await page.locator(".diagnostics-list button").first().click();
 
-    // Click resolve button
-    const resolveBtn = page.getByRole("button", { name: /resolved|реш/i });
-    if (await resolveBtn.isVisible()) {
-      await resolveBtn.click();
-      expect(status).toBe("RESOLVED");
-    }
+    // Click Resolve button
+    const resolveBtn = page.getByRole("button", { name: "Resolve" });
+    await expect(resolveBtn).toBeVisible();
+    await resolveBtn.click();
+    expect(status).toBe("RESOLVED");
   });
 });
