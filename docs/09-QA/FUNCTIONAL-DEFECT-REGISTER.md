@@ -8,13 +8,13 @@ tags: [qa, defects, reproduction]
 
 # Functional defect register
 
-Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Исторический аудит зафиксировал четыре открытых находки; исправление QA-004 от 2026-10-12 записано отдельно ниже. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
+Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Исторический аудит зафиксировал четыре открытых находки; исправления QA-003 и QA-004 от 2026-10-12 записаны отдельно ниже. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
 
 | ID | Категория | Severity | Status | Проблема |
 |---|---|---|---|---|
 | QA-001 | Reference integrity | MEDIUM / P2 | OPEN / reproduced | B01 OFL.txt SHA-256 mismatch |
 | QA-002 | Test infrastructure | MEDIUM / P2 | OPEN / reproduced | Legacy migration harness rolls back wrong migrations |
-| QA-003 | Test infrastructure | MEDIUM / P2 | OPEN / reproduced | Timestamp-tie fixture conflicts with exception deduplication |
+| QA-003 | Test infrastructure | MEDIUM / P2 | FIXED / local PostgreSQL verified; PR review pending | Distinct Throwable objects build the timestamp tie |
 | QA-004 | Product functional UI | HIGH / P1 | FIXED / locally verified, awaiting review | Explicit Career evidence selection implemented |
 
 ## QA-001 — OFL provenance byte mismatch
@@ -58,6 +58,25 @@ Pinned upstream fixture: 4495 bytes, 93 CRLF sequences; tracked asset: 4401 byte
 **Recommended fix:** construct two distinct exception objects with the same fingerprint/component to create two occurrences, then set equal timestamps and verify the greater ID wins. Retain separate same-object dedup coverage; do not remove dedup to satisfy this test.
 
 **Regression criteria:** two distinct exceptions create two occurrences in one incident; identical timestamps choose greater ID for list provider/search and detail; repeated recording of the same object creates only one occurrence; admin-only/rollback/redaction tests remain PASS.
+
+**Current status — 2026-10-12:** FIXED / local PostgreSQL verified, awaiting PR review.
+Explicit bounded owner IMPLEMENT override of NEXT; base/target `stage`, branch
+`fix/qa-003-diagnostics-fixture`. Validated code SHA
+`10d9b575b63cd44ad183af8287c322d4ff804191`.
+Only test data/assertions changed: two distinct RATE_LIMITED exceptions share
+one fingerprint/incident, two occurrence IDs and equal timestamps; greater ID
+supplies latest provider, request ID, attempt and retry delay. Dedicated runtime-role
+regression confirms recording the same object twice retains one occurrence/count.
+Production recorder/controller/migrations and WeakMap behavior are unchanged.
+
+Owned PostgreSQL 18.6 container/database, internal network, tmpfs storage; no shared
+DB or live provider calls. Exact failing test PASS (1/17); runtime-role Diagnostics
+suite PASS (5/50); targeted Diagnostics PASS on PostgreSQL (57/575), all exit 0,
+zero skips. USER list/detail/update denial, audit rollback and redaction PASS.
+Pint, PHPStan and diff check PASS; transaction rollback and owned cleanup verified.
+[New SHA/commands/environment/results](evidence/qa003-2026-10-12/README.md).
+Historical FAIL logs and audit accounting remain unchanged. Other QA findings
+are outside this repair; no full QA Audit or merge.
 
 ## QA-004 — ambiguous Claim cannot be resolved in Career UI
 

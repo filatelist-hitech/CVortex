@@ -1,5 +1,29 @@
 # CVortex — проверенное текущее состояние
 
+## QA-003 — diagnostics timestamp-tie fixture repair, 2026-10-12
+
+Explicit bounded owner IMPLEMENT override of
+`NEXT=b01-current-manifest-integrity-reconciliation`; native write preflight PASS.
+Base/target `stage`, branch `fix/qa-003-diagnostics-fixture`, one agent/sequential.
+NEXT and BLOCKERS are unchanged; no other QA repair or full audit.
+
+Baseline `5cfe18d401c056eefb179f722d875c3b1acf7522` reproduced expected 2/actual 1.
+Validated code SHA `10d9b575b63cd44ad183af8287c322d4ff804191`: two distinct
+RATE_LIMITED exceptions create two occurrences in one fingerprint; equal timestamps
+select greater ID with latest provider/request/attempt/retry metadata. Dedicated
+PostgreSQL same-object regression preserves one occurrence/count. Production
+recorder/controller/migrations and WeakMap behavior are unchanged.
+
+Owned PostgreSQL 18.6/tmpfs/internal network; runtime role NOSUPERUSER/NOBYPASSRLS.
+Exact test 1/17 PASS; runtime Diagnostics suite 5/50 PASS; targeted Diagnostics
+on PostgreSQL as isolated admin 57/575 PASS; zero skips, exit 0. USER list/detail/update
+403, audit rollback and redaction PASS. Pint, PHPStan, diff checks PASS. After each
+suite users/incidents/occurrences/audit return to zero; owned cleanup verified.
+Setup and LOG_LEVEL invocation failures remain in new evidence alongside the
+successful rerun; historical failure logs/accounting were not rewritten.
+[SHA/commands/environment/results](../../docs/09-QA/evidence/qa003-2026-10-12/README.md).
+Locally verified; PR delivery/CI is recorded in the final report. No merge. STOP.
+
 ## QA-004 — Career Claim resolution UI, 2026-10-12
 
 Bounded IMPLEMENT, explicit owner override of NEXT. Base `origin/stage` = `5cfe18d`;

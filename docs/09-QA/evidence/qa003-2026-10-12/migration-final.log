@@ -1,0 +1,35 @@
+
+   INFO  Preparing database.
+
+  Creating migration table ...................................... 10.49ms DONE
+
+   INFO  Running migrations.
+
+  2026_09_12_000001_create_access_core_tables ................... 10.74ms DONE
+  2026_09_13_000002_add_auth_generation_to_users ................. 0.42ms DONE
+  2026_09_13_000003_create_career_core_tables ................... 11.02ms DONE
+  2026_09_13_000004_reconcile_and_harden_career_core ............ 40.13ms DONE
+  2026_09_13_000005_enforce_career_source_idempotency ............ 2.46ms DONE
+  2026_09_19_000006_record_claim_resolution_choice ............... 3.91ms DONE
+  2026_09_19_000007_enforce_single_current_career_fact_replacement  1.05ms DONE
+  2026_09_19_000008_create_vacancy_core_tables .................. 51.49ms DONE
+  2026_09_19_000009_remediate_vacancy_core_review_findings ....... 8.61ms DONE
+  2026_09_21_000010_allow_reappearing_vacancy_snapshot_content ... 0.98ms DONE
+  2026_09_24_000011_reconcile_vacancy_aggregate_state ............ 2.94ms DONE
+  2026_09_24_000012_recover_completed_extraction_without_analysis  1.25ms DONE
+  2026_09_24_000013_create_application_preparations ............. 27.37ms DONE
+  2026_09_24_225859_create_oauth_auth_codes_table ................ 1.56ms DONE
+  2026_09_24_225900_create_oauth_access_tokens_table ............. 2.09ms DONE
+  2026_09_24_225901_create_oauth_refresh_tokens_table ............ 1.78ms DONE
+  2026_09_24_225902_create_oauth_clients_table ................... 2.70ms DONE
+  2026_09_24_225903_create_oauth_device_codes_table .............. 2.12ms DONE
+  2026_09_27_000013_create_diagnostic_incidents .................. 6.78ms DONE
+  2026_09_28_000014_add_recovery_metadata_to_diagnostic_incidents  1.11ms DONE
+  2026_09_29_000015_add_browser_error_reference_to_diagnostic_occurrences  0.42ms DONE
+  2026_09_29_000015_add_retry_delay_to_diagnostic_occurrences .... 0.51ms DONE
+  2026_10_01_000001_add_persisted_queue_recovery_deadlines ....... 1.51ms DONE
+  2026_10_01_000002_add_active_attempt_tokens_to_ai_aggregates ... 0.69ms DONE
+  2026_10_04_000001_create_chatgpt_connections ................... 2.34ms DONE
+  2026_10_04_000002_create_vacancy_chat_and_analysis_drafts ..... 18.87ms DONE
+  2026_10_04_000003_harden_chat_lifecycle_and_plan_welcome ....... 3.35ms DONE
+  2026_10_07_000001_add_oauth_generation_to_chatgpt_connections .. 0.78ms DONE

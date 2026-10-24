@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Feature\DiagnosticsPostgresTest" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" tests="5" assertions="50" errors="0" failures="0" skipped="0" time="0.641460">
+    <testcase name="test_runtime_role_can_group_and_admin_can_query_without_user_access" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="20" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="9" time="0.496892"/>
+    <testcase name="test_runtime_role_rolls_back_status_when_audit_fails" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="43" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="5" time="0.041797"/>
+    <testcase name="test_runtime_provider_filter_retry_delay_and_noop_status_audit" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="70" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="10" time="0.041376"/>
+    <testcase name="test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="96" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="17" time="0.030905"/>
+    <testcase name="test_runtime_role_deduplicates_the_same_throwable_object" file="/var/www/html/tests/Feature/DiagnosticsPostgresTest.php" line="139" class="Tests\Feature\DiagnosticsPostgresTest" classname="Tests.Feature.DiagnosticsPostgresTest" assertions="9" time="0.030490"/>
+  </testsuite>
+</testsuites>
