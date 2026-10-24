@@ -1,5 +1,39 @@
 # CVortex — проверенное текущее состояние
 
+## QA-004 — Career Claim resolution race conditions eliminated (PR #53) — 2026-10-25
+
+Mode: IMPLEMENT; branch: `fix/qa-004-claim-resolution-race-conditions`; target: `stage` (PR #53 squashed and merged as commit `679c3fcdca1effe26c253a4f3052b275c6c3abe9`). One agent / sequential execution.
+
+### Completed Outcomes
+1. **Request Sequencing & Invalidation (`apps/frontend/src/app/career-workspace.tsx`)**:
+   - Monotonic request tracking (`requestId` / `latestAppliedRequestIdRef`) ignoring stale GET responses.
+   - Mutation epoch tokens (`mutationEpochRef`) dropping any GET responses initiated before an explicit resolution PATCH.
+   - Local resolution invariant cache (`resolvedClaimsRef`) protecting resolved claim statuses against lagging server snapshots (preventing regression from resolved state back to `USER_RESOLUTION_REQUIRED` and preventing stale `PASS` from overwriting newer `BLOCK`).
+   - `AbortController` cancellation for in-flight GET requests upon new fetch, resolution mutation, user switch, or component unmount.
+   - Mutex coordination between active mutations (`activeMutationsRef`) and background polling, pausing polling during PATCH operations.
+   - User switch isolation (`activeUserIdRef`) and component unmount safety (`isMountedRef`), ensuring responses and resolution callbacks are never applied to unmounted components or across different user sessions.
+   - `apps/frontend/src/app/access-shell.tsx`: passed `userId` and `key={user.id}` to `CareerWorkspace`; permitted `AbortError` to pass through without generating spurious `NETWORK_ERROR` toasts.
+   - `apps/frontend/src/app/career-claim.tsx`: added `onMutating` notification callback and guarded `onResolved` against claim ID mismatch or unmount.
+
+2. **Verification & Regression Coverage**:
+   - **Frontend Vitest (`apps/frontend/src/app/__tests__/career-claim.test.tsx`)**: 10/10 test files (142/142 tests) PASS. Added deterministic `deferred<T>()` promise tests covering RACE-01 through RACE-08:
+     - RACE-01: Stale GET completing after successful PATCH does not revert resolution.
+     - RACE-02: Stale GET with PASS does not overwrite newer BLOCK.
+     - RACE-03: Out-of-order GET responses are ignored; only latest sequence applies.
+     - RACE-04: Failed PATCH handles error cleanly without false success state.
+     - RACE-05: Claim/context switch during in-flight request ignores old context.
+     - RACE-06: Background polling does not collide with or revert in-flight mutations.
+     - RACE-07: Unmount prior to request completion does not commit state.
+     - RACE-08: User switch drops pending requests from previous user session.
+     - Truth Guard negative test verifying unresolved ambiguous claims announce downstream resolution requirement.
+   - **Backend Feature Test (`apps/backend/tests/Feature/ClaimResolutionUiTest.php`)**: added `test_unresolved_ambiguous_claim_blocks_downstream_matching_until_explicit_resolution` verifying downstream matching (`TrustedCareerQuery::forMatching`) remains empty until explicit PATCH resolution. 83/83 backend feature tests PASS (689 assertions, isolated SQLite container).
+   - **Static Quality & Build**: ESLint (0 errors), TypeScript (`tsc --noEmit`, 0 errors), Next.js production build (6/6 static pages), Laravel Pint (0 issues), PHPStan (`--memory-limit=512M`, 0 errors).
+   - **Remote CI**: PR #53 passed `Governance/PR contract`, `Governance/Roadmap metadata`, and `Quality/m0-quality`.
+
+Status on `stage`: QA-004 is **PASS / RESOLVED**.
+
+---
+
 ## Google Gemini LLM Provider Integration — 2026-10-24
 
 Mode: IMPLEMENT; branch: `feature/gemini-llm-provider`. One agent / sequential execution.
@@ -33,8 +67,6 @@ Mode: IMPLEMENT; branch: `feature/gemini-llm-provider`. One agent / sequential e
    - Frontend Vitest: 11/11 test files (139/139 tests) PASS, including `ai-provider-settings.test.tsx` (6/6 PASS).
    - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
    - Frontend ESLint: 0 errors, 0 warnings.
-
----
 
 ## Playwright E2E UI Coverage & Quality Automation — 2026-10-24
 

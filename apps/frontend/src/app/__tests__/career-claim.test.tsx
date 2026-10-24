@@ -5,7 +5,7 @@ import type { Claim, Fact } from "../career-claim";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock("../vacancy-workspace", () => ({ default: () => null }));
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 const statement = "Built Laravel APIs.";
 const fact = (id: string, overrides: Partial<Fact> = {}): Fact => ({ id, fact_type: "skill", assertion_original: statement, assertion_approved: statement, source_excerpt: statement, provenance_type: "user_manual", status: "CONFIRMED", ...overrides });
 const claim: Claim = { id: "claim-a", statement, truth_status: "USER_RESOLUTION_REQUIRED", fact_ids: ["manual", "extracted"] };
@@ -26,6 +26,16 @@ async function mount(options: { facts?: Fact[]; claim?: Claim; patch?: () => Pro
 function choose() { fireEvent.click(screen.getAllByRole("radio")[0]); }
 function submit() { fireEvent.click(screen.getByRole("button", { name: "Подтвердить источник утверждения" })); }
 const failure = (status: number, code: string) => Response.json({ error: { code } }, { status });
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 describe("QA-004 Career claim resolution", () => {
   it("QA004-01 exposes explicit resolution with an explanation", async () => {
@@ -146,4 +156,333 @@ describe("QA-004 Career claim resolution", () => {
     expect(screen.getByText("Нужен выбор источника")).toBeInTheDocument();
   });
 
+  describe("QA-004 Race conditions and synchronization invariants (RACE-01 to RACE-08)", () => {
+    it("RACE-01: stale GET completing after successful PATCH does not revert Claim resolution", async () => {
+      let getCallCount = 0;
+      const staleGet = deferred<Response>();
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url === "/api/v1/career" && !init?.method) {
+          getCallCount++;
+          if (getCallCount === 1) {
+            return Response.json({
+              data: { facts, claims: [claim], sources: [] },
+            });
+          }
+          return staleGet.promise;
+        }
+        if (url === "/api/v1/career/claims/claim-a/resolve" && init?.method === "PATCH") {
+          return Response.json({ data: { id: claim.id, truth_status: "PASS" } });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      });
+
+      render(<CareerWorkspace />);
+      await screen.findByText("Нужен выбор источника");
+
+      fireEvent.click(screen.getByText("Выбрать источник утверждения"));
+      choose();
+      fireEvent.click(screen.getByRole("button", { name: "Обновить варианты" }));
+      expect(getCallCount).toBe(2);
+
+      submit();
+      await screen.findByText("Подтверждено фактами");
+
+      await act(async () => {
+        staleGet.resolve(
+          Response.json({
+            data: { facts, claims: [{ ...claim, truth_status: "USER_RESOLUTION_REQUIRED" }], sources: [] },
+          })
+        );
+      });
+
+      expect(screen.getByText("Подтверждено фактами")).toBeInTheDocument();
+      expect(screen.queryByText("Нужен выбор источника")).not.toBeInTheDocument();
+    });
+
+    it("RACE-02: stale GET with PASS does not overwrite newer BLOCK status", async () => {
+      let getCallCount = 0;
+      const staleGetWithPass = deferred<Response>();
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url === "/api/v1/career" && !init?.method) {
+          getCallCount++;
+          if (getCallCount === 1) {
+            return Response.json({
+              data: { facts, claims: [claim], sources: [] },
+            });
+          }
+          return staleGetWithPass.promise;
+        }
+        if (url === "/api/v1/career/claims/claim-a/resolve" && init?.method === "PATCH") {
+          return Response.json({ data: { id: claim.id, truth_status: "BLOCK" } });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      });
+
+      render(<CareerWorkspace />);
+      await screen.findByText("Нужен выбор источника");
+
+      fireEvent.click(screen.getByText("Выбрать источник утверждения"));
+      choose();
+      fireEvent.click(screen.getByRole("button", { name: "Обновить варианты" }));
+      expect(getCallCount).toBe(2);
+
+      submit();
+      await screen.findByText("Недостаточно подтверждения");
+
+      await act(async () => {
+        staleGetWithPass.resolve(
+          Response.json({
+            data: { facts, claims: [{ ...claim, truth_status: "PASS" }], sources: [] },
+          })
+        );
+      });
+
+      expect(screen.getByText("Недостаточно подтверждения")).toBeInTheDocument();
+      expect(screen.queryByText("Подтверждено фактами")).not.toBeInTheDocument();
+    });
+
+    it("RACE-03: multiple GETs completing out of order discard the stale earlier response", async () => {
+      let getCallCount = 0;
+      const get1 = deferred<Response>();
+      const get2 = deferred<Response>();
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url === "/api/v1/career" && !init?.method) {
+          getCallCount++;
+          if (getCallCount === 1) {
+            return Response.json({
+              data: { facts, claims: [claim], sources: [] },
+            });
+          }
+          if (getCallCount === 2) return get1.promise;
+          if (getCallCount === 3) return get2.promise;
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      });
+
+      render(<CareerWorkspace />);
+      await screen.findByText("Нужен выбор источника");
+
+      fireEvent.click(screen.getByText("Выбрать источник утверждения"));
+      choose();
+      fireEvent.click(screen.getByRole("button", { name: "Обновить варианты" }));
+      expect(getCallCount).toBe(2);
+
+      fireEvent.click(screen.getByRole("button", { name: "Обновить варианты" }));
+      expect(getCallCount).toBe(3);
+
+      await act(async () => {
+        get2.resolve(
+          Response.json({
+            data: {
+              facts,
+              claims: [{ ...claim, statement: "Newer Statement from GET 2" }],
+              sources: [],
+            },
+          })
+        );
+      });
+
+      expect(await screen.findByText("Newer Statement from GET 2")).toBeInTheDocument();
+
+      await act(async () => {
+        get1.resolve(
+          Response.json({
+            data: {
+              facts,
+              claims: [{ ...claim, statement: "Older Statement from GET 1" }],
+              sources: [],
+            },
+          })
+        );
+      });
+
+      expect(screen.getByText("Newer Statement from GET 2")).toBeInTheDocument();
+      expect(screen.queryByText("Older Statement from GET 1")).not.toBeInTheDocument();
+    });
+
+    it("RACE-04: PATCH error shows explicit error and does not produce false success or state corruption", async () => {
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url === "/api/v1/career" && !init?.method) {
+          return Response.json({ data: { facts, claims: [claim], sources: [] } });
+        }
+        if (url === "/api/v1/career/claims/claim-a/resolve" && init?.method === "PATCH") {
+          return Response.json({ error: { code: "VALIDATION_FAILED" } }, { status: 422 });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      });
+
+      render(<CareerWorkspace />);
+      await screen.findByText("Нужен выбор источника");
+      fireEvent.click(screen.getByText("Выбрать источник утверждения"));
+      choose();
+      submit();
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Сервер отклонил выбор");
+      expect(screen.getByText("Нужен выбор источника")).toBeInTheDocument();
+      expect(screen.queryByText("Подтверждено фактами")).not.toBeInTheDocument();
+      expect(screen.getAllByRole("radio")[0]).toBeChecked();
+    });
+
+    it("RACE-05: Claim or context changed during in-flight request does not corrupt new context", async () => {
+      const slowClaimResolve = deferred<Response>();
+      let getCalls = 0;
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url === "/api/v1/career" && !init?.method) {
+          getCalls++;
+          return Response.json({
+            data: {
+              facts,
+              claims: [getCalls === 1 ? claim : { ...claim, id: "claim-b", statement: "Claim B statement" }],
+              sources: [],
+            },
+          });
+        }
+        if (url === "/api/v1/career/claims/claim-a/resolve" && init?.method === "PATCH") {
+          return slowClaimResolve.promise;
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      });
+
+      const { rerender } = render(<CareerWorkspace userId="user-1" />);
+      await screen.findByText("Нужен выбор источника");
+
+      fireEvent.click(screen.getByText("Выбрать источник утверждения"));
+      choose();
+      submit();
+
+      rerender(<CareerWorkspace userId="user-2" />);
+      expect(await screen.findByText("Claim B statement")).toBeInTheDocument();
+
+      await act(async () => {
+        slowClaimResolve.resolve(Response.json({ data: { id: "claim-a", truth_status: "PASS" } }));
+      });
+
+      expect(screen.queryByText("Подтверждено фактами")).not.toBeInTheDocument();
+      expect(screen.getByText("Claim B statement")).toBeInTheDocument();
+    });
+
+    it("RACE-06: background polling does not roll back state during or after mutation", async () => {
+      let pollingGetCount = 0;
+      const stalePollingGet = deferred<Response>();
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        if (url === "/api/v1/career" && !init?.method) {
+          pollingGetCount++;
+          if (pollingGetCount === 1) {
+            return Response.json({
+              data: {
+                facts,
+                claims: [claim],
+                sources: [{ id: "src-1", extraction_status: "RUNNING", error_code: null }],
+              },
+            });
+          }
+          return stalePollingGet.promise;
+        }
+        if (url === "/api/v1/career/claims/claim-a/resolve" && init?.method === "PATCH") {
+          return Response.json({ data: { id: claim.id, truth_status: "PASS" } });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      });
+
+      render(<CareerWorkspace />);
+      await screen.findByText("Нужен выбор источника");
+
+      fireEvent.click(screen.getByText("Выбрать источник утверждения"));
+      choose();
+
+      fireEvent.click(screen.getByRole("button", { name: "Обновить варианты" }));
+      expect(pollingGetCount).toBe(2);
+
+      submit();
+      await screen.findByText("Подтверждено фактами");
+
+      await act(async () => {
+        stalePollingGet.resolve(
+          Response.json({
+            data: {
+              facts,
+              claims: [{ ...claim, truth_status: "USER_RESOLUTION_REQUIRED" }],
+              sources: [{ id: "src-1", extraction_status: "RUNNING", error_code: null }],
+            },
+          })
+        );
+      });
+
+      expect(screen.getByText("Подтверждено фактами")).toBeInTheDocument();
+      expect(screen.queryByText("Нужен выбор источника")).not.toBeInTheDocument();
+    });
+
+    it("RACE-07: unmounted component safely discards in-flight request results", async () => {
+      const pendingGet = deferred<Response>();
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (String(input) === "/api/v1/career" && !init?.method) {
+          return pendingGet.promise;
+        }
+        throw new Error("Unexpected request");
+      });
+
+      const { unmount } = render(<CareerWorkspace />);
+      unmount();
+
+      await act(async () => {
+        pendingGet.resolve(Response.json({ data: { facts, claims: [claim], sources: [] } }));
+      });
+    });
+
+    it("RACE-08: user switch prevents previous user in-flight response from leaking into new user state", async () => {
+      const user1Get = deferred<Response>();
+      const user2Get = deferred<Response>();
+      let callCount = 0;
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (String(input) === "/api/v1/career" && !init?.method) {
+          callCount++;
+          if (callCount === 1) return user1Get.promise;
+          return user2Get.promise;
+        }
+        throw new Error("Unexpected request");
+      });
+
+      const { rerender } = render(<CareerWorkspace userId="user-1" />);
+
+      rerender(<CareerWorkspace userId="user-2" />);
+
+      const user2Claim: Claim = { id: "claim-u2", statement: "User 2 Fact", truth_status: "PASS", fact_ids: [] };
+      await act(async () => {
+        user2Get.resolve(Response.json({ data: { facts: [], claims: [user2Claim], sources: [] } }));
+      });
+
+      expect(await screen.findByText("User 2 Fact")).toBeInTheDocument();
+
+      const user1Claim: Claim = { id: "claim-u1", statement: "User 1 Private Statement", truth_status: "USER_RESOLUTION_REQUIRED", fact_ids: [] };
+      await act(async () => {
+        user1Get.resolve(Response.json({ data: { facts: [], claims: [user1Claim], sources: [] } }));
+      });
+
+      expect(screen.queryByText("User 1 Private Statement")).not.toBeInTheDocument();
+      expect(screen.getByText("User 2 Fact")).toBeInTheDocument();
+    });
+
+    it("downstream blocking invariant: unresolved claim announces that downstream generation requires resolution", async () => {
+      await mount();
+      expect(screen.getByText("Нужен выбор источника")).toBeInTheDocument();
+      expect(screen.queryByText(/Для зависимых материалов повторите анализ/)).not.toBeInTheDocument();
+
+      choose();
+      submit();
+      await screen.findByText("Подтверждено фактами");
+
+      expect(screen.getByRole("status")).toHaveTextContent(/Для зависимых материалов повторите анализ вакансии и проверку текста/);
+    });
+  });
 });

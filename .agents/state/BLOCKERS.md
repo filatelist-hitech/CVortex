@@ -12,6 +12,15 @@ metadata сохранены; targeted mocked tests и health PASS.
 [Execution report](LOCAL_RUNTIME_ALIGNMENT_REPORT.md). Live ChatGPT/account/provider
 readiness этим не доказана. Production mutations и другие DB не выполнялись.
 
+## Закрыто в QA-004 (PR #53) — Career Claim resolution race conditions (RACE-01–RACE-08)
+
+2026-10-25 дефекты состояний гонки в `career-workspace.tsx` устранены в PR #53 (коммит `679c3fc` в `stage`).
+Внедрены монотонные generation-токены запросов, эпохи мутаций, локальный кэш инвариантов разрешений (`resolvedClaimsRef`),
+координация с `AbortController`, взаимное исключение активных мутаций и фонового поллинга, а также строгая изоляция
+жизненного цикла при смене пользователя и демонтировании компонента.
+Детерминированные регрессионные тесты RACE-01–RACE-08 (142/142 Vitest PASS) и backend Truth Guard isolation
+(`ClaimResolutionUiTest`, 83/83 PHPUnit PASS) подтверждены в CI.
+
 ## 1. Production accessibility release gate
 
 - **Причина:** mandatory reference/production state/viewport interactions,
@@ -25,25 +34,7 @@ readiness этим не доказана. Production mutations и другие D
   отдельными authorized tasks. Сначала current reference integrity.
 - **Владелец:** нужен human reviewer/AT session; screenshots/DOM/AX недостаточны.
 
-## 2. QA-004 — Career Claim resolution race conditions (RACE-01–RACE-08)
-
-- **Причина:** В `career-workspace.tsx` функция `refresh()` выполняет несинхронизированный
-  GET-запрос и безусловно перезаписывает стейт через `setOverview(result.data)` без проверки
-  последовательности (request ID / sequence token) или AbortController.
-  Устаревший GET после успешного PATCH resolution возвращает интерфейс к состоянию
-  `USER_RESOLUTION_REQUIRED` (RACE-01); устаревший GET с PASS перезаписывает более новый
-  BLOCK (RACE-02); фоновый polling с интервалом 1500ms перекрывает форму отправки (RACE-06);
-  размонтирование компонента вызывает недопустимый commit состояния размонтированного
-  компонента (RACE-07). Коммит `b09a081` исправил только код ошибки `RESOURCE_NOT_FOUND`
-  и memoize, не устранив гонки.
-- **Влияние:** Сквозной пользовательский сценарий Cross-task integration: FAIL.
-  Интерфейс Career Workspace нестабилен и подвержен ложному отображению неразрешённых
-  утверждений либо ложному PASS.
-- **Разрешение:** Отдельная bounded задача remediation: внедрение sequence token /
-  AbortController для отмены/игнорирования устаревших ответов `refresh()`, блокировка
-  затирания локального стейта разрешения устаревшими GET-ответами.
-
-## 3. QA-002 — Migration harness lifecycle safety & isolation gaps
+## 2. QA-002 — Migration harness lifecycle safety & isolation gaps
 
 - **Причина:** Независимое ревью выявило критические замечания к `scripts/vacancy_migration_harness.py`:
   - `R1 MAJOR`: инвентаризация контейнеров `inspect_owned` использует `docker container ls -q`
@@ -59,7 +50,7 @@ readiness этим не доказана. Production mutations и другие D
 - **Разрешение:** Устранить замечания R1, R2, R3 в harness и подтвердить гарантированную
   disposable изоляцию до запуска реального lifecycle.
 
-## 4. QA-003 — Diagnostics timestamp-tie negative control gap
+## 3. QA-003 — Diagnostics timestamp-tie negative control gap
 
 - **Причина:** Регрессионный тест в `DiagnosticsPostgresTest.php` не содержит строгого
   отрицательного контроля: SQL-контроль показал, что без условия `id DESC` выборка в PostgreSQL
@@ -73,7 +64,7 @@ readiness этим не доказана. Production mutations и другие D
 - **Разрешение:** Добавить строгий negative control (мутационный тест, инвертирующий порядок ID
   или явно требующий `id DESC`), обеспечить запуск на изолированном PostgreSQL.
 
-## 5. QA-001 — non-blocking review follow-ups (PASS on stage)
+## 4. QA-001 — non-blocking review follow-ups (PASS on stage)
 
 - PR #47 объединён в `stage`, canonical `--check` PASS, 10/10 Node тестов PASS,
   8/8 Python evidence regressions PASS. Исходный hash mismatch устранён.
@@ -83,7 +74,7 @@ readiness этим не доказана. Production mutations и другие D
   - `REVIEW-QA001-02 (INFORMATIONAL)`: документационное разграничение snapshot integrity
     и upstream authenticity в README. Локальная snapshot integrity не доказывает подлинность upstream.
 
-## 6. Preview 0.1 → M2 product gate
+## 5. Preview 0.1 → M2 product gate
 
 - **Причина:** repository не содержит полной real-user acceptance и feedback
   по m1-4 Preview completion checklist. Synthetic UI и unit tests этого не доказывают.
