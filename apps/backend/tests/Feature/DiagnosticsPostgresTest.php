@@ -112,28 +112,61 @@ class DiagnosticsPostgresTest extends TestCase
         $ids = DB::table('diagnostic_occurrences')->where('incident_id', $id)->orderBy('id')->pluck('id');
         $this->assertCount(2, $ids);
         $timestamp = now()->subMinute()->startOfSecond();
+        $baseUlid = (string) Str::ulid();
+        $largerId = substr($baseUlid, 0, -1).'Z';
+        $smallerId = substr($baseUlid, 0, -1).'A';
+        $this->assertTrue($largerId > $smallerId);
+
+        // Invert physical/insertion order relative to ID sort order:
+        // Update the FIRST row to have the LARGER ID ($largerId),
+        // and the SECOND row to have the SMALLER ID ($smallerId).
+        // In PostgreSQL storage, $smallerId gets the higher TID (most recently inserted tuple).
+        // A descending scan on created_at without "id DESC" will encounter $smallerId first!
         DB::table('diagnostic_occurrences')->where('id', $ids[0])->update([
-            'created_at' => $timestamp, 'provider' => 'older', 'request_id' => 'req_older',
-            'attempt' => 1, 'retry_after_seconds' => 5,
-        ]);
-        DB::table('diagnostic_occurrences')->where('id', $ids[1])->update([
-            'created_at' => $timestamp, 'provider' => 'newer', 'request_id' => $reference,
+            'id' => $largerId, 'created_at' => $timestamp, 'provider' => 'newer',
+            'operation' => 'operation_newer', 'request_id' => $reference,
             'llm_run_id' => (string) Str::ulid(), 'application_id' => (string) Str::ulid(),
             'attempt' => 2, 'retry_after_seconds' => 42,
         ]);
+        DB::table('diagnostic_occurrences')->where('id', $ids[1])->update([
+            'id' => $smallerId, 'created_at' => $timestamp, 'provider' => 'older',
+            'operation' => 'operation_older', 'request_id' => 'req_older',
+            'attempt' => 1, 'retry_after_seconds' => 5,
+        ]);
         $this->assertSame(2, DB::table('diagnostic_occurrences')->where('incident_id', $id)->where('created_at', $timestamp)->count());
 
+        // Strict negative control: verify that without the mandatory "id DESC" tie-breaker,
+        // PostgreSQL's backward index scan on (incident_id, created_at) returns the higher TID ($smallerId),
+        // yielding the older occurrence. This proves that removing "id DESC" would break the contract.
+        $withoutTieBreaker = DB::selectOne(
+            'SELECT provider, operation FROM diagnostic_occurrences WHERE incident_id = ? ORDER BY created_at DESC LIMIT 1',
+            [$id]
+        );
+        $this->assertNotNull($withoutTieBreaker);
+        $this->assertSame('older', $withoutTieBreaker->provider, 'Negative control: query without id DESC must return older occurrence');
+        $this->assertSame('operation_older', $withoutTieBreaker->operation, 'Negative control: query without id DESC must return older operation');
+
+        $detailWithoutTie = DB::table('diagnostic_occurrences')->where('incident_id', $id)
+            ->orderByDesc('created_at')->limit(20)->pluck('id');
+        $this->assertSame([$smallerId, $largerId], $detailWithoutTie->all(), 'Negative control: detail query without id DESC must return inverted order');
+
+        // Positive control: API uses "ORDER BY created_at DESC, id DESC LIMIT 1",
+        // correctly selecting the larger ID ($largerId) for both provider and operation.
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=newer&search='.$reference)->assertOk()
-            ->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.latest_provider', 'newer');
+            ->assertJsonPath('data.total', 1)
+            ->assertJsonPath('data.data.0.latest_provider', 'newer')
+            ->assertJsonPath('data.data.0.latest_operation', 'operation_newer');
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents?provider=older')->assertOk()
             ->assertJsonPath('data.total', 0);
         $this->as($admin)->getJson('/api/v1/diagnostics/incidents/'.$id)->assertOk()
-            ->assertJsonPath('data.occurrences.0.id', $ids[1])
+            ->assertJsonPath('data.occurrences.0.id', $largerId)
             ->assertJsonPath('data.occurrences.0.provider', 'newer')
+            ->assertJsonPath('data.occurrences.0.operation', 'operation_newer')
             ->assertJsonPath('data.occurrences.0.request_id', $reference)
             ->assertJsonPath('data.occurrences.0.attempt', 2)
             ->assertJsonPath('data.occurrences.0.retry_after_seconds', 42)
-            ->assertJsonPath('data.occurrences.1.id', $ids[0]);
+            ->assertJsonPath('data.occurrences.1.id', $smallerId)
+            ->assertJsonPath('data.occurrences.1.operation', 'operation_older');
     }
 
     public function test_runtime_role_deduplicates_the_same_throwable_object(): void

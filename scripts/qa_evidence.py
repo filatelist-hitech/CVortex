@@ -2,6 +2,7 @@
 """Deterministic PR #46 accounting, coverage and Git-safe evidence integrity."""
 import argparse
 import collections
+import gzip
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -257,6 +258,45 @@ def coverage_text(inventory, metrics):
     return '\n'.join(lines)
 
 
+def validate_qa002(root):
+    package = root / 'docs/09-QA/evidence/qa002-2026-10-12'
+    if not package.is_dir():
+        return
+    for p in package.glob('*.json'):
+        strict_json(p)
+    log_exports = strict_json(package / 'log-exports.json')
+    for item in log_exports:
+        for field in ('path', 'raw_gzip', 'raw_sha256', 'export_sha256'):
+            if field not in item:
+                raise ValueError(f'qa002 log-exports missing {field}')
+        target = safe_file(package, item['path'])
+        if hashlib.sha256(target.read_bytes()).hexdigest() != item['export_sha256']:
+            raise ValueError(f'qa002 export sha mismatch: {item["path"]}')
+        raw = safe_file(package, item['raw_gzip'])
+        if hashlib.sha256(gzip.decompress(raw.read_bytes())).hexdigest() != item['raw_sha256']:
+            raise ValueError(f'qa002 raw gzip sha mismatch: {item["raw_gzip"]}')
+    exact_runs = strict_json(package / 'exact-runs.json')
+    for run_entry in exact_runs.get('runs', []):
+        for field in ('id', 'exit_code', 'result', 'log', 'log_sha256'):
+            if field not in run_entry:
+                raise ValueError(f'qa002 exact-runs missing {field}')
+        if run_entry['result'] == 'PASS' and run_entry['exit_code'] != 0:
+            raise ValueError(f'qa002 run {run_entry["id"]} marked PASS with nonzero exit')
+        log_file = safe_file(package, run_entry['log'])
+        if hashlib.sha256(log_file.read_bytes()).hexdigest() != run_entry['log_sha256']:
+            raise ValueError(f'qa002 exact-run log sha mismatch: {run_entry["log"]}')
+    preservation = strict_json(package / 'development-preservation.json')
+    if not preservation.get('databases'):
+        raise ValueError('qa002 development-preservation missing databases')
+    readme = package / 'README.md'
+    if readme.is_file():
+        for link in re.findall(r'\]\(([^)]+)\)', readme.read_text()):
+            if not re.match(r'https?://|#', link):
+                target = (readme.parent / link.split('#')[0]).resolve()
+                if not target.is_relative_to(root.resolve()) or not target.exists():
+                    raise ValueError(f'broken/unsafe Markdown link: qa002 README.md: {link}')
+
+
 def run(root, write=False, index=False):
     package = root / PACKAGE
     for p in package.glob('*.json'):
@@ -291,6 +331,7 @@ def run(root, write=False, index=False):
     verify_manifest(root, manifest, expected_files(root))
     if index:
         verify_index(root, manifest)
+    validate_qa002(root)
     # References from changed QA docs must resolve inside the repository.
     for path in list((root / QA).glob('*.md')):
         for link in re.findall(r'\]\(([^)]+)\)', path.read_text()):

@@ -109,6 +109,23 @@ class MigrationHarnessTest(unittest.TestCase):
             harness.started = False
             harness.cleanup()
 
+    def test_resources_lists_all_containers_including_stopped(self):
+        harness = H.Harness(False)
+        harness.project = 'qa002_owned'
+        calls = []
+
+        def mock_command(args, input=None, check=True):
+            calls.append(args)
+            return subprocess.CompletedProcess(args, 0, stdout='fake_id\n', stderr='')
+
+        with patch.object(harness, 'command', side_effect=mock_command), \
+                patch.object(harness, 'docker_json', return_value=[]):
+            harness.resources()
+
+        container_calls = [c for c in calls if c[:3] == ['docker', 'container', 'ls']]
+        self.assertEqual(len(container_calls), 1)
+        self.assertIn('-a', container_calls[0])
+
     def test_main_never_passes_on_setup_sql_or_cleanup_failure(self):
         for run_error, cleanup_error in ((RuntimeError('SQL failure'), None),
                                          (None, RuntimeError('cleanup failure')),

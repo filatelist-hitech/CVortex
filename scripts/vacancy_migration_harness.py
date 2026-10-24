@@ -83,7 +83,8 @@ class Harness:
     def resources(self):
         result = []
         for kind in ('container', 'volume', 'network'):
-            ids = self.command(['docker', kind, 'ls', '-q', '--filter',
+            extra = ['-a'] if kind == 'container' else []
+            ids = self.command(['docker', kind, 'ls', *extra, '-q', '--filter',
                                 f'label=com.docker.compose.project={self.project}']).stdout.split()
             result.append(self.docker_json(kind, ids))
         return result
@@ -220,6 +221,13 @@ class Harness:
                               (FIXTURES / 'legacy-schema.sql').read_text(), check=False)
             require(result.returncode != 0 and 'legacy schema:' in result.stderr, 'wrong-schema control falsely passed')
             print(f'QA002-11: expected wrong-schema FAIL exit={result.returncode}; transaction rolled back', flush=True)
+            rebound_sql = ("BEGIN;\n"
+                           "UPDATE vacancy_snapshots SET vacancy_id = '00000000000000000000000011' WHERE id = '00000000000000000000000023';\n" +
+                           (FIXTURES / 'reconciled.sql').read_text() + "\nROLLBACK;")
+            result = self.sql(rebound_sql, check=False)
+            require(result.returncode != 0 and 'migration regressions:' in result.stderr,
+                    'erroneous aggregate rebinding negative control falsely passed')
+            print(f'QA002-14: expected aggregate rebinding mismatch FAIL exit={result.returncode}; transaction rolled back', flush=True)
         self.assert_file('legacy-schema.sql')
         self.assert_file('legacy.sql')
         print('legacy counts: ' + self.counts(), flush=True)
