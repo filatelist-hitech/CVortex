@@ -1,5 +1,39 @@
 # CVortex — проверенное текущее состояние
 
+## Playwright E2E UI Coverage & Quality Automation — 2026-10-24
+
+Mode: IMPLEMENT; branch: `chore/playwright-e2e-coverage`; task: `.agents/tasks/playwright-e2e-coverage.md`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Playwright Automation Infrastructure (`apps/frontend/`)**:
+   - Configured `playwright.config.ts` targeting local Docker Compose stack (`http://127.0.0.1:8080`) with Desktop Chromium (1440×900) and Mobile Chrome (Pixel 7 emulation, 393×851).
+   - Added npm test scripts: `test:e2e`, `test:e2e:smoke`, `test:e2e:critical`, `test:e2e:ui`, `test:e2e:report`.
+   - Built reusable test harness and fixtures (`apps/frontend/e2e/fixtures/test-fixtures.ts`) with synthetic run-scoped auth (`qa-*@test.cvortex`), automated WCAG 2.1 AA audits via `@axe-core/playwright`, and role-based helpers.
+   - Configured CI job `e2e-tests` in `.github/workflows/quality.yml` with host dependency installation, Chromium headless test execution, and Playwright report artifact uploading.
+
+2. **Test Suites & Verification Results (64 tests across 8 suites, 100% PASS)**:
+   - `e2e/auth/login.spec.ts`: 10/10 PASS (Desktop + Mobile) — form rendering, valid auth, invalid password safe failure, nonexistent user handling, HTML5 boundary validation, session persistence, logout flow.
+   - `e2e/auth/register.spec.ts`: 6/6 PASS — invite-only gate enforcement, successful registration with valid token, invalid token rejection, password mismatch validation.
+   - `e2e/auth/access-control.spec.ts`: 8/8 PASS — role-based route access, admin-only Error Center diagnostics, regular user 403 denial, unauthenticated visitor login redirect.
+   - `e2e/career/career-facts.spec.ts`: 8/8 PASS — career workspace panels, manual fact creation, fact review/confirmation, extraction provider error handling with safe localized messaging.
+   - `e2e/vacancies/vacancies.spec.ts`: 8/8 PASS — vacancy workspace rendering, vacancy creation via paste, client-side validation on empty input, Truth Guard invariant enforcing human approval separation before AI draft approval.
+   - `e2e/security/cross-user-isolation.spec.ts`: 6/6 PASS — multi-user career facts isolation, vacancy isolation, prompt injection resistance without privilege escalation.
+   - `e2e/diagnostics/diagnostics.spec.ts`: 6/6 PASS — admin incidents log, detailed sanitized technical context, status update to RESOLVED.
+   - `e2e/responsive/responsive-navigation.spec.ts`: 6/6 PASS — mobile navigation drawer, 390px viewport without horizontal overflow, 320px compact layout preservation.
+   - `e2e/accessibility/a11y-audit.spec.ts`: 6/6 PASS — automated axe-core WCAG 2.1 AA scans on auth and career pages, modal focus trap, Escape key dismissal.
+   - Vitest component/unit tests: 10/10 files (133/133 tests) PASS without regressions.
+   - TypeScript (`tsc --noEmit`) and ESLint (`eslint`): 0 errors.
+
+3. **Documentation Delivered**:
+   - `docs/09-QA/playwright-coverage-matrix.md`: 30+ scenarios across 8 areas mapped to priority (P0–P2), type, route, and coverage status.
+   - `docs/09-QA/playwright-architecture.md`: layout, fixtures, browser targets, configuration, and invariants.
+   - `docs/09-QA/playwright-test-strategy.md`: Truth-first, multi-user isolation, deterministic AI boundaries.
+   - `docs/09-QA/playwright-local-setup.md`: prerequisites, local test running instructions, environment overrides.
+   - `docs/09-QA/playwright-ci.md`: GitHub Actions workflow, artifact retention, timeout policies.
+   - `docs/09-QA/playwright-known-gaps.md`: honest audit of unimplemented UI features (file uploads, URL scraping, Career Tracks UI, Settings BYOK, Interview prep, Document export).
+
+---
+
 ## Post-Merge Targeted Regression — stage SHA 8dce209b7c1c86747753a97083dcf3eb0360db3f, 2026-10-24
 
 Mode: VERIFY ONLY / DOCUMENTATION ONLY; one agent/sequential. Проверенный HEAD ветки `stage`:

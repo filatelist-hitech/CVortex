@@ -66,8 +66,13 @@ test.describe("Access Control & Role Boundaries", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          data: [],
-          meta: { total: 0 },
+          data: {
+            data: [],
+            current_page: 1,
+            last_page: 1,
+            per_page: 25,
+            total: 0,
+          },
         }),
       });
     });
