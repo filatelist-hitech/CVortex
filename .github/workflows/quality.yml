@@ -36,3 +36,31 @@ jobs:
         run: make test
       - name: Frontend production build
         run: docker compose build frontend
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [m0-quality]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Compose configuration
+        run: docker compose --env-file .env.example config --quiet
+      - name: Build and install locked dependencies
+        run: make init
+      - name: Start stack for E2E
+        run: docker compose up --detach --wait postgres redis backend frontend nginx
+      - name: Install Playwright browsers with deps
+        run: |
+          cd apps/frontend
+          npx playwright install --with-deps chromium
+      - name: Run Playwright E2E smoke and critical tests
+        run: |
+          cd apps/frontend
+          PLAYWRIGHT_BASE_URL="http://127.0.0.1:8080" npm run test:e2e:critical
+      - name: Upload Playwright report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/frontend/playwright-report/
+          retention-days: 7
