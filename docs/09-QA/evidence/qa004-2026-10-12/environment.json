@@ -1,0 +1,136 @@
+{
+  "compose_project": "cvortexqa004",
+  "containers": [
+    {
+      "name": "cvortexqa004-nginx-1",
+      "image": "nginx:1.31.5-alpine3.24",
+      "environment": {},
+      "networks": [
+        "cvortexqa004_browser_edge",
+        "cvortexqa004_internal"
+      ],
+      "ports": {
+        "80/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18084"
+          }
+        ]
+      },
+      "source_mounts": [
+        "/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/infra/nginx/log-format.conf",
+        "/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/infra/nginx/nginx.conf"
+      ]
+    },
+    {
+      "name": "cvortexqa004-frontend-1",
+      "image": "cvortex-frontend:latest",
+      "environment": {},
+      "networks": [
+        "cvortexqa004_browser_edge"
+      ],
+      "ports": {},
+      "source_mounts": [
+        "/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/apps/frontend"
+      ]
+    },
+    {
+      "name": "cvortexqa004-horizon-1",
+      "image": "cvortex-backend:latest",
+      "environment": {
+        "DB_RUNTIME_ROLE": "qa004_app",
+        "DB_HOST": "postgres",
+        "APP_ENV": "local",
+        "OPENAI_BASE_URL": "http://fakeprovider:8000/v1",
+        "DB_DATABASE": "cvortex_qa004_synthetic",
+        "REDIS_HOST": "redis",
+        "DB_USERNAME": "qa004_app",
+        "AI_PROVIDER": "openai"
+      },
+      "networks": [
+        "cvortexqa004_internal"
+      ],
+      "ports": {
+        "9000/tcp": null
+      },
+      "source_mounts": [
+        "/host_mnt/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/apps/backend",
+        "/host_mnt/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/runtime-ai"
+      ]
+    },
+    {
+      "name": "cvortexqa004-backend-1",
+      "image": "cvortex-backend:latest",
+      "environment": {
+        "OPENAI_BASE_URL": "http://fakeprovider:8000/v1",
+        "APP_ENV": "local",
+        "REDIS_HOST": "redis",
+        "DB_HOST": "postgres",
+        "DB_DATABASE": "cvortex_qa004_synthetic",
+        "AI_PROVIDER": "openai",
+        "DB_RUNTIME_ROLE": "qa004_app",
+        "DB_USERNAME": "qa004_app"
+      },
+      "networks": [
+        "cvortexqa004_internal"
+      ],
+      "ports": {
+        "9000/tcp": null
+      },
+      "source_mounts": [
+        "/host_mnt/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/runtime-ai",
+        "/host_mnt/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/apps/backend"
+      ]
+    },
+    {
+      "name": "cvortexqa004-postgres-1",
+      "image": "postgres:18.6-bookworm",
+      "environment": {},
+      "networks": [
+        "cvortexqa004_internal"
+      ],
+      "ports": {
+        "5432/tcp": null
+      },
+      "source_mounts": [
+        "/host_mnt/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/infra/postgres/init-runtime-role.sh"
+      ]
+    },
+    {
+      "name": "cvortexqa004-redis-1",
+      "image": "redis:8.8.2-alpine3.23",
+      "environment": {},
+      "networks": [
+        "cvortexqa004_internal"
+      ],
+      "ports": {
+        "6379/tcp": null
+      },
+      "source_mounts": []
+    },
+    {
+      "name": "cvortexqa004-fakeprovider-1",
+      "image": "cvortex-frontend:latest",
+      "environment": {},
+      "networks": [
+        "cvortexqa004_internal"
+      ],
+      "ports": {},
+      "source_mounts": [
+        "/Users/filatelist/.codex/worktrees/qa-004-career-claim-resolution/CVortex/docs/09-QA/evidence/qa004-2026-10-12/provider.cjs"
+      ]
+    }
+  ],
+  "networks": [
+    {
+      "name": "cvortexqa004_browser_edge",
+      "internal": false
+    },
+    {
+      "name": "cvortexqa004_internal",
+      "internal": true
+    }
+  ],
+  "credentials": "synthetic only; values excluded",
+  "development_database": "not a connection target"
+}

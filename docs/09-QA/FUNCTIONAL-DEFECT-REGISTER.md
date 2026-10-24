@@ -2,20 +2,20 @@
 title: CVortex Functional Defect Register
 status: open-findings
 created: 2026-10-11
-updated: 2026-10-11
+updated: 2026-10-12
 tags: [qa, defects, reproduction]
 ---
 
 # Functional defect register
 
-Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Четыре открытых находки; ничего автоматически не исправлялось. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
+Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Исторический аудит зафиксировал четыре открытых находки; исправление QA-004 от 2026-10-12 записано отдельно ниже. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
 
 | ID | Категория | Severity | Status | Проблема |
 |---|---|---|---|---|
 | QA-001 | Reference integrity | MEDIUM / P2 | OPEN / reproduced | B01 OFL.txt SHA-256 mismatch |
 | QA-002 | Test infrastructure | MEDIUM / P2 | OPEN / reproduced | Legacy migration harness rolls back wrong migrations |
 | QA-003 | Test infrastructure | MEDIUM / P2 | OPEN / reproduced | Timestamp-tie fixture conflicts with exception deduplication |
-| QA-004 | Product functional UI | HIGH / P1 | OPEN / observed | USER_RESOLUTION_REQUIRED has no Career UI action |
+| QA-004 | Product functional UI | HIGH / P1 | FIXED / locally verified, awaiting review | Explicit Career evidence selection implemented |
 
 ## QA-001 — OFL provenance byte mismatch
 
@@ -72,6 +72,28 @@ Pinned upstream fixture: 4495 bytes, 93 CRLF sequences; tracked asset: 4401 byte
 **Recommended fix:** separately authorize bounded Career UI resolution: expose supporting same-owner confirmed evidence choices, submit explicit selection, show validation errors and refresh/revalidate dependent context. Preserve human choice and owner/Truth Guard guards; no automatic selection.
 
 **Regression criteria:** reproduce ambiguity in browser, choose an eligible supporting fact, observe PASS then complete generation/approval without console/API helper; reject foreign, pending, rejected and deprecated evidence; ambiguous/unresolved content stays unapprovable; keyboard/accessibility coverage for the new control.
+
+### QA-004 bounded correction — 2026-10-12
+
+**Current result:** FIXED / locally verified, awaiting PR review/integration.
+Career now exposes Russian explanation, linked confirmed supporting facts with
+source/type/excerpt, explicit radio selection and confirmation, busy/result/error
+states, preserved selection and safe manual retry. It uses the existing PATCH
+contract and displays only the backend's actual truth_status; HTTP 200/BLOCK is
+not success. No new facts, automatic confirmation, resolution or application approval.
+
+**Validation:** frontend 131 tests PASS, ESLint/TypeScript/build PASS;
+Career API 52 tests / 417 assertions and Application 19 tests / 253 assertions PASS
+(SQLite in-memory); targeted Pint/PHPStan PASS. Real browser against isolated
+PostgreSQL/runtime role + local mocked provider: 15 targeted scenarios PASS,
+including keyboard resolution, persistence, vacancy revalidation, generation,
+explicit acceptance/approval, CSRF419 and foreign Claim/approval404.
+Responsive smoke at 320/390/768/1440 PASS. [Evidence and reproducible runner](evidence/qa004-2026-10-12/README.md).
+
+Historical audit records above and their API-workaround evidence remain unchanged.
+No full QA audit or live provider verification. Preview 0.1 and manual accessibility
+release gates remain open; QA-001–003 are outside this correction. NEXT is unchanged
+under explicit owner override. Integration/independent review remain separate.
 
 ## Coverage gaps and non-defects
 

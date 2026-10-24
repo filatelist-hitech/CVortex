@@ -4,7 +4,7 @@
   "files": {
     "docs/09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md": "ffc55058e339a0ec2b042cd597385db3f0e6ab2d95318a39541496e5585887d5",
     "docs/09-QA/FUNCTIONAL-COVERAGE-MATRIX.md": "fe6ccca3a4df2094b21158b1cefda8810a428ca6ac923898d4c53ad4891fc10a",
-    "docs/09-QA/FUNCTIONAL-DEFECT-REGISTER.md": "7f7f9778b33fd6e95a0b61e7e317109800a780f6432c22291eee5b0f54b278f7",
+    "docs/09-QA/FUNCTIONAL-DEFECT-REGISTER.md": "4f5281b05afa5f481bbeffd39c0989ec90105ff781a6853723a0baaff8798c39",
     "docs/09-QA/PR46-REMEDIATION.md": "5108136f5fcc7e35d580142119178fb80bd78d4ca5693714561fedbe3d08c0e1",
     "docs/09-QA/evidence/full-2026-10-11/FunctionalAuditTruthGuardTest.php": "ee8bf65059c70fa907a6cda80a5390ddbc5a39f02389e8faba85abd63837dbbf",
     "docs/09-QA/evidence/full-2026-10-11/access-core-postgres-concurrency.log": "dcfe85cfe59221e06614ef41a810ab7fe788b74ad87a4519805bd0b8738c2ae1",

@@ -41,6 +41,7 @@ related:
 - [[../01-Product/Vision|Видение]], [[../01-Product/Principles|принципы]], [[../01-Product/Scope|объём продукта]] и [[../01-Product/Glossary|словарь]]: замысел, ограничения и термины. Эти документы описывают направление, а не подтверждают готовность функций.
 - [[../01-Product/Roadmap|План развития]]: последовательность этапов и их текущий статус.
 - [[../02-Architecture/Architecture-Baseline|Архитектурные границы]], [[../02-Architecture/Phase-06-System-Design|системный дизайн]] и [[../02-Architecture/M0-Runtime|схема M0]]: устройство системы, принятые решения и локальный запуск.
+- [QA-004: выбор источника утверждения](../09-QA/evidence/qa004-2026-10-12/README.md): bounded UI correction, synthetic validation и открытые human/provider gates.
 - [[../04-Data/M1-2-Career-Core|M1.2: факты о карьере]], [[../04-Data/M1-3-Vacancy-Core|M1.3: вакансии]] и [[../04-Data/M1-4-Application-Draft|M1.4: черновики отклика]]: структура данных, API и правила проверки.
 - [[../04-Data/Diagnostics|Модель диагностики]] и [[../05-API/diagnostics.openapi.yaml|контракт API диагностики]].
 - [[../06-AI/Phase-06-AI-Design|Проектирование работы с ИИ]], [[../08-Security/Threat-Model|модель угроз]] и [[../07-Design/Design-Foundation|основы дизайна]].
