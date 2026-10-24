@@ -77,6 +77,17 @@ venv/
 # Private personal-preview sources, fixtures, screenshots and evidence
 /.local/
 
+# Derived visual validation screenshots, diffs, contact sheets and inventories
+docs/07-Design/**/validation/**/*.png
+docs/07-Design/**/validation/*.png
+docs/07-Design/**/validation/**/*.json
+!docs/07-Design/**/validation/**/manifest.json
+research/design-redesign/**/*.png
+
+# Codex import dumps and context
+docs/codex_import/
+docs/CODEX_CONTEXT.md
+
 # --- Obsidian local workspace state ---
 # Project documentation remains plain Markdown in Git.
 .obsidian/
