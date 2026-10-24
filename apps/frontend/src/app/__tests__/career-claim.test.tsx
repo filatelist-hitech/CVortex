@@ -104,9 +104,15 @@ describe("QA-004 Career claim resolution", () => {
     expect(screen.getAllByRole("radio").every((radio) => !(radio as HTMLInputElement).checked)).toBe(true);
     expect(fetchMock.mock.calls.every(([, init]) => !init?.method)).toBe(true);
   });
-  it.each([[401, "AUTH_REQUIRED"], [403, "PERMISSION_DENIED"], [404, "NOT_FOUND"], [503, "INTERNAL_ERROR"]])("handles %s without a false PASS", async (status, code) => {
+  it.each([[401, "AUTH_REQUIRED"], [403, "PERMISSION_DENIED"], [404, "NOT_FOUND"], [404, "RESOURCE_NOT_FOUND"], [503, "INTERNAL_ERROR"]])("handles %s %s without a false PASS", async (status, code) => {
     await mount({ patch: async () => failure(Number(status), String(code)) }); choose(); submit();
     expect(await screen.findByRole("alert")).not.toBeEmptyDOMElement();
+    expect(screen.getAllByRole("radio")[0]).toBeChecked();
+    expect(screen.getByText("Нужен выбор источника")).toBeInTheDocument();
+  });
+  it("handles RESOURCE_NOT_FOUND with the specific unavailable message", async () => {
+    await mount({ patch: async () => failure(404, "RESOURCE_NOT_FOUND") }); choose(); submit();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Утверждение или факт больше недоступны. Обновите варианты перед повтором.");
     expect(screen.getAllByRole("radio")[0]).toBeChecked();
     expect(screen.getByText("Нужен выбор источника")).toBeInTheDocument();
   });

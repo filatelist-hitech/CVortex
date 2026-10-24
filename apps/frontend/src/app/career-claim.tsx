@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "./access-shell";
 
 export type Fact = {
@@ -31,7 +31,7 @@ function resolutionError(caught: unknown): string {
   if (caught instanceof ApiError) {
     if (caught.code === "AUTH_REQUIRED") return "Сессия завершена. Войдите снова и повторите выбор источника.";
     if (caught.code === "VALIDATION_FAILED") return "Сервер отклонил выбор. Состояние утверждения или факта могло измениться. Обновите варианты и проверьте выбранный факт.";
-    if (caught.code === "PERMISSION_DENIED" || caught.code === "NOT_FOUND") return "Утверждение или факт больше недоступны. Обновите варианты перед повтором.";
+    if (caught.code === "PERMISSION_DENIED" || caught.code === "NOT_FOUND" || caught.code === "RESOURCE_NOT_FOUND") return "Утверждение или факт больше недоступны. Обновите варианты перед повтором.";
     if (caught.code === "NETWORK_ERROR") return "Не удалось подключиться. Выбор сохранён. Проверьте сеть и повторите подтверждение.";
   }
   return "Не удалось подтвердить источник. Выбор сохранён. Обновите варианты или повторите подтверждение позже.";
@@ -49,11 +49,11 @@ export default function CareerClaim({ claim, facts, onResolved, onRefresh }: {
   const [success, setSuccess] = useState(false);
   const inFlight = useRef(false);
   const announcement = useRef<HTMLParagraphElement>(null);
-  const eligible = facts.filter((fact) => claim.fact_ids?.includes(fact.id)
+  const eligible = useMemo(() => facts.filter((fact) => claim.fact_ids?.includes(fact.id)
     && fact.status === "CONFIRMED"
     && (fact.assertion_approved ?? fact.assertion_original) === claim.statement
     && fact.source_excerpt.trim() !== ""
-    && !facts.some((replacement) => replacement.status === "CONFIRMED" && replacement.supersedes_fact_id === fact.id));
+    && !facts.some((replacement) => replacement.status === "CONFIRMED" && replacement.supersedes_fact_id === fact.id)), [facts, claim]);
   const selectionAvailable = eligible.some((fact) => fact.id === selected);
 
   async function resolve(event: FormEvent<HTMLFormElement>) {
