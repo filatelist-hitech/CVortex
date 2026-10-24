@@ -1,0 +1,28 @@
+services:
+  backend:
+    image: cvortex-backend:latest
+    networks: !override [internal]
+  horizon:
+    image: cvortex-backend:latest
+    networks: !override [internal]
+  frontend:
+    image: cvortex-frontend:latest
+    command: [sh, -c, 'npm run build && npm run start -- --hostname 0.0.0.0']
+    environment:
+      NODE_ENV: production
+  nginx:
+    networks: !override [edge, internal]
+  fakeprovider:
+    image: cvortex-frontend:latest
+    command: [node, /fixture/provider.cjs]
+    volumes:
+      - ./docs/09-QA/evidence/qa004-2026-10-12/provider.cjs:/fixture/provider.cjs:ro
+    networks: [internal]
+  scheduler:
+    profiles: [unused]
+networks:
+  edge:
+    name: cvortexqa004_browser_edge
+    internal: false
+  egress:
+    internal: true

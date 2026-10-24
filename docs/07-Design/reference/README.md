@@ -3,7 +3,7 @@ title: B01 Application Workspace Reference
 status: accepted
 owner: project
 created: 2026-10-08
-updated: 2026-10-11
+updated: 2026-10-12
 tags: [design, reference, tokens, validation]
 related: [../Design-Handoff.md, ../Application-Workspace.md, ../../../.agents/tasks/application-workspace-reference-foundation.md]
 ---
@@ -217,3 +217,27 @@ real 200% browser zoom and manual AT remain open. B01 PARTIAL; STOP before B02.
 ## Current B01 governance outcome — 2026-10-11
 
 Under accepted [ADR-0025](../../03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md), B01 is **ACCEPTED** as the owner-approved visual/product implementation baseline; lifecycle `reviewed`. Earlier PARTIAL/draft/STOP records above are historical. Unperformed manual checks remain **NOT TESTED**, with mandatory follow-up `.agents/tasks/b01-manual-accessibility-release-gate.md` blocking production release. B02 is explicitly authorized after this closure; B03 is not authorized.
+
+## Current integrity byte policy — QA-001, 2026-10-12
+
+Repository assets are verified as exact stored bytes by `manifest.generated`.
+`assets/OFL.txt` remains unchanged: LF with trailing horizontal whitespace removed.
+`assets/font-source.json` keeps its existing `sha256`/`bytes` as **upstream**
+provenance and adds `stored.sha256`/`stored.bytes`/`stored.bytePolicy` for the
+repository copy. The pinned upstream payload is retained as base64 in a JSON
+fixture so Git newline normalization cannot change its decoded bytes.
+
+Both `--check` and `--write` first verify the decoded upstream SHA-256/length,
+its URL, the documented normalization, and the exact repository SHA-256/length.
+This preserves an offline verifiable chain: pinned upstream → normalized license
+→ repository asset hash → current canonical manifest. `--write` cannot bless
+an altered license or provenance fixture. Other assets remain under the existing
+manifest checks. No upstream CRLF preservation requirement exists in ADR-0024/0025;
+no `.gitattributes` exception, font/license text or visual change is needed.
+
+[QA-001 reconciliation and current defect status](../../09-QA/QA-001-RECONCILIATION.md)
+records the option comparison, hashes, tests and evidence. Eight deterministic
+QA001 regressions run with the existing Node tests, including temporary corruption,
+missing assets and a fresh Git index checkout with `core.autocrlf=true`; CI runs
+the canonical checker and these tests. Historical FAIL/reports/manifests stay
+unchanged. Independent PR review is pending; manual release gate remains OPEN.

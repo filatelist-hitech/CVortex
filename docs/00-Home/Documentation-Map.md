@@ -3,7 +3,7 @@ title: Карта документации
 status: accepted
 owner: product-owner
 created: 2026-09-12
-updated: 2026-10-11
+updated: 2026-10-12
 tags: [documentation, moc, obsidian]
 related:
   - "[[CVortex]]"
@@ -41,6 +41,7 @@ related:
 - [[../01-Product/Vision|Видение]], [[../01-Product/Principles|принципы]], [[../01-Product/Scope|объём продукта]] и [[../01-Product/Glossary|словарь]]: замысел, ограничения и термины. Эти документы описывают направление, а не подтверждают готовность функций.
 - [[../01-Product/Roadmap|План развития]]: последовательность этапов и их текущий статус.
 - [[../02-Architecture/Architecture-Baseline|Архитектурные границы]], [[../02-Architecture/Phase-06-System-Design|системный дизайн]] и [[../02-Architecture/M0-Runtime|схема M0]]: устройство системы, принятые решения и локальный запуск.
+- [QA-004: выбор источника утверждения](../09-QA/evidence/qa004-2026-10-12/README.md): bounded UI correction, synthetic validation и открытые human/provider gates.
 - [[../04-Data/M1-2-Career-Core|M1.2: факты о карьере]], [[../04-Data/M1-3-Vacancy-Core|M1.3: вакансии]] и [[../04-Data/M1-4-Application-Draft|M1.4: черновики отклика]]: структура данных, API и правила проверки.
 - [[../04-Data/Diagnostics|Модель диагностики]] и [[../05-API/diagnostics.openapi.yaml|контракт API диагностики]].
 - [[../06-AI/Phase-06-AI-Design|Проектирование работы с ИИ]], [[../08-Security/Threat-Model|модель угроз]] и [[../07-Design/Design-Foundation|основы дизайна]].
@@ -63,7 +64,7 @@ related:
 | `06-AI/` | Сервисы ИИ, модели, сценарии и оценка ИИ | В работе |
 | `07-Design/` | Дизайн-система, токены и передача макетов | В работе |
 | `08-Security/` | Модель угроз и меры защиты | В работе |
-| `09-QA/` | [Functional audit](../09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), [coverage matrix](../09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), [defect register](../09-QA/FUNCTIONAL-DEFECT-REGISTER.md) и проверяемый evidence package | Датированные локальные проверки; provider/human/release gates видимы отдельно |
+| `09-QA/` | [Functional audit](../09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), [coverage matrix](../09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), [исторический defect register](../09-QA/FUNCTIONAL-DEFECT-REGISTER.md), [текущий статус QA-001](../09-QA/QA-001-RECONCILIATION.md) и проверяемый evidence package | Датированные локальные проверки; provider/human/release gates видимы отдельно |
 | `10-Operations/` | Локальный запуск, обслуживание и диагностика | В работе |
 | `11-Research/` | Исследования, результаты которых включены в документацию | Зарезервировано |
 | `99-Archive/` | Устаревшие и заменённые документы | Зарезервировано |
