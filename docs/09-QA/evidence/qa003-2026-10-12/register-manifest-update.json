@@ -2,6 +2,8 @@
   "reason": "Current QA-003 status changed in the mutable defect register; update only its digest, preserve historical logs/results/accounting and all other manifest entries.",
   "file": "docs/09-QA/FUNCTIONAL-DEFECT-REGISTER.md",
   "before_sha256": "7f7f9778b33fd6e95a0b61e7e317109800a780f6432c22291eee5b0f54b278f7",
-  "after_sha256": "73939806c6c203162675d7a848aa0706e4eeb39d6e9d73e42effaa434576ab33",
+  "after_sha256": "b14bc0c0a70072d4c9f580cd3b2abcf173f7daabd439ecc5246705f7a062c7bc",
+  "merged_post_sha256": "73939806c6c203162675d7a848aa0706e4eeb39d6e9d73e42effaa434576ab33",
+  "merge_note": "after_sha256 reflects the PR HEAD after chore(merge): sync stage into fix/qa-003-diagnostics-fixture (ee24c9f); merged_post_sha256 was the correct digest at docs commit 699af3d before the merge brought in QA-004/B01 changes from stage.",
   "validated_code_sha": "10d9b575b63cd44ad183af8287c322d4ff804191"
 }
