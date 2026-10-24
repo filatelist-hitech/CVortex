@@ -19,6 +19,10 @@ jobs:
           python3 scripts/qa_evidence.py
           python3 -m unittest discover -s scripts -p 'test_qa_evidence.py'
           python3 -m unittest discover -s scripts -p 'test_career_review_harness.py'
+      - name: B01 canonical integrity and regressions
+        run: |
+          node docs/07-Design/reference/build-reference.cjs --check
+          node --test docs/07-Design/reference/build-reference.test.cjs
       - name: Validate Compose configuration
         run: docker compose --env-file .env.example config --quiet
       - name: Build and install locked dependencies

@@ -7,7 +7,7 @@ separate branch `fix/qa-004-career-claim-resolution-ui` and managed worktree.
 Career now exposes explicit supporting-fact selection, existing PATCH, controlled
 errors/retry and backend-authoritative result. No production backend/schema changes.
 
-Local validation: frontend 131 tests, lint/typecheck/production build PASS;
+Local validation: frontend 133 tests, lint/typecheck/production build PASS;
 Career/Claim API 52 tests / 417 assertions and Application 19 / 253 PASS
 (SQLite in-memory), targeted Pint/PHPStan PASS. Browser: isolated PostgreSQL
 `cvortex_qa004_synthetic`, runtime role `qa004_app` without superuser/BYPASSRLS,
@@ -20,7 +20,34 @@ approval, CSRF419 and cross-owner404. Responsive 320/390/768/1440 smoke PASS.
 QA-004 FIXED / locally verified, awaiting PR review/integration. NEXT/BLOCKERS unchanged;
 QA-001–003, live-provider readiness, Preview 0.1 and manual accessibility gates
 remain outside scope. No development DB writes, automatic approval/submission or merge.
-STOP at QA-004; the next intended task remains `b01-current-manifest-integrity-reconciliation`.
+STOP at QA-004; the next intended task remains `b01-manual-accessibility-release-gate`.
+
+## QA-001 B01 integrity — local implementation verified, 2026-10-12
+
+Owner explicitly authorized IMPLEMENT, one agent/sequential, scoped commit/push/PR;
+base stage `5cfe18d401c056eefb179f722d875c3b1acf7522`, branch
+`fix/qa-001-b01-manifest-integrity`, isolated managed worktree. NEXT matched;
+no task spec existed at launch, owner prompt used as bounded authority and recorded
+in [new task spec](../tasks/b01-current-manifest-integrity-reconciliation.md).
+
+Current canonical `--check` PASS and 10/10 Node tests PASS (QA001-01…08).
+Pinned upstream fetched/rehashed: 4495 bytes/93 CRLF; tracked/worktree OFL:
+4401 bytes/LF, unchanged. Git normalizes CRLF but does not remove the separately
+observed trailing space. Manifest mixed upstream and stored-byte hashes.
+Policy A retains LF/trimmed storage and separate upstream metadata/fixture;
+check/write verify provenance before manifest generation. Only four generated
+asset hashes change, with no token/source/rendering or unrelated asset changes.
+
+[Current defect status and evidence](../../docs/09-QA/QA-001-RECONCILIATION.md).
+Historical QA-001 FAIL, register and evidence manifest stay byte-for-byte intact;
+new status supersedes their dated outcome. QA-002–QA-004 are not addressed.
+First remote Quality run failed because the Python test sandbox omitted the new
+linked task; its fixture helper now copies that task. Final-tree Python evidence
+regressions 8/8 PASS; original CI failure retained. Independent PR review pending;
+technical result is not independent review PASS.
+B01 owner acceptance remains; full manual matrix/K1/Z1/A1 **NOT TESTED / OPEN**,
+production release blocked. NEXT names the existing manual gate after QA-001
+review/integration; this task stops without executing it.
 
 ## PR #46 evidence remediation candidate — 2026-10-12
 
@@ -117,7 +144,7 @@ M2 planning/implementation и MVP 0.2 не начаты и остаются за
 | Workstream | Состояние | Открытый gate |
 | --- | --- | --- |
 | Core M1 / Preview | Code integrated, full acceptance unverified | Real-user E2E/feedback; provider readiness |
-| B01/B02 design | B01 owner ACCEPTED; B02 + React port integrated #44 | Current manifest integrity; mandatory manual production accessibility |
+| B01/B02 design | B01 owner ACCEPTED; B02 + React port integrated #44 | QA-001 local PASS, independent review pending; mandatory manual production accessibility |
 | ChatGPT/MCP | #42 merged; mocked tests PASS | Local schema aligned RCV-01; no fresh external account/provider proof |
 | Recovery control | Report/state/dashboard/spec prepared locally | Отдельная authorized documentation delivery, если нужна integration |
 
@@ -144,12 +171,11 @@ governance FAIL; его старые env/egress изменения преиму�
 
 ## Одна главная следующая задача
 
-**`b01-current-manifest-integrity-reconciliation` — согласование текущего B01 manifest / OFL.txt provenance.**
-RCV-01 закрыт; blocker current B01 integrity остаётся. Отдельная спецификация этого
-следующего bounded scope ещё не подготовлена; требуется отдельный owner launch.
-NEXT — указатель намерения, не разрешение продолжать после текущего STOP.
-Не переписывать historical reports/goldens. Затем existing manual accessibility
-release gate; Preview/provider verification и M2 остаются отдельными gates.
+**`b01-manual-accessibility-release-gate`** — следующая intended task после
+независимого review/integration QA-001. Current integrity проверен локально;
+manual state/viewport, keyboard, native200% zoom и human screen reader остаются
+OPEN/NOT TESTED. Нужен named human evidence; owner visual acceptance не заменяет
+его. Preview/provider/M2 gates остаются отдельными. STOP без перехода к gate.
 
 ## История
 
@@ -158,4 +184,4 @@ release gate; Preview/provider verification и M2 остаются отдель�
 Это dated evidence, **не канонический текущий статус или NEXT**.
 Следующая сессия читает этот STATUS, NEXT, BLOCKERS и task, как уже предписано AGENTS.
 
-**STOP:** RCV-01 завершён проверенным локальным результатом; следующая task не выполнялась.
+**STOP:** QA-001 проверен локально и передаётся на независимый review; следующая task не выполнялась.

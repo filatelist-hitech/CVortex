@@ -3,13 +3,27 @@ title: CVortex — Current Project Status
 status: current-dashboard
 owner: project
 created: 2026-10-03
-updated: 2026-10-11
+updated: 2026-10-12
 audit_date: 2026-10-11
 repository_commit: f06a6dba058589823bf3d3c8b693cb625170bc4b
 tags: [project-state, recovery, roadmap, mvp]
 ---
 
 # CVortex — Current Project Status
+
+## QA-001 update — 2026-10-12
+
+На ветке от stage `5cfe18d` current canonical integrity **PASS**, 10/10 Node
+regressions **PASS**; OFL/license text, tokens и визуальный reference не изменены.
+[Текущий статус/evidence QA-001](../09-QA/QA-001-RECONCILIATION.md).
+Независимый PR review/integration ожидается. NEXT — существующий manual accessibility
+release gate после QA-001 review; gate **OPEN / NOT TESTED**, production release
+blocked. Preview/provider/M2 gates не изменены.
+
+## Recovery snapshot — 2026-10-11 (история)
+
+Следующий датированный snapshot сохраняет прежний FAIL и Git/runtime evidence;
+текущие QA-001/NEXT формулировки находятся выше и в каноническом STATUS.
 
 Проверено **11 октября 2026, Europe/Moscow**, на stage `f06a6db`.
 Это удобное представление [канонического STATUS](../../.agents/state/STATUS.md),
