@@ -51,6 +51,29 @@ Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential
 
 ---
 
+## QA-002 & QA-003 — Harness Safety, Aggregate Relations & Timestamp-Tie Negative Control — 2026-10-25
+
+Mode: IMPLEMENT; branch: `fix/qa-002-qa-003-safety-negative-control`; target: `stage`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **QA-002: Lifecycle Safety, Aggregate Relations & Evidence Validation**:
+   - `R1 MAJOR`: `scripts/vacancy_migration_harness.py::resources()` дополнен флагом `-a` для `docker container ls`, гарантируя учёт остановленных контейнеров проекта при инвентаризации, валидации меток владения (`cvortex.qa002.run`) и контроле чистоты ресурсов при cleanup. Добавлен юнит-тест `test_resources_lists_all_containers_including_stopped`.
+   - `R2 MAJOR`: `scripts/fixtures/vacancy-duplicate-migration/reconciled.sql` дополнен строгой проверкой FK и aggregate mapping `vacancy → snapshots → analyses → LLM runs` (проверка соответствия каждого снимка его вакансии и `source_url`, каждого анализа — снимку и вакансии, LLM-прогона — снимку). В `vacancy_migration_harness.py` отрицательный контроль `QA002-14` перенесён в пост-миграционную фазу после применения `REPAIRS` и прохождения базового `reconciled.sql`, снабжён явной проверкой предусловий (существование целевого снимка и обновление ровно 1 строки) и проверяет точную сигнатуру ошибки (`snapshot source_url or owner_id differs from parent vacancy`). Добавлены юнит-тесты защиты от ложного PASS в `test_vacancy_migration_harness.py`.
+   - `R3 MINOR`: `scripts/qa_evidence.py` дополнен валидатором `validate_qa002`, выполняющим строгую проверку JSON, соответствие SHA-256 файлов `log-exports.json` (включая разархивирование raw gzip), валидацию структуры `exact-runs.json`, неизменность `development-preservation.json` и целостность ссылок в `README.md`. Добавлены тесты целостности в `scripts/test_qa_evidence.py`.
+   - Запуск полного lifecycle harness `scripts/test-vacancy-postgres-duplicate-migration.sh --regression-controls` в гарантированно изолированном disposable Compose-окружении завершён успешно (PASS, exit 0, чистый cleanup).
+
+2. **QA-003: Deterministic Timestamp Ordering Negative Control & Latest Operation**:
+   - В `apps/backend/tests/Feature/DiagnosticsPostgresTest.php` (`test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties`):
+     - Физический порядок обновления кортежей инвертирован относительно лексикографического порядка ULID: запись с большим ID обновляется первой, а с меньшим — второй, получая больший TID в таблице PostgreSQL.
+     - Добавлен строгий negative control: прямой SQL-запрос `ORDER BY created_at DESC LIMIT 1` без условия `id DESC` возвращает более старую запись (`$smallerId`), доказывая, что отсутствие `id DESC` приводит к получению неверного результата. Аналогичный отрицательный контроль добавлен для детального списка occurrences.
+     - Добавлена проверка tie-breaker для поля `latest_operation` (`operation_newer` vs `operation_older`).
+     - Проведено мутационное тестирование (удаление `id DESC` из `DiagnosticsController` вызывает немедленный FAIL тестов), подтверждена защита от регрессий.
+     - Выполнение теста подтверждено на изолированном PostgreSQL 18.6 (5/5 PASS, 58 assertions, 0 SKIP).
+
+Status: QA-002 и QA-003 **PASS / RESOLVED**.
+
+---
+
 ## QA-004 — Career Claim resolution race conditions eliminated (PR #53) — 2026-10-25
 
 Mode: IMPLEMENT; branch: `fix/qa-004-claim-resolution-race-conditions`; target: `stage` (PR #53 squashed and merged as commit `679c3fcdca1effe26c253a4f3052b275c6c3abe9`). One agent / sequential execution.
