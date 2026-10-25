@@ -34,35 +34,22 @@ readiness этим не доказана. Production mutations и другие D
   отдельными authorized tasks. Сначала current reference integrity.
 - **Владелец:** нужен human reviewer/AT session; screenshots/DOM/AX недостаточны.
 
-## 2. QA-002 — Migration harness lifecycle safety & isolation gaps
+## Закрыто в QA-002 — Migration harness lifecycle safety & isolation gaps
 
-- **Причина:** Независимое ревью выявило критические замечания к `scripts/vacancy_migration_harness.py`:
-  - `R1 MAJOR`: инвентаризация контейнеров `inspect_owned` использует `docker container ls -q`
-    без флага `-a`, в результате чего остановленные контейнеры не учитываются. Собственный
-    остановленный контейнер блокирует cleanup, а контейнер с неверным run-token может обойти guard.
-  - `R2 MAJOR`: фикстура `reconciled.sql` проверяет только скалярные counts и статусы,
-    но не валидирует полные FK-связи aggregate mapping `vacancy → snapshots → analyses → LLM runs`,
-    и не содержит negative control для предотвращения ошибочной перепривязки к другому агрегату.
-  - `R3 MINOR`: `scripts/qa_evidence.py` не проверяет QA-002 evidence package.
-- **Влияние:** Запуск PostgreSQL lifecycle harness заблокирован (`BLOCKED`). На хосте активен
-  shared development PostgreSQL (`cvortex-postgres-1`) с существующими данными (`cvortex_test`),
-  которые запрещено считать disposable.
-- **Разрешение:** Устранить замечания R1, R2, R3 в harness и подтвердить гарантированную
-  disposable изоляцию до запуска реального lifecycle.
+2026-10-25 замечания R1, R2, R3 устранены:
+- `R1 MAJOR`: В `scripts/vacancy_migration_harness.py` метод `resources()` использует флаг `-a` для `docker container ls`, учитывая остановленные контейнеры при инвентаризации, валидации токенов владения и контроле чистоты cleanup. Добавлен юнит-тест `test_resources_lists_all_containers_including_stopped`.
+- `R2 MAJOR`: Фикстура `reconciled.sql` дополнена исчерпывающей валидацией FK и aggregate mapping `vacancy → snapshots → analyses → LLM runs` (проверка соответствия каждого снимка его вакансии и `source_url`, каждого анализа — его снимку и вакансии, LLM-прогонов — снимку). В harness отрицательный контроль `QA002-14` перенесён в пост-миграционную фазу после применения `REPAIRS` и прохождения базового `reconciled.sql`, снабжён явной проверкой предусловий (наличие записи, обновление ровно одной строки) и проверяет точную сигнатуру ошибки (`snapshot source_url or owner_id differs from parent vacancy`). Добавлены юнит-тесты защиты от ложного PASS в `test_vacancy_migration_harness.py`.
+- `R3 MINOR`: В `scripts/qa_evidence.py` внедрена функция `validate_qa002`, выполняющая строгую валидацию JSON, сверку SHA-256 файлов из `log-exports.json` (включая распаковку raw gzip), структуры `exact-runs.json`, неизменности `development-preservation.json` и целостности ссылок в `README.md`. Добавлены тесты верификации и обнаружения подделки данных в `test_qa_evidence.py`.
+- Полный lifecycle проверен запуском `scripts/test-vacancy-postgres-duplicate-migration.sh --regression-controls` в гарантированно изолированном disposable Compose-окружении (PASS, чистый cleanup).
 
-## 3. QA-003 — Diagnostics timestamp-tie negative control gap
+## Закрыто в QA-003 — Diagnostics timestamp-tie negative control & latest_operation
 
-- **Причина:** Регрессионный тест в `DiagnosticsPostgresTest.php` не содержит строгого
-  отрицательного контроля: SQL-контроль показал, что без условия `id DESC` выборка в PostgreSQL
-  при одинаковых timestamps возвращает строки в порядке вставки (совпадающем с ID), что
-  приводит к ложному PASS при удалении обязательного tie-breaker из контроллера.
-  Кроме того, в CI используется SQLite, где данный тест пропускается (`SKIP`).
-  Успешный CI не подтверждает прохождение на PostgreSQL, а запуск на изолированном PostgreSQL
-  не подтверждён (`SKIP` не является `PASS`). Не проверяется tie для `latest_operation` (LOW).
-- **Влияние:** Статус QA-003 на stage: `BLOCKED`. Контракт детерминированной сортировки
-  не защищён от регрессий.
-- **Разрешение:** Добавить строгий negative control (мутационный тест, инвертирующий порядок ID
-  или явно требующий `id DESC`), обеспечить запуск на изолированном PostgreSQL.
+2026-10-25 дефекты регрессионного теста устранены:
+- В `DiagnosticsPostgresTest.php` (`test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties`):
+  - Инвертирован физический порядок обновления кортежей относительно лексикографического порядка идентификаторов: строка с большим ID обновляется первой, а с меньшим ID — второй (получая больший TID в куче PostgreSQL).
+  - Внедрен строгий negative control: прямой SQL-запрос `ORDER BY created_at DESC LIMIT 1` без обязательного `id DESC` возвращает более старую запись (`$smallerId`), что доказательно исключает ложный PASS при удалении `id DESC` из контроллера.
+  - Добавлена проверка tie-breaker для поля `latest_operation` (`operation_newer` vs `operation_older`).
+  - Тест валидирован мутационным тестированием (удаление `id DESC` из контроллера вызывает немедленный FAIL тестов) и подтвержден на изолированном PostgreSQL (5/5 PASS, 58 assertions, 0 SKIP).
 
 ## 4. QA-001 — non-blocking review follow-ups (PASS on stage)
 

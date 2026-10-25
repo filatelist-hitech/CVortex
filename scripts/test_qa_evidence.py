@@ -99,6 +99,30 @@ class EvidenceRegressionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'route mapping drift'):
             qa.validate_inventory(root, inv)
 
+    def test_qa002_evidence_validation_and_tamper_detection(self):
+        root = Path(__file__).resolve().parents[1]
+        qa.validate_qa002(root)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            shutil.copytree(root / 'docs/09-QA', tmp_root / 'docs/09-QA')
+            pkg = tmp_root / 'docs/09-QA/evidence/qa002-2026-10-12'
+            qa.validate_qa002(tmp_root)
+
+            # 1. Corrupted export log
+            target = pkg / 'current.log'
+            target.write_bytes(target.read_bytes() + b'corrupt')
+            with self.assertRaisesRegex(ValueError, 'qa002 export sha mismatch'):
+                qa.validate_qa002(tmp_root)
+            target.write_bytes(target.read_bytes()[:-7])
+
+            # 2. Corrupted exact-runs entry
+            exact_runs = qa.strict_json(pkg / 'exact-runs.json')
+            exact_runs['runs'][0]['log_sha256'] = '0' * 64
+            (pkg / 'exact-runs.json').write_text(json.dumps(exact_runs))
+            with self.assertRaisesRegex(ValueError, 'qa002 exact-run log sha mismatch'):
+                qa.validate_qa002(tmp_root)
+
 
 if __name__ == '__main__':
     unittest.main()
