@@ -272,7 +272,7 @@ class OpenAiResponsesProvider
                 ->withToken($key)
                 ->acceptJson()
                 ->timeout(10)
-                ->get('/models/'.$targetModel);
+                ->get('/models/'.urlencode($targetModel));
         } catch (\Throwable $exception) {
             return [
                 'success' => false,
@@ -292,6 +292,7 @@ class OpenAiResponsesProvider
             $status = $response->status();
             [$errorCode, $recommendation] = match (true) {
                 $status === 401 || $status === 403 => ['INVALID_CREDENTIALS', 'Verify that your OpenAI API key is valid and has model access.'],
+                $status === 404 => ['MODEL_NOT_FOUND', 'The specified OpenAI model was not found or your key lacks access to it.'],
                 $status === 429 => ['RATE_LIMITED', 'OpenAI quota or rate limit exceeded. Check your plan quota on OpenAI platform.'],
                 $status >= 500 => ['PROVIDER_UNAVAILABLE', 'OpenAI service is temporarily unavailable. Retry later.'],
                 default => ['PROVIDER_ERROR', 'The OpenAI provider returned an unexpected error.'],

@@ -334,6 +334,7 @@ class GeminiResponsesProvider
             [$errorCode, $recommendation] = match (true) {
                 $status === 400 => ['INVALID_ARGUMENT', 'Check the specified model name and parameters.'],
                 $status === 401 || $status === 403 => ['INVALID_CREDENTIALS', 'Verify that your Gemini API key is valid and has Gemini API enabled.'],
+                $status === 404 => ['MODEL_NOT_FOUND', 'The specified Gemini model was not found. Check the model name.'],
                 $status === 429 => ['RATE_LIMITED', 'Gemini quota or rate limit exceeded. Check your plan quota in Google AI Studio.'],
                 $status >= 500 => ['PROVIDER_UNAVAILABLE', 'Google Gemini service is temporarily unavailable. Retry later.'],
                 default => ['PROVIDER_ERROR', 'The provider returned an unexpected error.'],
@@ -403,7 +404,7 @@ class GeminiResponsesProvider
      */
     private function sanitizeSchema(array $schema): array
     {
-        unset($schema['$schema'], $schema['$id']);
+        unset($schema['$schema'], $schema['$id'], $schema['additionalProperties']);
 
         foreach ($schema as $key => $value) {
             if (is_array($value)) {

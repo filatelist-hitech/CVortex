@@ -31,11 +31,13 @@ class GeminiResponsesProviderTest extends TestCase
             schema: [
                 '$schema' => 'https://json-schema.org/draft/2020-12/schema',
                 'type' => 'object',
+                'additionalProperties' => false,
                 'properties' => [
                     'facts' => [
                         'type' => 'array',
                         'items' => [
                             'type' => 'object',
+                            'additionalProperties' => false,
                             'properties' => [
                                 'assertion' => ['type' => 'string'],
                             ],
@@ -102,8 +104,10 @@ class GeminiResponsesProviderTest extends TestCase
             $hasSystemInstruction = isset($data['systemInstruction']['parts'][0]['text'])
                 && $data['systemInstruction']['parts'][0]['text'] === 'You are a career extraction engine.';
             $hasSchemaWithoutDollar = ! isset($data['generationConfig']['responseSchema']['$schema']);
+            $hasSchemaWithoutAdditionalProperties = ! isset($data['generationConfig']['responseSchema']['additionalProperties'])
+                && ! isset($data['generationConfig']['responseSchema']['properties']['facts']['items']['additionalProperties']);
 
-            return $hasHeader && $hasSystemInstruction && $hasSchemaWithoutDollar;
+            return $hasHeader && $hasSystemInstruction && $hasSchemaWithoutDollar && $hasSchemaWithoutAdditionalProperties;
         });
     }
 

@@ -474,6 +474,7 @@ button.secondary:hover:not(:disabled) { background: var(--surface-interactive); 
 .test-result-box { padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--font-size-xs); line-height: 1.4; }
 .test-result-box.healthy, .test-result-box.success { background: rgba(30, 166, 114, 0.15); border: 1px solid var(--state-success); color: #87f0b5; }
 .test-result-box.failed, .test-result-box.error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--state-blocked); color: #ff9b9b; }
+.test-recommendation { margin-top: var(--space-1); opacity: 0.92; font-weight: 500; }
 
 .settings-actions { display: flex; justify-content: flex-end; padding-top: var(--space-4); border-top: 1px solid var(--border-subtle); }
 .settings-actions button { min-height: 44px; padding: 0 var(--space-6); font-size: var(--font-size-md); font-weight: 700; }

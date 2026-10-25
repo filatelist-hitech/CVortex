@@ -102,6 +102,7 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
       <div className="workspace-account-heading"><h2 id="workspace-account-title">Профиль</h2><button type="button" className="secondary" onClick={closeAccount}>Закрыть</button></div>
       <div className="workspace-account" role="group" aria-label="Управление аккаунтом">
         <span className="workspace-identity">{email}</span>
+        <Link className="workspace-link" href="/settings" aria-current={destination === "settings" ? "page" : undefined} onClick={closeAccount}>Настройки AI</Link>
         {role === "admin" && <Link className="workspace-link" href="/diagnostics" aria-current={destination === "diagnostics" ? "page" : undefined} onClick={closeAccount}>Диагностика</Link>}
         <button type="button" className="secondary" disabled={signingOut} onClick={() => void signOut()}>{signingOut ? "Выход…" : "Выйти"}</button>
         {error && <p className="error" role="alert">{error}</p>}

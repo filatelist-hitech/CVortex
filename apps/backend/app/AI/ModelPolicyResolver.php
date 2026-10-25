@@ -86,14 +86,21 @@ class ModelPolicyResolver
                     default => (string) config('ai.providers.gemini.default_model', 'gemini-1.5-flash'),
                 };
 
+            $inputCost = config('ai.providers.gemini.input_cost_micros_per_million_tokens')
+                ?? (config('ai.model_policies.'.$policy->id.'.provider') === 'gemini'
+                    ? config('ai.model_policies.'.$policy->id.'.input_cost_micros_per_million_tokens')
+                    : null);
+            $outputCost = config('ai.providers.gemini.output_cost_micros_per_million_tokens')
+                ?? (config('ai.model_policies.'.$policy->id.'.provider') === 'gemini'
+                    ? config('ai.model_policies.'.$policy->id.'.output_cost_micros_per_million_tokens')
+                    : null);
+
             return new ResolvedModel(
                 policyId: $policy->id,
                 provider: 'gemini',
                 model: $model,
-                inputCostMicrosPerMillionTokens: is_int(config('ai.model_policies.'.$policy->id.'.input_cost_micros_per_million_tokens'))
-                    ? (int) config('ai.model_policies.'.$policy->id.'.input_cost_micros_per_million_tokens') : null,
-                outputCostMicrosPerMillionTokens: is_int(config('ai.model_policies.'.$policy->id.'.output_cost_micros_per_million_tokens'))
-                    ? (int) config('ai.model_policies.'.$policy->id.'.output_cost_micros_per_million_tokens') : null,
+                inputCostMicrosPerMillionTokens: is_int($inputCost) ? $inputCost : null,
+                outputCostMicrosPerMillionTokens: is_int($outputCost) ? $outputCost : null,
                 apiKey: $setting->gemini_api_key,
             );
         }
@@ -106,14 +113,27 @@ class ModelPolicyResolver
                     ? $mapping['model']
                     : (string) config('ai.providers.openai.default_model', 'gpt-4o-mini'));
 
+            $inputCost = ($mapping['provider'] ?? null) === 'openai'
+                ? ($mapping['input_cost_micros_per_million_tokens'] ?? null)
+                : match ($policy->id) {
+                    'low_cost_structured_extraction' => config('ai.providers.openai.extraction_input_cost_micros'),
+                    'standard_semantic_generation' => config('ai.providers.openai.draft_input_cost_micros'),
+                    default => null,
+                };
+            $outputCost = ($mapping['provider'] ?? null) === 'openai'
+                ? ($mapping['output_cost_micros_per_million_tokens'] ?? null)
+                : match ($policy->id) {
+                    'low_cost_structured_extraction' => config('ai.providers.openai.extraction_output_cost_micros'),
+                    'standard_semantic_generation' => config('ai.providers.openai.draft_output_cost_micros'),
+                    default => null,
+                };
+
             return new ResolvedModel(
                 policyId: $policy->id,
                 provider: 'openai',
                 model: $model,
-                inputCostMicrosPerMillionTokens: is_int($mapping['input_cost_micros_per_million_tokens'] ?? null)
-                    ? $mapping['input_cost_micros_per_million_tokens'] : null,
-                outputCostMicrosPerMillionTokens: is_int($mapping['output_cost_micros_per_million_tokens'] ?? null)
-                    ? $mapping['output_cost_micros_per_million_tokens'] : null,
+                inputCostMicrosPerMillionTokens: is_int($inputCost) ? $inputCost : null,
+                outputCostMicrosPerMillionTokens: is_int($outputCost) ? $outputCost : null,
                 apiKey: $setting->openai_api_key,
             );
         }

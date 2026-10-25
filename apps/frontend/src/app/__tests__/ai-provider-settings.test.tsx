@@ -17,8 +17,8 @@ const defaultSettingsResponse = {
     gemini: {
       has_key: true,
       masked_key: "AIzaSy...abcd",
-      default_model: "gemini-2.5-flash",
-      available_models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
+      default_model: "gemini-1.5-flash",
+      available_models: ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"],
       env_key_configured: true,
     },
     openai: {
@@ -70,7 +70,7 @@ describe("AiProviderSettings", () => {
       .mockResolvedValueOnce({
         status: "healthy",
         provider: "gemini",
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-flash",
         latency_ms: 185,
         message: "Gemini connection test successful.",
       });
@@ -85,13 +85,13 @@ describe("AiProviderSettings", () => {
 
     expect(await screen.findByText("✓ Успешно")).toBeInTheDocument();
     expect(screen.getByText(/Gemini connection test successful/)).toBeInTheDocument();
-    expect(screen.getByText(/185 мс · gemini-2.5-flash/)).toBeInTheDocument();
+    expect(screen.getByText(/185 мс · gemini-1.5-flash/)).toBeInTheDocument();
 
     expect(mocks.api).toHaveBeenCalledWith("/api/v1/ai/test-connection", {
       method: "POST",
       body: JSON.stringify({
         provider: "gemini",
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-flash",
       }),
     });
   });
@@ -120,7 +120,7 @@ describe("AiProviderSettings", () => {
           default_provider: "gemini",
           gemini: {
             ...defaultSettingsResponse.data.gemini,
-            default_model: "gemini-2.5-pro",
+            default_model: "gemini-1.5-pro",
           },
         },
       });
@@ -130,7 +130,7 @@ describe("AiProviderSettings", () => {
 
     // Change model
     const geminiSelect = screen.getByRole("combobox", { name: "Модель Gemini по умолчанию" });
-    fireEvent.change(geminiSelect, { target: { value: "gemini-2.5-pro" } });
+    fireEvent.change(geminiSelect, { target: { value: "gemini-1.5-pro" } });
 
     // Submit form
     const saveBtn = screen.getByRole("button", { name: "Сохранить настройки" });
@@ -142,7 +142,7 @@ describe("AiProviderSettings", () => {
       method: "PATCH",
       body: JSON.stringify({
         default_provider: "gemini",
-        gemini_model: "gemini-2.5-pro",
+        gemini_model: "gemini-1.5-pro",
         openai_model: "gpt-4o-mini",
       }),
     });
@@ -179,7 +179,7 @@ describe("AiProviderSettings", () => {
       method: "PATCH",
       body: JSON.stringify({
         default_provider: "gemini",
-        gemini_model: "gemini-2.5-flash",
+        gemini_model: "gemini-1.5-flash",
         openai_model: "gpt-4o-mini",
         gemini_api_key: null,
       }),

@@ -50,6 +50,10 @@ return [
             'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
             'timeout_seconds' => (int) env('OPENAI_TIMEOUT_SECONDS', 45),
             'default_model' => env('OPENAI_DEFAULT_MODEL', 'gpt-4o-mini'),
+            'extraction_input_cost_micros' => filled($openaiExtractionInputCost) ? (int) $openaiExtractionInputCost : null,
+            'extraction_output_cost_micros' => filled($openaiExtractionOutputCost) ? (int) $openaiExtractionOutputCost : null,
+            'draft_input_cost_micros' => filled($openaiDraftInputCost) ? (int) $openaiDraftInputCost : null,
+            'draft_output_cost_micros' => filled($openaiDraftOutputCost) ? (int) $openaiDraftOutputCost : null,
         ],
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY'),
@@ -59,6 +63,8 @@ return [
             'default_model' => env('GEMINI_DEFAULT_MODEL', 'gemini-1.5-flash'),
             'extraction_model' => $geminiExtractionModel,
             'generation_model' => $geminiDraftModel,
+            'input_cost_micros_per_million_tokens' => filled($geminiInputCost) ? (int) $geminiInputCost : null,
+            'output_cost_micros_per_million_tokens' => filled($geminiOutputCost) ? (int) $geminiOutputCost : null,
             'available_models' => [
                 ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
                 ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],

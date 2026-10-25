@@ -117,6 +117,15 @@ class AiSettingsTest extends TestCase
 
         $model->refresh();
         $this->assertNull($model->gemini_api_key);
+
+        // Set key again and clear via empty string
+        $this->patchJson('/api/v1/ai/settings', ['gemini_api_key' => 'another-key'])->assertOk();
+        $model->refresh();
+        $this->assertSame('another-key', $model->gemini_api_key);
+
+        $this->patchJson('/api/v1/ai/settings', ['gemini_api_key' => '   '])->assertOk();
+        $model->refresh();
+        $this->assertNull($model->gemini_api_key);
     }
 
     public function test_cross_user_isolation(): void
@@ -397,5 +406,34 @@ class AiSettingsTest extends TestCase
         $this->assertSame(CareerFact::STATUS_PENDING, $fact->status);
         $this->assertSame('I am familiar with Laravel.', $fact->assertion_original);
         $this->assertNull($fact->assertion);
+    }
+
+    public function test_model_policy_resolves_costs_correctly_for_selected_provider(): void
+    {
+        config([
+            'ai.default_provider' => 'openai',
+            'ai.providers.gemini.input_cost_micros_per_million_tokens' => 75,
+            'ai.providers.gemini.output_cost_micros_per_million_tokens' => 300,
+            'ai.model_policies.low_cost_structured_extraction' => [
+                'provider' => 'openai',
+                'model' => 'gpt-4o-mini',
+                'input_cost_micros_per_million_tokens' => 150,
+                'output_cost_micros_per_million_tokens' => 600,
+            ],
+        ]);
+
+        UserAiSetting::query()->create([
+            'owner_id' => $this->userA->id,
+            'selected_provider' => 'gemini',
+            'gemini_api_key' => 'byok-gemini-key',
+        ]);
+
+        $resolver = app(ModelPolicyResolver::class);
+        $resolved = $resolver->resolve(new ModelPolicy('low_cost_structured_extraction', true), $this->userA);
+
+        $this->assertSame('gemini', $resolved->provider);
+        $this->assertSame(75, $resolved->inputCostMicrosPerMillionTokens);
+        $this->assertSame(300, $resolved->outputCostMicrosPerMillionTokens);
+        $this->assertSame('byok-gemini-key', $resolved->apiKey);
     }
 }

@@ -53,7 +53,9 @@ class AiSettingsController extends Controller
             $setting->selected_provider = ($selectedProvider === 'system_default' || $selectedProvider === null) ? null : $selectedProvider;
         }
 
-        if (! empty($validated['clear_gemini_key']) || ($request->has('gemini_api_key') && $request->input('gemini_api_key') === null)) {
+        $clearGemini = ! empty($validated['clear_gemini_key'])
+            || ($request->has('gemini_api_key') && ($request->input('gemini_api_key') === null || trim((string) $request->input('gemini_api_key')) === ''));
+        if ($clearGemini) {
             $setting->gemini_api_key = null;
         } elseif (isset($validated['gemini_api_key']) && trim($validated['gemini_api_key']) !== '') {
             $setting->gemini_api_key = trim($validated['gemini_api_key']);
@@ -63,7 +65,9 @@ class AiSettingsController extends Controller
             $setting->gemini_model = filled($validated['gemini_model']) ? trim((string) $validated['gemini_model']) : null;
         }
 
-        if (! empty($validated['clear_openai_key']) || ($request->has('openai_api_key') && $request->input('openai_api_key') === null)) {
+        $clearOpenai = ! empty($validated['clear_openai_key'])
+            || ($request->has('openai_api_key') && ($request->input('openai_api_key') === null || trim((string) $request->input('openai_api_key')) === ''));
+        if ($clearOpenai) {
             $setting->openai_api_key = null;
         } elseif (isset($validated['openai_api_key']) && trim($validated['openai_api_key']) !== '') {
             $setting->openai_api_key = trim($validated['openai_api_key']);

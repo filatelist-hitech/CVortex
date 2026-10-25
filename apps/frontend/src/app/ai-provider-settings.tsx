@@ -23,6 +23,7 @@ export type ConnectionTestResult = {
   model: string;
   latency_ms?: number;
   message: string;
+  recommendation?: string;
 };
 
 export default function AiProviderSettings() {
@@ -103,6 +104,7 @@ export default function AiProviderSettings() {
           provider,
           model: res.model || model,
           message: res.message || res.error_code || "Проверка подключения не удалась.",
+          recommendation: res.recommendation,
         });
       } else {
         setTestResult({
@@ -246,7 +248,7 @@ export default function AiProviderSettings() {
                 <strong>Google Gemini</strong>
                 <span className="choice-badge">Рекомендуется</span>
               </span>
-              <small>Быстрый, экономичный контекст (Gemini 2.5 Flash / Pro) с нативным OpenAPI structured output.</small>
+              <small>Быстрый, экономичный контекст (Gemini 1.5 / 2.0 Flash & Pro) с нативным OpenAPI structured output.</small>
             </label>
 
             <label className={`provider-choice ${selectedProvider === "openai" ? "selected" : ""}`}>
@@ -392,6 +394,9 @@ export default function AiProviderSettings() {
                   {geminiTestResult.latency_ms !== undefined && (
                     <small> ({geminiTestResult.latency_ms} мс · {geminiTestResult.model})</small>
                   )}
+                  {geminiTestResult.recommendation && (
+                    <div className="test-recommendation">{geminiTestResult.recommendation}</div>
+                  )}
                 </div>
               )}
             </div>
@@ -521,6 +526,9 @@ export default function AiProviderSettings() {
                   {openaiTestResult.message}
                   {openaiTestResult.latency_ms !== undefined && (
                     <small> ({openaiTestResult.latency_ms} мс · {openaiTestResult.model})</small>
+                  )}
+                  {openaiTestResult.recommendation && (
+                    <div className="test-recommendation">{openaiTestResult.recommendation}</div>
                   )}
                 </div>
               )}
