@@ -217,8 +217,14 @@ class SettingsResolver
             return $this->memoizedOverrides;
         }
 
+        /** @var mixed $cached */
+        $cached = Cache::remember(self::CACHE_KEY, 3600, fn () => $this->repository->all());
+        if (! ($cached instanceof Collection)) {
+            $cached = $this->repository->all();
+            Cache::put(self::CACHE_KEY, $cached, 3600);
+        }
         /** @var Collection<string, SystemSetting> $overrides */
-        $overrides = Cache::remember(self::CACHE_KEY, 3600, fn () => $this->repository->all());
+        $overrides = $cached;
         $this->memoizedOverrides = $overrides;
 
         return $overrides;

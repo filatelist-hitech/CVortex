@@ -124,6 +124,33 @@ const sampleSettings = [
     updated_at: null,
     updated_by: null,
   },
+  {
+    key: "storage.default_disk",
+    group: "storage",
+    subgroup: "storage",
+    label: "Основной диск хранилища",
+    description: "Диск хранения сгенерированных резюме и документов.",
+    type: "enum",
+    options: [{ value: "local", label: "Локальный диск (Docker Volume)" }],
+    default: "local",
+    value: "local",
+    source: "default",
+    is_secret: false,
+    is_configured: true,
+    is_overridden: false,
+    admin_editable: false,
+    runtime_mutable: false,
+    requires_restart: true,
+    env_locked: false,
+    env_fallback_key: "FILESYSTEM_DISK",
+    dangerous: false,
+    testable: true,
+    test_target: "storage",
+    sort_order: 10,
+    version: 1,
+    updated_at: null,
+    updated_by: null,
+  },
 ];
 
 const sampleEnvironment = {
@@ -166,6 +193,12 @@ describe("AdminSystemSettings Component", () => {
         });
       }
       if (url.includes("/api/v1/admin/settings/test") && options?.method === "POST") {
+        const body = options.body ? JSON.parse(String(options.body)) : {};
+        if (body.target === "storage") {
+          return Response.json({
+            data: { success: true, message: "Файловое хранилище (local) доступно для чтения и записи.", latency_ms: 15 },
+          });
+        }
         return Response.json({
           data: { success: true, message: "Подключение к OpenAI успешно выполнено.", latency_ms: 120 },
         });
@@ -174,7 +207,7 @@ describe("AdminSystemSettings Component", () => {
         return Response.json({ data: [], message: "Настройки успешно сохранены." });
       }
       if (url.includes("/api/v1/admin/settings")) {
-        return Response.json({ data: sampleSettings, meta: { total: 4, overrides_count: 2 } });
+        return Response.json({ data: sampleSettings, meta: { total: 5, overrides_count: 2 } });
       }
       return Response.json({ data: null });
     });
@@ -349,6 +382,62 @@ describe("AdminSystemSettings Component", () => {
 
     expect(await screen.findByText("Подключение к OpenAI успешно выполнено.")).toBeInTheDocument();
     expect(screen.getByText("(120 ms)")).toBeInTheDocument();
+  });
+
+  it("runs storage connection test and displays independent result and latency", async () => {
+    render(<AdminSystemSettings />);
+    await screen.findByRole("heading", { name: "Системные настройки" });
+
+    // Navigate to Storage category
+    fireEvent.click(screen.getByRole("button", { name: /Файлы и шаблоны/ }));
+    expect(await screen.findByText("Основной диск хранилища")).toBeInTheDocument();
+
+    const testButton = screen.getByRole("button", { name: "Проверить соединение" });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/v1/admin/settings/test",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ target: "storage" }),
+        })
+      );
+    });
+
+    expect(await screen.findByText("Файловое хранилище (local) доступно для чтения и записи.")).toBeInTheDocument();
+    expect(screen.getByText("(15 ms)")).toBeInTheDocument();
+  });
+
+  it("handles connection test failure gracefully with error box", async () => {
+    fetchSpy.mockImplementationOnce(async (input: RequestInfo | URL, options?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/v1/admin/settings/environment")) {
+        return Response.json({ data: sampleEnvironment });
+      }
+      if (url.includes("/api/v1/admin/settings")) {
+        return Response.json({ data: sampleSettings, meta: { total: 5, overrides_count: 2 } });
+      }
+      return Response.json({ data: null });
+    });
+
+    render(<AdminSystemSettings />);
+    await screen.findByRole("heading", { name: "Системные настройки" });
+
+    // Mock failure for the test POST
+    fetchSpy.mockImplementationOnce(async () => {
+      return new Response(JSON.stringify({ error: { message: "Connection refused on storage disk" } }), { status: 500 });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Файлы и шаблоны/ }));
+    expect(await screen.findByText("Основной диск хранилища")).toBeInTheDocument();
+
+    const testButton = screen.getByRole("button", { name: "Проверить соединение" });
+    fireEvent.click(testButton);
+
+    const errorBox = await screen.findByText(/Не удалось выполнить запрос|Сбой проверки соединения/);
+    expect(errorBox).toBeInTheDocument();
+    expect(errorBox.closest(".test-result-box")).toHaveClass("error");
   });
 
   it("renders read-only environment diagnostics tab", async () => {

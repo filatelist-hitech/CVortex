@@ -13,32 +13,41 @@ Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential
 
 2. **Backend Engine (`apps/backend/app/Settings/`)**:
    - Created migration `2026_10_24_000001_create_system_settings_table.php` (ULID, key UNIQUE, JSON value, encrypted_value text, version integer for optimistic concurrency, updated_by FK to users).
-   - Implemented `SettingDefinitionRegistry` with typed definitions across groups (`general`, `auth`, `ai_models`, `ai_providers`, `email`, `storage`, `limits`).
-   - Implemented `SettingsResolver` with strict 4-tier precedence: Hard environment lock → Database override → Config/ENV fallback → Application default.
+   - Implemented `SettingDefinitionRegistry` with typed definitions across groups (`general`, `auth`, `ai_models`, `ai_providers`, `email`, `storage`, `limits`) with explicit `test_target` mapping (`openai`, `smtp`, `storage`).
+   - Implemented `SettingsResolver` with strict 4-tier precedence: Hard environment lock → Database override → Config/ENV fallback → Application default. Defensive cache deserialization recovery.
    - Enforced zero secret leakage: encrypted at rest via AES-256-CBC (`Crypt`), masked in API responses, excluded from audit logs (`redacted: true`), excluded from standard logs.
-   - Implemented `SettingTestService` for live connectivity tests (OpenAI API latency/ping, SMTP HELO, storage disk write/read/delete) with audit logging.
+   - Reinforced optimistic locking & concurrency: initial override creation validates `expected_version === 1` and bumps to 2; concurrent first inserts hitting database unique constraints are caught and converted to `SettingConcurrencyException` (HTTP 409).
+   - Atomic batch operations: `AdminSettingsController::update` wraps all setting updates in `DB::transaction`, guaranteeing full rollback if any setting in a batch fails validation or concurrency checks.
+   - Implemented `SettingTestService` for live connectivity tests (OpenAI API latency/ping, SMTP HELO, dynamically resolved storage disk write/read/delete) with audit logging.
    - Built `AdminSettingsController` with endpoints:
      - `GET /api/v1/admin/settings` (list all settings with secrets masked)
-     - `PATCH /api/v1/admin/settings` (batch update with optimistic locking)
+     - `PATCH /api/v1/admin/settings` (atomic batch update with optimistic locking)
      - `POST /api/v1/admin/settings/reset` (reset override to fallback/default)
-     - `POST /api/v1/admin/settings/test` (connectivity testing)
+     - `POST /api/v1/admin/settings/test` (connectivity testing with target validation)
      - `GET /api/v1/admin/settings/environment` (read-only diagnostics without exposing `APP_KEY`)
    - Wired dynamic settings into core services (`AppServiceProvider`, rate limits, `ModelPolicyResolver`, `OpenAiResponsesProvider`, `InvitationService`, character extraction limits).
 
 3. **Frontend Control Plane (`apps/frontend/`)**:
    - Built modern Admin UI `apps/frontend/src/app/admin-settings.tsx` with category navigation (Общие, Аутентификация, Модели ИИ, Провайдеры ИИ, Почта и SMTP, Файлы и шаблоны, Лимиты и хранение, Среда и диагностика).
    - Implemented search filter, source badges (`badge-db`, `badge-env`, `badge-locked`, `badge-default`), staged editing with sticky Discard/Save bar, secret masking & replacement, override reset, and test ping buttons with latency reporting.
+   - Explicit test target routing: connection test buttons route strictly through `item.test_target` without defaulting non-matching items to storage.
+   - Lifecycle cleanup & unmount guard: `isMountedRef` and `AbortController` cancellation prevent state leakage or updates on unmounted components.
    - Created route `apps/frontend/src/app/admin/settings/page.tsx` and integrated route guard in `access-shell.tsx` (403 for non-admins).
+   - Protected access shell integrity: `access-shell.tsx` preserves `AbortError` passthrough without converting to `NETWORK_ERROR`, and preserves `key={user.id}` + `userId={user.id}` on `CareerWorkspace`.
    - Added navigation links to "Настройки системы" in `workspace-shell.tsx` and `app-shell.tsx`.
    - Designed responsive styling in `apps/frontend/src/app/globals.css` using `--cv-*` design tokens.
 
 4. **Verification**:
-   - Backend PHPUnit: 19/19 tests PASS (482 assertions) across `SettingDefinitionRegistryTest`, `SettingsResolverTest`, and `AdminSettingsApiTest`.
-   - Backend Pint: 0 style issues across 237 files.
-   - Frontend Vitest: 9/9 tests PASS in `admin-settings.test.tsx`.
+   - Backend PHPUnit Settings: 26/26 tests PASS (488 assertions) across `SettingDefinitionRegistryTest`, `SettingsResolverTest`, and `AdminSettingsApiTest`.
+   - Full Backend PHPUnit Suite: 421/421 tests PASS (3371 assertions, 12 skipped).
+   - Backend Pint: 0 style issues across 231 files.
+   - Backend PHPStan: 0 errors across 146 files (`[OK] No errors`).
+   - Frontend Vitest: 12/12 test files (159/159 tests) PASS, including `access-shell.test.tsx` (6/6 PASS) and `admin-settings.test.tsx` (11/11 PASS).
    - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
    - Frontend ESLint: 0 errors, 0 warnings.
    - Playwright E2E: 10/10 tests PASS across Desktop Chromium and Mobile Chrome in `e2e/admin/system-settings.spec.ts`.
+   - B01 Reference Integrity: PASS (10/10 tests).
+   - PR Contract: PASS (`check-pr-contract.sh 56` exit 0).
 
 ---
 

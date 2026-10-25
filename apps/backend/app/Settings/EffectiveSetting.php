@@ -41,6 +41,7 @@ class EffectiveSetting
             'env_fallback_key' => $this->definition->envFallbackKey,
             'dangerous' => $this->definition->dangerous,
             'testable' => $this->definition->testable,
+            'test_target' => $this->definition->testTarget,
             'sort_order' => $this->definition->sortOrder,
             'version' => $this->version,
             'updated_at' => $this->updatedAt,

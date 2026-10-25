@@ -9,6 +9,7 @@ use App\Settings\Exceptions\SettingImmutableException;
 use App\Settings\Exceptions\SettingNotFoundException;
 use App\Settings\SettingsResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
@@ -127,6 +128,23 @@ class SettingsResolverTest extends TestCase
         // Admin 1 attempts to save with stale version
         $this->expectException(SettingConcurrencyException::class);
         $this->resolver->update('general.app_name', 'Stale Save', $admin, $first->version);
+    }
+
+    public function test_initial_save_with_stale_expected_version_throws_concurrency_exception(): void
+    {
+        $admin = $this->createAdmin('admin_initial_stale@example.com');
+
+        $this->expectException(SettingConcurrencyException::class);
+        $this->resolver->update('general.app_name', 'Initial With Stale Version', $admin, 99);
+    }
+
+    public function test_corrupted_cache_recovers_gracefully(): void
+    {
+        // Simulate corrupted cache entry (e.g. string or stdClass instead of Collection)
+        Cache::put('cvortex:system_settings:overrides', 'invalid_cache_entry', 3600);
+
+        $effective = $this->resolver->resolve('general.app_name');
+        $this->assertSame('CVortex', $effective->value);
     }
 
     public function test_immutable_setting_cannot_be_updated_or_reset(): void

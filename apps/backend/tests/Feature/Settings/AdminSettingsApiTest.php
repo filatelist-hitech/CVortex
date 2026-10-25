@@ -300,4 +300,105 @@ class AdminSettingsApiTest extends TestCase
             ->first();
         $this->assertNotNull($testAudit);
     }
+
+    public function test_admin_patch_nonexistent_setting_returns_404_not_found(): void
+    {
+        $this->actingAs($this->admin);
+
+        $response = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'nonexistent.unknown.key', 'value' => 'some-value'],
+            ],
+        ]);
+
+        $response->assertStatus(404);
+        $response->assertJsonPath('error.code', 'SETTING_NOT_FOUND');
+    }
+
+    public function test_admin_patch_initial_override_with_stale_expected_version_returns_409(): void
+    {
+        $this->actingAs($this->admin);
+
+        // Attempting to create override when no DB record exists, but sending expected_version 99 instead of 1
+        $response = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Stale Init Attempt', 'expected_version' => 99],
+            ],
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('error.code', 'SETTING_CONCURRENCY_CONFLICT');
+    }
+
+    public function test_admin_patch_batch_is_atomic_and_rolls_back_on_failure(): void
+    {
+        $this->actingAs($this->admin);
+
+        /** @var SettingsResolver $resolver */
+        $resolver = app(SettingsResolver::class);
+        $originalName = $resolver->get('general.app_name');
+
+        // Batch contains 1 valid setting and 1 invalid setting
+        $response = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Rolled Back Name'],
+                ['key' => 'auth.invitation_default_expires_days', 'value' => 999], // fails validation
+            ],
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('error.code', 'VALIDATION_FAILED');
+
+        // Verify general.app_name was rolled back and not persisted
+        $this->assertSame($originalName, $resolver->get('general.app_name'));
+    }
+
+    public function test_reset_setting_then_recreate_override_preserves_concurrency_semantics(): void
+    {
+        $this->actingAs($this->admin);
+
+        // 1. Initial creation
+        $res1 = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Step 1 Name', 'expected_version' => 1],
+            ],
+        ]);
+        $res1->assertStatus(200);
+
+        // 2. Reset setting
+        $res2 = $this->postJson('/api/v1/admin/settings/reset', [
+            'key' => 'general.app_name',
+        ]);
+        $res2->assertStatus(200);
+        $this->assertSame(1, $res2->json('data.version'));
+
+        // 3. Stale save with old version 2 is rejected with 409
+        $conflict = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Stale Post-Reset', 'expected_version' => 2],
+            ],
+        ]);
+        $conflict->assertStatus(409);
+        $conflict->assertJsonPath('error.code', 'SETTING_CONCURRENCY_CONFLICT');
+
+        // 4. Fresh save with version 1 succeeds
+        $res3 = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Valid Post-Reset', 'expected_version' => 1],
+            ],
+        ]);
+        $res3->assertStatus(200);
+        $this->assertSame('Valid Post-Reset', app(SettingsResolver::class)->get('general.app_name'));
+    }
+
+    public function test_admin_test_with_unsupported_target_returns_422_validation_failed(): void
+    {
+        $this->actingAs($this->admin);
+
+        $response = $this->postJson('/api/v1/admin/settings/test', [
+            'target' => 'unsupported_provider',
+        ]);
+
+        $response->assertStatus(422);
+    }
 }

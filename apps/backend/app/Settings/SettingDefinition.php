@@ -26,6 +26,7 @@ class SettingDefinition
         public readonly bool $envLocked = false,
         public readonly bool $dangerous = false,
         public readonly bool $testable = false,
+        public readonly ?string $testTarget = null,
         public readonly int $sortOrder = 100,
     ) {}
 
@@ -51,6 +52,7 @@ class SettingDefinition
             'env_locked' => $this->envLocked,
             'dangerous' => $this->dangerous,
             'testable' => $this->testable,
+            'test_target' => $this->testTarget,
             'sort_order' => $this->sortOrder,
         ];
     }

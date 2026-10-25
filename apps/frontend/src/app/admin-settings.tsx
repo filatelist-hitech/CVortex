@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "./access-shell";
 
@@ -27,6 +27,7 @@ export type SettingItem = {
   env_fallback_key: string | null;
   dangerous: boolean;
   testable: boolean;
+  test_target?: "openai" | "smtp" | "storage" | null;
   sort_order: number;
   version: number;
   updated_at: string | null;
@@ -97,6 +98,7 @@ function SourceBadge({ source }: { source: string }) {
 }
 
 export default function AdminSystemSettings() {
+  const isMountedRef = useRef(true);
   const [settings, setSettings] = useState<SettingItem[]>([]);
   const [diagnostics, setDiagnostics] = useState<EnvironmentDiagnostics | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("general");
@@ -114,28 +116,46 @@ export default function AdminSystemSettings() {
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency_ms: number } | null>>({});
   const [runningTests, setRunningTests] = useState<Record<string, boolean>>({});
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setFeedback(null);
     try {
       const [settingsRes, envRes] = await Promise.all([
-        api("/api/v1/admin/settings"),
-        api("/api/v1/admin/settings/environment"),
+        api("/api/v1/admin/settings", { signal }),
+        api("/api/v1/admin/settings/environment", { signal }),
       ]);
+      if (!isMountedRef.current) return;
       setSettings(settingsRes.data || []);
       setDiagnostics(envRes.data || null);
     } catch (err) {
+      if (!isMountedRef.current) return;
+      if (err && typeof err === "object" && "name" in err && (err as { name: string }).name === "AbortError") {
+        return;
+      }
       setFeedback({
         text: err instanceof Error ? err.message : "Не удалось загрузить системные настройки.",
         type: "error",
       });
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    void loadData();
+    const controller = new AbortController();
+    void loadData(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [loadData]);
 
   const overridesCount = useMemo(
@@ -237,18 +257,23 @@ export default function AdminSystemSettings() {
         method: "PATCH",
         body: JSON.stringify({ settings: payload }),
       });
+      if (!isMountedRef.current) return;
       setStagedValues({});
       setSecretEdits({});
       setClearedSecrets({});
       await loadData();
+      if (!isMountedRef.current) return;
       setFeedback({ text: "Настройки успешно сохранены.", type: "success" });
     } catch (err) {
+      if (!isMountedRef.current) return;
       setFeedback({
         text: err instanceof Error ? err.message : "Ошибка при сохранении настроек.",
         type: "error",
       });
     } finally {
-      setSaving(false);
+      if (isMountedRef.current) {
+        setSaving(false);
+      }
     }
   }
 
@@ -260,6 +285,7 @@ export default function AdminSystemSettings() {
         method: "POST",
         body: JSON.stringify({ key }),
       });
+      if (!isMountedRef.current) return;
       // clear any staged values for this key
       setStagedValues((prev) => {
         const next = { ...prev };
@@ -279,12 +305,15 @@ export default function AdminSystemSettings() {
       setFeedback({ text: "Настройка сброшена к унаследованному значению.", type: "success" });
       await loadData();
     } catch (err) {
+      if (!isMountedRef.current) return;
       setFeedback({
         text: err instanceof Error ? err.message : "Не удалось сбросить настройку.",
         type: "error",
       });
     } finally {
-      setSaving(false);
+      if (isMountedRef.current) {
+        setSaving(false);
+      }
     }
   }
 
@@ -296,8 +325,10 @@ export default function AdminSystemSettings() {
         method: "POST",
         body: JSON.stringify({ target }),
       });
+      if (!isMountedRef.current) return;
       setTestResults((prev) => ({ ...prev, [target]: res.data }));
     } catch (err) {
+      if (!isMountedRef.current) return;
       setTestResults((prev) => ({
         ...prev,
         [target]: {
@@ -307,7 +338,9 @@ export default function AdminSystemSettings() {
         },
       }));
     } finally {
-      setRunningTests((prev) => ({ ...prev, [target]: false }));
+      if (isMountedRef.current) {
+        setRunningTests((prev) => ({ ...prev, [target]: false }));
+      }
     }
   }
 
@@ -519,11 +552,15 @@ export default function AdminSystemSettings() {
                     const currentValue = isStaged ? stagedValues[item.key] : item.value;
                     const isSecretUpdated = secretEdits[item.key] !== undefined && secretEdits[item.key].length > 0;
                     const isSecretCleared = clearedSecrets[item.key] === true;
-                    const testTarget: "openai" | "smtp" | "storage" = item.key.includes("openai")
-                      ? "openai"
-                      : item.key.includes("mail")
-                      ? "smtp"
-                      : "storage";
+                    const testTarget: "openai" | "smtp" | "storage" | null =
+                      item.test_target ??
+                      (item.key.includes("openai")
+                        ? "openai"
+                        : item.key.includes("mail")
+                        ? "smtp"
+                        : item.key.includes("storage")
+                        ? "storage"
+                        : null);
 
                     return (
                       <div
@@ -662,7 +699,7 @@ export default function AdminSystemSettings() {
                               </button>
                             )}
 
-                            {item.testable && (
+                            {item.testable && testTarget && (
                               <button
                                 type="button"
                                 className="button-test-connection"
@@ -677,7 +714,7 @@ export default function AdminSystemSettings() {
                           </div>
 
                           {/* Inline test result display */}
-                          {item.testable && testResults[testTarget] && (
+                          {item.testable && testTarget && testResults[testTarget] && (
                             <div
                               className={`test-result-box ${testResults[testTarget]?.success ? "success" : "error"}`}
                             >

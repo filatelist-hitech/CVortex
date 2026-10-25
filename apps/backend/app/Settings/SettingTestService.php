@@ -149,7 +149,8 @@ class SettingTestService
      */
     private function testStorage(): array
     {
-        $disk = Storage::disk('local');
+        $diskName = (string) $this->resolver->get('storage.default_disk', 'local');
+        $disk = Storage::disk($diskName);
         $testFile = '.health-check-'.bin2hex(random_bytes(8));
         $disk->put($testFile, 'ok');
         $read = $disk->get($testFile);
@@ -158,7 +159,7 @@ class SettingTestService
         if ($read === 'ok') {
             return [
                 'success' => true,
-                'message' => 'Локальное дисковое хранилище доступно для чтения и записи.',
+                'message' => "Файловое хранилище ({$diskName}) доступно для чтения и записи.",
             ];
         }
 

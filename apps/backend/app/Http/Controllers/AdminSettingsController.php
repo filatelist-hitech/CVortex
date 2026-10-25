@@ -48,19 +48,26 @@ class AdminSettingsController extends Controller
         $updated = [];
 
         try {
-            foreach ($validated['settings'] as $item) {
-                $key = (string) $item['key'];
-                $expectedVersion = isset($item['expected_version']) ? (int) $item['expected_version'] : null;
+            $updated = DB::transaction(function () use ($validated, $resolver, $admin): array {
+                $results = [];
+                foreach ($validated['settings'] as $item) {
+                    $key = (string) $item['key'];
+                    $expectedVersion = isset($item['expected_version']) ? (int) $item['expected_version'] : null;
 
-                if (! empty($item['clear_secret'])) {
-                    $setting = $resolver->update($key, null, $admin, $expectedVersion);
-                } else {
-                    $setting = $resolver->update($key, $item['value'] ?? null, $admin, $expectedVersion);
+                    if (! empty($item['clear_secret'])) {
+                        $setting = $resolver->update($key, null, $admin, $expectedVersion);
+                    } else {
+                        $setting = $resolver->update($key, $item['value'] ?? null, $admin, $expectedVersion);
+                    }
+
+                    $results[] = $setting->toArray();
                 }
 
-                $updated[] = $setting->toArray();
-            }
+                return $results;
+            });
         } catch (SettingConcurrencyException $e) {
+            $resolver->invalidateCache();
+
             return response()->json([
                 'error' => [
                     'code' => 'SETTING_CONCURRENCY_CONFLICT',
@@ -68,6 +75,8 @@ class AdminSettingsController extends Controller
                 ],
             ], 409);
         } catch (SettingImmutableException $e) {
+            $resolver->invalidateCache();
+
             return response()->json([
                 'error' => [
                     'code' => 'SETTING_IMMUTABLE',
@@ -75,6 +84,8 @@ class AdminSettingsController extends Controller
                 ],
             ], 422);
         } catch (SettingNotFoundException $e) {
+            $resolver->invalidateCache();
+
             return response()->json([
                 'error' => [
                     'code' => 'SETTING_NOT_FOUND',
@@ -82,6 +93,8 @@ class AdminSettingsController extends Controller
                 ],
             ], 404);
         } catch (ValidationException $e) {
+            $resolver->invalidateCache();
+
             return response()->json([
                 'error' => [
                     'code' => 'VALIDATION_FAILED',

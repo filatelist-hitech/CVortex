@@ -270,6 +270,7 @@ class SettingDefinitionRegistry
             isSecret: true,
             envFallbackKey: 'OPENAI_API_KEY',
             testable: true,
+            testTarget: 'openai',
             sortOrder: 20,
         ));
 
@@ -353,6 +354,7 @@ class SettingDefinitionRegistry
             validationRules: ['nullable', 'string', 'max:128'],
             envFallbackKey: 'MAIL_HOST',
             testable: true,
+            testTarget: 'smtp',
             sortOrder: 20,
         ));
 
@@ -436,6 +438,7 @@ class SettingDefinitionRegistry
             requiresRestart: true,
             envFallbackKey: 'FILESYSTEM_DISK',
             testable: true,
+            testTarget: 'storage',
             sortOrder: 10,
         ));
 
