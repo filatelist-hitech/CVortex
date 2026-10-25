@@ -3,11 +3,13 @@
 import { useEffect, useState, useId } from "react";
 import { api } from "./access-shell";
 
+export type ModelOption = string | { id: string; name: string };
+
 export type ProviderConfig = {
   has_key: boolean;
   masked_key: string | null;
   default_model: string;
-  available_models: string[];
+  available_models: ModelOption[];
   env_key_configured: boolean;
 };
 
@@ -15,7 +17,25 @@ export type AiSettingsData = {
   default_provider: "gemini" | "openai";
   gemini: ProviderConfig;
   openai: ProviderConfig;
+  providers?: {
+    gemini?: {
+      available_models?: ModelOption[];
+      [key: string]: unknown;
+    };
+    openai?: {
+      available_models?: ModelOption[];
+      [key: string]: unknown;
+    };
+  };
 };
+
+function getModelId(model: ModelOption): string {
+  return typeof model === "string" ? model : model.id;
+}
+
+function getModelLabel(model: ModelOption): string {
+  return typeof model === "string" ? model : (model.name || model.id);
+}
 
 export type ConnectionTestResult = {
   status: "healthy" | "failed";
@@ -59,6 +79,12 @@ export default function AiProviderSettings() {
         setLoading(true);
         const res = await api("/api/v1/ai/settings");
         const data: AiSettingsData = res.data;
+        if (data.providers?.gemini?.available_models) {
+          data.gemini.available_models = data.providers.gemini.available_models;
+        }
+        if (data.providers?.openai?.available_models) {
+          data.openai.available_models = data.providers.openai.available_models;
+        }
         setSettings(data);
         setSelectedProvider(data.default_provider || "gemini");
         setGeminiModel(data.gemini.default_model);
@@ -365,11 +391,15 @@ export default function AiProviderSettings() {
                 value={geminiModel}
                 onChange={(e) => setGeminiModel(e.target.value)}
               >
-                {geminiConfig.available_models.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
+                {geminiConfig.available_models.map((m) => {
+                  const id = getModelId(m);
+                  const label = getModelLabel(m);
+                  return (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -498,11 +528,15 @@ export default function AiProviderSettings() {
                 value={openaiModel}
                 onChange={(e) => setOpenaiModel(e.target.value)}
               >
-                {openaiConfig.available_models.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
+                {openaiConfig.available_models.map((m) => {
+                  const id = getModelId(m);
+                  const label = getModelLabel(m);
+                  return (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

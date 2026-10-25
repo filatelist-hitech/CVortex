@@ -436,4 +436,180 @@ class AiSettingsTest extends TestCase
         $this->assertSame(300, $resolved->outputCostMicrosPerMillionTokens);
         $this->assertSame('byok-gemini-key', $resolved->apiKey);
     }
+
+    public function test_conflicting_parameters_rejects_with_validation_error(): void
+    {
+        $this->asUser($this->userA);
+
+        // Pre-seed an existing key
+        UserAiSetting::query()->create([
+            'owner_id' => $this->userA->id,
+            'gemini_api_key' => 'initial-gemini-key',
+            'openai_api_key' => 'initial-openai-key',
+        ]);
+
+        // Attempt conflicting update: both clear and new key for Gemini
+        $resGemini = $this->patchJson('/api/v1/ai/settings', [
+            'gemini_api_key' => 'some-new-key',
+            'clear_gemini_key' => true,
+        ]);
+        $resGemini->assertStatus(422);
+        $resGemini->assertJsonValidationErrors(['clear_gemini_key']);
+
+        // Assert existing key was NOT lost or corrupted
+        $setting = UserAiSetting::query()->where('owner_id', $this->userA->id)->first();
+        $this->assertSame('initial-gemini-key', $setting->gemini_api_key);
+
+        // Attempt conflicting update for OpenAI
+        $resOpenAi = $this->patchJson('/api/v1/ai/settings', [
+            'openai_api_key' => 'some-new-openai-key',
+            'clear_openai_key' => true,
+        ]);
+        $resOpenAi->assertStatus(422);
+        $resOpenAi->assertJsonValidationErrors(['clear_openai_key']);
+
+        $setting->refresh();
+        $this->assertSame('initial-openai-key', $setting->openai_api_key);
+    }
+
+    public function test_clear_flag_false_preserves_or_updates_key_properly(): void
+    {
+        $this->asUser($this->userA);
+
+        UserAiSetting::query()->create([
+            'owner_id' => $this->userA->id,
+            'gemini_api_key' => 'existing-key',
+        ]);
+
+        // 1. clear_gemini_key: false with no new key -> key is preserved
+        $res1 = $this->patchJson('/api/v1/ai/settings', [
+            'clear_gemini_key' => false,
+        ]);
+        $res1->assertOk();
+        $setting = UserAiSetting::query()->where('owner_id', $this->userA->id)->first();
+        $this->assertSame('existing-key', $setting->gemini_api_key);
+
+        // 2. clear_gemini_key: false with valid new key -> key is updated
+        $res2 = $this->patchJson('/api/v1/ai/settings', [
+            'clear_gemini_key' => false,
+            'gemini_api_key' => 'updated-key',
+        ]);
+        $res2->assertOk();
+        $setting->refresh();
+        $this->assertSame('updated-key', $setting->gemini_api_key);
+    }
+
+    public function test_user_clears_key_and_subsequent_request_fails_closed_without_secret_leakage(): void
+    {
+        $this->asUser($this->userA);
+
+        // User had a BYOK key
+        UserAiSetting::query()->create([
+            'owner_id' => $this->userA->id,
+            'selected_provider' => 'gemini',
+            'gemini_api_key' => 'super-secret-byok-key-xyz',
+        ]);
+
+        // Clear key
+        $this->patchJson('/api/v1/ai/settings', ['clear_gemini_key' => true])->assertOk();
+
+        // Ensure system key is also empty
+        config(['ai.providers.gemini.api_key' => '']);
+
+        $provider = app(ConfiguredLlmProvider::class);
+
+        try {
+            $provider->generateStructured(new LlmRequest(
+                'trusted',
+                'untrusted',
+                ['type' => 'object'],
+                new ModelPolicy('low_cost_structured_extraction', true),
+            ));
+            $this->fail('Call without credentials must throw NOT_CONFIGURED.');
+        } catch (LlmProviderException $e) {
+            $this->assertSame(LlmProviderException::NOT_CONFIGURED, $e->category);
+            $this->assertSame('gemini', $e->providerName);
+            $this->assertStringNotContainsString('super-secret-byok-key-xyz', $e->getMessage());
+        }
+    }
+
+    public function test_pricing_isolation_between_models_and_providers(): void
+    {
+        $this->asUser($this->userA);
+
+        config([
+            'ai.default_provider' => 'openai',
+            'ai.providers.gemini.extraction_model' => 'gemini-1.5-flash',
+            'ai.providers.gemini.input_cost_micros_per_million_tokens' => 75,
+            'ai.providers.gemini.output_cost_micros_per_million_tokens' => 300,
+            'ai.providers.openai.default_model' => 'gpt-4o-mini',
+            'ai.providers.openai.extraction_input_cost_micros' => 150,
+            'ai.providers.openai.extraction_output_cost_micros' => 600,
+            'ai.model_policies.low_cost_structured_extraction' => [
+                'provider' => 'openai',
+                'model' => 'gpt-4o-mini',
+                'input_cost_micros_per_million_tokens' => 150,
+                'output_cost_micros_per_million_tokens' => 600,
+            ],
+        ]);
+
+        $resolver = app(ModelPolicyResolver::class);
+        $policy = new ModelPolicy('low_cost_structured_extraction', true);
+
+        // 1. User with Gemini provider and default model -> gets Gemini flash prices
+        $setting = UserAiSetting::query()->create([
+            'owner_id' => $this->userA->id,
+            'selected_provider' => 'gemini',
+        ]);
+
+        $resolved = $resolver->resolve($policy, $this->userA);
+        $this->assertSame('gemini', $resolved->provider);
+        $this->assertSame('gemini-1.5-flash', $resolved->model);
+        $this->assertSame(75, $resolved->inputCostMicrosPerMillionTokens);
+        $this->assertSame(300, $resolved->outputCostMicrosPerMillionTokens);
+
+        // 2. User selects custom/different model without configured price (e.g. gemini-1.5-pro)
+        // Must NOT silently apply the gemini-1.5-flash price!
+        $setting->update(['gemini_model' => 'gemini-1.5-pro']);
+        $resolvedPro = $resolver->resolve($policy, $this->userA);
+        $this->assertSame('gemini-1.5-pro', $resolvedPro->model);
+        $this->assertNull($resolvedPro->inputCostMicrosPerMillionTokens);
+        $this->assertNull($resolvedPro->outputCostMicrosPerMillionTokens);
+
+        // 3. User selects unknown model -> costs remain null
+        $setting->update(['gemini_model' => 'custom-unlisted-model']);
+        $resolvedUnknown = $resolver->resolve($policy, $this->userA);
+        $this->assertSame('custom-unlisted-model', $resolvedUnknown->model);
+        $this->assertNull($resolvedUnknown->inputCostMicrosPerMillionTokens);
+        $this->assertNull($resolvedUnknown->outputCostMicrosPerMillionTokens);
+
+        // 4. Free model with cost = 0 is distinctly preserved (not turned into null)
+        config([
+            'ai.providers.gemini.models.gemini-experimental.input_cost_micros_per_million_tokens' => 0,
+            'ai.providers.gemini.models.gemini-experimental.output_cost_micros_per_million_tokens' => 0,
+        ]);
+        $setting->update(['gemini_model' => 'gemini-experimental']);
+        $resolvedFree = $resolver->resolve($policy, $this->userA);
+        $this->assertSame('gemini-experimental', $resolvedFree->model);
+        $this->assertSame(0, $resolvedFree->inputCostMicrosPerMillionTokens);
+        $this->assertSame(0, $resolvedFree->outputCostMicrosPerMillionTokens);
+
+        // 5. Switch to OpenAI -> uses OpenAI prices, completely isolated from Gemini
+        $setting->update([
+            'selected_provider' => 'openai',
+            'openai_model' => null, // default gpt-4o-mini
+        ]);
+        $resolvedOpenAi = $resolver->resolve($policy, $this->userA);
+        $this->assertSame('openai', $resolvedOpenAi->provider);
+        $this->assertSame('gpt-4o-mini', $resolvedOpenAi->model);
+        $this->assertSame(150, $resolvedOpenAi->inputCostMicrosPerMillionTokens);
+        $this->assertSame(600, $resolvedOpenAi->outputCostMicrosPerMillionTokens);
+
+        // 6. OpenAI with custom model without explicit pricing -> costs must be null (not gpt-4o-mini costs)
+        $setting->update(['openai_model' => 'gpt-4o']);
+        $resolvedGpt4o = $resolver->resolve($policy, $this->userA);
+        $this->assertSame('gpt-4o', $resolvedGpt4o->model);
+        $this->assertNull($resolvedGpt4o->inputCostMicrosPerMillionTokens);
+        $this->assertNull($resolvedGpt4o->outputCostMicrosPerMillionTokens);
+    }
 }

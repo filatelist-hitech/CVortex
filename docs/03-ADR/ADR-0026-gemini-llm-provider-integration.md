@@ -37,16 +37,25 @@ CVortex requires multi-provider resilience for runtime AI workflows (such as car
    - Or the system-configured default provider/policy mapping (`config('ai.model_policies.{policy}')`).
    Silent fallbacks are strictly prohibited: if the active provider fails, the error is normalized to `LlmProviderException` and surfaced directly.
 
-3. **Structured Output & Normalization**:
-   Pass structured schemas via `generationConfig.responseSchema` with `responseMimeType: "application/json"`. Sanitize JSON Schema metadata (such as `$schema` tags) for Gemini compatibility.
+3. **Structured Output & Schema Adaptation**:
+   Pass structured schemas via `generationConfig.responseSchema` with `responseMimeType: "application/json"`.
+   Sanitize application JSON schemas to strict Gemini OpenAPI 3.0 requirements:
+   - Inlines and dereferences local `$ref` pointers (from `$defs` or `definitions`) into a flat schema and removes top-level `$defs`/`definitions`.
+   - Normalizes nullable unions (`type: ["string", "null"]` → `type: "string", nullable: true`).
+   - Removes `additionalProperties` only as an object schema directive while strictly preserving user domain properties named `additionalProperties`.
+   - Strips metadata keywords (`$schema`, `$id`) while preserving all semantic constraints (`required`, `enum`, `items`, `minItems`, `maxItems`, `minimum`, `maximum`, `minLength`, `maxLength`).
+   - Rejects unsupported circular or external `$ref` safely (`LlmProviderException::INVALID_CONFIGURATION`).
+   - Maintains server-side domain validation in CVortex services as the primary authority regardless of provider adaptation.
    Map finish reasons: `STOP` → success, `SAFETY`/`RECITATION`/`BLOCKLIST` → `LlmProviderException::REFUSAL`, `MAX_TOKENS` → `LlmProviderException::INCOMPLETE`.
    Map errors: 400/401/403 → `INVALID_CONFIGURATION`, 429 → `RATE_LIMITED` (with `Retry-After`), 500/503 → `TEMPORARY_UNAVAILABLE`, timeouts → `TRANSPORT`.
 
-4. **Credential Security & BYOK**:
+4. **Credential Security, BYOK & Pricing Isolation**:
    - System credentials live in environment configuration (`GEMINI_API_KEY`) and are never written to Git.
    - User BYOK keys are persisted in `user_ai_settings` using Laravel's native `'encrypted'` Eloquent cast (AES-256-CBC at rest).
-   - PostgreSQL Row-Level Security (`cvortex.owner_id`) isolates settings between users.
+   - PostgreSQL Row-Level Security (`cvortex.owner_id`) isolates settings between users under non-privileged runtime roles (`cvortex_app`).
+   - Conflicting BYOK mutation requests (submitting a new key while simultaneously setting `clear_*_key: true`) are rejected with `422 Unprocessable Content`.
    - Credentials are hidden (`$hidden`) and are never returned to the frontend or written to application logs.
+   - Cost estimation strictly isolates provider models: custom or unknown models without per-model configured pricing return `null` rather than silently inheriting default model costs. Zero-cost free models are distinguished as `0` micros.
 
 5. **Safe Connection Testing**:
    Expose `POST /api/v1/ai/test-connection` protected by rate-limiting (`throttle:10,1`). The test sends a minimal probe (`ping`) with `maxOutputTokens: 5`. It touches zero career facts, vacancies, or domain models, and returns latency/status without secret leakage.

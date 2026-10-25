@@ -399,20 +399,124 @@ class GeminiResponsesProvider
     /**
      * Sanitize JSON Schema for Gemini OpenAPI 3.0 responseSchema requirements.
      *
+     * - Inlines local $ref references (#/$defs/... or #/definitions/...)
+     * - Removes schema meta-keywords ($schema, $id, $defs, definitions)
+     * - Normalizes nullable union types (e.g. type: ["string", "null"] -> type: "string", nullable: true)
+     * - Removes additionalProperties keyword without damaging user properties named 'additionalProperties'
+     * - Preserves required, properties, items, enum, and numeric/string constraints
+     *
      * @param  array<string, mixed>  $schema
      * @return array<string, mixed>
      */
-    private function sanitizeSchema(array $schema): array
+    public function sanitizeSchema(array $schema): array
     {
-        unset($schema['$schema'], $schema['$id'], $schema['additionalProperties']);
+        $root = $schema;
 
-        foreach ($schema as $key => $value) {
-            if (is_array($value)) {
-                $schema[$key] = $this->sanitizeSchema($value);
+        return $this->normalizeSchemaNode($schema, $root, []);
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     * @param  array<string, mixed>  $root
+     * @param  list<string>  $refStack
+     * @return array<string, mixed>
+     */
+    private function normalizeSchemaNode(array $node, array $root, array $refStack): array
+    {
+        // 1. Resolve $ref if present
+        if (isset($node['$ref']) && is_string($node['$ref'])) {
+            $ref = $node['$ref'];
+            if (in_array($ref, $refStack, true)) {
+                throw new LlmProviderException(
+                    LlmProviderException::INVALID_CONFIGURATION,
+                    'Circular schema reference detected: '.$ref,
+                    'gemini',
+                );
+            }
+
+            $resolved = $this->resolveLocalRef($ref, $root);
+            if (! is_array($resolved)) {
+                throw new LlmProviderException(
+                    LlmProviderException::INVALID_CONFIGURATION,
+                    'Unresolvable schema reference: '.$ref,
+                    'gemini',
+                );
+            }
+
+            // Merge resolved definition with any local overrides (excluding $ref itself)
+            $localOverrides = $node;
+            unset($localOverrides['$ref']);
+
+            $merged = array_merge($resolved, $localOverrides);
+
+            return $this->normalizeSchemaNode($merged, $root, [...$refStack, $ref]);
+        }
+
+        // 2. Remove meta keys on schema object
+        unset($node['$schema'], $node['$id'], $node['$defs'], $node['definitions'], $node['additionalProperties']);
+
+        // 3. Normalize nullable union types: e.g. ["string", "null"] => type: "string", nullable: true
+        if (isset($node['type']) && is_array($node['type'])) {
+            $types = $node['type'];
+            $hasNull = in_array('null', $types, true);
+            $nonNullTypes = array_values(array_filter($types, fn ($t) => $t !== 'null'));
+
+            if ($hasNull && count($nonNullTypes) === 1) {
+                $node['type'] = (string) $nonNullTypes[0];
+                $node['nullable'] = true;
+            } elseif (count($nonNullTypes) === 1) {
+                $node['type'] = (string) $nonNullTypes[0];
+            } else {
+                throw new LlmProviderException(
+                    LlmProviderException::INVALID_CONFIGURATION,
+                    'Gemini does not support multi-type unions: '.json_encode($types),
+                    'gemini',
+                );
             }
         }
 
-        return $schema;
+        // 4. Process properties map carefully: keys in 'properties' are field names, not schema keywords!
+        if (isset($node['properties']) && is_array($node['properties'])) {
+            $normalizedProperties = [];
+            foreach ($node['properties'] as $propName => $propSchema) {
+                if (is_array($propSchema)) {
+                    $normalizedProperties[$propName] = $this->normalizeSchemaNode($propSchema, $root, $refStack);
+                } else {
+                    $normalizedProperties[$propName] = $propSchema;
+                }
+            }
+            $node['properties'] = $normalizedProperties;
+        }
+
+        // 5. Process items (for array types)
+        if (isset($node['items']) && is_array($node['items'])) {
+            $node['items'] = $this->normalizeSchemaNode($node['items'], $root, $refStack);
+        }
+
+        return $node;
+    }
+
+    /**
+     * @param  array<string, mixed>  $root
+     * @return array<string, mixed>|null
+     */
+    private function resolveLocalRef(string $ref, array $root): ?array
+    {
+        if (! str_starts_with($ref, '#/')) {
+            return null; // External refs are unsupported
+        }
+
+        $parts = explode('/', ltrim(substr($ref, 2), '/'));
+        $current = $root;
+        foreach ($parts as $part) {
+            $part = str_replace(['~1', '~0'], ['/', '~'], $part);
+            if (! is_array($current) || ! array_key_exists($part, $current)) {
+                return null;
+            }
+            $current = $current[$part];
+        }
+
+        return is_array($current) ? $current : null;
     }
 
     private function estimateCost(ResolvedModel $resolved, ?int $inputTokens, ?int $outputTokens): ?int

@@ -273,4 +273,183 @@ class GeminiResponsesProviderTest extends TestCase
         $this->assertFalse($missing['success']);
         $this->assertSame('NOT_CONFIGURED', $missing['error_code']);
     }
+
+    public function test_sanitize_schema_inlines_defs_and_refs(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        $schema = [
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'type' => 'object',
+            'additionalProperties' => false,
+            'required' => ['drafts'],
+            'properties' => [
+                'drafts' => [
+                    'type' => 'array',
+                    'items' => ['$ref' => '#/$defs/draft_item'],
+                ],
+            ],
+            '$defs' => [
+                'draft_item' => [
+                    'type' => 'object',
+                    'additionalProperties' => false,
+                    'required' => ['content', 'tags'],
+                    'properties' => [
+                        'content' => ['type' => 'string', 'minLength' => 10],
+                        'tags' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $sanitized = $provider->sanitizeSchema($schema);
+
+        $this->assertArrayNotHasKey('$schema', $sanitized);
+        $this->assertArrayNotHasKey('$defs', $sanitized);
+        $this->assertArrayNotHasKey('additionalProperties', $sanitized);
+
+        $itemSchema = $sanitized['properties']['drafts']['items'];
+        $this->assertSame('object', $itemSchema['type']);
+        $this->assertArrayNotHasKey('$ref', $itemSchema);
+        $this->assertArrayNotHasKey('additionalProperties', $itemSchema);
+        $this->assertSame(['content', 'tags'], $itemSchema['required']);
+        $this->assertSame('string', $itemSchema['properties']['content']['type']);
+        $this->assertSame(10, $itemSchema['properties']['content']['minLength']);
+    }
+
+    public function test_sanitize_schema_converts_nullable_union_to_openapi_nullable(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'normalized_value' => [
+                    'type' => ['string', 'null'],
+                    'description' => 'A string or null value',
+                ],
+            ],
+        ];
+
+        $sanitized = $provider->sanitizeSchema($schema);
+
+        $this->assertSame('string', $sanitized['properties']['normalized_value']['type']);
+        $this->assertTrue($sanitized['properties']['normalized_value']['nullable']);
+        $this->assertSame('A string or null value', $sanitized['properties']['normalized_value']['description']);
+    }
+
+    public function test_sanitize_schema_preserves_additional_properties_field_name(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        $schema = [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'required' => ['additionalProperties'],
+            'properties' => [
+                'additionalProperties' => [
+                    'type' => 'string',
+                    'description' => 'A user field explicitly named additionalProperties',
+                ],
+            ],
+        ];
+
+        $sanitized = $provider->sanitizeSchema($schema);
+
+        // Directive at object level must be stripped
+        $this->assertArrayNotHasKey('additionalProperties', $sanitized);
+
+        // But property with the name 'additionalProperties' MUST NOT be deleted
+        $this->assertArrayHasKey('additionalProperties', $sanitized['properties']);
+        $this->assertSame('string', $sanitized['properties']['additionalProperties']['type']);
+        $this->assertSame(['additionalProperties'], $sanitized['required']);
+    }
+
+    public function test_sanitize_schema_preserves_constraints(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        $schema = [
+            'type' => 'object',
+            'required' => ['score', 'category'],
+            'properties' => [
+                'score' => [
+                    'type' => 'number',
+                    'minimum' => 0.0,
+                    'maximum' => 1.0,
+                ],
+                'category' => [
+                    'type' => 'string',
+                    'enum' => ['A', 'B', 'C'],
+                ],
+                'tags' => [
+                    'type' => 'array',
+                    'minItems' => 1,
+                    'maxItems' => 5,
+                    'items' => [
+                        'type' => 'string',
+                        'minLength' => 2,
+                        'maxLength' => 20,
+                    ],
+                ],
+            ],
+        ];
+
+        $sanitized = $provider->sanitizeSchema($schema);
+
+        $this->assertSame(['score', 'category'], $sanitized['required']);
+        $this->assertSame(0.0, $sanitized['properties']['score']['minimum']);
+        $this->assertSame(1.0, $sanitized['properties']['score']['maximum']);
+        $this->assertSame(['A', 'B', 'C'], $sanitized['properties']['category']['enum']);
+        $this->assertSame(1, $sanitized['properties']['tags']['minItems']);
+        $this->assertSame(5, $sanitized['properties']['tags']['maxItems']);
+        $this->assertSame(2, $sanitized['properties']['tags']['items']['minLength']);
+        $this->assertSame(20, $sanitized['properties']['tags']['items']['maxLength']);
+    }
+
+    public function test_sanitize_schema_detects_circular_ref_and_throws(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'self' => ['$ref' => '#/$defs/node'],
+            ],
+            '$defs' => [
+                'node' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'parent' => ['$ref' => '#/$defs/node'],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(LlmProviderException::class);
+        $this->expectExceptionMessage('Circular schema reference detected');
+
+        $provider->sanitizeSchema($schema);
+    }
+
+    public function test_sanitize_schema_throws_on_unresolvable_ref(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'item' => ['$ref' => '#/$defs/nonexistent'],
+            ],
+            '$defs' => [],
+        ];
+
+        $this->expectException(LlmProviderException::class);
+        $this->expectExceptionMessage('Unresolvable schema reference');
+
+        $provider->sanitizeSchema($schema);
+    }
 }

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserAiSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AiSettingsController extends Controller
 {
@@ -45,6 +46,18 @@ class AiSettingsController extends Controller
             'clear_openai_key' => ['nullable', 'boolean'],
             'openai_model' => ['nullable', 'string', 'max:128'],
         ]);
+
+        if (! empty($validated['clear_gemini_key']) && isset($validated['gemini_api_key']) && trim((string) $validated['gemini_api_key']) !== '') {
+            throw ValidationException::withMessages([
+                'clear_gemini_key' => 'Cannot specify a new Gemini API key and clear_gemini_key simultaneously.',
+            ]);
+        }
+
+        if (! empty($validated['clear_openai_key']) && isset($validated['openai_api_key']) && trim((string) $validated['openai_api_key']) !== '') {
+            throw ValidationException::withMessages([
+                'clear_openai_key' => 'Cannot specify a new OpenAI API key and clear_openai_key simultaneously.',
+            ]);
+        }
 
         $setting = UserAiSetting::query()->firstOrNew(['owner_id' => $user->id]);
 
