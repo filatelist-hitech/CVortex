@@ -519,6 +519,11 @@ export default function AdminSystemSettings() {
                     const currentValue = isStaged ? stagedValues[item.key] : item.value;
                     const isSecretUpdated = secretEdits[item.key] !== undefined && secretEdits[item.key].length > 0;
                     const isSecretCleared = clearedSecrets[item.key] === true;
+                    const testTarget: "openai" | "smtp" | "storage" = item.key.includes("openai")
+                      ? "openai"
+                      : item.key.includes("mail")
+                      ? "smtp"
+                      : "storage";
 
                     return (
                       <div
@@ -661,14 +666,10 @@ export default function AdminSystemSettings() {
                               <button
                                 type="button"
                                 className="button-test-connection"
-                                onClick={() => {
-                                  if (item.key.includes("openai")) void handleTest("openai");
-                                  else if (item.key.includes("mail")) void handleTest("smtp");
-                                  else if (item.key.includes("storage")) void handleTest("storage");
-                                }}
-                                disabled={runningTests[item.key.includes("openai") ? "openai" : "smtp"] || saving}
+                                onClick={() => void handleTest(testTarget)}
+                                disabled={runningTests[testTarget] || saving}
                               >
-                                {runningTests[item.key.includes("openai") ? "openai" : "smtp"]
+                                {runningTests[testTarget]
                                   ? "Проверка..."
                                   : "Проверить соединение"}
                               </button>
@@ -676,13 +677,13 @@ export default function AdminSystemSettings() {
                           </div>
 
                           {/* Inline test result display */}
-                          {item.testable && testResults[item.key.includes("openai") ? "openai" : "smtp"] && (
+                          {item.testable && testResults[testTarget] && (
                             <div
-                              className={`test-result-box ${testResults[item.key.includes("openai") ? "openai" : "smtp"]?.success ? "success" : "error"}`}
+                              className={`test-result-box ${testResults[testTarget]?.success ? "success" : "error"}`}
                             >
-                              <span>{testResults[item.key.includes("openai") ? "openai" : "smtp"]?.message}</span>
-                              {testResults[item.key.includes("openai") ? "openai" : "smtp"]?.latency_ms ? (
-                                <small>({testResults[item.key.includes("openai") ? "openai" : "smtp"]?.latency_ms} ms)</small>
+                              <span>{testResults[testTarget]?.message}</span>
+                              {testResults[testTarget]?.latency_ms ? (
+                                <small>({testResults[testTarget]?.latency_ms} ms)</small>
                               ) : null}
                             </div>
                           )}

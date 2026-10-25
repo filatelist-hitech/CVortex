@@ -435,6 +435,7 @@ class SettingDefinitionRegistry
             runtimeMutable: false,
             requiresRestart: true,
             envFallbackKey: 'FILESYSTEM_DISK',
+            testable: true,
             sortOrder: 10,
         ));
 

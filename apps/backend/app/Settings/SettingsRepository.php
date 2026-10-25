@@ -41,10 +41,14 @@ class SettingsRepository
                 return $setting;
             }
 
+            if ($expectedVersion !== null && $expectedVersion !== 1) {
+                throw new SettingConcurrencyException;
+            }
+
             $newSetting = new SystemSetting([
                 'key' => $key,
                 'updated_by' => $userId,
-                'version' => 1,
+                'version' => 2,
             ]);
             $newSetting->setDecodedValue($value, $isSecret);
             $newSetting->save();

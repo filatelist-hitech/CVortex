@@ -231,4 +231,73 @@ class AdminSettingsApiTest extends TestCase
         $content = $response->getContent();
         $this->assertStringNotContainsString(config('app.key'), (string) $content);
     }
+
+    public function test_admin_patch_with_stale_expected_version_returns_409_concurrency_conflict(): void
+    {
+        $this->actingAs($this->admin);
+
+        // First update creates override with version 2
+        $first = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Version 2 Name', 'expected_version' => 1],
+            ],
+        ]);
+        $first->assertStatus(200);
+
+        // Second update with stale expected_version 1 triggers HTTP 409
+        $conflict = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'general.app_name', 'value' => 'Conflict Attempt', 'expected_version' => 1],
+            ],
+        ]);
+
+        $conflict->assertStatus(409);
+        $conflict->assertJsonPath('error.code', 'SETTING_CONCURRENCY_CONFLICT');
+    }
+
+    public function test_admin_patch_with_invalid_value_returns_422_validation_failed(): void
+    {
+        $this->actingAs($this->admin);
+
+        // auth.invitation_default_expires_days must be between 1 and 30
+        $response = $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'auth.invitation_default_expires_days', 'value' => 999],
+            ],
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('error.code', 'VALIDATION_FAILED');
+    }
+
+    public function test_admin_reset_nonexistent_setting_returns_404_not_found(): void
+    {
+        $this->actingAs($this->admin);
+
+        $response = $this->postJson('/api/v1/admin/settings/reset', [
+            'key' => 'nonexistent.unknown.key',
+        ]);
+
+        $response->assertStatus(404);
+        $response->assertJsonPath('error.code', 'SETTING_NOT_FOUND');
+    }
+
+    public function test_admin_can_execute_storage_connection_test(): void
+    {
+        $this->actingAs($this->admin);
+
+        $response = $this->postJson('/api/v1/admin/settings/test', [
+            'target' => 'storage',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.success', true);
+        $this->assertIsInt($response->json('data.latency_ms'));
+
+        $testAudit = AuditEvent::query()
+            ->where('event_type', 'setting.test_executed')
+            ->where('metadata->target', 'storage')
+            ->first();
+        $this->assertNotNull($testAudit);
+    }
 }
