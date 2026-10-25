@@ -27,7 +27,7 @@ const directions = [
   { id: "opportunities", label: "Вакансии", icon: "briefcase", href: "/" },
   { id: "career", label: "Карьера", icon: "user", href: "/career" },
   { id: "employers", label: "Работодатели", icon: "building" },
-  { id: "settings", label: "Настройки", icon: "settings" },
+  { id: "settings", label: "Настройки", icon: "settings", href: "/settings" },
 ] as const;
 
 function Icon({ name }: { name: string }) {
@@ -45,14 +45,14 @@ function Icon({ name }: { name: string }) {
 export default function WorkspaceShell({ email, role, destination, onSignOut, children }: {
   email: string;
   role: string;
-  destination: "career" | "diagnostics" | "vacancies";
+  destination: "career" | "diagnostics" | "vacancies" | "settings";
   onSignOut: () => Promise<void>;
   children: ReactNode;
 }) {
   const hash = useSyncExternalStore(subscribeLocation, currentHash, serverHash);
   const compact = useSyncExternalStore(subscribeCompact, compactSnapshot, serverCompact);
-  const active = destination === "career" ? hash === "#vacancy-title" ? "opportunities" : "career" : null;
-  const currentLabel = destination === "diagnostics" ? "Диагностика" : active === "opportunities" ? "Вакансии" : "Карьера";
+  const active = destination === "career" ? hash === "#vacancy-title" ? "opportunities" : "career" : destination === "settings" ? "settings" : null;
+  const currentLabel = destination === "diagnostics" ? "Диагностика" : destination === "settings" ? "Настройки" : active === "opportunities" ? "Вакансии" : "Карьера";
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const menuTrigger = useRef<HTMLElement>(null);
@@ -80,7 +80,7 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
     <a className="workspace-skip" href="#workspace-content">Перейти к содержимому</a>
     <header className="workspace-global-header">
       <div className="workspace-brand"><strong>CVortex</strong><span>Your career, in context.</span></div>
-      <div className="workspace-context"><strong>{currentLabel}</strong><span>{destination === "diagnostics" ? "Ошибки и состояние операций" : "Факты, источники и подтверждения"}</span></div>
+      <div className="workspace-context"><strong>{currentLabel}</strong><span>{destination === "diagnostics" ? "Ошибки и состояние операций" : destination === "settings" ? "Конфигурация AI-провайдеров и ключей" : "Факты, источники и подтверждения"}</span></div>
       <button ref={accountTrigger} type="button" className="workspace-account-trigger secondary" aria-haspopup="dialog" aria-controls="workspace-account-dialog" aria-expanded={accountOpen} onClick={() => { accountDialog.current?.showModal(); setAccountOpen(true); }}>
         <span className="workspace-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</span><span><strong>Профиль</strong><small>{role === "admin" ? "Администратор" : "Пользователь"}</small></span><Icon name="chevron" />
       </button>
@@ -102,6 +102,7 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
       <div className="workspace-account-heading"><h2 id="workspace-account-title">Профиль</h2><button type="button" className="secondary" onClick={closeAccount}>Закрыть</button></div>
       <div className="workspace-account" role="group" aria-label="Управление аккаунтом">
         <span className="workspace-identity">{email}</span>
+        <Link className="workspace-link" href="/settings" aria-current={destination === "settings" ? "page" : undefined} onClick={closeAccount}>Настройки AI</Link>
         {role === "admin" && <Link className="workspace-link" href="/diagnostics" aria-current={destination === "diagnostics" ? "page" : undefined} onClick={closeAccount}>Диагностика</Link>}
         <button type="button" className="secondary" disabled={signingOut} onClick={() => void signOut()}>{signingOut ? "Выход…" : "Выйти"}</button>
         {error && <p className="error" role="alert">{error}</p>}

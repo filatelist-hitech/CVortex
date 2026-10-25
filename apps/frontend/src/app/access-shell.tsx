@@ -6,6 +6,7 @@ import Link from "next/link";
 import CareerWorkspace from "./career-workspace";
 import Diagnostics from "./diagnostics";
 import WorkspaceShell from "./workspace-shell";
+import AiProviderSettings from "./ai-provider-settings";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
@@ -100,7 +101,7 @@ export async function api(path: string, options: RequestInit = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export default function AccessShell({ registrationRoute = false, destination = "vacancies" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" | "vacancies" }) {
+export default function AccessShell({ registrationRoute = false, destination = "vacancies" }: { registrationRoute?: boolean; destination?: "career" | "diagnostics" | "vacancies" | "settings" }) {
   const router = useRouter();
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
@@ -152,6 +153,8 @@ export default function AccessShell({ registrationRoute = false, destination = "
     return <WorkspaceShell email={user.email} role={user.role} destination={destination} onSignOut={onSignOut}>
       {destination === "diagnostics"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell diagnostics-shell"><Diagnostics /></main>
+        : destination === "settings"
+        ? <main id="workspace-content" tabIndex={-1} className="career-shell settings-shell"><AiProviderSettings /></main>
         : <CareerWorkspace key={user.id} userId={user.id} />}
     </WorkspaceShell>;
   }

@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Http;
 
 class OpenAiResponsesProvider
 {
-    public function generateResolved(LlmRequest $request, ResolvedModel $resolved): LlmResponse
+    public function generateResolved(LlmRequest $request, ResolvedModel $resolved, ?string $apiKey = null): LlmResponse
     {
-        $apiKey = (string) config('ai.providers.openai.api_key');
+        $apiKey = ($apiKey !== null && trim($apiKey) !== '') ? trim($apiKey) : (string) config('ai.providers.openai.api_key');
         $model = $resolved->model;
         if ($apiKey === '' || $model === '') {
             throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED, 'The OpenAI provider is not fully configured.', 'openai', $model);
@@ -237,5 +237,86 @@ class OpenAiResponsesProvider
     private function elapsedMilliseconds(int $startedAt): int
     {
         return (int) round((hrtime(true) - $startedAt) / 1_000_000);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function testConnection(?string $apiKey = null, ?string $model = null): array
+    {
+        $key = ($apiKey !== null && trim($apiKey) !== '')
+            ? trim($apiKey)
+            : (string) config('ai.providers.openai.api_key');
+
+        $targetModel = ($model !== null && trim($model) !== '')
+            ? trim($model)
+            : (string) config('ai.providers.openai.default_model', 'gpt-4o-mini');
+
+        if ($key === '') {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => 'openai',
+                'model' => $targetModel,
+                'error_code' => 'NOT_CONFIGURED',
+                'message' => 'The OpenAI API key is missing. Configure it in environment or AI settings.',
+                'recommendation' => 'Enter a valid OpenAI API key or configure OPENAI_API_KEY.',
+            ];
+        }
+
+        $startedAt = hrtime(true);
+        $baseUrl = rtrim((string) config('ai.providers.openai.base_url', 'https://api.openai.com/v1'), '/');
+
+        try {
+            $response = Http::baseUrl($baseUrl)
+                ->withToken($key)
+                ->acceptJson()
+                ->timeout(10)
+                ->get('/models/'.urlencode($targetModel));
+        } catch (\Throwable $exception) {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => 'openai',
+                'model' => $targetModel,
+                'latency_ms' => $this->elapsedMilliseconds($startedAt),
+                'error_code' => 'TRANSPORT_ERROR',
+                'message' => 'Unable to reach OpenAI endpoint.',
+                'recommendation' => 'Check your internet connection and proxy/DNS settings.',
+            ];
+        }
+
+        $latencyMs = $this->elapsedMilliseconds($startedAt);
+
+        if (! $response->successful()) {
+            $status = $response->status();
+            [$errorCode, $recommendation] = match (true) {
+                $status === 401 || $status === 403 => ['INVALID_CREDENTIALS', 'Verify that your OpenAI API key is valid and has model access.'],
+                $status === 404 => ['MODEL_NOT_FOUND', 'The specified OpenAI model was not found or your key lacks access to it.'],
+                $status === 429 => ['RATE_LIMITED', 'OpenAI quota or rate limit exceeded. Check your plan quota on OpenAI platform.'],
+                $status >= 500 => ['PROVIDER_UNAVAILABLE', 'OpenAI service is temporarily unavailable. Retry later.'],
+                default => ['PROVIDER_ERROR', 'The OpenAI provider returned an unexpected error.'],
+            };
+
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'provider' => 'openai',
+                'model' => $targetModel,
+                'latency_ms' => $latencyMs,
+                'error_code' => $errorCode,
+                'message' => 'Connection test failed: '.$errorCode,
+                'recommendation' => $recommendation,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'status' => 'healthy',
+            'provider' => 'openai',
+            'model' => $targetModel,
+            'latency_ms' => $latencyMs,
+            'message' => 'OpenAI connection test successful.',
+        ];
     }
 }
