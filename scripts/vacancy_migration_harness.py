@@ -178,6 +178,41 @@ class Harness:
             args.append('--path=database/migrations/' + name + '.php')
         print(self.command(self.compose + ['exec', '-T', 'runner', *args]).stdout.strip(), flush=True)
 
+    def control_aggregate_rebinding(self):
+        target_snapshot = '00000000000000000000000023'
+        rebound_vacancy = '00000000000000000000000011'
+        expected_failure = 'snapshot source_url or owner_id differs from parent vacancy'
+
+        count = self.sql(f"SELECT count(*) FROM vacancy_snapshots WHERE id = '{target_snapshot}';").stdout.strip()
+        require(count == '1', f'QA002-14 precondition failed: target snapshot {target_snapshot} does not exist (count={count})')
+
+        rebound_sql = (
+            "BEGIN;\n"
+            "ALTER TABLE vacancy_snapshots DISABLE TRIGGER vacancy_snapshots_immutable;\n"
+            "DO $$\n"
+            "DECLARE\n"
+            "    updated integer;\n"
+            "BEGIN\n"
+            f"    UPDATE vacancy_snapshots SET vacancy_id = '{rebound_vacancy}', "
+            f"version = (SELECT COALESCE(max(version), 0) + 1 FROM vacancy_snapshots WHERE vacancy_id = '{rebound_vacancy}') "
+            f"WHERE id = '{target_snapshot}';\n"
+            "    GET DIAGNOSTICS updated = ROW_COUNT;\n"
+            "    IF updated <> 1 THEN\n"
+            "        RAISE EXCEPTION 'QA002-14 precondition failed: expected exactly 1 updated row, got %', updated;\n"
+            "    END IF;\n"
+            "END;\n"
+            "$$;\n" +
+            (FIXTURES / 'reconciled.sql').read_text() +
+            "\nROLLBACK;"
+        )
+        result = self.sql(rebound_sql, check=False)
+        require(result.returncode != 0, 'QA002-14: aggregate rebinding negative control falsely passed with exit 0')
+        require('QA002-14 precondition failed:' not in result.stderr,
+                f'QA002-14: update precondition failed: {result.stderr}')
+        require(expected_failure in result.stderr,
+                f'QA002-14: aggregate rebinding failed with unexpected error signature: {result.stderr}')
+        print(f'QA002-14: expected aggregate rebinding mismatch FAIL exit={result.returncode}; transaction rolled back', flush=True)
+
     def run(self):
         self.prepare()
         print(f'identity: project={self.project} db={self.database} admin={self.admin} runtime={self.runtime}', flush=True)
@@ -221,13 +256,6 @@ class Harness:
                               (FIXTURES / 'legacy-schema.sql').read_text(), check=False)
             require(result.returncode != 0 and 'legacy schema:' in result.stderr, 'wrong-schema control falsely passed')
             print(f'QA002-11: expected wrong-schema FAIL exit={result.returncode}; transaction rolled back', flush=True)
-            rebound_sql = ("BEGIN;\n"
-                           "UPDATE vacancy_snapshots SET vacancy_id = '00000000000000000000000011' WHERE id = '00000000000000000000000023';\n" +
-                           (FIXTURES / 'reconciled.sql').read_text() + "\nROLLBACK;")
-            result = self.sql(rebound_sql, check=False)
-            require(result.returncode != 0 and 'migration regressions:' in result.stderr,
-                    'erroneous aggregate rebinding negative control falsely passed')
-            print(f'QA002-14: expected aggregate rebinding mismatch FAIL exit={result.returncode}; transaction rolled back', flush=True)
         self.assert_file('legacy-schema.sql')
         self.assert_file('legacy.sql')
         print('legacy counts: ' + self.counts(), flush=True)
@@ -239,6 +267,8 @@ class Harness:
         self.assert_file('repaired-schema.sql')
         require(self.history_fingerprint() == history, 'remediation changed snapshot/analysis/LLM history')
         print('reconciled counts: ' + self.counts(), flush=True)
+        if self.controls:
+            self.control_aggregate_rebinding()
         preserved = self.fingerprint()
         for name in reversed(REPAIRS):
             ledger = self.recorded()

@@ -126,6 +126,66 @@ class MigrationHarnessTest(unittest.TestCase):
         self.assertEqual(len(container_calls), 1)
         self.assertIn('-a', container_calls[0])
 
+    def test_qa002_14_control_aggregate_rebinding_lifecycle_and_guards(self):
+        harness = H.Harness(True)
+
+        # 1. Expected behavior: target exists and SQL fails with specific aggregate invariant violation
+        def mock_sql_success(query, check=True):
+            if query.strip().startswith("SELECT count(*) FROM vacancy_snapshots"):
+                return subprocess.CompletedProcess([], 0, stdout='1\n', stderr='')
+            return subprocess.CompletedProcess(
+                [], 3, stdout='',
+                stderr='ERROR: migration regressions: snapshot source_url or owner_id differs from parent vacancy; vacancy 13 snapshots mapping mismatch\n'
+            )
+
+        with patch.object(harness, 'sql', side_effect=mock_sql_success):
+            harness.control_aggregate_rebinding()
+
+        # 2. Precondition: target snapshot does not exist before update
+        def mock_sql_missing_record(query, check=True):
+            if query.strip().startswith("SELECT count(*) FROM vacancy_snapshots"):
+                return subprocess.CompletedProcess([], 0, stdout='0\n', stderr='')
+            return subprocess.CompletedProcess([], 0, stdout='', stderr='')
+
+        with patch.object(harness, 'sql', side_effect=mock_sql_missing_record):
+            with self.assertRaisesRegex(RuntimeError, 'QA002-14 precondition failed: target snapshot.*does not exist'):
+                harness.control_aggregate_rebinding()
+
+        # 3. Precondition: SQL update inside transaction updated 0 rows
+        def mock_sql_update_zero_rows(query, check=True):
+            if query.strip().startswith("SELECT count(*) FROM vacancy_snapshots"):
+                return subprocess.CompletedProcess([], 0, stdout='1\n', stderr='')
+            return subprocess.CompletedProcess(
+                [], 3, stdout='',
+                stderr='ERROR: QA002-14 precondition failed: expected exactly 1 updated row, got 0\n'
+            )
+
+        with patch.object(harness, 'sql', side_effect=mock_sql_update_zero_rows):
+            with self.assertRaisesRegex(RuntimeError, 'QA002-14: update precondition failed'):
+                harness.control_aggregate_rebinding()
+
+        # 4. Extraneous error: syntax error or arbitrary regression without aggregate signature
+        for error_stderr in ('ERROR: syntax error at or near "UPDATE"\n',
+                             'ERROR: migration regressions: duplicate vacancies not converged\n'):
+            def mock_sql_extraneous_error(query, check=True, err=error_stderr):
+                if query.strip().startswith("SELECT count(*) FROM vacancy_snapshots"):
+                    return subprocess.CompletedProcess([], 0, stdout='1\n', stderr='')
+                return subprocess.CompletedProcess([], 3, stdout='', stderr=err)
+
+            with patch.object(harness, 'sql', side_effect=mock_sql_extraneous_error):
+                with self.assertRaisesRegex(RuntimeError, 'unexpected error signature'):
+                    harness.control_aggregate_rebinding()
+
+        # 5. False PASS: SQL unexpectedly exits with 0
+        def mock_sql_false_success(query, check=True):
+            if query.strip().startswith("SELECT count(*) FROM vacancy_snapshots"):
+                return subprocess.CompletedProcess([], 0, stdout='1\n', stderr='')
+            return subprocess.CompletedProcess([], 0, stdout='', stderr='')
+
+        with patch.object(harness, 'sql', side_effect=mock_sql_false_success):
+            with self.assertRaisesRegex(RuntimeError, 'falsely passed with exit 0'):
+                harness.control_aggregate_rebinding()
+
     def test_main_never_passes_on_setup_sql_or_cleanup_failure(self):
         for run_error, cleanup_error in ((RuntimeError('SQL failure'), None),
                                          (None, RuntimeError('cleanup failure')),
