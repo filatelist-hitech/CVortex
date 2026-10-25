@@ -13,6 +13,7 @@ class ConfiguredLlmProvider implements LlmProvider
     public function __construct(
         private readonly ModelPolicyResolver $resolver,
         private readonly OpenAiResponsesProvider $openAi,
+        private readonly GeminiResponsesProvider $gemini,
     ) {}
 
     public function generateStructured(LlmRequest $request): LlmResponse
@@ -20,7 +21,8 @@ class ConfiguredLlmProvider implements LlmProvider
         $resolved = $this->resolver->resolve($request->modelPolicy);
 
         return match ($resolved->provider) {
-            'openai' => $this->openAi->generateResolved($request, $resolved),
+            'openai' => $this->openAi->generateResolved($request, $resolved, $resolved->apiKey),
+            'gemini' => $this->gemini->generateResolved($request, $resolved, $resolved->apiKey),
             default => throw new LlmProviderException(
                 LlmProviderException::NOT_CONFIGURED,
                 'The resolved LLM provider is not available.',

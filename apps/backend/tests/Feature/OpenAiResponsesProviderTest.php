@@ -104,4 +104,47 @@ class OpenAiResponsesProviderTest extends TestCase
             }
         }
     }
+
+    public function test_test_connection_returns_structured_array_on_success(): void
+    {
+        Http::fake([
+            'https://api.openai.com/v1/models/gpt-4o-mini' => Http::response(['id' => 'gpt-4o-mini'], 200),
+        ]);
+
+        $provider = app(OpenAiResponsesProvider::class);
+        $result = $provider->testConnection('test-key', 'gpt-4o-mini');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('healthy', $result['status']);
+        $this->assertSame('openai', $result['provider']);
+        $this->assertSame('gpt-4o-mini', $result['model']);
+        $this->assertIsInt($result['latency_ms']);
+    }
+
+    public function test_test_connection_returns_structured_error_array_on_auth_failure_without_leaking_raw_body(): void
+    {
+        Http::fake([
+            'https://api.openai.com/v1/models/gpt-4o-mini' => Http::response(['error' => ['message' => 'Sensitive internal backend message']], 401),
+        ]);
+
+        $provider = app(OpenAiResponsesProvider::class);
+        $result = $provider->testConnection('invalid-key', 'gpt-4o-mini');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('failed', $result['status']);
+        $this->assertSame('openai', $result['provider']);
+        $this->assertSame('INVALID_CREDENTIALS', $result['error_code']);
+        $this->assertStringNotContainsString('Sensitive internal backend message', $result['message']);
+    }
+
+    public function test_test_connection_returns_structured_error_array_when_key_is_missing(): void
+    {
+        config(['ai.providers.openai.api_key' => '']);
+        $provider = app(OpenAiResponsesProvider::class);
+        $result = $provider->testConnection('', 'gpt-4o-mini');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('failed', $result['status']);
+        $this->assertSame('NOT_CONFIGURED', $result['error_code']);
+    }
 }

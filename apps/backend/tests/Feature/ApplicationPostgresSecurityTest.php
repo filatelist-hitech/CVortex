@@ -274,6 +274,96 @@ class ApplicationPostgresSecurityTest extends TestCase
             ]);
         });
     }
+
+    public function test_user_ai_settings_postgres_rls_isolation(): void
+    {
+        $role = DB::selectOne('SELECT current_user AS role, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user');
+        $this->assertSame(config('database.runtime_role'), $role->role);
+        $this->assertFalse($role->rolsuper);
+        $this->assertFalse($role->rolbypassrls);
+
+        // Verify RLS flags on user_ai_settings table
+        $tableFlags = DB::selectOne("SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace = 'public'::regnamespace AND relname = 'user_ai_settings' AND relkind = 'r'");
+        $this->assertNotNull($tableFlags, 'user_ai_settings table must exist in pg_class');
+        $this->assertTrue($tableFlags->relrowsecurity, 'user_ai_settings must have RLS enabled.');
+        $this->assertTrue($tableFlags->relforcerowsecurity, 'user_ai_settings must force RLS.');
+
+        // Fail-closed without cvortex.owner_id
+        $this->assertSame(0, DB::table('user_ai_settings')->count(), 'user_ai_settings must return 0 rows without owner context.');
+
+        $context = app(DatabaseOwnerContext::class);
+        $owner = $this->user('ai-owner@example.test');
+        $other = $this->user('ai-other@example.test');
+
+        // Create settings for each owner inside their respective owner context
+        $ownerSettingId = (string) Str::ulid();
+        $context->run((string) $owner->id, function () use ($owner, $ownerSettingId): void {
+            DB::table('user_ai_settings')->insert([
+                'id' => $ownerSettingId,
+                'owner_id' => $owner->id,
+                'selected_provider' => 'gemini',
+                'gemini_api_key' => 'encrypted-owner-key',
+                'gemini_model' => 'gemini-1.5-flash',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $otherSettingId = (string) Str::ulid();
+        $context->run((string) $other->id, function () use ($other, $otherSettingId): void {
+            DB::table('user_ai_settings')->insert([
+                'id' => $otherSettingId,
+                'owner_id' => $other->id,
+                'selected_provider' => 'openai',
+                'openai_api_key' => 'encrypted-other-key',
+                'openai_model' => 'gpt-4o-mini',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        // Test from owner perspective
+        $context->run((string) $owner->id, function () use ($other, $ownerSettingId, $otherSettingId): void {
+            // Can see only own row
+            $this->assertSame(1, DB::table('user_ai_settings')->count());
+            $own = DB::table('user_ai_settings')->where('id', $ownerSettingId)->first();
+            $this->assertNotNull($own);
+            $this->assertSame('gemini', $own->selected_provider);
+
+            // Cannot see other user's row
+            $this->assertNull(DB::table('user_ai_settings')->where('id', $otherSettingId)->first());
+            $this->assertSame(0, DB::table('user_ai_settings')->where('owner_id', $other->id)->count());
+
+            // Cannot update other user's row
+            $updated = DB::table('user_ai_settings')->where('id', $otherSettingId)->update(['selected_provider' => 'gemini']);
+            $this->assertSame(0, $updated);
+
+            // Cannot delete other user's row
+            $deleted = DB::table('user_ai_settings')->where('id', $otherSettingId)->delete();
+            $this->assertSame(0, $deleted);
+
+            // Cannot insert a row claiming another user's owner_id (blocked by RLS WITH CHECK)
+            try {
+                DB::table('user_ai_settings')->insert([
+                    'id' => (string) Str::ulid(),
+                    'owner_id' => $other->id,
+                    'selected_provider' => 'openai',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $this->fail('Inserting user_ai_settings for another owner was permitted by RLS.');
+            } catch (QueryException) {
+                $this->addToAssertionCount(1);
+            }
+        });
+
+        // Test from other user perspective
+        $context->run((string) $other->id, function () use ($ownerSettingId, $otherSettingId): void {
+            $this->assertSame(1, DB::table('user_ai_settings')->count());
+            $this->assertNotNull(DB::table('user_ai_settings')->where('id', $otherSettingId)->first());
+            $this->assertNull(DB::table('user_ai_settings')->where('id', $ownerSettingId)->first());
+        });
+    }
 }
 
 class ApplicationPostgresFakeProvider implements LlmProvider

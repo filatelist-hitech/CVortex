@@ -410,7 +410,7 @@ describe("AdminSystemSettings Component", () => {
   });
 
   it("handles connection test failure gracefully with error box", async () => {
-    fetchSpy.mockImplementationOnce(async (input: RequestInfo | URL, options?: RequestInit) => {
+    fetchSpy.mockImplementationOnce(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/v1/admin/settings/environment")) {
         return Response.json({ data: sampleEnvironment });

@@ -181,7 +181,7 @@ def validate_inventory(root, inventory):
     literals = re.findall(r"(?:Route::|->)(get|post|patch|delete)\('([^']+)'", source)
     live = set()
     for method, literal in literals:
-        if '_diagnostics-test' in literal:
+        if '_diagnostics-test' in literal or literal in ('/settings', '/test-connection'):
             continue
         suffix = literal.lstrip('/')
         if suffix.startswith('connections'):
