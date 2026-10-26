@@ -64,16 +64,16 @@ content. Repeat captures followed typography/form tuning. Profile captures use
 viewport screenshots; filled Career captures scroll to top before full-page capture
 so sticky placement is not misrepresented. Screenshot sources are not painted over.
 
-| Viewport | Canonical / before / after contact sheet |
+| Viewport | Canonical / before / after contact sheet (артефакты оптимизированы в PR #51) |
 | --- | --- |
-| 1440 | [Desktop comparison](1440-comparison.png) |
-| 768 | [Tablet comparison](768-comparison.png) |
-| 390 | [Mobile comparison](390-comparison.png) |
-| 320 | [Compact comparison](320-comparison.png) |
+| 1440 | Desktop comparison (`1440-comparison.png`) |
+| 768 | Tablet comparison (`768-comparison.png`) |
+| 390 | Mobile comparison (`390-comparison.png`) |
+| 320 | Compact comparison (`320-comparison.png`) |
 
-Raw [BEFORE desktop](before/1440-production.png), [AFTER desktop](after/1440-production.png),
-[canonical desktop](before/1440-canonical.png), [BEFORE mobile](before/390-production.png),
-[AFTER mobile](after/390-production.png), [canonical mobile](before/390-canonical.png).
+Исходные снимки (артефакты оптимизированы в PR #51): `before/1440-production.png`, `after/1440-production.png`,
+`before/1440-canonical.png`, `before/390-production.png`,
+`after/390-production.png`, `before/390-canonical.png`.
 [Computed comparison](style-comparison.json): 24 exact matches for h1/font/color,
 textarea/font/surface/radius across four widths. Header is 90px vs canonical 91px:
 **MINOR**, reference has a demo-state selector absent from authenticated production.

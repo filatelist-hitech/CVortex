@@ -20,16 +20,16 @@ Preflight `check-agent-contract.sh implementation ... --write --user-override` P
 Только candidate и STATUS/BLOCKERS. NEXT, active B01 и authority сохранены.
 Один агент, без OMX/subagents. Полный snapshot до правок:
 `/tmp/cvortex-orbit-before-apple.zip` (временный локальный архив).
-Сохраняемые [desktop](validation/baseline/1440-normal.png) и
-[mobile](validation/baseline/390-normal.png), manifest и baseline reports —
-в `validation/baseline/`. Предыдущие 449 checks / 75 captures не являются
+Базовые снимки `1440-normal.png` (desktop) и
+`390-normal.png` (mobile), manifest и baseline reports —
+в `validation/baseline/` (графические файлы оптимизированы в PR #51). Предыдущие 449 checks / 75 captures не являются
 доказательством текущего результата.
 
 | Приоритет | Наблюдение до правок | Решение / принцип |
 | --- | --- | --- |
 | P1 | Space Grotesk Latin и Arial Cyrillic смешаны внутри каждой строки; жирные подписи конкурируют с контентом | Явный Arial для русского рабочего текста, Space Grotesk для brand/Latin company/salary; weight/leading по роли. Clarity, consistency. |
 | P1 | Профиль открывается из угла в центре экрана, закрывается без обратного пути; keyframes нельзя перенаправить | Desktop menu привязано к trigger, mobile sheet снизу; critically damped spring из текущего значения и скорости; Escape/close обратимы. Spatial continuity, agency. |
-| P1 | На mobile путь назад пропадает при прокрутке, no safe-area treatment | Sticky путь list/work/evidence и доступное меню; safe-area padding, scroll lock только для modal. Wayfinding, flexibility. |
+| P1 | На мобильных экранах кнопка возврата пропадает при прокрутке, нет учёта safe-area | Закреплённая панель навигации (список / работа / факты) и доступное меню; отступы safe-area, блокировка прокрутки только для модальных окон |
 | P2 | Причины растягивают review card и оставляют пустоту около действий | Выравнивание колонки сверху, меры текста, более точная иерархия surfaces/approval. Deference, craft. |
 | P2 | Hover/selected заметны, press даёт лишь 1px сдвиг; account feedback сохраняет старое сообщение | Мгновенный press, явные hover/focus/disabled, semantic action feedback; feedback reset на open. Response, predictability. |
 | P2 | Шапка dialog на 320 занимает много места и при прокрутке отрезает контекст | Компактная sticky шапка, scroll внутри sheet, видимое закрытие. Mobile ergonomics. |
@@ -65,15 +65,12 @@ trap до завершения; новое взаимодействие внут
 Вкладки, warnings, role switches и approval обновляют семантику немедленно;
 движение не задерживает gates и не изображает неподтверждённые данные принятыми.
 
-## Проверки и human gate
+## Проверки и ручной контроль качества
 
 Финальный прогон после последней CSS/capture правки: 528 checks / 85 captures PASS;
 379 inherited + 70 candidate + 79 Apple checks. 2/2 shared transformer tests PASS.
-Визуально просмотрены fresh state/section sheets и full-size выборка.
-Минимум sampled text contrast 6.20:1; browser errors/external requests 0/0.
-424 protected Git-visible hashes сохранены. Результаты и точные ограничения —
-в README и validation reports. Native zoom попытка заблокирована unavailable
-Chrome connection и ScreenCaptureKit -3811; manual screen reader не запускался.
-По visual review исправлены group wrap salary, phantom action grid gap и sticky
-full-page capture. Double-close backdrop найден и исправлен, assertions не ослаблены. Human review остаётся pending;
-эта работа не назначает candidate active и не начинает B02.
+Визуально просмотрены свежие листы состояний и полноразмерная выборка.
+Минимум контраста текста составил 6.20:1; ошибок браузера и внешних сетевых запросов 0/0.
+Результаты и ограничения зафиксированы в README и отчётах валидации.
+Попытка нативного масштабирования до 200% была ограничена сбоем захвата экрана ScreenCaptureKit -3811; ручное тестирование со скринридером не проводилось.
+По результатам визуального осмотра исправлены перенос блока зарплаты и артефакты захвата верстки. Ручная приёмка человеком остаётся открытой; этот этап не переводит кандидата в статус активного и не запускает B02.

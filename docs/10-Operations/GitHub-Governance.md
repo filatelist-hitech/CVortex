@@ -1,138 +1,138 @@
 ---
-title: GitHub Delivery Governance
+title: Регламент поставки и управление репозиторием в GitHub
 status: accepted
 owner: project
 created: 2026-09-12
 updated: 2026-09-12
 tags: [github, roadmap, milestones, project, releases, governance]
 related:
-  - "[[../01-Product/Roadmap|Product Roadmap]]"
+  - "[[../01-Product/Roadmap|План развития продукта]]"
 ---
 
-# GitHub Delivery Governance
+# Регламент поставки и управление репозиторием в GitHub
 
-## Purpose
+## Назначение
 
-GitHub should reflect the CVortex value-driven roadmap instead of keeping milestones and versions only in prose.
+Структура задач в GitHub должна наглядно отражать ценностно-ориентированный план развития CVortex (Roadmap), а не хранить этапы и версии исключительно в виде свободного текста.
 
-Repository-managed desired state:
+Файлы конфигурации репозитория:
 
-- `.github/roadmap.yml` — milestone/version/slice/project mapping;
-- `.github/labels.yml` — canonical labels;
-- `.github/workflows/governance.yml` — PR metadata validation;
-- `.github/rulesets/cvortex-protected-branches.json` — protected-branch rules;
-- `.agents/policies/git-workflow.md` — contributor/agent workflow;
-- `.agents/policies/release-management.md` — SemVer and release gates.
+- `.github/roadmap.yml` — сопоставление этапов (milestones), версий, срезов и полей проекта;
+- `.github/labels.yml` — канонические метки задач и пулл-реквестов;
+- `.github/workflows/governance.yml` — автоматическая проверка метаданных пулл-реквестов;
+- `.github/rulesets/cvortex-protected-branches.json` — правила защиты веток `main` и `stage`;
+- `.agents/policies/git-workflow.md` — регламент ветвления для контрибьюторов и агентов;
+- `.agents/policies/release-management.md` — семантическое версионирование и условия релизов.
 
-## Native GitHub Milestones
+## Нативные этапы GitHub (Milestones)
 
-Create exactly these active milestone identities:
+В проекте используются строго определённые этапы:
 
-| GitHub Milestone | Target version | Meaning |
+| Этап в GitHub | Целевая версия | Смысл и назначение |
 | --- | --- | --- |
-| `M0 · Runnable Core` | `v0.1.0-alpha.1` optional | runnable technical baseline |
-| `M1 · First Value` | `v0.1.0` | Preview 0.1 |
-| `M2 · Real Application Package` | `v0.2.0` | MVP 0.2 |
-| `M3 · Imports & Integrations` | `v0.3.0` | input/integration expansion |
-| `M4 · Employer Journey` | `v0.4.0` | employer context + interview flow |
-| `M5 · Outcomes & Analytics` | `v0.5.0` | outcome learning |
-| `M6 · Distribution & Hardening` | `v0.6.0` | deployment/operations hardening |
+| `M0 · Runnable Core` | `v0.1.0-alpha.1` (опционально) | Работающий технический каркас локального запуска |
+| `M1 · First Value` | `v0.1.0` | Публичная предварительная версия (Preview 0.1) |
+| `M2 · Real Application Package` | `v0.2.0` | Полноценный пакет отклика (MVP 0.2) |
+| `M3 · Imports & Integrations` | `v0.3.0` | Расширение источников и импорт данных |
+| `M4 · Employer Journey` | `v0.4.0` | Контекст работодателя и этапы собеседований |
+| `M5 · Outcomes & Analytics` | `v0.5.0` | Аналитика результатов и обратная связь |
+| `M6 · Distribution & Hardening` | `v0.6.0` | Эксплуатационная надежность и тиражирование |
 
-Do not add arbitrary due dates merely to make a roadmap chart look industrious. Add dates only when the owner actually commits to them.
+Не ставьте произвольные даты дедлайнов только ради создания видимости бурной деятельности. Сроки фиксируются только тогда, когда владелец проекта явно берет на себя обязательства по ним.
 
-Closing a Milestone records delivery completion; it does not automatically publish the target version.
+Закрытие этапа в GitHub фиксирует факт готовности работ; оно не публикует релиз автоматически.
 
-## M1 slices
+## Вертикальные срезы M1
 
-GitHub Milestones are intentionally coarse. M1 vertical slices use labels:
+Майлстоуны верхнего уровня намеренно укрупнены. Внутри M1 работа делится на четыре вертикальных среза с помощью меток:
 
-- `slice:m1.1-access`;
-- `slice:m1.2-career`;
-- `slice:m1.3-vacancy`;
-- `slice:m1.4-application`.
+- `slice:m1.1-access` — авторизация и первый вход;
+- `slice:m1.2-career` — карьерные факты;
+- `slice:m1.3-vacancy` — анализ вакансий;
+- `slice:m1.4-application` — подготовка черновиков откликов.
 
-Use `roadmap:cross-cutting` only when one M1 change genuinely spans slices.
+Метка `roadmap:cross-cutting` ставится только в том случае, если изменение в M1 действительно затрагивает несколько срезов одновременно.
 
-## GitHub Project
+## Проектная доска (GitHub Project)
 
-Recommended Project title: `CVortex Roadmap`.
+Рекомендуемое название проекта: `CVortex Roadmap`.
 
-Keep the Project private by default unless the owner deliberately chooses public visibility.
+По умолчанию доска остаётся приватной, если владелец явно не решит сделать её публичной.
 
-Native Milestone remains the milestone authority. Do not create a duplicate custom Milestone field.
+Авторитетным источником этапа всегда остаётся нативный GitHub Milestone. Не создавайте дублирующее кастомное поле Milestone.
 
-Custom fields:
+Пользовательские поля доски:
 
-| Field | Type | Values |
+| Поле | Тип | Значения |
 | --- | --- | --- |
-| Delivery | single select | Backlog, Ready, In progress, Review, Blocked, Done |
-| Slice | single select | None, M1.1, M1.2, M1.3, M1.4 |
-| Target version | text | SemVer target, for example `v0.1.0` |
-| Priority | single select | P0, P1, P2, P3 |
+| Delivery | выбор из списка | Backlog, Ready, In progress, Review, Blocked, Done |
+| Slice | выбор из списка | None, M1.1, M1.2, M1.3, M1.4 |
+| Target version | текст | Семантическая версия (например `v0.1.0`) |
+| Priority | выбор из списка | P0, P1, P2, P3 |
 
-Recommended views:
+Рекомендуемые представления (Views):
 
-1. **Current** — filter to current/open Milestone, group by Delivery.
-2. **Roadmap** — group by native Milestone, sort by Priority.
-3. **M1 Slices** — filter Milestone M1, group by Slice.
-4. **Release** — filter non-empty Target version, group/sort by target.
-5. **Blocked** — Delivery=Blocked or `status:blocked`.
+1. **Current** — фильтр по текущему открытому этапу, группировка по статусу Delivery.
+2. **Roadmap** — группировка по нативным Milestones, сортировка по приоритету.
+3. **M1 Slices** — фильтр по Milestone M1, группировка по срезам Slice.
+4. **Release** — отображение задач с заполненной целевой версией.
+5. **Blocked** — задачи со статусом `Delivery=Blocked` или меткой `status:blocked`.
 
-Project fields must never contain private career facts, recruiter messages, secrets or production data.
+Поля проекта ни при каких условиях не должны содержать личных карьерных данных, переписки с рекрутерами, секретов или дампов базы.
 
-## PR governance
+## Регламент пулл-реквестов
 
-PRs to `stage` require either a native M0–M6 Milestone or `roadmap:unversioned`.
+Пулл-реквесты в ветку `stage` обязаны содержать либо нативный Milestone (M0–M6), либо метку `roadmap:unversioned`.
 
-M1 PRs additionally require one M1 slice label unless `roadmap:cross-cutting` is justified.
+Пулл-реквесты по этапу M1 дополнительно требуют наличия метки одного из срезов M1 (или обоснованной метки `roadmap:cross-cutting`).
 
-PRs to `main` are only:
+В ветку `main` допускаются только два типа пулл-реквестов:
 
-- `stage → main` with `release:promotion`; or
-- `hotfix/* → main` with `release:hotfix`.
+- `stage → main` с меткой `release:promotion`;
+- `hotfix/* → main` с меткой `release:hotfix`.
 
-`.github/workflows/governance.yml` enforces these rules as the `Roadmap metadata` check.
+Скрипт `.github/workflows/governance.yml` валидирует эти правила в рамках обязательной проверки `Roadmap metadata`.
 
-## Versioning
+## Версионирование
 
-Milestones target a version but do not mechanically create it.
+Этапы ориентируются на конкретные версии, но не создают их автоматически.
 
-- M0 may optionally produce `v0.1.0-alpha.1`.
-- M1 produces the first required coherent preview target `v0.1.0` only after M1.1–M1.4 work end to end.
-- M2 targets `v0.2.0`.
-- M3–M6 advance minor pre-1.0 versions.
-- patch releases fix an already published milestone line.
-- `v1.0.0` requires a separate production-stability decision after M6.
+- M0 может опционально выпустить альфа-релиз `v0.1.0-alpha.1`.
+- M1 выпускает первую согласованную версию `v0.1.0` только после того, как срезы M1.1–M1.4 заработают в едином сквозном сценарии.
+- M2 выпускает версию `v0.2.0`.
+- M3–M6 последовательно поднимают минорную версию до релиза 1.0.
+- Патч-релизы исправляют ошибки в уже опубликованных версиях.
+- Версия `v1.0.0` потребует отдельного решения о промышленной стабильности после завершения этапа M6.
 
-## Bootstrap
+## Начальная настройка (Bootstrap)
 
-Sync labels, Milestones and Project:
+Синхронизация меток, этапов и доски проекта:
 
 ```bash
 gh auth refresh -s project
 bash scripts/bootstrap-github-roadmap.sh
 ```
 
-The script is idempotent and preserves closed milestone state when re-run.
+Скрипт идемпотентен: при повторном запуске он не ломает состояние закрытых этапов.
 
-Apply branch rules only after the governance workflow exists on `stage`:
+Применять правила защиты веток следует только после того, как workflow-файл регламента появится в ветке `stage`:
 
 ```bash
 bash scripts/apply-github-ruleset.sh
 ```
 
-The apply script deliberately refuses to install a required `Roadmap metadata` check before the workflow file is available on `stage`, avoiding a governance-shaped self-inflicted outage.
+Скрипт намеренно откажется включать обязательную проверку `Roadmap metadata` до появления самого workflow в `stage`, чтобы не заблокировать разработку ложным отказом CI.
 
-## Authority
+## Источники правды и приоритеты
 
-Planning metadata never overrides execution state.
+Плановые метаданные в трекере никогда не подменяют реального состояния выполнения.
 
 ```text
 GitHub Milestone / Project
-= planning + visibility
+= планирование и прозрачность процесса
 
 .agents/state/NEXT.md
-= exact next task authorized for execution
+= точная следующая задача, разрешённая к исполнению
 ```
 
-When they disagree, stop and reconcile instead of silently following whichever UI happens to look more official.
+При возникновении расхождений остановитесь и согласуйте приоритеты, а не следуйте вслепую за интерфейсом трекера.

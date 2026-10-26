@@ -53,7 +53,7 @@ Actual runtime composition → first candidate composition: **CareerWorkspace co
 
 ## Отношения и переходы
 
-```
+```text
 Career source → pending fact → human confirmation → confirmed fact
 confirmed fact → Claim → proposed text → accept/edit/reject → exact content approval
 Vacancy snapshot → normalized requirements ↔ confirmed career evidence

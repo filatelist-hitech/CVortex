@@ -34,7 +34,7 @@ Regression commands: `python3 -m unittest discover -s scripts -p 'test_qa_eviden
 
 Actual PostgreSQL verification uses a new isolated Compose project with new generated credentials, a new PostgreSQL volume, internal-only backend network and read-only existing dependency volume. `AI_PROVIDER=none`, empty provider credential, no Horizon/browser/provider invocation. The harness creates only randomly named disposable race databases in that isolated PostgreSQL instance, then drops only those owned databases. Primary application services and data-bearing databases are not targeted. Command templates require an operator-provided private env file and isolated Compose override; never reuse production env/volumes.
 
-```
+```bash
 COMPOSE_PROJECT_NAME=<owned-isolated-project> \
 COMPOSE_FILE="$PWD/compose.yaml:<private-isolated-override>" \
 COMPOSE_ENV_FILES=<private-generated-env> \

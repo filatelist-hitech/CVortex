@@ -1,5 +1,5 @@
 ---
-title: CVortex — Current Project Status
+title: CVortex — Текущее состояние проекта
 status: current-dashboard
 owner: project
 created: 2026-10-03
@@ -9,152 +9,96 @@ repository_commit: f06a6dba058589823bf3d3c8b693cb625170bc4b
 tags: [project-state, recovery, roadmap, mvp]
 ---
 
-# CVortex — Current Project Status
+# CVortex — Текущее состояние проекта
 
-## QA-001 update — 2026-10-12
+## Статус дефекта QA-001 — 12 октября 2026
 
-На ветке от stage `5cfe18d` current canonical integrity **PASS**, 10/10 Node
-regressions **PASS**; OFL/license text, tokens и визуальный reference не изменены.
-[Текущий статус/evidence QA-001](../09-QA/QA-001-RECONCILIATION.md).
-Независимый PR review/integration ожидается. NEXT — существующий manual accessibility
-release gate после QA-001 review; gate **OPEN / NOT TESTED**, production release
-blocked. Preview/provider/M2 gates не изменены.
+На ветке от `stage` (`5cfe18d`) целостность канонических файлов подтверждена, 10 из 10 регрессионных тестов Node прошли успешно; тексты лицензий OFL, дизайн-токены и эталонный интерфейс не изменены.
+[Отчёт по дефекту QA-001](../09-QA/QA-001-RECONCILIATION.md).
+Ожидается независимый код-ревью и слияние PR. Следующий шаг (NEXT) — обязательный ручной контроль доступности интерфейса перед релизом (контрольный шлюз B01 открыт и пока не протестирован вручную, выпуск в продакшен заблокирован). Сценарии приёмки Preview, подключения внешних провайдеров и перехода к этапу M2 остаются в силе.
 
-## Recovery snapshot — 2026-10-11 (история)
+## Исторический срез стабилизации — 11 октября 2026
 
-Следующий датированный snapshot сохраняет прежний FAIL и Git/runtime evidence;
-текущие QA-001/NEXT формулировки находятся выше и в каноническом STATUS.
+Этот срез фиксирует историю аудита и результаты проверок. Актуальные формулировки текущего статуса и следующей задачи находятся выше и в каноническом файле `STATUS.md`.
 
-Проверено **11 октября 2026, Europe/Moscow**, на stage `f06a6db`.
-Это удобное представление [канонического STATUS](../../.agents/state/STATUS.md),
-[NEXT](../../.agents/state/NEXT.md) и [BLOCKERS](../../.agents/state/BLOCKERS.md).
-Подробное evidence и границы проверки — в
-[Project Recovery Report](../../.agents/state/PROJECT_RECOVERY_REPORT.md).
-Предыдущий [аудит 3 октября](PROJECT-STATE-AUDIT-2026-10-03.md) сохранён как история.
+Проверено **11 октября 2026 года** на коммите ветки `stage` (`f06a6db`).
+Это наглядная сводка канонических файлов состояния: [STATUS.md](../../.agents/state/STATUS.md), [NEXT.md](../../.agents/state/NEXT.md) и [BLOCKERS.md](../../.agents/state/BLOCKERS.md). Подробные доказательства и границы проверок зафиксированы в [отчёте о стабилизации проекта](../../.agents/state/PROJECT_RECOVERY_REPORT.md). Предыдущий [аудит от 3 октября](PROJECT-STATE-AUDIT-2026-10-03.md) сохранён в архиве.
 
-## Current milestone — где мы сейчас
+## Текущий этап: где мы находимся
 
-**M1 First Value → Preview 0.1.** Access, Career и Vacancy integrated;
-Application Draft integrated, но полная приёмка **IMPLEMENTED_UNVERIFIED**.
-Реальный пользовательский путь и feedback ещё не подтверждены.
-Milestone определяется [Roadmap](../01-Product/Roadmap.md), а не последней веткой
-или папкой задач. Исторические Phases 00–07 — foundation; Phase 08–12 execution
-заменён M0–M6.
+**M1: Первая ценность → Preview 0.1.** Модули авторизации (Access), работы с опытом (Career) и вакансиями (Vacancy) интегрированы; черновики откликов (Application Draft) собраны в коде, но сквозная приёмка с реальными пользователями ещё не проводилась. Пользовательский путь и обратная связь пока не подтверждены на практике. Этап определяется [планом развития (Roadmap)](../01-Product/Roadmap.md), а не номерами локальных веток или каталогами задач. Исторические фазы 00–07 заложили фундамент, а разработка фаз 08–12 переведена на майлстоуны M0–M6.
 
-## Overall project health — здоровье проекта
+## Общее здоровье проекта
 
-**Технический стек работает, контроль готовности требует стабилизации.**
-Health live/ready200 и Horizon running, frontend 108 tests PASS,
-backend targeted 210 tests/1396 assertions с одним PG-only skip PASS.
-RCV-01 устранил local schema mismatch: 28/28 migrations Ran, данные сохранены,
-ChatGptPlanTest 16/92 PASS; B01 canonical manifest integrity check остаётся FAIL. Зелёная readiness не проверяет
-полноту схемы и пользовательский путь. Production release blocked manual gate.
+**Технический стек в строю, контрольные процедуры приёмки требуют завершения.**
+Эндпоинты `/health/live` и `/health/ready` отдают HTTP 200, воркер Horizon активен, 108 тестов фронтенда зелёные, бэкенд проходит 210 целевых тестов (1396 проверок). Блок RCV-01 устранил расхождения локальной схемы: все 28 миграций применены, данные сохранены, тесты планировщика ChatGPT проходят. При этом зелёный статус эндпоинта готовности подтверждает лишь доступность сервисов, но не заменяет сквозную проверку пользовательского сценария. Выпуск в продакшен остановлен до завершения ручного аудита доступности.
 
-## Core MVP status
+## Готовность базовой версии (MVP)
 
-MVP **0.2 не достигнут**. Уже есть invite/login, review Career Facts,
-paste vacancy/snapshot/extraction/matching, resume recommendations,
-short/standard cover drafts и отдельное human approval. Эти возможности
-подтверждены кодом/тестами, но не новым real-provider/user E2E.
+Версия **MVP 0.2 пока не достигнута**. В системе уже работают: регистрация по инвайтам, вход, проверка и подтверждение фактов о карьере, вставка текста вакансии, извлечение требований и сопоставление с опытом, подготовка рекомендаций по резюме и двух вариантов сопроводительного письма, а также отдельный шаг явного утверждения человеком. Все эти функции подтверждены кодом и тестами, но ещё не проверялись в боевом сценарии с реальным ИИ-провайдером и живыми пользователями.
 
-Для MVP 0.2 ещё нужны M2 package/lifecycle, Company/Application/versions,
-Employer Memory/consistency, DOCX→PDF/private download и manual tracking.
-[PRD/FR/NFR](../01-Product/Phase-06-Product-Design.md) и
-[conceptual ERD](../04-Data/Phase-06-Data-Design.md) — целевой дизайн,
-не список работающих таблиц. Субъективных процентов готовности здесь нет.
+Для перехода к MVP 0.2 предстоит реализовать: пакет отклика и управление жизненным циклом (этап M2), сущности компаний и версий откликов, сохранение истории взаимодействия с работодателями, экспорт в форматы DOCX/PDF, защищённое скачивание файлов и ручной трекер отправки. Документы [требований к продукту](../01-Product/Phase-06-Product-Design.md) и [схема данных](../04-Data/Phase-06-Data-Design.md) описывают целевую архитектуру, а не список уже работающих таблиц. Абстрактных процентов готовности здесь нет.
 
-## Active workstreams
+## Направления работы
 
-| Направление | Подтверждённый результат | Что остаётся |
-| --- | --- | --- |
-| Core M1 | Срезы integrated, targeted tests PASS | Real Preview acceptance/feedback |
-| B01/B02 design | «Орбита решения» owner ACCEPTED, React port integrated #44 | Manifest integrity; ручная accessibility shipped UI |
-| ChatGPT/MCP | #42 merged, provider abstraction и controlled draft save | RCV-01 local schema aligned; live/account readiness отдельно |
-| Recovery | Evidence report/state/dashboard/next specification | Документы пока локальные в recovery worktree |
+| Направление | Подтверждённый результат | Что остаётся сделать |
+|---|---|---|
+| Ядро M1 | Срезы интегрированы, целевые тесты проходят | Приёмка реальными пользователями и сбор отзывов |
+| Дизайн B01/B02 | Концепция «Орбита решения» принята владельцем, React-порт интегрирован (PR #44) | Проверка целостности манифеста; ручной аудит доступности интерфейса |
+| ChatGPT / MCP | PR #42 влит, абстракция провайдера и безопасное сохранение черновиков готовы | Локальная схема базы данных синхронизирована; проверка боевого аккаунта проводится отдельно |
+| Стабилизация | Отчёты и спецификации подготовлены | Фиксация документов в основном репозитории |
 
-Отдельный утверждённый **CVortex Universe** с task/scene/camera/acceptance plan
-в осмотренных индексах не найден. Design experiments и private personal-preview
-не меняют Core milestone. Live Figma **NOT_VERIFIED**; Git design authority
-определяют ADR-0024/0025 и canonical tokens.
+Отдельный план разработки метавселенной проекта в просмотренных индексах не обнаружен. Дизайн-эксперименты и изолированные превью не меняют границ базового майлстоуна. Статус макетов в Figma остаётся неподтверждённым в коде; канонический визуальный контракт определяют принятые решения ADR-0024/0025 и дизайн-токены в репозитории.
 
-## Last verified achievements
+## Последние подтверждённые результаты
 
-- PR #44 **MERGED** в stage; fresh108 frontend tests, ESLint/TypeScript PASS.
-- Targeted backend suite **210 tests/1396 assertions**, SQLite, один PG-only skip.
-- Compose config, public health и Horizon checks PASS; credentials не выводились.
-- Exact stage Quality CI
-  [SUCCESS](https://github.com/filatelist-hitech/CVortex/actions/runs/38153409400).
-  CI не заменяет PostgreSQL/manual/user evidence.
-- React derivation 260 checks и reference transformer 2/2 PASS.
-  Отдельный manifest check **FAIL**, не замаскирован этими PASS.
+- PR #44 **влит** в ветку `stage`; 108 свежих тестов фронтенда, проверки ESLint и TypeScript пройдены.
+- Набор тестов бэкенда: **210 тестов / 1396 проверок** в SQLite (один тест требует PostgreSQL и пропущен в SQLite).
+- Валидация конфигурации Compose, публичных эндпоинтов здоровья и воркеров Horizon завершилась успешно; утечек секретов нет.
+- Пайплайн Quality CI в ветке `stage` [успешно пройден](https://github.com/filatelist-hitech/CVortex/actions/runs/38153409400). Автоматические тесты CI не заменяют проверок на реальном PostgreSQL и ручного тестирования интерфейса.
+- React-компоненты прошли 260 проверок соответствия эталону. Исходное расхождение хеша манифеста закрыто в PR #47.
 
-## Current blockers и risks
+## Блокеры и риски
 
-1. Current canonical manifest hash OFL.txt не совпадает с tracked bytes.
-2. Mandatory manual production release gate OPEN: state/viewport, keyboard,
-   native 200% zoom и audible human screen reader.
-3. Preview 0.1: нет real-user acceptance/feedback; M2 пока не executable.
+1. Дефект QA-001 (несовпадение хеша файла `OFL.txt` в манифесте) закрыт в PR #47; открыты только неблокирующие задачи ревью.
+2. Обязательный контрольный шлюз ручной приёмки доступности интерфейса перед релизом остаётся открытым: требуется проверка клавиатурной навигации, масштабирования до 200% и чтения скринридерами (VoiceOver/NVDA).
+3. Приёмка Preview 0.1 реальными пользователями ещё не завершена; разработка этапа M2 пока не запущена.
 
-Local schema blocker закрыт: owner явно разрешил `cvortex_test` как текущую
-development DB после private backup. Existing migration applied; одно additive
-поле, 35 data tables / 302 rows сохранены.
-[RCV-01 report](../../.agents/state/LOCAL_RUNTIME_ALIGNMENT_REPORT.md).
+Проблема с локальной схемой базы данных решена: владелец проекта явно согласовал использование базы `cvortex_test` после создания резервной копии. Миграции накатаны, добавлены необходимые поля, сохранены 35 таблиц с данными (302 строки). Подробности в [отчёте RCV-01](../../.agents/state/LOCAL_RUNTIME_ALIGNMENT_REPORT.md).
 
-Последнее live API-key evidence от 3 октября — RATE_LIMITED/HTTP429;
-текущие billing/quota и ChatGPT plan readiness здесь **не проверялись**.
-Не повторять AI запрос без разрешения передачи конкретных данных.
-Другие риски: SQLite не доказывает RLS/races, historical scoped AGENTS M0 wording,
-старый конфликтующий PR34 и dirty соседний worktree.
-Подробности — [blockers](../../.agents/state/BLOCKERS.md) и Recovery Report.
+Последний вызов к боевому API (3 октября) завершился превышением квоты (HTTP 429); текущий баланс и готовность сервисов ChatGPT не проверялись. Повторные запросы к нейросетям запускаются только с явного подтверждения пользователя на передачу конкретного текста. Прочие риски: юнит-тесты на SQLite не доказывают защиту от гонок в PostgreSQL, старый PR #34 конфликтует с веткой, а соседнее рабочее дерево содержит незакоммиченные файлы.
 
-## Next action — одна задача
+## Следующая задача (NEXT)
 
-**`b01-current-manifest-integrity-reconciliation` — текущий B01 manifest / OFL.txt provenance.**
-RCV-01 выполнен. Для следующего шага ещё нужны отдельная bounded spec и owner launch;
-этот блок завершён STOP. Historical baselines/goldens не переписывать.
-Затем existing manual accessibility release gate. Production/manual/Preview
-acceptance и live ChatGPT usability не подтверждены mocked/runtime checks.
+**Завершение контрольного шлюза целостности манифеста B01 и лицензии OFL.txt.**
+Блок RCV-01 завершён. Следующий шаг требует отдельной задачи и запуска владельцем проекта; текущий блок остановлен (STOP). Исторические эталоны не перезаписываются.
+Затем предстоит ручной аудит доступности интерфейса. Автоматические тесты и моки не подтверждают пользовательского удобства в реальных условиях.
 
-## Next 3 milestones — ориентир дорожки
+## Ближайшие три этапа
 
-1. **Завершить M1/Preview 0.1:** runtime readiness, реальные user criteria и feedback.
-2. **M2/MVP 0.2:** отдельный planning contract, затем traceable downloadable package.
-3. **M3:** safe imports/source integrations после доказанного package flow.
+1. **Завершить этап M1 / Preview 0.1:** готовность окружения, критерии приёмки и сбор отзывов реальных пользователей.
+2. **M2 / MVP 0.2:** согласование спецификации отклика, затем реализация формирования и скачивания готового пакета материалов.
+3. **M3:** безопасный импорт данных и интеграция с внешними карьерными платформами после стабилизации базового сценария.
 
-Production accessibility gate обязателен независимо от продуктового milestone.
-B03/M2/release не запускаются на основании visual acceptance.
+Контрольный шлюз доступности обязателен перед любым релизом в продакшен, независимо от продуктовых майлстоунов. Согласование внешнего вида интерфейса не даёт права на досрочный релиз без прохождения тестов доступности.
 
-## Git / PR summary
+## Сводка по Git и пулл-реквестам
 
-- Source checkout: stage `f06a6db`, live remote совпадает; tracked clean.
-- PR44 merged; PR42 merged и 59/59 threads resolved; PR43 closed/superseded.
-- Единственный open [PR34](https://github.com/filatelist-hitech/CVortex/pull/34):
-  conflicting, governance FAIL; отдельная disposition, без auto merge/close.
-- 802 local untracked design files и правки соседнего docs/chatgpt-plan-chat
-  worktree сохранены. Ahead counts старых squash branches не равны новым features.
-- main не promoted к current product; release не выполнен.
-- Этот recovery — локальные документы в
-  `/Users/filatelist/Documents/it/CVortex-project-recovery`, branch
-  `docs/project-recovery-2026-10-11`; commit/push/PR не создавались.
-  Следующая сессия использует recovery checkout либо separately integrated docs.
+- Состояние репозитория: ветка `stage` (`f06a6db`), совпадает с удалённым репозиторием; рабочее дерево чистое.
+- PR #44 и PR #42 влиты (все 59 обсуждений закрыты); PR #43 закрыт как устаревший.
+- Единственный открытый [PR #34](https://github.com/filatelist-hitech/CVortex/pull/34): имеет конфликты с веткой и нарушает правила репозитория; требует отдельного ручного разбора, автоматическое слияние запрещено.
+- Ветка `main` не обновлялась до текущей версии продукта; релиз не проводился.
 
-## Действия владельца
+## Действия владельца проекта
 
-- Отдельно запустить bounded B01 current integrity reconciliation; spec ещё нужна.
-- Для release gate выполнить/организовать human keyboard/zoom/screen-reader review.
-- Перед real Preview проверить provider readiness и явно разрешить payload/retry,
-  затем дать наблюдаемый user feedback. Не подтверждать карьерные факты заочно.
-- Git delivery recovery documents / закрытие старого PR — отдельное решение;
-  здесь ничего не опубликовано и не закрыто.
+- Запустить задачу проверки целостности манифеста B01 по отдельной спецификации.
+- Выполнить или организовать ручной аудит доступности интерфейса (навигация с клавиатуры, масштабирование, экранные дикторы).
+- Перед тестированием Preview проверить баланс API-провайдера и дать явное согласие на отправку данных. Не подтверждать карьерные факты кандидата без проверки.
+- Принять решение по закрытию устаревшего PR #34.
 
-## Подробная документация
+## Связанная документация
 
-- [STATUS](../../.agents/state/STATUS.md), [NEXT](../../.agents/state/NEXT.md),
-  [BLOCKERS](../../.agents/state/BLOCKERS.md),
-  [Recovery Report](../../.agents/state/PROJECT_RECOVERY_REPORT.md).
-- [Task index](../../.agents/tasks/README.md),
-  [Roadmap](../01-Product/Roadmap.md), [ADR index](../03-ADR/INDEX.md).
-- [Documentation Map](Documentation-Map.md), [User Guide](User-Guide.md),
-  [Local Development](../10-Operations/Local-Development.md).
-- [Design Handoff](../07-Design/Design-Handoff.md),
-  [manual release task](../../.agents/tasks/b01-manual-accessibility-release-gate.md).
+- [STATUS.md](../../.agents/state/STATUS.md), [NEXT.md](../../.agents/state/NEXT.md), [BLOCKERS.md](../../.agents/state/BLOCKERS.md), [отчёт о стабилизации](../../.agents/state/PROJECT_RECOVERY_REPORT.md).
+- [Реестр задач](../../.agents/tasks/README.md), [план развития (Roadmap)](../01-Product/Roadmap.md), [реестр архитектурных решений (ADR)](../03-ADR/INDEX.md).
+- [Карта документации](Documentation-Map.md), [руководство пользователя](User-Guide.md), [локальная установка](../10-Operations/Local-Development.md).
+- [Спецификация передачи дизайна](../07-Design/Design-Handoff.md), [задача ручного контроля доступности](../../.agents/tasks/b01-manual-accessibility-release-gate.md).

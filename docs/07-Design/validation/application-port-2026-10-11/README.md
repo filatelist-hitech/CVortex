@@ -131,8 +131,10 @@ expander; no live AI action was exercised.
 
 | Viewport | Canonical | React | Difference |
 | --- | --- | --- | --- |
-| 1440 desktop | [PNG](1440-normal-canonical.png) | [PNG](1440-normal-production.png) | [PNG](1440-normal-difference.png) |
-| 390 mobile | [PNG](390-normal-canonical.png) | [PNG](390-normal-production.png) | [PNG](390-normal-difference.png) |
+| 1440 desktop | `1440-normal-canonical.png` | `1440-normal-production.png` | `1440-normal-difference.png` |
+| 390 mobile | `390-normal-canonical.png` | `390-normal-production.png` | `390-normal-difference.png` |
+
+> *Примечание: Файлы визуального сравнения оптимизированы и удалены в PR #51.*
 
 The full 717-image capture corpus remains in the local validation directory and is
 not part of this PR. The committed machine summary preserves comparison counts,
@@ -149,7 +151,7 @@ local inspection aids, not pixel-gate inputs.
 Resume source changes: `application/{app-shell.tsx,use-workspace.tsx,model.ts}`;
 new `application/motion.ts` and `__tests__/application-motion.test.ts`;
 `vacancy-workspace.tsx` (distinct chat/preparation keys);
-`scripts/check-application-reference.cjs` (native dynamic imports for lint).
+`apps/frontend/scripts/check-application-reference.cjs` (native dynamic imports for lint).
 Task specification, STATUS/BLOCKERS and this evidence directory are updated.
 Pre-existing interrupted React components, auth/Career integration and dirty work
 were preserved. No canonical/backend/token/ADR source changes in this session.

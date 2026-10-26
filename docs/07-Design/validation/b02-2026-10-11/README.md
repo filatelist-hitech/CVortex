@@ -55,9 +55,9 @@ and unauthenticated API denial. A real authenticated Laravel end-to-end session 
 not claimed. Manual screen-reader and full human keyboard/zoom/state matrix remain
 NOT TESTED in the mandatory B01 release gate; production release remains blocked.
 
-Screenshots: [desktop](1440-career.png), [mobile](390-career.png),
-[320px](320-career.png), [admin](1440-admin-diagnostics.png),
-[denied](390-diagnostics-denied.png), [registration](390-public-register.png).
+Screenshots (файлы оптимизированы в PR #51): `1440-career.png` (desktop), `390-career.png` (mobile),
+`320-career.png` (320px), `1440-admin-diagnostics.png` (admin),
+`390-diagnostics-denied.png` (denied), `390-public-register.png` (registration).
 No private preview content is present.
 
 Start the existing application from repository root: `make up`.

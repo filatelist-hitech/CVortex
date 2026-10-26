@@ -20,7 +20,7 @@
 
 Тип: Space Grotesk для латинского интерфейса, 32px H1, 24px H2, 16px body, 14px compact, минимум 12px; tabular figures для сроков и зарплат. Локальный font asset с upstream OFL сохраняет воспроизводимость offline, только для research preview; production font workflow не меняется.
 
-```
+```text
 A: navigation | urgent action + state strip
               | pipeline table       | selected decision
               | employer timeline    | interview agenda

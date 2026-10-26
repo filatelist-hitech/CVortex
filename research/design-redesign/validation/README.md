@@ -2,7 +2,7 @@
 
 2026-10-07. Final result: **PASS — 127 checks**, Playwright Chromium **145.0.7632.6**. Machine-readable result: [browser-results.json](browser-results.json). All four final desktop and mobile screenshots were visually inspected.
 
-Additional final checks passed: gallery images and four HTTP concept links, gallery desktop/mobile reflow, gallery JavaScript error check ([gallery-results.json](gallery-results.json), [screenshot](gallery-preview.png)); `node --check` for all eight prototype/server/validation JavaScript files; local HTML/Markdown link and asset audit; absence of placeholder copy; `git diff --check`.
+Additional final checks passed: gallery images and four HTTP concept links, gallery desktop/mobile reflow, gallery JavaScript error check ([gallery-results.json](gallery-results.json), screenshot `gallery-preview.png` [удалён в PR #51]); `node --check` for all eight prototype/server/validation JavaScript files; local HTML/Markdown link and asset audit; absence of placeholder copy; `git diff --check`.
 
 ## Reproduce
 
