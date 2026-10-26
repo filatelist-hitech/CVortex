@@ -79,7 +79,17 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
   return <div className="workspace-shell">
     <a className="workspace-skip" href="#workspace-content">Перейти к содержимому</a>
     <header className="workspace-global-header">
-      <div className="workspace-brand"><strong>CVortex</strong><span>Your career, in context.</span></div>
+      <div className="workspace-brand">
+        <span className="vortex-swiss-logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 2.5C18.799 2.5 23.5 7.20101 23.5 13C23.5 15.65 22.45 18.05 20.75 19.85" stroke="#FFFFFF" strokeWidth="2.3" strokeLinecap="round"/>
+            <path d="M13 23.5C7.20101 23.5 2.5 18.799 2.5 13C2.5 10.35 3.55 7.95 5.25 6.15" stroke="var(--accent-coral, #FF5533)" strokeWidth="2.3" strokeLinecap="round"/>
+            <circle cx="13" cy="13" r="2.3" fill="var(--accent-coral, #FF5533)"/>
+          </svg>
+        </span>
+        <strong>CVortex<span className="brand-dot">.</span></strong>
+        <span>Your career, in context.</span>
+      </div>
       <div className="workspace-context"><strong>{currentLabel}</strong><span>{destination === "diagnostics" ? "Ошибки и состояние операций" : destination === "settings" ? "Конфигурация AI-провайдеров и ключей" : "Факты, источники и подтверждения"}</span></div>
       <button ref={accountTrigger} type="button" className="workspace-account-trigger secondary" aria-haspopup="dialog" aria-controls="workspace-account-dialog" aria-expanded={accountOpen} onClick={() => { accountDialog.current?.showModal(); setAccountOpen(true); }}>
         <span className="workspace-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</span><span><strong>Профиль</strong><small>{role === "admin" ? "Администратор" : "Пользователь"}</small></span><Icon name="chevron" />

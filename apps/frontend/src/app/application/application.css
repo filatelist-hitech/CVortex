@@ -26,14 +26,15 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell button, .application-shell.application-shell input, .application-shell.application-shell select, .application-shell.application-shell textarea { font: var(--cv-font-weight-regular) var(--cv-font-size-sm)/var(--cv-font-line-height-body) var(--working-font); color: var(--cv-text-primary); background: var(--cv-surface-default); border: 1px solid var(--cv-border-default); border-radius: var(--cv-radius-md); }
 .application-shell.application-shell button, .application-shell.application-shell select, .application-shell.application-shell summary { min-height: 44px; touch-action: manipulation; }
 .application-shell.application-shell button, .application-shell.application-shell a, .application-shell.application-shell input, .application-shell.application-shell select, .application-shell.application-shell textarea, .application-shell.application-shell summary { -webkit-tap-highlight-color: transparent; }
-.application-shell.application-shell button { padding: var(--cv-space-2) var(--cv-space-4); cursor: pointer; transition: background-color var(--cv-motion-duration-fast), border-color var(--cv-motion-duration-fast); }
-.application-shell.application-shell button:hover:not(:disabled) { background: var(--cv-surface-interactive); border-color: var(--cv-accent-primary); }
+.application-shell.application-shell button { padding: var(--cv-space-2) var(--cv-space-4); cursor: pointer; transition: all var(--cv-motion-duration-fast) cubic-bezier(0.16, 1, 0.3, 1); }
+.application-shell.application-shell button:hover:not(:disabled) { background: var(--cv-surface-interactive); border-color: var(--cv-border-hover); transform: translateY(-1px); }
 .application-shell.application-shell button:active:not(:disabled) { transform: scale(.98); background: var(--cv-surface-interactive); }
-.application-shell.application-shell button:disabled { color: var(--cv-text-disabled); cursor: not-allowed; border-style: dashed; }
-.application-shell.application-shell button.primary { color: var(--cv-text-inverse); background: var(--cv-accent-primary); border-color: var(--cv-accent-primary); font-weight: var(--cv-font-weight-semibold); }
-.application-shell.application-shell button.primary:hover:not(:disabled), .application-shell.application-shell button.primary:active:not(:disabled) { color: var(--cv-text-inverse); background: var(--cv-accent-primary-hover); }
-.application-shell.application-shell button.primary:disabled { color: var(--cv-text-disabled); background: var(--cv-surface-elevated); border-color: var(--cv-border-default); }
-.application-shell.application-shell input, .application-shell.application-shell select, .application-shell.application-shell textarea { width: 100%; min-width: 0; min-height: 44px; padding: var(--cv-space-2) var(--cv-space-3); }
+.application-shell.application-shell button:disabled { color: var(--cv-text-disabled); cursor: not-allowed; border-style: dashed; transform: none; box-shadow: none; }
+.application-shell.application-shell button.primary { color: #ffffff; background: var(--cv-accent-primary); border-color: var(--cv-accent-primary); font-weight: var(--cv-font-weight-semibold); border-radius: var(--cv-radius-pill); box-shadow: 0 0 16px var(--cv-accent-coral-glow); }
+.application-shell.application-shell button.primary:hover:not(:disabled), .application-shell.application-shell button.primary:active:not(:disabled) { color: #ffffff; background: var(--cv-accent-primary-hover); transform: translateY(-1px) scale(1.02); box-shadow: 0 4px 24px rgba(255, 85, 51, 0.45); }
+.application-shell.application-shell button.primary:disabled { color: var(--cv-text-disabled); background: var(--cv-surface-elevated); border-color: var(--cv-border-default); box-shadow: none; transform: none; }
+.application-shell.application-shell input, .application-shell.application-shell select, .application-shell.application-shell textarea { width: 100%; min-width: 0; min-height: 44px; padding: var(--cv-space-2) var(--cv-space-3); transition: border-color var(--cv-motion-duration-fast); }
+.application-shell.application-shell input:focus, .application-shell.application-shell select:focus, .application-shell.application-shell textarea:focus { border-color: var(--cv-accent-primary); }
 .application-shell.application-shell input, .application-shell.application-shell textarea { font-size: var(--cv-font-size-md); }
 .application-shell.application-shell textarea { min-height: 120px; resize: vertical; }
 .application-shell.application-shell :focus-visible { outline: 2px solid var(--cv-border-focus); outline-offset: 3px; }
@@ -44,43 +45,47 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .skip-link { position: absolute; top: -100px; left: var(--cv-space-4); z-index: var(--cv-layer-modal); background: var(--cv-surface-elevated); padding: var(--cv-space-3); }
 .application-shell.application-shell .skip-link:focus { top: var(--cv-space-2); }
 .application-shell.application-shell .compact-navigation { display: contents; }
-.application-shell.application-shell .site-header { grid-column: 1 / -1; display: grid; grid-template-columns: 240px minmax(0,1fr) 224px auto; align-items: center; gap: var(--cv-space-6); padding: var(--cv-space-3) var(--cv-space-6); border-bottom: 1px solid var(--cv-border-subtle); background: var(--cv-surface-default); }
-.application-shell.application-shell .brand { position: relative; padding-left: var(--cv-space-3); display: grid; gap: var(--cv-space-1); }
-.application-shell.application-shell .brand-accent { position: absolute; left: 0; inset-block: var(--cv-space-1); width: var(--cv-space-1); background: var(--cv-accent-primary); border-radius: var(--cv-radius-sm); }
-.application-shell.application-shell .brand strong { font-family: var(--cv-font-family-brand); font-size: var(--cv-font-size-xl); font-weight: var(--cv-font-weight-bold); line-height: var(--cv-font-line-height-title); }
+.application-shell.application-shell .site-header { grid-column: 1 / -1; display: grid; grid-template-columns: 240px minmax(0,1fr) 224px auto; align-items: center; gap: var(--cv-space-6); padding: var(--cv-space-3) var(--cv-space-6); border-bottom: 1px solid var(--cv-border-subtle); background: var(--cv-surface-default); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.application-shell.application-shell .brand { position: relative; padding-left: var(--cv-space-3); display: flex; align-items: center; gap: var(--cv-space-2); }
+.application-shell.application-shell .vortex-swiss-logo { width: 22px; height: 22px; flex: none; display: grid; place-items: center; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.application-shell.application-shell .brand:hover .vortex-swiss-logo { transform: rotate(90deg) scale(1.1); }
+.application-shell.application-shell .brand-dot { color: var(--cv-accent-primary); }
+.application-shell.application-shell .brand strong { font-family: var(--cv-font-family-brand); font-size: var(--cv-font-size-xl); font-weight: var(--cv-font-weight-bold); line-height: var(--cv-font-line-height-title); color: var(--cv-text-pure); }
 .application-shell.application-shell .reference-meta { display: grid; gap: var(--cv-space-1); }
 .application-shell.application-shell .reference-meta b { font-weight: var(--cv-font-weight-regular); }
 .application-shell.application-shell .scenario-picker { display: grid; gap: var(--cv-space-1); min-width: 0; }
 .application-shell.application-shell .account-trigger { display: flex; align-items: center; gap: var(--cv-space-2); padding: var(--cv-space-2); text-align: left; }
 .application-shell.application-shell .account-trigger strong, .application-shell.application-shell .account-trigger small { display: block; }
-.application-shell.application-shell .account-avatar { display: grid; place-items: center; width: var(--cv-space-8); height: var(--cv-space-8); flex: none; color: var(--cv-accent-tertiary); background: var(--cv-surface-elevated); border-radius: var(--cv-radius-pill); }
-.application-shell.application-shell .account-trigger[aria-expanded='true'] { border-color: var(--cv-accent-tertiary); background: var(--cv-surface-elevated); }
-.application-shell.application-shell .global-menu { grid-column: 1; grid-row: 2; background: var(--cv-surface-default); border-right: 1px solid var(--cv-border-subtle); padding: var(--cv-space-6) var(--cv-space-3); }
+.application-shell.application-shell .account-avatar { display: grid; place-items: center; width: var(--cv-space-8); height: var(--cv-space-8); flex: none; color: var(--cv-accent-primary); background: var(--cv-surface-elevated); border-radius: var(--cv-radius-pill); border: 1px solid var(--cv-border-subtle); }
+.application-shell.application-shell .account-trigger[aria-expanded='true'] { border-color: var(--cv-accent-primary); background: var(--cv-surface-elevated); }
+.application-shell.application-shell .global-menu { grid-column: 1; grid-row: 2; background: var(--cv-surface-sidebar); border-right: 1px solid var(--cv-border-subtle); padding: var(--cv-space-6) var(--cv-space-3); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .application-shell.application-shell .global-menu > summary { display: none; }
 .application-shell.application-shell .global-nav { display: grid; gap: var(--cv-space-2); position: sticky; top: var(--cv-space-6); }
-.application-shell.application-shell .global-nav > * { display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; gap: var(--cv-space-1) var(--cv-space-2); padding: var(--cv-space-3) var(--cv-space-2); border-radius: var(--cv-radius-md); }
+.application-shell.application-shell .global-nav > * { display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; gap: var(--cv-space-1) var(--cv-space-2); padding: var(--cv-space-3) var(--cv-space-2); border-radius: var(--cv-radius-md); transition: all 0.15s ease; }
+.application-shell.application-shell .global-nav > *:hover { background: var(--cv-surface-interactive); transform: translateX(2px); }
 .application-shell.application-shell .global-nav .icon { width: 24px; height: 24px; }
 .application-shell.application-shell .global-nav small { grid-column: 2; }
-.application-shell.application-shell .global-nav strong { background: var(--cv-surface-interactive); color: var(--cv-text-primary); font-weight: var(--cv-font-weight-semibold); }
+.application-shell.application-shell .global-nav strong { background: var(--cv-surface-interactive); color: var(--cv-text-pure); font-weight: var(--cv-font-weight-semibold); border-left: 2px solid var(--cv-accent-primary); }
 .application-shell.application-shell .tablet-bar, .application-shell.application-shell .mobile-bar, .application-shell.application-shell .mobile-section.field, .application-shell.application-shell #close-list { display: none; }
 .application-shell.application-shell .layout { grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 272px minmax(0,1fr); min-height: calc(100vh - 90px); }
-.application-shell.application-shell .opportunity-list { padding: var(--cv-space-6) var(--cv-space-4); background: var(--cv-surface-default); border-right: 1px solid var(--cv-border-subtle); min-width: 0; }
+.application-shell.application-shell .opportunity-list { padding: var(--cv-space-6) var(--cv-space-4); background: var(--cv-surface-default); border-right: 1px solid var(--cv-border-subtle); min-width: 0; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 .application-shell.application-shell .pane-heading, .application-shell.application-shell .eyebrow-row, .application-shell.application-shell .section-heading, .application-shell.application-shell .review-head, .application-shell.application-shell .inspector-top { display: flex; align-items: center; justify-content: space-between; gap: var(--cv-space-3); flex-wrap: wrap; }
 .application-shell.application-shell .field { display: block; }
 .application-shell.application-shell .field input, .application-shell.application-shell .field textarea, .application-shell.application-shell .field select { margin-top: var(--cv-space-2); }
 .application-shell.application-shell .opportunity-list .field { margin-top: var(--cv-space-6); }
 .application-shell.application-shell .opportunity-items { display: grid; margin-top: var(--cv-space-4); gap: var(--cv-space-2); }
-.application-shell.application-shell .opportunity-item { display: flex; flex-direction: column; align-items: flex-start; gap: var(--cv-space-2); text-align: left; width: 100%; padding: var(--cv-space-4); border: 1px solid transparent; border-radius: var(--cv-radius-md); }
+.application-shell.application-shell .opportunity-item { display: flex; flex-direction: column; align-items: flex-start; gap: var(--cv-space-2); text-align: left; width: 100%; padding: var(--cv-space-4); border: 1px solid var(--cv-border-subtle); border-radius: var(--cv-radius-md); background: rgba(19, 23, 34, 0.45); transition: all var(--cv-motion-duration-fast) cubic-bezier(0.16, 1, 0.3, 1); }
+.application-shell.application-shell .opportunity-item:hover { background: var(--cv-surface-elevated); border-color: var(--cv-border-hover); transform: translateY(-1px); }
 .application-shell.application-shell .company-row { display: flex; align-items: center; gap: var(--cv-space-2); min-width: 0; }
-.application-shell.application-shell .company-mark { display: grid; place-items: center; width: var(--cv-space-6); height: var(--cv-space-6); flex: none; color: var(--cv-accent-secondary); background: var(--cv-surface-elevated); border-radius: var(--cv-radius-sm); }
+.application-shell.application-shell .company-mark { display: grid; place-items: center; width: var(--cv-space-6); height: var(--cv-space-6); flex: none; color: var(--cv-accent-secondary); background: var(--cv-surface-elevated); border-radius: var(--cv-radius-sm); border: 1px solid var(--cv-border-subtle); }
 .application-shell.application-shell .list-salary { color: var(--cv-text-secondary); font-variant-numeric: tabular-nums; }
-.application-shell.application-shell .opportunity-item[aria-current='true'] { border-color: var(--cv-accent-primary); background: var(--cv-surface-interactive); }
-.application-shell.application-shell .opportunity-item[aria-current='true']::after { content: 'Выбрано'; font-size: var(--cv-font-size-xs); color: var(--cv-accent-primary); }
+.application-shell.application-shell .opportunity-item[aria-current='true'] { border-color: var(--cv-accent-primary); background: var(--cv-surface-elevated); box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3), 0 0 16px var(--cv-accent-coral-glow); }
+.application-shell.application-shell .opportunity-item[aria-current='true']::after { content: 'Выбрано'; font-size: var(--cv-font-size-xs); color: var(--cv-accent-primary); font-family: var(--cv-font-family-mono); font-weight: var(--cv-font-weight-semibold); }
 .application-shell.application-shell .list-note { margin-top: var(--cv-space-6); padding-top: var(--cv-space-4); border-top: 1px solid var(--cv-border-subtle); }
 .application-shell.application-shell .workspace { min-width: 0; padding: var(--cv-space-6) var(--cv-space-8) var(--cv-space-8); background: var(--cv-surface-canvas); }
 .application-shell.application-shell .vacancy-summary { display: grid; grid-template-columns: minmax(0,1fr) 224px; align-items: start; gap: var(--cv-space-6); margin-block: var(--cv-space-6); }
 .application-shell.application-shell .workspace-heading { display: flex; gap: var(--cv-space-2); align-items: center; margin-bottom: var(--cv-space-3); }
-.application-shell.application-shell .identity { width: var(--cv-space-6); height: var(--cv-space-6); display: grid; place-items: center; flex: none; background: var(--cv-surface-elevated); color: var(--cv-accent-secondary); border-radius: var(--cv-radius-sm); }
+.application-shell.application-shell .identity { width: var(--cv-space-6); height: var(--cv-space-6); display: grid; place-items: center; flex: none; background: var(--cv-surface-elevated); color: var(--cv-accent-secondary); border-radius: var(--cv-radius-sm); border: 1px solid var(--cv-border-subtle); }
 .application-shell.application-shell #workspace-title { max-width: 34ch; }
 .application-shell.application-shell #company-name { min-width: 0; }
 .application-shell.application-shell .metadata { display: flex; align-items: flex-start; gap: var(--cv-space-2); margin-top: var(--cv-space-3); }
@@ -93,14 +98,14 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .salary-value { display: flex; align-items: baseline; gap: var(--cv-space-2); flex-wrap: wrap; }
 .application-shell.application-shell .salary-unit { white-space: nowrap; }
 .application-shell.application-shell .salary-currency { font-family: var(--cv-font-family-brand); }
-.application-shell.application-shell .notice { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); align-items: start; gap: var(--cv-space-4); padding: var(--cv-space-4) var(--cv-space-5); background: var(--cv-surface-default); border-radius: var(--cv-radius-md); }
+.application-shell.application-shell .notice { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); align-items: start; gap: var(--cv-space-4); padding: var(--cv-space-4) var(--cv-space-5); background: var(--cv-surface-default); border: 1px solid var(--cv-border-subtle); border-radius: var(--cv-radius-md); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35); }
 .application-shell.application-shell .notice p { max-width: 65ch; }
 .application-shell.application-shell .notice.warning .next-action-title { color: var(--cv-state-warning); }
 .application-shell.application-shell .notice.blocked .next-action-title { color: var(--cv-state-blocked); }
 .application-shell.application-shell .section-nav { display: flex; flex-wrap: wrap; gap: 0 var(--cv-space-6); border-bottom: 1px solid var(--cv-border-subtle); margin-top: var(--cv-space-4); }
-.application-shell.application-shell .section-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: var(--cv-space-2) 0; border-bottom: 2px solid transparent; text-decoration: none; }
-.application-shell.application-shell .section-nav a[aria-current='page'] { color: var(--cv-text-primary); border-color: var(--cv-accent-primary); font-weight: var(--cv-font-weight-semibold); }
-.application-shell.application-shell .section-nav a:hover { color: var(--cv-text-primary); }
+.application-shell.application-shell .section-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: var(--cv-space-2) 0; border-bottom: 2px solid transparent; text-decoration: none; transition: all 0.15s ease; }
+.application-shell.application-shell .section-nav a[aria-current='page'] { color: var(--cv-text-pure); border-color: var(--cv-accent-primary); font-weight: var(--cv-font-weight-semibold); }
+.application-shell.application-shell .section-nav a:hover { color: var(--cv-text-pure); }
 .application-shell.application-shell .section-nav a:active { background: var(--cv-surface-interactive); }
 .application-shell.application-shell .content-section { padding-top: var(--cv-space-6); }
 .application-shell.application-shell .section-heading { margin-bottom: var(--cv-space-4); }
@@ -110,7 +115,7 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .badge.success { color: var(--cv-state-confirmed); }
 .application-shell.application-shell .badge.warning { color: var(--cv-state-warning); }
 .application-shell.application-shell .badge.danger { color: var(--cv-state-blocked); }
-.application-shell.application-shell .review-card { background: var(--cv-surface-default); border-radius: var(--cv-radius-md); padding: var(--cv-space-6); }
+.application-shell.application-shell .review-card { background: var(--cv-surface-default); border: 1px solid var(--cv-border-subtle); border-radius: var(--cv-radius-md); padding: var(--cv-space-6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
 .application-shell.application-shell .review-head { align-items: flex-start; margin-bottom: var(--cv-space-3); }
 .application-shell.application-shell .review-card > .subtle { margin-top: var(--cv-space-2); }
 .application-shell.application-shell .review-body { align-items: start; display: grid; grid-template-columns: minmax(0,1fr) 240px; grid-template-areas: 'diff reason' 'actions reason' '. reason'; grid-template-rows: max-content max-content minmax(0,1fr); gap: var(--cv-space-6); margin-top: var(--cv-space-6); }
