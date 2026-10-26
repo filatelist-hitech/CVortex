@@ -4,6 +4,7 @@ import ApplicationWorkspace from "../application/app-shell";
 import AccessShell from "../access-shell";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
+vi.mock("../vacancy-chat", () => ({ default: () => null }));
 Object.defineProperty(window, "matchMedia", { writable: true, value: vi.fn().mockImplementation(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })) });
 HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
 HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); this.dispatchEvent(new Event("close")); };
@@ -104,6 +105,7 @@ describe("canonical Application Workspace", () => {
     const preparation = { id: "prep", vacancy_id: "live", stale: false, status: "DRAFT", items: [draft] };
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
       const path = String(input);
+      if (path === "/api/v1/ai/settings") return Response.json({ data: { default_provider: "gemini", gemini: { default_model: "gemini-2.0-flash" } } });
       if (path === "/api/v1/vacancies") return Response.json({ data: [vacancy] });
       if (path === "/api/v1/vacancies/live") return Response.json({ data: vacancy });
       if (path === "/api/v1/vacancies/live/preparation" || path === "/api/v1/applications/preparations/prep") return Response.json({ data: preparation });

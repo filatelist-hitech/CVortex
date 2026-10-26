@@ -97,8 +97,10 @@ export function GlobalSidebar() {
   const menuOpen = menuLocation === locationKey;
   const summary = useRef<HTMLElement>(null);
   return <div className="compact-navigation"><details className="global-menu" open={w.size !== "mobile" || menuOpen} onKeyDown={event => { if (event.key === "Escape") { setMenuLocation(null); summary.current?.focus(); } }}><summary ref={summary} className="type-nav" onClick={event => { event.preventDefault(); setMenuLocation(menuOpen ? null : locationKey); }}>Меню: вакансии</summary><nav className="global-nav" aria-label="Основное меню">
-    <span className="type-nav" title="Этот раздел пока недоступен"><Icon name="sun" />Сегодня <small>Недоступно</small></span>
+    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+    <a className="type-nav" href="/" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="sun" />Сегодня</a>
     <strong className="type-nav" aria-current="page"><Icon name="briefcase" />Вакансии</strong>
+    <a className="type-nav" href="/vacancies/import" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="plus" />Импорт вакансии</a>
     <a className="type-nav" href="/career" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="user" />Карьера <small>Факты</small></a>
     <span className="type-nav" title="В приложении ещё нет подтверждённой связи с работодателем"><Icon name="building" />Работодатели <small>Недоступно</small></span>
     <a className="type-nav" href="/settings" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="settings" />Настройки <small>AI</small></a>

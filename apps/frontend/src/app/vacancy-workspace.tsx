@@ -286,6 +286,16 @@ export default function VacancyWorkspace() {
   </section>;
 }
 
+function humanizeDraftError(err: string): string {
+  if (err.includes("VALIDATION_FAILED")) {
+    return "Для подготовки материалов отклика сначала дождитесь успешного завершения анализа вакансии.";
+  }
+  if (err.includes("LLM_PROVIDER_RATE_LIMITED") || err.includes("429")) {
+    return "Лимит запросов к AI-провайдеру временно исчерпан. Повторите попытку позже.";
+  }
+  return err;
+}
+
 export function ApplicationDraftPanel({ vacancyId, vacancyTitle, canonical = false }: { vacancyId: string; vacancyTitle: string; canonical?: boolean }) {
   const [preparation, setPreparation] = useState<Preparation | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -431,7 +441,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle, canonical = fal
     <h3 id="application-draft-title">{canonical ? `Подготовка: ${vacancyTitle}` : `Prepare for ${vacancyTitle}`}</h3>
     <p className="muted">{canonical ? "Материалы остаются приватными. Одобрение не отправляет отклик и не связывается с работодателем." : "Recommendations and cover drafts stay private. Approval does not submit an application or contact an employer."}</p>
     {loading && <p className="loading" role="status">{canonical ? "Загрузка сохранённых материалов…" : "Loading saved preparation…"}</p>}
-    {error && <div className="alert error" role="alert"><span>{error}</span></div>}
+    {error && <div className="alert error" role="alert"><span>{humanizeDraftError(error)}</span></div>}
     {preparation?.stale && <p className="stale-callout" role="status"><strong>{canonical ? "Материалы устарели." : "Preparation is stale."}</strong><span>{canonical ? "Вакансия или подтверждённые факты изменились. Проверьте анализ и откройте материалы заново." : "Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing."}</span></p>}
     {retrySecondsRemaining > 0 && <p role="status">{canonical ? `До повторного запроса к провайдеру: ${retrySecondsRemaining} с.` : `Wait at least ${formatRetryWait(retrySecondsRemaining)} before retrying a provider-backed action.`}</p>}
     {preparation && !loading && <>

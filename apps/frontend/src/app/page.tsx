@@ -1,5 +1,5 @@
 import AccessShell from "./access-shell";
 
 export default function Home() {
-  return <AccessShell />;
+  return <AccessShell destination="today" />;
 }
