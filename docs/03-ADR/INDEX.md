@@ -56,6 +56,7 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0024](ADR-0024-git-design-reference-workflow.md) | Git-reviewed Design References for Application Workspace | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-07 | Design / workflow | ADR-0013; amends ADR-0014 Figma role | — |
 | [ADR-0025](ADR-0025-b01-reference-acceptance-release-gate.md) | B01 Reference Acceptance and Release Gate | accepted | OWNER_CONSTRAINT | 2026-10-11 | Design / governance | Amends ADR-0024 validation timing | — |
 | [ADR-0026](ADR-0026-gemini-llm-provider-integration.md) | Google Gemini LLM Provider Integration and BYOK Routing | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-24 | AI / providers | Amends ADR-0010, ADR-0011 | — |
+| [ADR-0027](ADR-0027-runtime-system-settings.md) | Runtime System Settings and Administrative Configuration Control Plane | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-24 | Configuration / Admin | — | — |
 
 ## Freeze rule
 

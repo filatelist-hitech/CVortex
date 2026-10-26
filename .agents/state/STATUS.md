@@ -1,5 +1,57 @@
 # CVortex — проверенное текущее состояние
 
+## Runtime Configuration & Admin System Settings — 2026-10-25
+
+Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Architecture & Invariant Enforcement**:
+   - Enforced architectural baseline **Option C**: bootstrap and infrastructure configuration remains in `.env` (immutable by application), while runtime settings live in code (`SettingDefinitionRegistry`) with database overrides in `system_settings`.
+   - Adopted and accepted `docs/03-ADR/ADR-0027-runtime-system-settings.md` and registered in `docs/03-ADR/INDEX.md`.
+   - Documented operational manual in `docs/10-Operations/Runtime-Configuration.md`.
+   - Updated `.env.example` with clear section headers distinguishing `BOOTSTRAP/ENV_ONLY` from `RUNTIME_FALLBACK`.
+
+2. **Backend Engine (`apps/backend/app/Settings/`)**:
+   - Created migration `2026_10_24_000001_create_system_settings_table.php` (ULID, key UNIQUE, JSON value, encrypted_value text, version integer for optimistic concurrency, updated_by FK to users).
+   - Implemented `SettingDefinitionRegistry` with typed definitions across groups (`general`, `auth`, `ai_models`, `ai_providers`, `email`, `storage`, `limits`) with explicit `test_target` mapping (`openai`, `smtp`, `storage`).
+   - Implemented `SettingsResolver` with strict 4-tier precedence: Hard environment lock → Database override → Config/ENV fallback → Application default. Defensive cache deserialization recovery.
+   - Enforced zero secret leakage: encrypted at rest via AES-256-CBC (`Crypt`), masked in API responses, excluded from audit logs (`redacted: true`), excluded from standard logs.
+   - Reinforced optimistic locking & concurrency: initial override creation validates `expected_version === 1` and bumps to 2; concurrent first inserts hitting database unique constraints are caught and converted to `SettingConcurrencyException` (HTTP 409).
+   - Atomic batch operations: `AdminSettingsController::update` wraps all setting updates in `DB::transaction`, guaranteeing full rollback if any setting in a batch fails validation or concurrency checks.
+   - Implemented `SettingTestService` for live connectivity tests (OpenAI API latency/ping, SMTP HELO, dynamically resolved storage disk write/read/delete) with audit logging.
+   - Built `AdminSettingsController` with endpoints:
+     - `GET /api/v1/admin/settings` (list all settings with secrets masked)
+     - `PATCH /api/v1/admin/settings` (atomic batch update with optimistic locking)
+     - `POST /api/v1/admin/settings/reset` (reset override to fallback/default)
+     - `POST /api/v1/admin/settings/test` (connectivity testing with target validation)
+     - `GET /api/v1/admin/settings/environment` (read-only diagnostics without exposing `APP_KEY`)
+   - Wired dynamic settings into core services (`AppServiceProvider`, rate limits, `ModelPolicyResolver`, `OpenAiResponsesProvider`, `InvitationService`, character extraction limits).
+
+3. **Frontend Control Plane (`apps/frontend/`)**:
+   - Built modern Admin UI `apps/frontend/src/app/admin-settings.tsx` with category navigation (Общие, Аутентификация, Модели ИИ, Провайдеры ИИ, Почта и SMTP, Файлы и шаблоны, Лимиты и хранение, Среда и диагностика).
+   - Implemented search filter, source badges (`badge-db`, `badge-env`, `badge-locked`, `badge-default`), staged editing with sticky Discard/Save bar, secret masking & replacement, override reset, and test ping buttons with latency reporting.
+   - Explicit test target routing: connection test buttons route strictly through `item.test_target` without defaulting non-matching items to storage.
+   - Lifecycle cleanup & unmount guard: `isMountedRef` and `AbortController` cancellation prevent state leakage or updates on unmounted components.
+   - Created route `apps/frontend/src/app/admin/settings/page.tsx` and integrated route guard in `access-shell.tsx` (403 for non-admins).
+   - Protected access shell integrity: `access-shell.tsx` preserves `AbortError` passthrough without converting to `NETWORK_ERROR`, and preserves `key={user.id}` + `userId={user.id}` on `CareerWorkspace`.
+   - Added navigation links to "Настройки системы" in `workspace-shell.tsx` and `app-shell.tsx`.
+   - Designed responsive styling in `apps/frontend/src/app/globals.css` using `--cv-*` design tokens.
+
+4. **Verification**:
+   - Backend PHPUnit Settings: 26/26 tests PASS (488 assertions) across `SettingDefinitionRegistryTest`, `SettingsResolverTest`, and `AdminSettingsApiTest`.
+   - Full Backend PHPUnit Suite: 421/421 tests PASS (3371 assertions, 12 skipped).
+   - Backend Pint: 0 style issues across 231 files.
+   - Backend PHPStan: 0 errors across 146 files (`[OK] No errors`).
+   - Frontend Vitest: 13/13 test files (167/167 tests) PASS, including `access-shell.test.tsx` (6/6 PASS), `admin-settings.test.tsx` (11/11 PASS), and `ai-provider-settings.test.tsx` (8/8 PASS).
+   - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
+   - Frontend ESLint: 0 errors, 0 warnings.
+   - Playwright E2E: 10/10 tests PASS across Desktop Chromium and Mobile Chrome in `e2e/admin/system-settings.spec.ts`.
+   - B01 Reference Integrity: PASS (10/10 tests).
+   - Gemini BYOK Dynamic Discovery & Network Resilience: `GeminiResponsesProvider` dynamically discovers all models supporting `generateContent` by key via `GET /v1beta/models`, caches model catalog, provides automatic fallback on 404, supports optional `AI_HTTP_PROXY`, and Nginx `/api/v1/ai/` and `/api/v1/admin/settings/` fastcgi timeouts extended to 60s eliminating 504 Gateway Timeouts.
+   - PR Contract: PASS (`check-pr-contract.sh 56` exit 0).
+
+---
+
 ## QA-002 & QA-003 — Harness Safety, Aggregate Relations & Timestamp-Tie Negative Control — 2026-10-25
 
 Mode: IMPLEMENT; branch: `fix/qa-002-qa-003-safety-negative-control`; target: `stage`. One agent / sequential execution.
@@ -21,7 +73,7 @@ Mode: IMPLEMENT; branch: `fix/qa-002-qa-003-safety-negative-control`; target: `s
 
 Status: QA-002 и QA-003 **PASS / RESOLVED**.
 
-
+---
 
 ## QA-004 — Career Claim resolution race conditions eliminated (PR #53) — 2026-10-25
 
@@ -91,6 +143,7 @@ Mode: IMPLEMENT; branch: `feature/gemini-llm-provider`. One agent / sequential e
    - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
    - Frontend ESLint: 0 errors, 0 warnings.
 
+---
 ## Playwright E2E UI Coverage & Quality Automation — 2026-10-24
 
 Mode: IMPLEMENT; branch: `chore/playwright-e2e-coverage`; task: `.agents/tasks/playwright-e2e-coverage.md`. One agent / sequential execution.

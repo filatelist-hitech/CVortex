@@ -18,6 +18,10 @@ use App\Mcp\OAuth\McpResource;
 use App\Mcp\OAuth\ResourceAccessToken;
 use App\Queue\QueueExecutionContext;
 use App\Services\EmailNormalizer;
+use App\Settings\SettingDefinitionRegistry;
+use App\Settings\SettingsRepository;
+use App\Settings\SettingsResolver;
+use App\Settings\SettingTestService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Queue\Events\JobExceptionOccurred;
@@ -54,6 +58,11 @@ class AppServiceProvider extends ServiceProvider
             LlmProvider::class,
             ConfiguredLlmProvider::class,
         );
+
+        $this->app->singleton(SettingDefinitionRegistry::class);
+        $this->app->singleton(SettingsRepository::class);
+        $this->app->singleton(SettingsResolver::class);
+        $this->app->singleton(SettingTestService::class);
     }
 
     /**
@@ -166,9 +175,14 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('login', function (Request $request): Limit {
+            /** @var SettingsResolver $settings */
+            $settings = app(SettingsResolver::class);
+            $attempts = (int) $settings->get('auth.login_rate_limit_attempts', (int) config('auth.login_rate_limit.attempts'));
+            $decay = (int) $settings->get('auth.login_rate_limit_decay_seconds', (int) config('auth.login_rate_limit.decay_seconds'));
+
             return Limit::perSecond(
-                (int) config('auth.login_rate_limit.attempts'),
-                (int) config('auth.login_rate_limit.decay_seconds'),
+                $attempts,
+                $decay,
             )->by('login:'.$request->ip().'|'.app(EmailNormalizer::class)->normalize((string) $request->input('email')));
         });
         RateLimiter::for('diagnostics-report', fn (Request $request): Limit => Limit::perMinute(10)->by((string) $request->user()?->id));

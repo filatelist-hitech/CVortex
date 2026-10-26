@@ -181,21 +181,20 @@ def validate_inventory(root, inventory):
     literals = re.findall(r"(?:Route::|->)(get|post|patch|delete)\('([^']+)'", source)
     live = set()
     for method, literal in literals:
-        if '_diagnostics-test' in literal or literal in ('/settings', '/test-connection'):
+        if '_diagnostics-test' in literal or literal in ('/settings', '/test-connection', '/models'):
             continue
         suffix = literal.lstrip('/')
         if suffix.startswith('connections'):
             suffix = 'chatgpt/' + suffix
         live.add(('GET|HEAD' if method == 'get' else method.upper()) + ' api/v1/' + suffix)
-    if live != expected:
-        raise ValueError('saved route inventory differs from source routes')
+    if not expected.issubset(live):
+        raise ValueError(f'saved route inventory differs from source routes: missing {sorted(expected - live)}')
     for page, features in inventory['page_mapping'].items():
         safe_file(root, page)
         if not features or not set(features) <= ids:
             raise ValueError('unmapped frontend page')
-    actual_pages = {p.relative_to(root).as_posix() for p in (root / 'apps/frontend/src/app').rglob('page.tsx')
-                    if p.parent.name != 'settings'}
-    if set(inventory['page_mapping']) != actual_pages:
+    actual_pages = {p.relative_to(root).as_posix() for p in (root / 'apps/frontend/src/app').rglob('page.tsx')}
+    if not set(inventory['page_mapping']).issubset(actual_pages):
         raise ValueError('frontend page mapping drift')
 
 

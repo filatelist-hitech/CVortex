@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\ApplicationPreparationController;
 use App\Http\Controllers\AuthController;
@@ -31,12 +32,19 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/connections/{id}', [$controller, 'disconnect']);
             Route::post('/connections/{id}/proof', [$controller, 'proof']);
         });
+        Route::prefix('admin')->group(function (): void {
+            Route::get('/settings', [AdminSettingsController::class, 'index']);
+            Route::patch('/settings', [AdminSettingsController::class, 'update']);
+            Route::post('/settings/reset', [AdminSettingsController::class, 'reset']);
+            Route::post('/settings/test', [AdminSettingsController::class, 'test']);
+            Route::get('/settings/environment', [AdminSettingsController::class, 'environment']);
+        });
         Route::middleware(['db-owner-context'])->prefix('ai')->group(function (): void {
             Route::get('/settings', [AiSettingsController::class, 'index']);
             Route::patch('/settings', [AiSettingsController::class, 'update']);
             Route::middleware('throttle:10,1')->post('/test-connection', [AiSettingsController::class, 'testConnection']);
+            Route::middleware('throttle:30,1')->post('/models', [AiSettingsController::class, 'models']);
         });
-
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::middleware('throttle:diagnostics-report')->post('/diagnostics/report', [DiagnosticsController::class, 'report']);
         Route::get('/diagnostics/incidents', [DiagnosticsController::class, 'index']);

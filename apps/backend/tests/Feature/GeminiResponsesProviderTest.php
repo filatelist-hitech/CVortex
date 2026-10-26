@@ -274,6 +274,82 @@ class GeminiResponsesProviderTest extends TestCase
         $this->assertSame('NOT_CONFIGURED', $missing['error_code']);
     }
 
+    public function test_list_models_returns_only_generate_content_models_sorted(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        Http::fake([
+            '*/models*' => Http::response([
+                'models' => [
+                    [
+                        'name' => 'models/text-embedding-004',
+                        'displayName' => 'Text Embedding 004',
+                        'supportedGenerationMethods' => ['embedContent'],
+                    ],
+                    [
+                        'name' => 'models/gemini-1.5-pro',
+                        'displayName' => 'Gemini 1.5 Pro',
+                        'supportedGenerationMethods' => ['generateContent', 'countTokens'],
+                    ],
+                    [
+                        'name' => 'models/gemini-2.0-flash',
+                        'displayName' => 'Gemini 2.0 Flash',
+                        'supportedGenerationMethods' => ['generateContent'],
+                    ],
+                    [
+                        'name' => 'models/gemini-1.5-flash',
+                        'displayName' => 'Gemini 1.5 Flash',
+                        'supportedGenerationMethods' => ['generateContent'],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $models = $provider->listModels('valid-key');
+
+        $this->assertCount(3, $models);
+        // Assert embedding model was filtered out
+        $this->assertNotContains('text-embedding-004', array_column($models, 'id'));
+        // Assert priority sorting: 2.0-flash first, then 1.5-flash, then 1.5-pro
+        $this->assertSame('gemini-2.0-flash', $models[0]['id']);
+        $this->assertSame('gemini-1.5-flash', $models[1]['id']);
+        $this->assertSame('gemini-1.5-pro', $models[2]['id']);
+        $this->assertSame('Gemini 2.0 Flash (gemini-2.0-flash)', $models[0]['name']);
+    }
+
+    public function test_connection_test_falls_back_to_available_model_when_target_model_returns_404(): void
+    {
+        $provider = app(GeminiResponsesProvider::class);
+
+        Http::fake([
+            '*/models?*' => Http::response([
+                'models' => [
+                    [
+                        'name' => 'models/gemini-2.0-flash',
+                        'displayName' => 'Gemini 2.0 Flash',
+                        'supportedGenerationMethods' => ['generateContent'],
+                    ],
+                ],
+            ], 200),
+            '*/models/gemini-1.5-flash:generateContent*' => Http::response([
+                'error' => ['message' => 'models/gemini-1.5-flash is not found.'],
+            ], 404),
+            '*/models/gemini-2.0-flash:generateContent*' => Http::response([
+                'candidates' => [
+                    ['content' => ['parts' => [['text' => 'pong']]], 'finishReason' => 'STOP'],
+                ],
+            ], 200),
+        ]);
+
+        $result = $provider->testConnection('custom-key', 'gemini-1.5-flash');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('healthy', $result['status']);
+        $this->assertSame('gemini-2.0-flash', $result['model']);
+        $this->assertCount(1, $result['available_models']);
+        $this->assertStringContainsString('gemini-2.0-flash', $result['message']);
+    }
+
     public function test_sanitize_schema_inlines_defs_and_refs(): void
     {
         $provider = app(GeminiResponsesProvider::class);

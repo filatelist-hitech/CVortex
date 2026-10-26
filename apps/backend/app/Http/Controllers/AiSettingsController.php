@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserAiSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 class AiSettingsController extends Controller
@@ -142,6 +143,48 @@ class AiSettingsController extends Controller
         return response()->json($result);
     }
 
+    public function models(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'provider' => ['required', 'string', 'in:gemini,openai'],
+            'api_key' => ['nullable', 'string', 'max:512'],
+        ]);
+
+        $user = $request->user();
+        $setting = $user
+            ? UserAiSetting::query()->where('owner_id', $user->id)->first()
+            : null;
+
+        $provider = $validated['provider'];
+        $apiKey = isset($validated['api_key']) && trim($validated['api_key']) !== ''
+            ? trim($validated['api_key'])
+            : ($provider === 'gemini' ? $setting?->gemini_api_key : $setting?->openai_api_key);
+
+        $models = $provider === 'gemini'
+            ? $this->gemini->listModels($apiKey)
+            : [];
+
+        if (empty($models)) {
+            $models = $provider === 'gemini'
+                ? config('ai.providers.gemini.available_models', [
+                    ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
+                    ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],
+                    ['id' => 'gemini-2.0-flash', 'name' => 'Gemini 2.0 Flash (Next-gen Fast)'],
+                ])
+                : [
+                    ['id' => 'gpt-4o-mini', 'name' => 'GPT-4o mini'],
+                    ['id' => 'gpt-4o', 'name' => 'GPT-4o'],
+                ];
+        }
+
+        return response()->json([
+            'data' => [
+                'provider' => $provider,
+                'models' => $models,
+            ],
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -159,11 +202,23 @@ class AiSettingsController extends Controller
         $geminiModel = $setting?->gemini_model ?: (string) config('ai.providers.gemini.default_model', 'gemini-1.5-flash');
         $openaiModel = $setting?->openai_model ?: (string) config('ai.providers.openai.default_model', 'gpt-4o-mini');
 
-        $geminiAvailableModelObjects = config('ai.providers.gemini.available_models', [
-            ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
-            ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],
-            ['id' => 'gemini-2.0-flash', 'name' => 'Gemini 2.0 Flash (Next-gen Fast)'],
-        ]);
+        $geminiAvailableModelObjects = null;
+        if ($hasUserGeminiKey || $hasSystemGeminiKey) {
+            $cacheKey = 'gemini_models_list_'.md5((string) ($setting?->gemini_api_key ?: config('ai.providers.gemini.api_key')));
+            /** @var mixed $cached */
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached) && ! empty($cached)) {
+                /** @var list<array{id: string, name: string, description?: string}> $cached */
+                $geminiAvailableModelObjects = $cached;
+            }
+        }
+        if (empty($geminiAvailableModelObjects)) {
+            $geminiAvailableModelObjects = config('ai.providers.gemini.available_models', [
+                ['id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash (Fast & Cost-effective)'],
+                ['id' => 'gemini-1.5-pro', 'name' => 'Gemini 1.5 Pro (Complex Reasoning)'],
+                ['id' => 'gemini-2.0-flash', 'name' => 'Gemini 2.0 Flash (Next-gen Fast)'],
+            ]);
+        }
         /** @var list<string> $geminiAvailableModelIds */
         $geminiAvailableModelIds = array_column((array) $geminiAvailableModelObjects, 'id');
 

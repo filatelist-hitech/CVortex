@@ -8,6 +8,7 @@ use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\ProviderRetryAfter;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use JsonException;
 use Throwable;
@@ -61,15 +62,22 @@ class GeminiResponsesProvider
 
         $baseUrl = rtrim((string) config('ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
         $timeout = (int) config('ai.providers.gemini.timeout_seconds', 45);
+        $normalizedModel = preg_replace('#^models/#', '', trim($model));
+        $proxy = config('ai.providers.gemini.proxy', config('ai.proxy'));
 
         try {
-            $response = Http::baseUrl($baseUrl)
+            $client = Http::baseUrl($baseUrl)
                 ->withHeaders([
                     'x-goog-api-key' => $apiKey,
                 ])
                 ->acceptJson()
-                ->timeout($timeout)
-                ->post('/models/'.urlencode($model).':generateContent', $payload);
+                ->timeout($timeout);
+
+            if (filled($proxy)) {
+                $client = $client->withOptions(['proxy' => (string) $proxy]);
+            }
+
+            $response = $client->post('/models/'.urlencode($normalizedModel).':generateContent', $payload);
         } catch (ConnectionException $exception) {
             throw new LlmProviderException(
                 LlmProviderException::TRANSPORT,
@@ -260,9 +268,123 @@ class GeminiResponsesProvider
     }
 
     /**
+     * List all available Gemini models for the given API key, filtered to models supporting generateContent.
+     *
+     * @return list<array{id: string, name: string, description: string}>
+     */
+    public function listModels(?string $apiKey = null): array
+    {
+        $key = $apiKey !== null && trim($apiKey) !== ''
+            ? trim($apiKey)
+            : (string) config('ai.providers.gemini.api_key');
+
+        if ($key === '') {
+            return [];
+        }
+
+        $cacheKey = 'gemini_models_list_'.md5($key);
+        /** @var mixed $cached */
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && ! empty($cached)) {
+            /** @var list<array{id: string, name: string, description: string}> $cached */
+            return $cached;
+        }
+
+        $baseUrl = rtrim((string) config('ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+        $proxy = config('ai.providers.gemini.proxy', config('ai.proxy'));
+
+        try {
+            $client = Http::baseUrl($baseUrl)
+                ->withHeaders([
+                    'x-goog-api-key' => $key,
+                ])
+                ->acceptJson()
+                ->timeout(15);
+
+            if (filled($proxy)) {
+                $client = $client->withOptions(['proxy' => (string) $proxy]);
+            }
+
+            $response = $client->get('/models', ['pageSize' => 100]);
+
+            if (! $response->successful()) {
+                return [];
+            }
+
+            $data = $response->json();
+            if (! is_array($data) || ! isset($data['models']) || ! is_array($data['models'])) {
+                return [];
+            }
+
+            $models = [];
+            foreach ($data['models'] as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $rawName = (string) ($item['name'] ?? '');
+                $id = preg_replace('#^models/#', '', $rawName);
+                if ($id === '') {
+                    continue;
+                }
+
+                $methods = (array) ($item['supportedGenerationMethods'] ?? []);
+                if (! in_array('generateContent', $methods, true)) {
+                    continue;
+                }
+
+                $displayName = (string) ($item['displayName'] ?? $id);
+                $name = $displayName !== '' && $displayName !== $id
+                    ? "{$displayName} ({$id})"
+                    : $id;
+
+                $models[] = [
+                    'id' => $id,
+                    'name' => $name,
+                    'description' => (string) ($item['description'] ?? ''),
+                ];
+            }
+
+            usort($models, function (array $a, array $b): int {
+                $priority = function (string $id): int {
+                    if (str_contains($id, '2.0-flash')) {
+                        return 1;
+                    }
+                    if (str_contains($id, '1.5-flash')) {
+                        return 2;
+                    }
+                    if (str_contains($id, 'flash')) {
+                        return 3;
+                    }
+                    if (str_contains($id, 'pro')) {
+                        return 4;
+                    }
+
+                    return 5;
+                };
+                $pA = $priority($a['id']);
+                $pB = $priority($b['id']);
+                if ($pA !== $pB) {
+                    return $pA <=> $pB;
+                }
+
+                return strcmp($a['id'], $b['id']);
+            });
+
+            if (! empty($models)) {
+                Cache::put($cacheKey, $models, 180);
+            }
+
+            return $models;
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Test connection to Gemini with minimal non-domain payload.
      *
-     * @return array{success: bool, provider: string, model: string, latency_ms?: int, message: string, error_code?: string, recommendation?: string}
+     * @return array{success: bool, provider: string, model: string, latency_ms?: int, message: string, error_code?: string, recommendation?: string, available_models?: list<array{id: string, name: string, description: string}>}
      */
     public function testConnection(?string $apiKey = null, ?string $model = null): array
     {
@@ -270,16 +392,18 @@ class GeminiResponsesProvider
             ? trim($apiKey)
             : (string) config('ai.providers.gemini.api_key');
 
-        $targetModel = $model !== null && trim($model) !== ''
+        $initialTarget = $model !== null && trim($model) !== ''
             ? trim($model)
             : (string) config('ai.providers.gemini.test_model', 'gemini-1.5-flash');
+
+        $normalizedTarget = preg_replace('#^models/#', '', $initialTarget);
 
         if ($key === '') {
             return [
                 'success' => false,
                 'status' => 'failed',
                 'provider' => 'gemini',
-                'model' => $targetModel,
+                'model' => $normalizedTarget,
                 'error_code' => 'NOT_CONFIGURED',
                 'message' => 'Gemini API key is not configured.',
                 'recommendation' => 'Enter a valid Google Gemini API key or configure GEMINI_API_KEY.',
@@ -288,53 +412,102 @@ class GeminiResponsesProvider
 
         $startedAt = hrtime(true);
         $baseUrl = rtrim((string) config('ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+        $proxy = config('ai.providers.gemini.proxy', config('ai.proxy'));
 
-        try {
-            $response = Http::baseUrl($baseUrl)
+        $sendPing = function (string $target) use ($baseUrl, $key, $proxy) {
+            $client = Http::baseUrl($baseUrl)
                 ->withHeaders([
                     'x-goog-api-key' => $key,
                 ])
                 ->acceptJson()
-                ->timeout(15)
-                ->post('/models/'.urlencode($targetModel).':generateContent', [
-                    'contents' => [
-                        [
-                            'role' => 'user',
-                            'parts' => [
-                                ['text' => 'ping'],
-                            ],
+                ->timeout(25);
+
+            if (filled($proxy)) {
+                $client = $client->withOptions(['proxy' => (string) $proxy]);
+            }
+
+            return $client->post('/models/'.urlencode($target).':generateContent', [
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => 'ping'],
                         ],
                     ],
-                    'generationConfig' => [
-                        'maxOutputTokens' => 5,
-                    ],
-                ]);
+                ],
+                'generationConfig' => [
+                    'maxOutputTokens' => 5,
+                ],
+            ]);
+        };
+
+        $modelToTest = $normalizedTarget;
+
+        try {
+            $response = $sendPing($modelToTest);
         } catch (Throwable $e) {
+            $msg = $e->getMessage();
+            $isTimeout = str_contains($msg, 'cURL error 28') || str_contains(strtolower($msg), 'timed out');
+
             return [
                 'success' => false,
                 'status' => 'failed',
                 'provider' => 'gemini',
-                'model' => $targetModel,
+                'model' => $modelToTest,
                 'latency_ms' => $this->elapsedMilliseconds($startedAt),
-                'error_code' => 'TRANSPORT_ERROR',
-                'message' => 'Unable to reach Google Gemini endpoint.',
-                'recommendation' => 'Check your internet connection and proxy/DNS settings.',
+                'error_code' => $isTimeout ? 'TIMEOUT' : 'TRANSPORT_ERROR',
+                'message' => $isTimeout
+                    ? 'Превышено время ожидания ответа от Google Gemini (таймаут запроса).'
+                    : 'Не удалось связаться с Google Gemini: '.$msg,
+                'recommendation' => $isTimeout
+                    ? 'Модель '.$modelToTest.' отвечает дольше обычного. Попробуйте выбрать быструю модель (gemini-1.5-flash или gemini-2.0-flash).'
+                    : 'Проверьте сетевой доступ к generativelanguage.googleapis.com, настройки прокси/VPN или DNS.',
             ];
         }
 
         $latencyMs = $this->elapsedMilliseconds($startedAt);
 
+        // Fallback retry only if initial ping returned 404 or 400
+        $availableModels = [];
+        if ($response->status() === 404 || $response->status() === 400) {
+            $availableModels = $this->listModels($key);
+            if (! empty($availableModels)) {
+                $fallbackModel = $availableModels[0]['id'];
+                if ($fallbackModel !== $modelToTest) {
+                    try {
+                        $fallbackResponse = $sendPing($fallbackModel);
+                        if ($fallbackResponse->successful()) {
+                            return [
+                                'success' => true,
+                                'status' => 'healthy',
+                                'provider' => 'gemini',
+                                'model' => $fallbackModel,
+                                'latency_ms' => $this->elapsedMilliseconds($startedAt),
+                                'message' => "Модель {$normalizedTarget} не найдена по ключу. Подключение успешно проверено с доступной моделью {$fallbackModel}.",
+                                'available_models' => $availableModels,
+                            ];
+                        }
+                    } catch (Throwable) {
+                        // proceed with original failure response
+                    }
+                }
+            }
+        }
+
         if (! $response->successful()) {
             $status = $response->status();
             $body = $response->json();
-            $rawMessage = is_array($body) && is_string($body['error']['message'] ?? null)
-                ? $body['error']['message']
-                : 'HTTP '.$status;
+
+            if (empty($availableModels)) {
+                $availableModels = $this->listModels($key);
+            }
 
             [$errorCode, $recommendation] = match (true) {
                 $status === 400 => ['INVALID_ARGUMENT', 'Check the specified model name and parameters.'],
                 $status === 401 || $status === 403 => ['INVALID_CREDENTIALS', 'Verify that your Gemini API key is valid and has Gemini API enabled.'],
-                $status === 404 => ['MODEL_NOT_FOUND', 'The specified Gemini model was not found. Check the model name.'],
+                $status === 404 => ['MODEL_NOT_FOUND', ! empty($availableModels)
+                    ? 'Запрошенная модель не найдена. Доступные модели по вашему ключу: '.implode(', ', array_column(array_slice($availableModels, 0, 8), 'id'))
+                    : 'The specified Gemini model was not found. Check the model name.'],
                 $status === 429 => ['RATE_LIMITED', 'Gemini quota or rate limit exceeded. Check your plan quota in Google AI Studio.'],
                 $status >= 500 => ['PROVIDER_UNAVAILABLE', 'Google Gemini service is temporarily unavailable. Retry later.'],
                 default => ['PROVIDER_ERROR', 'The provider returned an unexpected error.'],
@@ -344,21 +517,25 @@ class GeminiResponsesProvider
                 'success' => false,
                 'status' => 'failed',
                 'provider' => 'gemini',
-                'model' => $targetModel,
+                'model' => $modelToTest,
                 'latency_ms' => $latencyMs,
                 'error_code' => $errorCode,
                 'message' => 'Connection test failed: '.$errorCode,
                 'recommendation' => $recommendation,
+                'available_models' => $availableModels,
             ];
         }
+
+        $availableModels = $this->listModels($key);
 
         return [
             'success' => true,
             'status' => 'healthy',
             'provider' => 'gemini',
-            'model' => $targetModel,
+            'model' => $modelToTest,
             'latency_ms' => $latencyMs,
-            'message' => 'Connection to Google Gemini successful.',
+            'message' => 'Подключение к Google Gemini успешно проверено.',
+            'available_models' => $availableModels,
         ];
     }
 
