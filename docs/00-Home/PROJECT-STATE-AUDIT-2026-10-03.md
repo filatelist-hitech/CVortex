@@ -15,13 +15,13 @@ related:
 
 # Аудит текущего состояния CVortex
 
-> **Design-only amendment — 2026-10-08.** Owner selected Concept B / Application Workspace. [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) supersedes ADR-0013 and amends ADR-0014’s Figma role: the current workflow is [Git Design Handoff](../07-Design/Design-Handoff.md), with optional Figma. Figma-parity/human-canvas requirements in the dated audit below are historical, no longer current gates. No runtime readiness, authenticated product E2E, production redesign, Preview acceptance or M2 completion was re-audited here. Current design limitations are the normalized reference, human state/pixel review and production accessibility/visual regression still to be executed.
+> **Design-only amendment — 2026-10-08.** Owner selected Concept B / Application Workspace. [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md) supersedes ADR-0013 and amends ADR-0014’s Figma role: the current workflow is [Git Design Handoff](../07-Design/Design-Handoff.md), with optional Figma. Требования к макетам Figma в этом историческом аудите устарели и больше не являются приёмочными барьерами. No runtime readiness, authenticated product E2E, production redesign, приёмки Preview or M2 completion was re-audited here. Current design limitations are the normalized reference, human state/pixel review and production accessibility/visual regression still to be executed.
 
 ## Границы и правило доказательств
 
 Аудит опирается на checkout `a599330bbaec5ff957bd6d6600136b97c2a83655`. На момент проверки 2026-10-03 этот SHA совпадал с `origin/stage`. Проверены исходный код, миграции, тесты, task specs, ADR, продуктовая и операционная документация, GitHub PR/CI и доступные локальные health checks.
 
-`DONE` означает, что реализация подтверждена тестами, проверками или документацией, если оценивается сам документ. Описание функции само по себе реализацию не подтверждает. Live-проверки в этом отчёте относятся только к действиям текущей сессии. Записи из `STATUS.md` приведены как историческое evidence и не считаются повторными запусками.
+`DONE` означает, что реализация подтверждена тестами, проверками или документацией, если оценивается сам документ. Описание функции само по себе реализацию не подтверждает. Live-проверки в этом отчёте относятся только к действиям текущей сессии. Записи из `STATUS.md` приведены как исторические свидетельства и не считаются повторными запусками.
 
 Внешние исследования в аудит не входили. Перед реализацией нужно заново проверить версии, модели, API, цены, лицензии и условия внешних площадок.
 
@@ -38,7 +38,7 @@ CVortex прошёл Foundation Era. В коде уже есть первый в
 ### Пять работающих частей по репозиторию
 
 1. Invite-only вход и first-party session API реализованы; есть негативные проверки доступа и владения данными. Актуальный Quality workflow прошёл на точном audited SHA. В этой сессии полноценная регистрация пользователя не выполнялась.
-2. Career Core умеет сохранить источник, выдавать extracted facts как `PENDING`, принимать ручные подтверждённые факты и связывать Claims с provenance; `TrustedCareerQuery` фильтрует пригодные для продукта подтверждённые факты.
+2. Career Core умеет сохранить источник, выдавать extracted facts как `PENDING`, принимать ручные подтверждённые факты и связывать утверждения (Claims) с первоисточником; `TrustedCareerQuery` фильтрует пригодные для продукта подтверждённые факты.
 3. Vacancy Core принимает вставленный текст, сохраняет snapshot, извлекает требования при настроенном AI и выдаёт детерминированный разбор dimensions/gaps/recommendation. URL остаётся метаданными и не загружается.
 4. M1.4 содержит сохранённую подготовку отклика, resume recommendations, short/standard cover drafts, редактирование, повторную проверку Truth Guard, историю ревизий и явное локальное одобрение без отправки работодателю.
 5. В коде есть ограниченный read-only MCP gateway и Error Center/structured diagnostics. Локальный homepage отвечает `200`, Redis отвечает `PONG`, Horizon сообщает `running`. API и Preview пока не готовы.
@@ -78,9 +78,9 @@ VACANCY WORKFLOW — вставка/анализ/матчинг реализов
   ↓
 APPLICATION WORKFLOW — M1.4 сохранённые draft/review/approval реализованы
   ↓
-PREVIEW 0.1 — BLOCKED: readiness 503 и нет user E2E/feedback evidence
+PREVIEW 0.1 — BLOCKED: readiness 503 и нет доказательств сквозного тестирования и обратной связи
   ↓
-M2 PLANNING — BLOCKED до Preview evidence
+M2 PLANNING — BLOCKED до подтверждений работы Preview
   ↓
 MVP 0.2 — ещё не достигнут
 ```
@@ -92,10 +92,10 @@ MVP 0.2 — ещё не достигнут
 | M0 Runnable Core | PARTIAL в текущем окружении | Compose, Nginx и frontend работают; `GET /` = 200; readiness = 503 | Сверить целевую БД с volume и получить `/ready` = 200 без удаления данных |
 | M1.1 Access Core | DONE | Auth routes/controller, task history, тесты и состояние проекта | Нет обязательного незавершённого пункта в текущем state |
 | M1.2 Career Core | DONE | Career services/migrations/tests и completed status | Импорт DOCX/PDF намеренно отложен до M3 |
-| M1.3 Vacancy Core | INCONSISTENT | Project/Status и PR #28 называют slice завершённым; task spec всё ещё отмечен как remediation awaiting review | Синхронизировать lifecycle status task spec после сверки merge evidence |
-| M1.4 Application Draft | PARTIAL | Код внедрён и PR #31 merged; `PROJECT.md` фиксирует отсутствие Preview acceptance | Реальный Preview E2E и feedback |
-| Preview 0.1 | BLOCKED | Нет user acceptance; текущий DB mapping ломает readiness | Восстановить ready runtime, затем пройти критерии task spec |
-| M2 planning | BLOCKED | Task spec ожидает Preview evidence; `NEXT.md` запрещает начать раньше | Только после сохранения Preview evidence и явной reassessment |
+| M1.3 Vacancy Core | INCONSISTENT | Project/Status и PR #28 называют slice завершённым; task spec всё ещё отмечен как remediation awaiting review | Синхронизировать lifecycle status task spec после сверки свидетельств слияния PR |
+| M1.4 Application Draft | PARTIAL | Код внедрён и PR #31 merged; `PROJECT.md` фиксирует отсутствие приёмки Preview | Реальный Preview E2E и feedback |
+| Preview 0.1 | BLOCKED | Нет пользовательской приёмки; текущий DB mapping ломает readiness | Восстановить ready runtime, затем пройти критерии task spec |
+| M2 planning | BLOCKED | Task spec ожидает подтверждений работы Preview; `NEXT.md` запрещает начать раньше | Только после сохранения подтверждений работы Preview и явной reassessment |
 | M2 implementation / MVP 0.2 | NOT STARTED | Ни task plan по результатам Preview, ни application package нет | Сначала закончить M2 planning task |
 | M3–M6 | NOT STARTED | Есть только roadmap level requirements | Не расширять scope до доказанной потребности |
 
@@ -109,13 +109,13 @@ MVP 0.2 — ещё не достигнут
 | Architecture | DONE | Решения приняты и индексированы. Текущий код в основном следует архитектуре, а отложенные ADR элементы являются явными future scope, не притворной реализацией. |
 | Infrastructure | PARTIAL | Все основные Compose services подняты и health-marked, но приложение не ready из-за отсутствующей configured database. |
 | Auth / multi-user | DONE на уровне slice | Invite registration, login/logout, активный статус, ownership и тесты присутствуют. Password recovery/account recovery flow отсутствует. Реальный пользовательский auth flow в этой сессии не проходился. |
-| Career | DONE на уровне M1.2 | Career source/facts/claims, review states, provenance, extraction/manual entry и trusted query существуют. Полная CareerTrack/EmploymentHistory модель/редактор и файловый импорт не реализованы. |
+| Career | DONE на уровне M1.2 | Career source/facts/claims, статусы проверки, цепочка происхождения, извлечение фактов и ручной ввод и trusted query существуют. Полная CareerTrack/EmploymentHistory модель/редактор и файловый импорт не реализованы. |
 | Truth Guard | DONE для M1.4 candidate content | Есть content/Claim checks, fail-closed review и revalidation после edit. Это не EmployerConsistencyCheck по истории компании. |
 | AI runtime | PARTIAL | Есть `LlmProvider`, OpenAI Responses provider, model policy resolver, runtime skills, schemas/prompts, retries и run metadata/cost estimates. Prompt assets версионируются внутри skills, отдельного центрального Prompt Registry нет. Реально подключён один provider; AI выключен по умолчанию; общего multi-agent/workflow orchestration и исполняемого eval harness нет. |
 | Vacancies | PARTIAL | Paste → snapshot → extraction → analysis работает как кодовая возможность. URL fetching, adapters, attachments и manual requirement editor отсутствуют. |
 | Matching | DONE для текущего среза | Детерминированные explainable dimensions/gaps строятся после успешной extraction по Technical, Experience, Domain, Language, Location, Work format и Salary (где есть данные). Универсального ATS score нет. Первый анализ требует настроенного AI. |
 | Applications | PARTIAL | Есть только `ApplicationPreparation`/draft lifecycle. Полноценной `Application` и отслеживания отправленного отклика нет. |
-| Resume | PARTIAL | Есть рекомендации и provenance; нет `ResumeVersion`, `ResumeChange` и готового резюме как отдельного файла. |
+| Resume | PARTIAL | Есть рекомендации и цепочка происхождения фактов; нет `ResumeVersion`, `ResumeChange` и готового резюме как отдельного файла. |
 | Cover | PARTIAL | Есть short/standard text drafts, revision и approval. Нет версии внешнего документа/экспорта. Отдельный RU/EN output setting/acceptance в текущем M1.4 contract не подтверждён; это не блокер, пока такое требование не принято. |
 | Employer Memory | NOT STARTED | История claims/salary/conversations компании и `EmployerConsistencyCheck` не найдены в активном коде. |
 | Conversations | NOT STARTED | Импорт диалогов и извлечение подтверждаемых фактов отсутствуют. |
@@ -126,21 +126,21 @@ MVP 0.2 — ещё не достигнут
 | Security | PARTIAL | Strong ownership/RLS для Vacancy и Application, auth protections, prompt-injection validation и redacted diagnostics. Career boundary в основном application/service/FK based и отличается от RLS подхода Vacancy. |
 | Testing | PARTIAL | Backend Feature suite, frontend Vitest, отдельные Postgres harnesses и live shell smoke scripts есть. Нет записанного M1.4 real-user E2E, общего browser E2E и исполняемого LLM eval harness в CI. |
 | Observability | PARTIAL | Structured logs, request/job/LLM correlation, failed jobs, Error Center и Horizon есть. Реальный diagnostics API в текущем окружении упирается в PostgreSQL недоступную БД; unified cost analytics нет. |
-| CI / Developer Experience | DONE для текущих quality gates; PARTIAL для proof | `Quality` на audited SHA успешен; Compose, make commands, governance workflow и scripts существуют. Required CI не исполняет все независимые PostgreSQL concurrency/security harnesses. |
+| CI / Developer Experience | DONE для текущих quality gates; PARTIAL для proof | `Quality` на audited SHA успешен; Compose, make commands, скрипт регламента PR и scripts существуют. Required CI не исполняет все независимые PostgreSQL concurrency/security harnesses. |
 
-## 4. Что подтверждено имеющимися evidence
+## 4. Что подтверждено проведёнными тестами и артефактами
 
 Таблица показывает, в каком слое подтверждены код и проверки. Пользовательский Preview flow не проходили.
 
-| Capability | Evidence | Проверка и ограничение |
+| Возможность | Подтверждение | Проверка и ограничение |
 |---|---|---|
 | Access Core | [`AuthController`](../../apps/backend/app/Http/Controllers/AuthController.php), `/api/v1/auth/*` в [`api.php`](../../apps/backend/routes/api.php), `AccessCoreTest.php` | M1.1 отмечен completed; exact-SHA Quality CI зелёный. В текущем аудите вход пользователя не выполнялся. |
-| Career facts + Claims | [`CareerFactService`](../../apps/backend/app/Services/CareerFactService.php), [`TrustedCareerQuery`](../../apps/backend/app/Services/TrustedCareerQuery.php), migrations 000003–000007, CareerCore tests | Исторические M1.2 acceptance/runtime проверки зафиксированы в `STATUS.md`; не запускались повторно в этом аудите. Extracted fact остаётся pending до решения человека. |
+| Career facts + Claims | [`CareerFactService`](../../apps/backend/app/Services/CareerFactService.php), [`TrustedCareerQuery`](../../apps/backend/app/Services/TrustedCareerQuery.php), migrations 000003–000007, CareerCore tests | Исторические M1.2 проверки приёмки и работоспособности зафиксированы в `STATUS.md`; не запускались повторно в этом аудите. Extracted fact остаётся pending до решения человека. |
 | Vacancy paste + matching | [`VacancyIngestionService`](../../apps/backend/app/Services/VacancyIngestionService.php), [`VacancyAnalysisService`](../../apps/backend/app/Services/VacancyAnalysisService.php), [`VacancyMatchingService`](../../apps/backend/app/Services/VacancyMatchingService.php), `VacancyCoreTest.php` | Код и тесты есть. Live API невозможно подтвердить: readiness 503. Для первоначальной extraction нужен AI; URL ingestion нет. |
 | Saved M1.4 draft | [`ApplicationPreparationService`](../../apps/backend/app/Services/ApplicationPreparationService.php), [`ApplicationTruthGuard`](../../apps/backend/app/Services/ApplicationTruthGuard.php), [`vacancy-workspace.tsx`](../../apps/frontend/src/app/vacancy-workspace.tsx), `ApplicationDraftTest.php` | PR #31 merged; исторические test/review evidence есть в `STATUS.md`. User E2E, edit/approve в текущем browser runtime не проходились. |
 | Runtime AI assets | [`runtime-ai/skills`](../../runtime-ai/README.md), [`RuntimeSkillRegistry`](../../apps/backend/app/AI/RuntimeSkillRegistry.php), [`config/ai.php`](../../apps/backend/config/ai.php) | Четыре skill families имеют prompt/schema; adversarial JSON fixtures сохранены. Провайдер задан конфигурацией; default `AI_PROVIDER=none`, без API key генерация недоступна. |
 | Local service processes | [`compose.yaml`](../../compose.yaml), [`Makefile`](../../Makefile) | В текущем запуске: backend/frontend/PostgreSQL/Redis/Nginx healthy, Horizon running; `docker compose config --quiet` прошёл; `GET /` вернул 200. Но `/api/v1/health/ready` вернул 503. |
-| Quality gate | [GitHub Quality run на audited SHA](https://github.com/filatelist-hitech/CVortex/actions/runs/37125263395) | GitHub сообщил `completed / success` для точного SHA `a599330...`. Workflow выполняет Compose config, `make lint`, `make test` и production frontend build; `make test` принудительно использует SQLite для backend. |
+| Контроль качества (Quality CI) | [GitHub Quality run на audited SHA](https://github.com/filatelist-hitech/CVortex/actions/runs/37125263395) | GitHub сообщил `completed / success` для точного SHA `a599330...`. Workflow выполняет Compose config, `make lint`, `make test` и production frontend build; `make test` принудительно использует SQLite для backend. |
 | Error Center / MCP | `DiagnosticsController`, `diagnostic_*` migrations, `McpGatewayTest`, MCP read-only tools and operations guides | Implementation и historical local test evidence есть; внешний ChatGPT/Tunnel E2E не прошёл. API/runtime часть сейчас ограничена PostgreSQL readiness failure. |
 
 ## 5. Частично реализованные возможности и критерии завершения
@@ -148,10 +148,10 @@ MVP 0.2 — ещё не достигнут
 | Область | Уже есть | Не хватает для завершения | Критерий следующего завершения |
 |---|---|---|---|
 | M0 runtime | Docker Compose, Nginx, PHP-FPM, frontend, PostgreSQL, Redis, Horizon и health endpoints | Текущий `DB_DATABASE=cvortex2` отсутствует в активном volume; сервисы healthy не равны API ready | Подтвердить целевую существующую БД, безопасно согласовать local config, readiness 200 и миграции проверены на верной БД |
-| Career / security | Owner checks, owner-chain constraints, claims, provenance, тесты межпользовательского доступа | Для Career не обнаружены те же forced RLS policies, что для Vacancy/Preparation | Либо принять обоснованный и проверенный DB-level isolation boundary, либо закрыть разницу с тестами на реальном PostgreSQL |
-| Vacancy / matching | Paste, snapshot, AI requirements, deterministic dimensions/gaps | Нет URL adapters, ручного ввода требований и внешних source controls | Оставить это M3; для M1 достаточно устойчивого paste-to-match path и его Preview acceptance |
+| Career / security | Owner checks, owner-chain constraints, утверждения, цепочка фактов, тесты межпользовательского доступа | Для Career не обнаружены те же forced RLS policies, что для Vacancy/Preparation | Либо принять обоснованный и проверенный DB-level isolation boundary, либо закрыть разницу с тестами на реальном PostgreSQL |
+| Vacancy / matching | Paste, snapshot, AI requirements, deterministic dimensions/gaps | Нет URL adapters, ручного ввода требований и внешних source controls | Оставить это M3; для M1 достаточно устойчивого paste-to-match path и его приёмки Preview |
 | AI runtime | Один provider, Skill manifests, JSON schemas, prompts, usage/run metadata, configured price estimates | Нет провайдера второго типа, общего ModelRouter/Workflow/Agent runtime, LLM eval runner и golden evaluation pipeline | Расширять только отдельным bounded task. Для MVP нужны проверяемые M1 skills и truthful outputs; платформенный orchestration layer в этот scope не входит |
-| M1.4 | Рекомендации, short/standard drafts, provenance, revisions, approvals, Truth Guard | Нет real-user flow evidence; статусы task spec не отражают code merge | Пользователь проходит критерии M1.4 и feedback/evidence записываются без приватных карьерных данных в открытых артефактах |
+| M1.4 | Рекомендации, черновики откликов, подтверждение источников, ревизии, утверждение, контроль Truth Guard | Нет real-user flow evidence; статусы task spec не отражают code merge | Пользователь проходит критерии M1.4 и feedback/evidence записываются без приватных карьерных данных в открытых артефактах |
 | Дизайн | Git token JSON и CSS semantic subset с комментарием `derived from` | Figma file не рецензировался; JSON→CSS/Figma автоматизация не найдена, frontend parity не подтверждена | Отдельно получить human review Figma и сравнить Git token SHA, UI states, keyboard/focus/contrast/reflow |
 | API contract | `/api/v1`, route validation, domain docs | Один OpenAPI-файл только для diagnostics; остальные route contracts разнесены по task/data docs | До роста клиентов определить bounded OpenAPI coverage для поддерживаемых first-party endpoints |
 
@@ -188,7 +188,7 @@ Roadmap связывает MVP 0.2 с M2 Real Application Package. Не нача
 | ID | Severity | Несовпадение | Воздействие | Необходимая сверка |
 |---|---|---|---|---|
 | I-01 | HIGH | `.agents/tasks/m1-3-vacancy-core.md` сохраняет `changes-required-remediation-awaiting-review`; `PROJECT.md` говорит M1.3 PASS, `STATUS.md` говорит completed, PR #28 merged | Новый агент может повторно открыть уже завершённый slice или неверно прочитать acceptance | После подтверждения completion обновить lifecycle метаданные task spec и сохранить причину/ссылку на merge |
-| I-02 | HIGH | M1.4 task spec имеет `status: ready`, но код и PR #31 уже merged; `PROJECT.md` и `STATUS.md` говорят: implementation merged, Preview acceptance не PASS | Смешаны «готов к запуску», «код выполнен» и «продуктовый gate пройден» | Развести code completion M1.4 и Preview acceptance в статусе/формулировке spec; не ставить Preview PASS без user evidence |
+| I-02 | HIGH | M1.4 task spec имеет `status: ready`, но код и PR #31 уже merged; `PROJECT.md` и `STATUS.md` говорят: implementation merged, приёмки Preview не PASS | Смешаны «готов к запуску», «код выполнен» и «продуктовый gate пройден» | Развести code completion M1.4 и приёмки Preview в статусе/формулировке spec; не ставить Preview PASS без user evidence |
 | I-03 | MEDIUM | PR #34 `m4env` остаётся `OPEN` с head `chore/m1.4-preview-env` от 2026-09-26; текущий base уже дальше, `PR contract` и `Roadmap metadata` завершились failure, `m0-quality` — success | Старый delivery lane остаётся видимым рядом с актуальным stage и путает состояние Preview setup | Reconcile PR #34 с merged #38/#39 и текущим `stage`; не считать его готовым к merge |
 | I-04 | LOW | `BLOCKERS.md` помещает внешний ChatGPT/Tunnel MCP E2E в один список с Preview/DB blockers. MCP выключен по умолчанию и не входит в MVP | Читатель может принять этот пункт за блокировку M1/M2 | Явно отметить его `non-MVP / external integration blocker`, сохранив `UNKNOWN` для entitlement и tunnel access |
 
@@ -200,7 +200,7 @@ Roadmap связывает MVP 0.2 с M2 Real Application Package. Не нача
 
 - Согласовать Compose `DB_DATABASE=cvortex2` с нужной базой активного volume. В volume перечислены `cvortex` и `cvortex_dev2`; ни одна не должна выбираться наугад. Сначала установить, где целевые данные/схема, затем менять только локальную конфигурацию по этому доказательству. Не удалять volume и не запускать миграции до подтверждения назначения БД.
 - Вернуть dependency readiness в `200`, проверить миграционное состояние уже на правильной БД и только затем проходить real-user Preview.
-- Записать результат всех Preview acceptance критериев и наблюдаемую feedback без публикации приватных career facts.
+- Записать результат всех приёмки Preview критериев и наблюдаемую feedback без публикации приватных career facts.
 
 ### Нужно закрыть в ходе достижения MVP
 
@@ -208,7 +208,7 @@ Roadmap связывает MVP 0.2 с M2 Real Application Package. Не нача
 - Полный export/download pipeline с детерминированной рендеринг-проверкой и безопасной обработкой файлов.
 - Решить и проверить database-level isolation для всех private domain tables; в первую очередь объяснить/закрыть отличие Career от Vacancy/Application.
 - Уточнить актуальные цены/модели/лицензии/runtime support до добавления новых document/AI dependencies.
-- Оформить один bounded M2 implementation task из Preview evidence вместо реализации всех будущих систем разом.
+- Оформить один bounded M2 implementation task из подтверждений работы Preview вместо реализации всех будущих систем разом.
 
 ### Может ждать после MVP
 
@@ -222,7 +222,7 @@ Roadmap связывает MVP 0.2 с M2 Real Application Package. Не нача
 
 В доступных материалах аудит не подтвердил exploit path. Он выявил следующие control gaps и ограничения:
 
-- Career таблицы имеют owner/provenance constraints и application-level owner filtering; в открытых migrations не нашёл такой RLS policy, как для `vacancies`, `application_preparations` и связанных M1.4 таблиц. Это меньшая глубина изоляции между доменами. Нужна PostgreSQL проверка прямого доступа/обхода приложения перед расширением данных.
+- Career таблицы имеют ограничения владельца и цепочки происхождения данных и application-level owner filtering; в открытых migrations не нашёл такой RLS policy, как для `vacancies`, `application_preparations` и связанных M1.4 таблиц. Это меньшая глубина изоляции между доменами. Нужна PostgreSQL проверка прямого доступа/обхода приложения перед расширением данных.
 - PostgreSQL-specific authorization/RLS/concurrency tests существуют как отдельные tests/scripts, но обязательный `make test` передаёт backend suite `DB_CONNECTION=sqlite`; последние `11` PG-only skips отражены в историческом status evidence. Green CI на этом commit не подтверждает runtime-role/RLS/concurrency на PostgreSQL.
 - Вакансии пока поступают только через вставку текста. URL fetching и file upload не реализованы, поэтому будущие SSRF и malicious-file сценарии ещё не проверены и не защищены.
 - BYOK/system-managed credential UX и encrypted-at-rest user secret vault указаны в будущем M2 scope. Сейчас provider key задаётся операторской environment configuration; пользовательский secret management flow не найден.
@@ -236,13 +236,13 @@ Roadmap связывает MVP 0.2 с M2 Real Application Package. Не нача
 | Backend unit/feature | 12 `tests/Feature/*Test.php` групп: Access, Career, Vacancy, Application Draft, Diagnostics, Health, MCP и OpenAI provider | Бизнес-правила, error paths, provenance, access boundaries и provider parsing | Exact-SHA `Quality` CI completed success. Полный suite в этом аудите повторно не запускался. |
 | PostgreSQL integration/security | Отдельные Application/Vacancy/Diagnostics PostgreSQL suites плюс concurrency/upgrade scripts | RLS, runtime role, owner isolation, legacy schema/concurrency races | `make test` запускает backend на SQLite; эти suites не равны CI gate и часть пропускается. Не запускались повторно в этом аудите. |
 | Frontend component/unit | 4 Vitest test files: homepage/auth, diagnostics, browser error reporting, client instrumentation | Основные access/diagnostics/telemetry interaction contracts | Production UI/E2E по Career → Vacancy → M1.4 не покрыт одним браузерным acceptance flow. CI Vitest прошёл. |
-| Live/API smoke | `test-same-origin-auth.sh`, `test-career-first-value-live.sh`, MCP toggle и Nginx log safety scripts | Отдельные auth/Career/MCP/runtime boundaries | Это технические harnesses, не записанная real-user M1.4 Preview acceptance. Не запускались в этой сессии. |
+| Live/API smoke | `test-same-origin-auth.sh`, `test-career-first-value-live.sh`, MCP toggle и Nginx log safety scripts | Отдельные auth/Career/MCP/runtime boundaries | Это технические harnesses, не записанная real-user M1.4 приёмки Preview. Не запускались в этой сессии. |
 | Browser E2E | Отдельной Playwright suite/dependency не найдено | — | Главный gap для реального Preview navigation/focus/responsive/manual approval. Не подменять его синтетическими скриншотами. |
 | LLM evaluations | В runtime skills есть `evals/adversarial.json` fixtures | Враждебные/невалидные входы как test material | Автоматический eval runner, golden dataset и регулярный CI verdict не найдены. |
 | Security | Auth/ownership tests, prompt-injection cases, PostgreSQL suites и diagnostics redaction cases | Критичные M1 boundaries | Нужна обязательная PG security/concurrency проверка на exact head перед расширением private data; real-world external input coverage ограничена. |
 | Documents | Отдельных renderer/export suites нет | — | Соответствует статусу: pipeline ещё не реализован. |
 
-CI из `.github/workflows/quality.yml` на audited SHA выполняет `make init`, `make lint`, `make test` и production frontend build. Команда `make test` из `Makefile` переключает backend на in-memory SQLite. `governance.yml` проверяет roadmap/PR metadata. Результаты `m0-quality`/Quality для текущего SHA проверены через GitHub; локальные backend/frontend suites в этой audit-сессии не запускались.
+CI из `.github/workflows/quality.yml` на audited SHA выполняет `make init`, `make lint`, `make test` и production frontend build. Команда `make test` из `Makefile` переключает backend на in-memory SQLite. `регламент.yml` проверяет roadmap/PR metadata. Результаты `m0-quality`/Quality для текущего SHA проверены через GitHub; локальные backend/frontend suites в этой audit-сессии не запускались.
 
 ## 12. Документация и research: полнота и свежесть
 
@@ -261,15 +261,15 @@ CI из `.github/workflows/quality.yml` на audited SHA выполняет `mak
 | MCP research | Отдельный report обновлён 2026-09-27 | Свежей для локального MCP boundary; external entitlement/tunnel access остаются `UNKNOWN`, не архитектурное основание для M1/M2. |
 | Figma/design | Token file есть; Figma file записан | По `Figma-Handoff.md` reviewer отсутствует и verdict BLOCKED из-за MCP plan limit. Frontend/Figma visual parity = NOT VERIFIED. |
 
-Ближайшее развитие сейчас блокируют восстановление DB readiness и Preview acceptance. Перед M2 нужно проверить по официальным источникам лицензии, возможности актуальных renderer/framework и цены моделей, если scope включает документный pipeline или расширение AI.
+Ближайшее развитие сейчас блокируют восстановление DB readiness и приёмки Preview. Перед M2 нужно проверить по официальным источникам лицензии, возможности актуальных renderer/framework и цены моделей, если scope включает документный pipeline или расширение AI.
 
 ### Git history и текущая delivery-картина
 
 - M1.3 code/review завершение записано 2026-09-24; PR #27 merged, затем отдельный state PR #28 merged. `PROJECT.md` подтверждает M1.3 PASS.
-- M1.4 Application Draft merged PR #31 (2026-09-24); отдельный state PR #32 также merged. M1.4 implementation не равен Preview acceptance: `STATUS.md` прямо оставляет user E2E/feedback невалидированными.
+- M1.4 Application Draft merged PR #31 (2026-09-24); отдельный state PR #32 также merged. M1.4 implementation не равен приёмки Preview: `STATUS.md` прямо оставляет user E2E/feedback невалидированными.
 - PR #33 доставил read-only MCP gateway, PR #36 и #37 закрыли observability/Error Center, PR #38 добавил локальный startup guide, а PR #39 обновил пользовательскую и операционную документацию. PR #39 merged на audited `stage` SHA.
 - На GitHub остался открытым PR #34 `m4env`/`chore/m1.4-preview-env`, обновлявшийся 2026-09-26. Его Quality прошёл, но актуальные `PR contract` и `Roadmap metadata` не прошли; mergeability в момент проверки `UNKNOWN`. Это не новый canonical task и не свидетельство готового Preview.
-- Текущие exact-SHA CI evidence: `Quality` = completed/success. Проверки на remote exact commit не заменяют локальный readiness, real-user Preview или независимые PostgreSQL concurrency harnesses.
+- Текущие exact-SHA свидетельства CI: `Quality` = completed/success. Проверки на remote exact commit не заменяют локальный readiness, real-user Preview или независимые PostgreSQL concurrency harnesses.
 
 ## 13. Accepted ADR inventory
 
@@ -315,21 +315,21 @@ flowchart LR
     E --> F[Career Facts + Claims — DONE]
     F --> G[Vacancy paste + matching — PARTIAL]
     G --> H[M1.4 saved drafts + Truth Guard — PARTIAL]
-    H --> I[Preview 0.1 acceptance — BLOCKED]
+    H --> I[Приёмка Preview 0.1 — ЗАБЛОКИРОВАНО]
     I --> J[M2 application package — NOT STARTED]
     J --> K[MVP 0.2 — NOT STARTED]
 ```
 
 ## 15. Дорожка от текущего состояния до MVP
 
-Сначала нужны evidence Preview и явная переоценка gate. Переход к M2 зависит от их результата.
+Сначала нужны подтверждённые результаты Preview и переоценка готовности. Переход к M2 зависит от их результата.
 
 ```mermaid
 flowchart TD
     A[CURRENT: M1.4 code merged; Preview unaccepted] --> B[Resolve local PostgreSQL target safely]
     B --> C[Health readiness 200; migration state verified]
     C --> D[Real-user Preview 0.1 E2E + observed feedback]
-    D --> E[Reassess gate and reconcile task/state records]
+    D --> E[Переоценка приёмочного шлюза и сверка статусов]
     E --> F[M2 planning task: one bounded implementation contract]
     F --> G[Build traceable Application package slices]
     G --> H[MVP 0.2: prepare, export, download, manually submit]
@@ -343,15 +343,15 @@ flowchart TD
 | Order | Task | Depends on | Why required for MVP | Size | Risk |
 |---|---|---|---|---|---|
 | 1 | Неразрушающе установить правильную БД/volume и восстановить `/ready` | Проверка существующих DB/volume и подтверждение целевых данных | Сейчас даже нормальный Preview API flow недоступен | S–M | HIGH — нельзя перепутать или стереть пользовательские данные |
-| 2 | Пройти Preview 0.1 реальным пользователем и записать наблюдения по acceptance criteria | Task 1; `.agents/tasks/m1-4-application-draft.md` | Это обязательный value checkpoint перед M2 | M | HIGH — без фактического использования M2 scope будет предположением |
-| 3 | Сверить M1.3/M1.4 task statuses и current state после evidence | Установленное code merge и результат Preview | State является execution gate для следующих агентов | S | MEDIUM — риск повторной или преждевременной работы |
+| 2 | Пройти Preview 0.1 реальным пользователем и записать наблюдения по критерии приёмки | Task 1; `.agents/tasks/m1-4-application-draft.md` | Это обязательный value checkpoint перед M2 | M | HIGH — без фактического использования M2 scope будет предположением |
+| 3 | Сверить M1.3/M1.4 task statuses и current state после фактических проверок | Установленное code merge и результат Preview | State является execution gate для следующих агентов | S | MEDIUM — риск повторной или преждевременной работы |
 | 4 | Выполнить M2 application-package planning task и определить один implementation slice | Записанный Preview feedback и reassessment | Канонический вход в M2; не заказывать весь M2 одним PR | M | MEDIUM — scope зависит от evidence |
 | 5 | Выполнить первый bounded M2 slice по созданному planning contract | NEXT из task 4; принятые ADR | Начинает переход от draft к полезному скачиваемому package | M–L | MEDIUM/HIGH — ownership, provenance, stale dependency и files |
 | 6 | Последующими bounded slices завершить readiness/export/employer consistency и end-to-end проверку | Предыдущие M2 slices и продуктовые решения | Это критерии MVP 0.2 в Roadmap | L/XL суммарно | HIGH — несколько security/data/rendering границ, нельзя сливать в одну задачу |
 
 ## 17. Dependency map
 
-Показаны только зависимости, прямо следующие из нынешнего workflow и roadmap. `Auth` оборачивает private resources. Для candidate text Truth Guard зависит от подтверждённых Career claims. Для M2 Employer Memory зависит от сохранённых Applications/Conversation evidence.
+Показаны только зависимости, прямо следующие из нынешнего workflow и roadmap. `Auth` оборачивает private resources. Для candidate text Truth Guard зависит от подтверждённых Career claims. Для M2 Employer Memory зависит от сохранённых сохранённых откликов и истории общения.
 
 ```mermaid
 flowchart TD
@@ -389,7 +389,7 @@ flowchart TD
 
 **Объём:** исследовать каталоги/схемы безопасными read-only средствами; согласовать local `DB_DATABASE`/`POSTGRES_DB` с существующими данными; не удалять volume и не выполнять миграции до подтверждения целевого состояния.
 
-**Критерии завершения:** правильная DB выбрана по evidence; конфигурация согласована; readiness = 200; migration state проверен без потери прежних данных; результат записан.
+**Критерии завершения:** правильная DB выбрана на основе фактических данных; конфигурация согласована; readiness = 200; migration state проверен без потери прежних данных; результат записан.
 
 **Источники истины:** `.agents/state/BLOCKERS.md`, `.agents/tasks/m0-runnable-core.md`, `docs/10-Operations/Local-Development.md`, `compose.yaml`.
 
@@ -399,39 +399,39 @@ flowchart TD
 
 **Почему сейчас:** это обязательный product checkpoint перед M2 planning.
 
-**Условия:** NEXT-01; acceptance criteria M1.4 task spec; настроенный AI для первоначальных extraction/generation шагов либо заранее известная допустимая конфигурация.
+**Условия:** NEXT-01; критерии приёмки M1.4 task spec; настроенный AI для первоначальных extraction/generation шагов либо заранее известная допустимая конфигурация.
 
-**Объём:** пройти Preview flow, записать результат каждого acceptance criterion и собрать наблюдаемую обратную связь. Функции работодателя, автосабмит и файловый экспорт в этот flow не входят.
+**Объём:** пройти Preview flow, записать результат каждого критерия приёмки и собрать наблюдаемую обратную связь. Функции работодателя, автосабмит и файловый экспорт в этот flow не входят.
 
-**Критерии завершения:** записаны real-user E2E evidence и feedback; ограничения подтверждены; пропущенные действия не отмечены как PASS; private candidate content исключён или замаскирован в общих артефактах.
+**Критерии завершения:** записаны результаты сквозного тестирования реальным пользователем и обратная связь; ограничения подтверждены; пропущенные действия не отмечены как PASS; private candidate content исключён или замаскирован в общих артефактах.
 
 **Источники истины:** `NEXT.md`, `BLOCKERS.md`, `.agents/tasks/m1-4-application-draft.md`, `docs/01-Product/Roadmap.md`.
 
 ### NEXT-03: reconciliate project state and task lifecycles
 
-**Цель:** синхронизировать код, merge evidence, task specs и canonical state.
+**Цель:** синхронизировать код, свидетельств слияния PR, task specs и canonical state.
 
 **Почему сейчас:** статусы M1.3/M1.4 расходятся с историей merge; статус внешнего MCP смешан с Preview blocker.
 
-**Условия:** подтвердить PR/commit evidence и записать результат Preview.
+**Условия:** подтвердить артефактов коммитов и пулл-реквестов и записать результат Preview.
 
 **Объём:** минимально обновить task lifecycle и `STATUS/NEXT/BLOCKERS` по фактическому результату; не создавать backlog в state и не менять порядок roadmap без decision.
 
-**Критерии завершения:** M1.3 отмечен по фактическому merged acceptance; code completion M1.4 отделён от Preview acceptance; `NEXT` указывает следующую разрешённую задачу; MCP external blocker помечен как non-MVP.
+**Критерии завершения:** M1.3 отмечен по фактическому приёмки после слияния PR; code completion M1.4 отделён от приёмки Preview; `NEXT` указывает следующую разрешённую задачу; MCP external blocker помечен как non-MVP.
 
 **Источники истины:** `.agents/state/{STATUS,NEXT,BLOCKERS}.md`, `.agents/tasks/m1-3-vacancy-core.md`, `.agents/tasks/m1-4-application-draft.md`, `PROJECT.md`.
 
 ### NEXT-04: определить одну bounded M2 implementation task
 
-**Цель:** использовать Preview evidence, чтобы выполнить текущую M2 planning spec и выбрать один наблюдаемый application-package outcome.
+**Цель:** использовать подтверждений работы Preview, чтобы выполнить текущую M2 planning spec и выбрать один наблюдаемый application-package outcome.
 
 **Почему сейчас:** подтверждённый Preview покажет, какой package gap важнее.
 
-**Условия:** Preview evidence/feedback и state reassessment из NEXT-03.
+**Условия:** подтверждений работы Preview и обратной связи и state reassessment из NEXT-03.
 
 **Объём:** задать одну vertical capability и её data/API/UI/security/test/documentation boundaries. Application lifecycle, generation, documents, Employer Memory и integrations должны остаться отдельными implementation tasks.
 
-**Критерии завершения:** готова одна implementation spec с measurable acceptance, Truth-first provenance, owner isolation, stale-input behavior, PostgreSQL evidence where needed и no auto-submission.
+**Критерии завершения:** готова одна implementation spec с измеримыми критериями приёмки, достоверность первоисточника (Truth-first), owner isolation, stale-input behavior, результаты тестов на PostgreSQL где применимо и no auto-submission.
 
 **Источники истины:** `.agents/tasks/m2-application-package-planning.md`, `docs/01-Product/Roadmap.md`, accepted ADRs.
 
@@ -445,18 +445,18 @@ flowchart TD
 
 **Объём:** одна выбранная capability; отдельные subsequent tasks для export pipeline, employer consistency и readiness, если планирование подтвердит их необходимость.
 
-**Критерии завершения:** task acceptance, focused automated regression coverage, required PostgreSQL/runtime validation, актуальные docs/state и независимый review по repo workflow.
+**Критерии завершения:** приёмка задачи, focused automated regression coverage, required PostgreSQL/runtime validation, актуальные docs/state и независимый review по repo workflow.
 
 **Источники истины:** будут указаны в завершённом M2 planning task. До его закрытия implementation scope не утверждён.
 
 ## 19. Три горизонта
 
-### Горизонт A: завершить текущий gate
+### Горизонт A: завершить текущий приёмочный рубеж
 
 1. Безопасно определить и согласовать local DB/volume.
 2. Восстановить readiness и migration visibility.
-3. Пройти M1.4 Preview acceptance реальным пользователем и записать feedback.
-4. Сверить task/state metadata; до evidence не объявлять M1.4/Preview полностью PASS.
+3. Пройти M1.4 приёмки Preview реальным пользователем и записать feedback.
+4. Сверить task/state metadata; до получения подтверждающих результатов не объявлять M1.4/Preview полностью сданными.
 
 ### Горизонт B: достичь MVP 0.2
 
@@ -475,7 +475,7 @@ Basic Employer Memory входит в Roadmap M2; advanced employer journey и �
 
 Эта таблица оценивает возможность пройти end-to-end flow **в текущем audited runtime**. Наличие кода и подтверждение пользовательского шага указаны отдельно. Сейчас приложение не ready.
 
-| Шаг | Статус | Evidence / причина |
+| Шаг | Статус | Подтверждение / причина |
 |---|---|---|
 | User / invite / sign-in | NOT VERIFIED | Auth implementation и тесты есть, но interactive auth не проходил; API readiness 503. |
 | Career Fact Base | NOT VERIFIED | Manual entry, extraction, review и Claim code есть; текущий API не может подключиться к configured DB. |
@@ -492,13 +492,13 @@ Basic Employer Memory входит в Roadmap M2; advanced employer journey и �
 | `READY_TO_APPLY` | FAIL | Deterministic readiness contract пока только M2 roadmap. |
 | Application Tracking | FAIL | Нет полноценной Application/status chronology и ручного submission tracking. |
 
-**Полный flow сейчас: FAIL.** API readiness не проходит, а M2 package capabilities отсутствуют. **Preview 0.1: NOT PASS / BLOCKED** до восстановления runtime и real-user acceptance.
+**Полный flow сейчас: FAIL.** API readiness не проходит, а M2 package capabilities отсутствуют. **Preview 0.1: NOT PASS / BLOCKED** до восстановления runtime и приёмки реальным пользователем.
 
 ## 21. Техническая карта зависимостей
 
 - Auth/owner isolation предшествует любой private Career, Vacancy, Application или file workflow.
 - Career Facts должны быть подтверждены и связаны с Claim до использования в Matching/Truth Guard.
-- Vacancy ingestion и Career evidence сходятся в Matching; автоматическое требование к manual requirement entry отсутствует.
+- Данные вакансий и карьерные факты объединяются при сопоставлении; автоматическое требование к manual requirement entry отсутствует.
 - Resume recommendations и Cover generation получают vacancy context, career claims и Truth Guard checks.
 - M2 Applications и версии создают traceable package; Documents рендерят утверждённое содержимое.
 - Employer Memory должен опираться на Application/conversation history; отдельные интервью не являются prerequisite для подготовки первого пакета.
@@ -513,7 +513,7 @@ Health показывает состояние каждой области. Эт
 | Architecture | GREEN | Accepted ADR set индексирован; текущие границы в основном соблюдаются. |
 | Documentation | YELLOW | Product/ops docs развиты и обновлены; task lifecycle метаданные M1.3/M1.4 отстали, нет единого API OpenAPI. |
 | Infrastructure | RED | Все Compose сервисы подняты, но configured DB отсутствует; `/ready` = 503. |
-| Security | YELLOW | Access, ownership, Vacancy/Application RLS и diagnostics redaction реализованы; Career DB-level граница и PG gate в CI слабее/не обязательны. |
+| Security | YELLOW | Access, ownership, Vacancy/Application RLS и diagnostics redaction реализованы; граница Career на уровне базы данных и проверка PostgreSQL в CI менее строгие. |
 | Backend | YELLOW | M1 domain/services есть; локальный runtime backend не готов из-за DB mapping. |
 | Frontend | YELLOW | M1 workspace и diagnostics есть; homepage отдаётся, но Preview interactions не прогнаны. |
 | AI | YELLOW | Provider boundary, OpenAI implementation, skills/schemas и run metadata есть; AI default-off, provider один, eval harness отсутствует. |
@@ -528,7 +528,7 @@ Health показывает состояние каждой области. Эт
 - `NEXT.md`: текущая цель Preview 0.1 сохранена; она остаётся canonical product task. Начать реальный Preview flow можно после устранения PostgreSQL blocker. Файл не менялся.
 - `BLOCKERS.md`: PostgreSQL blocker live подтверждён: backend config `DB_DATABASE=cvortex2`; текущий PostgreSQL каталог содержит `cvortex` и `cvortex_dev2`, но не `cvortex2`; readiness 503. В аудит-сессии миграции не запускались. Файл не менялся.
 - `STATUS.md`: после аудита добавлена dated-запись со ссылкой на этот отчёт и результатами runtime-проверок: Compose healthy и homepage 200 не отменяют readiness 503 из-за отсутствующей `cvortex2`; `migrate:status` остановился до миграций.
-- `.agents/tasks/m1-3-vacancy-core.md`: сверить статус с PR #27/#28 merge и `PROJECT.md`; удалить устаревшее “awaiting re-review” только после проверки acceptance history.
+- `.agents/tasks/m1-3-vacancy-core.md`: сверить статус с PR #27/#28 merge и `PROJECT.md`; удалить устаревшее “awaiting re-review” только после проверки истории приёмки.
 - `.agents/tasks/m1-4-application-draft.md`: отделить уже merged implementation от ещё не принятого Preview 0.1; не маркировать full slice PASS до user E2E.
 - `BLOCKERS.md`/статус интеграций: обозначить внешний MCP ChatGPT/Tunnel E2E как отдельный non-MVP blocker; его entitlement и tunnel доступ остаются UNKNOWN.
 - `PROJECT.md`: базовое описание M1.4/Preview/M2 соответствует текущему факту; менять его стоит только вместе с outcome Preview и reconciliation task statuses.
@@ -552,7 +552,7 @@ Health показывает состояние каждой области. Эт
 | `docker compose exec -T backend php artisan migrate:status --no-interaction --no-ansi` | FAIL до миграционного списка: PostgreSQL отвечает `database "cvortex2" does not exist`. Это подтвердило причину; миграции не применялись. |
 | Read-only database catalog query и Compose/backend config inspection | Configured `DB_DATABASE=cvortex2`; доступны `cvortex`, `cvortex_dev2`, но не `cvortex2` |
 | GitHub PR/CI read-only lookup | PR #39 merged; PR #34 открыт и имеет failing PR contract/Roadmap checks; Quality для exact audited SHA завершился success |
-| `make migrate`, application test suite, браузерный Preview E2E | NOT RUN: миграции могли бы изменить БД, runtime DB отсутствует; tests не требовались для аудита кода при green exact-SHA Quality CI; Preview blocked readiness и отсутствием user acceptance. |
+| `make migrate`, application test suite, браузерный Preview E2E | NOT RUN: миграции могли бы изменить БД, runtime DB отсутствует; tests не требовались для аудита кода при green exact-SHA Quality CI; Preview blocked readiness и отсутствием пользовательской приёмки. |
 
 Validation outputs не меняли tracked project files. Миграции, volumes и прикладные данные также не менялись. Статическая проверка подтвердила 16 Markdown targets, 3 Obsidian targets, 8 сбалансированных code fences, отсутствие trailing whitespace и корректную структуру трёх простых Mermaid `flowchart` diagrams. Mermaid CLI нет в текущем PATH, поэтому визуальный render не выполнялся. `git diff --no-index --check /dev/null docs/00-Home/CURRENT-PROJECT-STATE.md` не нашёл whitespace errors. Exit 1 ожидаем: команда сравнивает новый файл с `/dev/null`.
 
@@ -562,4 +562,4 @@ Validation outputs не меняли tracked project files. Миграции, vo
 - Исторические local test counts из `STATUS.md` не повторялись, поэтому они не названы новыми локальными PASS в этом отчёте.
 - Browser/Figma/screen-reader/keyboard contrast review не выполнялись.
 - Не проверялись ChatGPT/Tunnel entitlement, внешние интеграции, актуальные цены/ToS/лицензии или output quality реального OpenAI provider; эти внешние факты должны оставаться UNKNOWN до их целевого исследования.
-- Код и suite coverage сами по себе не подтверждают real-user Preview acceptance. Для этого пользователь должен пройти сценарий.
+- Код и suite coverage сами по себе не подтверждают приёмки Preview реальным пользователем. Для этого пользователь должен пройти сценарий.

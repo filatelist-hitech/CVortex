@@ -19,20 +19,20 @@ Git preflight с `--write --user-override` выполнен. Изменения 
 сохраняются. Приложенного screenshot в доступном сообщении нет; исходные шесть
 снимков сняты с фактического кандидата перед изменениями.
 
-[DOM inventory до изменений](validation/typography/before/inventory.json) охватывает
+DOM inventory до изменений (`validation/typography/before/inventory.json`, файл оптимизирован в PR #51) охватывает
 все пять разделов, восемь состояний, отказ/принятие/одобрение, редактирование и его
-ошибку, Cedar conflict, evidence, mobile list и три demo roles. Он включает H1–H6,
+ошибку, конфликт Cedar, панель фактов, мобильный список и три демонстрационные роли. Он включает H1–H6,
 визуальные заголовки strong/p, подписи, статусы, кнопки и вспомогательные тексты.
 
 | Наблюдение | Причина | Решение |
 | --- | --- | --- |
 | Название вакансии и зарплата конкурируют | Узкий title рядом с яркой карточкой, оба 32 px | Page Title 24 px, Numeric Highlight 24 px; зарплата без рамки и тени |
 | Заголовки одного уровня выглядят по-разному | h2/h3 переопределены в pane, section, inspector, dialog | Визуальная роль задаётся классом независимо от HTML-тега |
-| H2 списка предшествует H1 вакансии; на mobile нет видимого H1 списка | Семантика закреплена за desktop | Список desktop имеет подпись; list/work/evidence получают один видимый H1 |
+| H2 списка предшествует H1 вакансии; на mobile нет видимого H1 списка | Семантика закреплена за desktop | Список desktop имеет подпись; экраны списка, работы и фактов получают один видимый H1 |
 | Отказ выглядит как блокировка | rejected использует danger | Отказ neutral; отсутствие подтверждений error; pending/stale warning |
 | Диапазон «240 000…290 000 ₽» разрывается | Многоточие и слишком крупные цифры | Эквивалентные «240–290 тыс. ₽», отдельно месяц и налоги |
 | Предложения и контекст нарезаны прямоугольниками | Рамки и подложки дублируют иерархию | Одна поверхность сравнения, контекст отделён whitespace |
-| Следующее действие повторяет описание состояния | Общая подпись для разных gates | Действие зависит от просмотра, принятия, отказа и одобрения |
+| Следующее действие повторяет описание состояния | Общая подпись для разных gates | Действие зависит от просмотра, принятия, отказа и одобрения: у каждого этапа своя подпись |
 | Тексты многократно повторяют вымышленность и недоступность | Пояснения вставлены в каждый блок | Явная demo-рамка, краткие локальные ограничения и сохранённые риски |
 
 ## Направление до реализации
@@ -93,7 +93,7 @@ Foundation и её общая шкала H1/H2/H3 остаются прежни�
 Отступы задаются layout-контейнером и группировкой, без скрытых margins в heading
 classes. Нет механического clamp(). Название переносится по словам, без hyphens;
 длинный непрерывный identifier имеет emergency wrap. Значимые данные не обрезаются.
-На mobile заголовок списка или evidence становится Page Title с той же ролью.
+На мобильных экранах заголовок списка или панели фактов становится Page Title с той же ролью.
 
 ## Продуктовый смысл текста
 
@@ -110,8 +110,8 @@ classes. Нет механического clamp(). Название перен�
 
 ## Inventory заголовков
 
-[Полный inventory до](validation/typography/before/inventory.json) и
-[после](validation/typography/after/inventory.json) содержат видимый текст, tag,
+Полный inventory до (`validation/typography/before/inventory.json`) и
+после (`validation/typography/after/inventory.json`, файлы оптимизированы в PR #51) содержат видимый текст, tag,
 class, font, size, weight, leading, tracking, color, tooltips и placeholders.
 Таблица ниже объясняет структурные роли, включая прежние strong/p-заголовки.
 H5/H6 в кандидате не используются; уровни проверяются в каждом видимом состоянии.
@@ -125,7 +125,7 @@ H5/H6 в кандидате не используются; уровни пров
 | Правка резюме | H2 | Section Title |
 | Работодатель | H2 | Section Title |
 | История | H2 | Section Title |
-| На чём основан текст | H2 desktop; H1 mobile evidence | Section Title / Page Title |
+| На чём основан текст | H2 десктоп; H1 мобильная панель фактов | Section Title / Page Title |
 | Профиль и доступ | H2 в dialog | Section Title |
 | API и PostgreSQL / Playwright в обзоре | H3 | Card Title |
 | Регрессионные тесты API на Python и pytest | H3 | Card Title |
@@ -137,7 +137,7 @@ H5/H6 в кандидате не используются; уровни пров
 | Анализ выполняется / нет анализа / ошибка | H3 | Subsection Title |
 | Подтверждения устарели / отсутствуют / pending | H3 | Subsection Title |
 | Правка принята, текст ещё не одобрен / Cedar conflict | H3 | Subsection Title |
-| От текста к источнику | H3 desktop; H2 mobile evidence | Subsection Title |
+| От текста к источнику | H3 десктоп; H2 мобильная панель фактов | Subsection Title |
 | Для администратора | H3 | Subsection Title |
 | Сейчас / Предлагаемая правка | H4 | Field Label |
 | Почему эта правка / Подтверждения / Что нельзя добавлять | H4 | Field Label |
@@ -194,12 +194,14 @@ Northstar: исходные `240000` и `290000` рублей, Cedar: `250000` �
 
 | Экран | BEFORE | AFTER |
 | --- | --- | --- |
-| Desktop 1440, обзор | [До](validation/typography/before/1440-overview.png) | [После](validation/typography/after/1440-overview.png) |
-| Desktop 1440, материалы | [До](validation/typography/before/1440-materials.png) | [После](validation/typography/after/1440-materials.png) |
-| Desktop 1440, отказ | [До](validation/typography/before/1440-rejected.png) | [После](validation/typography/after/1440-rejected.png) |
-| Mobile 390, обзор | [До](validation/typography/before/390-overview.png) | [После](validation/typography/after/390-overview.png) |
-| Mobile 390, материалы | [До](validation/typography/before/390-materials.png) | [После](validation/typography/after/390-materials.png) |
-| Mobile 390, отказ | [До](validation/typography/before/390-rejected.png) | [После](validation/typography/after/390-rejected.png) |
+| Desktop 1440, обзор | `1440-overview.png` | `1440-overview.png` |
+| Desktop 1440, материалы | `1440-materials.png` | `1440-materials.png` |
+| Desktop 1440, отказ | `1440-rejected.png` | `1440-rejected.png` |
+| Mobile 390, обзор | `390-overview.png` | `390-overview.png` |
+| Mobile 390, материалы | `390-materials.png` | `390-materials.png` |
+| Mobile 390, отказ | `390-rejected.png` | `390-rejected.png` |
+
+> *Примечание: Графические файлы скриншотов оптимизированы и удалены в PR #51.*
 
 Агент оценивает композицию и читаемость по изображениям отдельно от PASS тестов.
 При проверке glyph providers выявлен системный STIX Two Math для знака ₽ в Arial.

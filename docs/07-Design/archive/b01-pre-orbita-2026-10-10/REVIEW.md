@@ -50,17 +50,17 @@ the record remains pending.
 цветовые акценты, локальные иконки и декоративную иллюстрацию. Отзыв задаёт
 направление правок; результат этих правок ещё не получил human review.
 
-| Review input | Scope |
+| Review input (артефакты оптимизированы в PR #51) | Scope |
 | --- | --- |
-| [Меню пользователя](validation/1440-account-user.png), [администратора](validation/390-account-admin.png), [без входа](validation/320-account-guest.png) | Только локальная демонстрация ролей; Tab, Shift+Tab, Escape, возврат фокуса; реальная сессия не меняется |
-| [Cedar: требования](validation/1440-cedar-requirements.png) | Зарплата, графика и предупреждение о конфликте на экране из замечаний владельца |
-| [Desktop normal](validation/1440-normal.png), [evidence](validation/1440-evidence.png) | 1440×900; list, workspace, optional inspector, evidence readability |
-| [Tablet workspace](validation/768-normal.png), [drawer](validation/768-evidence.png), [list](validation/768-list.png) | 768×1024; one transient panel, keyboard trap and Escape/return focus |
-| [Compact workspace](validation/390-normal.png), [list](validation/390-list.png), [evidence](validation/390-evidence.png) | 390×844; list → workspace → context and Back |
-| [Small workspace](validation/320-normal.png), [evidence](validation/320-evidence.png) | 320×640; wrapping, full-width evidence, touch controls |
-| [Loading](validation/1440-loading.png), [empty](validation/390-empty.png), [failed](validation/320-failed.png) | Visible operation/state, honest unavailable data and next action |
-| [Stale](validation/1440-stale.png), [blocked](validation/1440-blocked.png), [pending](validation/390-pending.png), [conflict](validation/1440-conflict.png) | Support reason remains inline; Accept/Approve unavailable |
-| [Approval distinct](validation/1440-approval.png), [compact approval](validation/320-approval.png) | Accept → separate exact-content approval → explicitly not sent |
+| Меню пользователя (`1440-account-user.png`), администратора (`390-account-admin.png`), без входа (`320-account-guest.png`) | Только локальная демонстрация ролей; Tab, Shift+Tab, Escape, возврат фокуса; реальная сессия не меняется |
+| Cedar: требования (`1440-cedar-requirements.png`) | Зарплата, графика и предупреждение о конфликте на экране из замечаний владельца |
+| Desktop normal (`1440-normal.png`), evidence (`1440-evidence.png`) | 1440×900; list, workspace, optional inspector, evidence readability |
+| Tablet workspace (`768-normal.png`), drawer (`768-evidence.png`), list (`768-list.png`) | 768×1024; one transient panel, keyboard trap and Escape/return focus |
+| Compact workspace (`390-normal.png`), list (`390-list.png`), evidence (`390-evidence.png`) | 390×844; list → workspace → context and Back |
+| Small workspace (`320-normal.png`), evidence (`320-evidence.png`) | 320×640; wrapping, full-width evidence, touch controls |
+| Loading (`1440-loading.png`), empty (`390-empty.png`), failed (`320-failed.png`) | Visible operation/state, honest unavailable data and next action |
+| Stale (`1440-stale.png`), blocked (`1440-blocked.png`), pending (`390-pending.png`), conflict (`1440-conflict.png`) | Support reason remains inline; Accept/Approve unavailable |
+| Approval distinct (`1440-approval.png`), compact approval (`320-approval.png`) | Accept → separate exact-content approval → explicitly not sent |
 
 All 53 captures are listed with scenario URL and viewport in the browser report;
 the links above are entry points, not approval of the remaining states.

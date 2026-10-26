@@ -25,9 +25,9 @@ related:
 - [[CVortex|О CVortex]]: возможности и текущие ограничения продукта.
 - [[User-Guide|Руководство пользователя]]: вход, факты о карьере, вакансии, черновики и защита данных.
 - [[Process-Map|Карта процессов]]: Preview, происхождение данных, локальный запуск и диагностика. Планы M2 выделены отдельно.
-- [Текущее состояние проекта](CURRENT-PROJECT-STATE.md): короткий dashboard с milestone, blockers, Git и одной next task; каноническое состояние — `.agents/state/`.
-- [Project Recovery Report](../../.agents/state/PROJECT_RECOVERY_REPORT.md): evidence матрицы фаз/реализации, Git/PR audit, проверки и recovery roadmap.
-- [Аудит 3 октября — история](PROJECT-STATE-AUDIT-2026-10-03.md): датированный отчёт, не текущий execution state.
+- [Текущее состояние проекта](CURRENT-PROJECT-STATE.md): сводная панель с этапами, блокерами, состоянием Git и следующей задачей; каноническое состояние фиксируется в `.agents/state/`.
+- [Project Recovery Report](../../.agents/state/PROJECT_RECOVERY_REPORT.md): доказательная база по матрице фаз и реализации, аудит Git и PR, проверки и план восстановления.
+- [Аудит 3 октября — история](PROJECT-STATE-AUDIT-2026-10-03.md): исторический отчёт, а не текущее состояние выполнения.
 - [[../10-Operations/Local-Development|Локальная установка]]: требования, настройка, запуск, остановка, обновление и устранение проблем.
 - [[../10-Operations/M0-Runbook|Проверка и восстановление M0]]: состояние служб и действия оператора.
 - [[Error-Center-User-Guide|Разбор ошибок]]: действия пользователя и администратора при сбое.
@@ -41,14 +41,14 @@ related:
 - [[../01-Product/Vision|Видение]], [[../01-Product/Principles|принципы]], [[../01-Product/Scope|объём продукта]] и [[../01-Product/Glossary|словарь]]: замысел, ограничения и термины. Эти документы описывают направление, а не подтверждают готовность функций.
 - [[../01-Product/Roadmap|План развития]]: последовательность этапов и их текущий статус.
 - [[../02-Architecture/Architecture-Baseline|Архитектурные границы]], [[../02-Architecture/Phase-06-System-Design|системный дизайн]] и [[../02-Architecture/M0-Runtime|схема M0]]: устройство системы, принятые решения и локальный запуск.
-- [QA-004: выбор источника утверждения](../09-QA/evidence/qa004-2026-10-12/README.md): bounded UI correction, synthetic validation и открытые human/provider gates.
+- [QA-004: выбор источника утверждения](../09-QA/evidence/qa004-2026-10-12/README.md): точечные исправления интерфейса, синтетическое тестирование и открытые шлюзы ручной приёмки и внешних провайдеров.
 - [[../04-Data/M1-2-Career-Core|M1.2: факты о карьере]], [[../04-Data/M1-3-Vacancy-Core|M1.3: вакансии]] и [[../04-Data/M1-4-Application-Draft|M1.4: черновики отклика]]: структура данных, API и правила проверки.
 - [[../04-Data/Diagnostics|Модель диагностики]] и [[../05-API/diagnostics.openapi.yaml|контракт API диагностики]].
 - [[../06-AI/Phase-06-AI-Design|Проектирование работы с ИИ]], [[../08-Security/Threat-Model|модель угроз]] и [[../07-Design/Design-Foundation|основы дизайна]].
-- [Application Workspace](../07-Design/Application-Workspace.md): выбранный Concept B, IA, evidence/AI/employer interaction и mobile navigation.
-- [Design Handoff](../07-Design/Design-Handoff.md): актуальный Git source-of-truth workflow, токены и visual review.
-- [Concept B Reconciliation](../07-Design/Concept-B-Reconciliation.md): traceable decision matrix, browser evidence, token ledger и bounded frontend roadmap.
-- [[../07-Design/Figma-Handoff|Исторический Figma handoff]]: superseded; dated capability/evidence record, вспомогательный инструмент.
+- [Application Workspace](../07-Design/Application-Workspace.md): выбранная концепция B, информационная архитектура, подтверждения фактов, взаимодействие с ИИ и работодателем, мобильная навигация.
+- [Design Handoff](../07-Design/Design-Handoff.md): актуальный процесс на базе Git как единого источника правды, дизайн-токены и визуальное ревью.
+- [Concept B Reconciliation](../07-Design/Concept-B-Reconciliation.md): прозрачная матрица решений, артефакты браузерных тестов, реестр дизайн-токенов и дорожная карта фронтенда.
+- [[../07-Design/Figma-Handoff|Исторический Figma handoff]]: устарел; исторический архив возможностей и подтверждений, вспомогательный инструмент.
 - [[../03-ADR/INDEX|Указатель архитектурных решений]]: список принятых архитектурных решений.
 
 ## Разделы документации
@@ -64,7 +64,7 @@ related:
 | `06-AI/` | Сервисы ИИ, модели, сценарии и оценка ИИ | В работе |
 | `07-Design/` | Дизайн-система, токены и передача макетов | В работе |
 | `08-Security/` | Модель угроз и меры защиты | В работе |
-| `09-QA/` | [Functional audit](../09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), [coverage matrix](../09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), [исторический defect register](../09-QA/FUNCTIONAL-DEFECT-REGISTER.md), [текущий статус QA-001](../09-QA/QA-001-RECONCILIATION.md) и проверяемый evidence package | Датированные локальные проверки; provider/human/release gates видимы отдельно |
+| `09-QA/` | [Функциональный аудит](../09-QA/FULL-FUNCTIONAL-AUDIT-2026-10-11.md), [матрица покрытия](../09-QA/FUNCTIONAL-COVERAGE-MATRIX.md), [исторический реестр дефектов](../09-QA/FUNCTIONAL-DEFECT-REGISTER.md), [текущий статус QA-001](../09-QA/QA-001-RECONCILIATION.md) и проверяемый пакет подтверждений | Датированные локальные проверки; шлюзы ручной приёмки, внешних провайдеров и релизные барьеры выделены отдельно |
 | `10-Operations/` | Локальный запуск, обслуживание и диагностика | В работе |
 | `11-Research/` | Исследования, результаты которых включены в документацию | Зарезервировано |
 | `99-Archive/` | Устаревшие и заменённые документы | Зарезервировано |

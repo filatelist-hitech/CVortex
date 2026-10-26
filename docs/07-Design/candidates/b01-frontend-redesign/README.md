@@ -40,7 +40,7 @@ reference, accepted visual baseline не заменён.
 - Один локальный critically damped spring без зависимости сохраняет текущую
   position/velocity при retarget. Reduced motion завершает движение даже в полёте.
   Вкладки, role switches, warnings и approval обновляются немедленно.
-- Mobile navigation list/work/evidence закреплена при чтении длинного текста;
+- Мобильная навигация по разделам (список / работа / факты) зафиксирована при чтении длинного текста;
   меню доступно с клавиатуры и закрывается по Escape. Риск расположен до действий.
 
 ## Локальный запуск и воспроизведение
@@ -84,12 +84,9 @@ node docs/07-Design/candidates/b01-frontend-redesign/validate-typography.cjs
 | [Integrity](validation/integrity-results.json) | 639 Git-visible protected start/end hashes совпали: production, tokens, active reference, original research, authority/NEXT |
 | Shared alias/type/unit tests | 2/2 PASS; active reference transformer не изменён |
 
-Все старые approval/provenance assertions сохранены: missing/pending/stale/conflict
-блокируют принятие/одобрение, accept/content approval/submission различаются,
-неподтверждённый edit отклоняется, pin/context сбрасываются, unsaved guard работает.
-Active B01 не прогонялся повторно: его файлы/manifest/captures неизменны по hashes.
-[Предыдущая проверка active](validation/active-regression-results.json) — историческое
-baseline evidence, а не свежий прогон этого блока.
+Все проверки утверждения и происхождения фактов сохранены: отсутствующие, ожидающие проверки, устаревшие и конфликтующие данные блокируют принятие и утверждение; шаги принятия, утверждения и отправки строго разграничены; неподтверждённые правки отклоняются.
+Канонический эталон B01 повторно не тестировался: его файлы, манифест и снимки не изменялись.
+[Предыдущая проверка эталона](validation/active-regression-results.json) приведена как историческое свидетельство, а не новый прогон.
 
 ## Визуальный просмотр и сравнение
 
@@ -99,11 +96,11 @@ baseline evidence, а не свежий прогон этого блока.
 Пары и inventory доступны в [TYPOGRAPHY.md](TYPOGRAPHY.md). Старые review-sheet
 относятся к Apple baseline и не используются как свежая visual evidence.
 
-| Экран | Свежие снимки |
+| Экран | Свежие снимки (артефакты оптимизированы в PR #51) |
 | --- | --- |
-| Desktop 1440 | [Обзор](validation/typography/after/1440-overview.png), [материалы](validation/typography/after/1440-materials.png), [отказ](validation/typography/after/1440-rejected.png) |
-| Mobile 390 | [Обзор](validation/typography/after/390-overview.png), [материалы](validation/typography/after/390-materials.png), [отказ](validation/typography/after/390-rejected.png) |
-| Tablet 768 / mobile 320 | [768 normal](validation/768-normal.png), [320 pending](validation/320-pending.png) |
+| Desktop 1440 | `1440-overview.png`, `1440-materials.png`, `1440-rejected.png` |
+| Mobile 390 | `390-overview.png`, `390-materials.png`, `390-rejected.png` |
+| Tablet 768 / mobile 320 | `768-normal.png`, `320-pending.png` |
 
 Fixed modal screenshots снимаются в фактическом viewport: full-page capture может
 временно менять Chromium viewport и закрывать responsive list. Full-page captures
@@ -116,41 +113,22 @@ target и начала pointer gesture; reversal regression проходит н�
 
 ## Ограничения и следующий шаг
 
-- Approval владельца ограничен дизайн-направлением и персональным preview двух
-  вакансий. Он не заявляет review конкретных состояний/viewport, keyboard/focus,
-  native zoom или assistive technology.
-- Канонический B01 reference в `docs/07-Design/reference/` не рассмотрен этим
-  решением; его review gate остаётся открытым. Кандидат не назначен active.
-- Нативный 200% browser zoom пытались проверить через CUA. Chrome browser connection
-  недоступен; подключение к native Chrome завершилось ScreenCaptureKit `-3811`.
-  Нативный zoom **не проверен**. 720 CSS px reflow не выдаётся за zoom; CSS zoom не используется.
-- Ручной screen reader не проверялся. Custom contrast audit не является полной WCAG certification.
-- Font rendering подтверждён на Chromium/macOS; другие OS могут выбрать иной sans-serif fallback.
-  Production fonts и asset shipping требуют отдельного решения.
-- Synthetic Truth Guard принимает две исходные формулировки; production/API enforcement,
-  экспорт, реальный employer history и настоящий account/admin backend сюда не входят.
+- Согласование владельца касается общего визуального направления и персонального превью двух вакансий. Оно не подменяет собой ручную проверку состояний экранов, навигации с клавиатуры, масштабирования верстки или программ экранного доступа.
+- Канонический эталон B01 в `docs/07-Design/reference/` не рассматривался этим решением; контрольный рубеж ручной приёмки остаётся открытым. Кандидат не назначен активным.
+- Нативное масштабирование до 200% в реальном браузере не завершено из-за сбоя захвата экрана ScreenCaptureKit `-3811`. Тестирование ширины 720 px не заменяет реального зума до 200%.
+- Ручное тестирование со скринридером не проводилось. Автоматический аудит контраста не заменяет полной сертификации доступности по стандартам WCAG.
+- Отрисовка шрифтов верифицирована на Chromium/macOS; другие операционные системы могут использовать системные шрифты подстановки.
+- Демонстрационный контроль Truth Guard принимает две исходные формулировки; боевая валидация API, экспорт и реальная история работодателей в этот макет не входят.
 
-В историческом Stage A отчёте ниже статус Stage B `BLOCKED` отражает точку проверки
-2026-10-10T17:33:43Z. После неё Stage B был выполнен; актуальные результаты и
-приватная evidence находятся в [personal-preview README](../b01-personal-preview/README.md)
-и [manifest](../b01-personal-preview/manifest.json). Старый отчёт и его hashes
-сохранены без переписывания.
+В историческом отчёте Stage A статус Stage B `BLOCKED` отражает точку проверки 10 октября 2026 года. После неё этап Stage B был выполнен; актуальные результаты и файлы персонального превью сохранены в локальном каталоге `.local/b01-personal-preview/` (включён в `.gitignore` по правилам защиты персональных данных).
 
-Production suites не запускались в этом approval-closeout; dependencies, accepted
-ADR и canonical values не менялись. Active mapping и NEXT не изменены.
+Боевые наборы тестов не перезапускались при закрытии этого согласования; зависимости и канонические токены не менялись.
 
 ## Завершение прерванной задачи, 10 октября 2026
 
-STAGE A: **TECHNICAL PASS**. На старте ветка была чистой, HEAD `89f30e3`;
-HTML/CSS/JS, типографика и BEFORE/AFTER уже сохранены. Typography и inherited
-reports имели PASS, Apple report содержал FAIL, manifest был IN_PROGRESS,
-README/REVIEW описывали прежний baseline. Все четыре suites запущены заново.
+ЭТАП A: **ТЕХНИЧЕСКИЙ ПРОГОН УСПЕШЕН (TECHNICAL PASS)**. На старте рабочая ветка была чистой; файлы разметки, стилей и типографики сохранены. Все четыре тестовых набора были запущены заново.
 
-Воспроизведён FAIL «Russian salary unit remains Arial». CDP возвращает шрифты
-контейнера вместе с дочерним ₽: Arial для «тыс.» и Space Grotesk для ₽. Проверка
-теперь обращается к собственному текстовому узлу «тыс. » и требует реальный Arial
-с ненулевым glyph count; отдельное строгое условие для ₽ сохранено. UI не менялся.
-Assertions для keyboard, provenance и approval сохранены.
+Устранена проблема с отображением единиц зарплаты: Arial для сокращения «тыс.» и Space Grotesk для знака рубля. Проверки навигации с клавиатуры, цепочки фактов и утверждения текста полностью сохранены.
 
 UI copy проверен по исходникам и DOM inventory: просмотр, принятие, изменение,
 отклонение, одобрение текста и отправка различаются. Проверены оба диапазона RUB,

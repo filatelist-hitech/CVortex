@@ -3,7 +3,7 @@ title: Architecture Decision Index
 status: accepted
 owner: project
 created: 2026-09-12
-updated: 2026-10-08
+updated: 2026-10-24
 tags: [architecture, adr, index, phase-05]
 related:
   - "[[../02-Architecture/Architecture-Baseline|Architecture Baseline]]"

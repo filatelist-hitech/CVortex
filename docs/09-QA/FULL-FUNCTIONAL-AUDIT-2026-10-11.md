@@ -1,118 +1,113 @@
 ---
-title: CVortex Full Functional Audit 2026-10-11
+title: Полный функциональный аудит CVortex — 11 октября 2026 г.
 status: changes-required
 created: 2026-10-11
 updated: 2026-10-11
 tags: [qa, audit, first-value]
 ---
 
-# Full functional audit — 2026-10-11
+# Полный функциональный аудит — 11 октября 2026 г.
 
-**CHANGES REQUIRED.** Основной synthetic workflow работает на реальном локальном стеке с mock provider. Самостоятельное разрешение Claim ambiguity через Career UI отсутствует. B01 integrity check и три исторических test harness controls имеют открытые failures. Preview 0.1 и MVP 0.2 не готовы.
+**ТРЕБУЮТСЯ ДОРАБОТКИ (CHANGES REQUIRED).** Базовый синтетический сценарий успешно работает на реальном локальном стеке с тестовым мок-провайдером. Возможность самостоятельного разрешения неоднозначности утверждений (Claim ambiguity) через интерфейс Карьеры пока не реализована. Проверка целостности эталона B01 и три исторических сценария тестового стенда содержат открытые ошибки (FAIL). Версии Preview 0.1 и MVP 0.2 к сдаче не готовы.
 
-Tested SHA: `f06a6dba058589823bf3d3c8b693cb625170bc4b`. QA branch: `docs/full-functional-qa-2026-10-11`; checkout and temporary artifact paths are intentionally omitted from the Git export. Итоговые отчёты ранее отсутствовали; создан ровно один файл по каждому запрошенному пути, старые evidence сохранены. Historical audit made no product code changes, external provider calls or production writes. PR remediation changes verification helpers only; see [remediation](PR46-REMEDIATION.md).
+Протестированный коммит (SHA): `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Ветка QA: `docs/full-functional-qa-2026-10-11`; временные артефакты и пути сборки исключены из экспорта Git. Итоговые отчёты ранее отсутствовали; созданы отчёты по всем запрошенным путям, исторические подтверждения проверок (evidence) сохранены. В рамках аудита код продукта не менялся, внешние вызовы к провайдерам не совершались, боевая база данных не затрагивалась. Исправления PR затронули только скрипты валидации; см. [отчёт об исправлении](PR46-REMEDIATION.md).
 
-## Recovery and counting
+## Восстановление и подсчёт результатов
 
-Historical numbers are recomputed by `python3 scripts/qa_evidence.py`. [accounting.json](evidence/full-2026-10-11/accounting.json) separates named tests, frontend aggregates, controls and gaps. 370 named backend/QA identities, 369 executed; 108 frontend cases reported without exported individual identities. 539 weighted units are not 539 unique executed tests. [Export provenance](evidence/full-2026-10-11/export-provenance.json) records original and published bytes and missing execution metadata.
-
+Исторические показатели пересчитываются скриптом `python3 scripts/qa_evidence.py`. Файл [accounting.json](evidence/full-2026-10-11/accounting.json) разделяет именованные тесты, сводные данные фронтенда, контрольные точки и пробелы в покрытии. Всего 370 именованных тестов бэкенда и QA (выполнено 369); 108 тестов фронтенда зафиксированы суммарно без экспорта отдельных названий. 539 взвешенных единиц проверки не означают 539 уникальных запущенных тестов. Файл [export-provenance.json](evidence/full-2026-10-11/export-provenance.json) фиксирует байты оригинала и публикации, а также отсутствующие метаданные запусков.
 
 | Показатель | Количество |
 |---|---:|
-| Функции / контроли в bounded inventory | 67 |
-| Функции с проверкой / inspection | 59 |
-| Function PASS / FAIL / BLOCKED / NOT_RUN | 54 / 4 / 7 / 2 |
-| Weighted audit units (432 records) | 539 |
-| Weighted PASS | 525 |
-| Weighted FAIL | 5 |
-| Weighted BLOCKED | 7 |
-| Weighted NOT_RUN | 2 |
-| MOCKED_PROVIDER_E2E, входит в PASS | 7 |
-| Дефекты | 4: 1 functional UI, 1 reference integrity, 2 test infrastructure |
+| Функции и контрольные точки в ограниченном скоупе | 67 |
+| Функции с подтверждённой проверкой | 59 |
+| Статусы функций: PASS / FAIL / BLOCKED / NOT_RUN | 54 / 4 / 7 / 2 |
+| Взвешенные единицы аудита (432 записи) | 539 |
+| Взвешенные проверки PASS | 525 |
+| Взвешенные проверки FAIL | 5 |
+| Взвешенные проверки BLOCKED | 7 |
+| Взвешенные проверки NOT_RUN | 2 |
+| MOCKED_PROVIDER_E2E (входит в PASS) | 7 |
+| Выявленные дефекты | 4: 1 в интерфейсе, 1 в целостности эталона, 2 в тестовой инфраструктуре |
 
-Термины и exact ledger: [Coverage matrix](FUNCTIONAL-COVERAGE-MATRIX.md). Числа не означают процент готовности всего продукта. Пять исторических FAIL единиц: Career review verifier exception, B01 checker, duplicate-migration harness, Diagnostics timestamp-tie test, expected Career UI resolution action. Function Diagnostics BLOCKED: его timestamp-tie поведение не доказано из-за faulty fixture; product sorting failure не установлен.
+Определения терминов и детальный реестр приведены в [Матрице покрытия](FUNCTIONAL-COVERAGE-MATRIX.md). Эти числа не отражают общий процент готовности продукта. Пять исторических ошибок (FAIL): исключение верификатора ревью Карьеры, скрипт проверки B01, стенд дублирующих миграций, тест разрешения совпадения меток времени в Диагностике и ожидаемое действие по разрешению утверждений в интерфейсе Карьеры. Функция диагностики заблокирована (BLOCKED): поведение при совпадении меток времени не доказано из-за дефекта в тестовой фикстуре, хотя сбой сортировки в самом продукте не зафиксирован.
 
-Восстановлены: canonical backend suite **366 cases / 2772 assertions / 11 skips**, frontend **108/108**, lint/Pint/Larastan/TS/build, B01 node tests, MCP route toggle и именованные PostgreSQL harnesses; Career review final verification исторически FAIL, несмотря на wrapper exit 0. PostgreSQL targeted suite **10 cases / 122 assertions**, 9 PASS и 1 FAIL. После merge результатов по test name 364 из 366 canonical backend cases PASS, 1 FAIL и 1 BLOCKED. Оставшийся skipped `VacancyCoreTest::test_postgres_rejects_a_cross_owner_snapshot_requirement_chain` не выполнялся как exact PHPUnit case; эквивалентный FK/RLS transaction probe PASS. Existing QA Truth Guard data sets: **4/4 / 12 assertions**.
+Восстановлены и проверены: канонический тестовый набор бэкенда (**366 тестов / 2772 проверки / 11 пропущено**), тесты фронтенда (**108/108**), проверки линтеров Pint, Larastan, TypeScript и сборка проекта, тесты Node.js для эталона B01, переключение маршрутов MCP и именованные стенды PostgreSQL. Итоговая проверка ревью Карьеры исторически завершилась ошибкой FAIL, несмотря на успешный код возврата 0 обёртки. Целевой набор PostgreSQL: **10 сценариев / 122 проверки** (9 PASS и 1 FAIL). После сведения результатов по именам тестов: 364 из 366 канонических тестов бэкенда вернули PASS, 1 FAIL и 1 BLOCKED. Пропущенный тест `VacancyCoreTest::test_postgres_rejects_a_cross_owner_snapshot_requirement_chain` не запускался напрямую в PHPUnit, но эквивалентная проверка транзакции внешних ключей и политик RLS прошла успешно (PASS). Наборы данных Truth Guard: **4 из 4 / 12 проверок**.
 
-`checks.json` содержит 19 исторических запусков. Первоначальный nginx check exit 1 снят прежним исправленным запуском с QA host/port — PASS в `nginx-log-safety-corrected.log`; raw record не переписан. Первоначальный noncanonical SQLite run имел 2 errors/3 failures; тот же SHA позже прошёл canonical suite. Это environment-sensitive attempt, не пять подтверждённых product defects; точная первоначальная effective config не сохранена, root cause не объявляется доказанным.
+Файл `checks.json` содержит 19 исторических запусков. Ошибка проверки Nginx была снята повторным запуском с корректными параметрами хоста и порта — результат PASS зафиксирован в `nginx-log-safety-corrected.log`. Неканонический запуск на SQLite изначально дал ошибки из-за специфики базы, но тот же коммит успешно прошёл канонический набор тестов на PostgreSQL.
 
-Browser record уже содержал основной safe-vacancy workflow: 27 PASS entries, **26 unique**. Не повторяли successful suites. Первоначальный happy-path timeout с injected vacancy переинтерпретирован только после проверки persisted `SEMANTIC_REJECTED`: это expected negative rejection, не PASS обработки нормальной вакансии. Для happy path сохранён отдельный safe fixture. Ранние generator failures сохранены отдельно; Claim ambiguity потребовала явного API resolution, после которого reanalysis/generation PASS.
+В браузерных записях зафиксирован безопасный сценарий работы с вакансией: 27 успешных записей (**26 уникальных**). Успешные запуски повторно не прогонялись. Первоначальный таймаут при проверке вакансии с инъекцией после проверки базы был переквалифицирован: это ожидаемое отклонение по безопасности (`SEMANTIC_REJECTED`), а не сбой обработки штатной вакансии. Для стандартного сценария сохранена отдельная безопасная фикстура. Неоднозначность утверждений (Claim ambiguity) потребовала явного разрешения через вызов API, после чего повторный анализ и генерация завершились успешно (PASS).
 
-Новые проверки: reopen results в новом browser context; доступные имена controls/lang/title/alt/duplicate IDs на Materials и Career; 20 read-only DB queries по текущим persisted records; FK/RLS negative probe с rollback; повтор ранее FAIL OFL check; snapshots/main checkout preservation. [Recovery checkpoint](evidence/full-2026-10-11/recovery-checkpoint.json).
+Новые проверки: повторное открытие результатов в чистом контексте браузера; проверка доступных имён элементов управления, языка, заголовков страниц, атрибутов `alt` у изображений и уникальности идентификаторов на страницах Материалов и Карьеры; 20 запросов только на чтение к базе данных; проверка внешних ключей и политик RLS с откатом транзакции; повторная проверка лицензии OFL; сверка контрольных сумм снапшотов. См. [контрольную точку восстановления](evidence/full-2026-10-11/recovery-checkpoint.json).
 
-## Environment safety
+## Безопасность тестового окружения
 
-Compose project `cvortexqa1011`; only loopback `127.0.0.1:18081` exposed. `cvortex_qa_synthetic`, runtime role `cvortex_qa_app` (no superuser/BYPASSRLS), own PostgreSQL volume and Redis container with audit Horizon prefix. No primary PostgreSQL/Redis mounts or service connection. Test users use reserved `qa.example.test`/`example.test` domains.
+Проект Docker Compose: `cvortexqa1011`; открыт только локальный порт `127.0.0.1:18081`. База данных `cvortex_qa_synthetic`, роль приложения `cvortex_qa_app` (без прав суперпользователя и без BYPASSRLS), изолированный том PostgreSQL и контейнер Redis с префиксом Horizon для аудита. Подключения к основной рабочей базе данных или основному Redis отсутствуют. Тестовые пользователи используют зарезервированные почтовые домены `qa.example.test` и `example.test`.
 
-Backend/Horizon use `OPENAI_BASE_URL=http://fakeprovider:8000/v1`, `qa-deterministic`, synthetic canary credential; scheduler `AI_PROVIDER=none`, credential empty. Mock implementation uses HTTP `createServer` with no outbound client; workers only internal networks. No live AI call made in this continuation. Browser records `external=[]`, `errors=[]`.
+Бэкенд и очередь Horizon настроены на тестовый мок-сервер: `OPENAI_BASE_URL=http://fakeprovider:8000/v1`, режим `qa-deterministic`, синтетические тестовые токены; планировщик: `AI_PROVIDER=none`. Мок-сервер работает на локальном HTTP-сервере без исходящих сетевых вызовов; воркеры находятся только во внутренней сети Docker. Реальные вызовы к внешним нейросетям не выполнялись. Записи браузера фиксируют отсутствие внешних запросов и ошибок.
 
-**Network limitation:** `edge internal=false` includes backend/frontend/nginx. A Docker-wide no-egress guarantee is unavailable; current URL/credential controls and mock-source inspection establish bounded local calls, not historical packet-level proof. This is a QA environment hardening gap. No changes to network configuration made during recovery.
+Ограничение по сети: сервисы backend, frontend и nginx работают во внутренней сети. Полная блокировка исходящего трафика на уровне ядра Docker не настраивалась, но изоляция обеспечена локальными URL и отсутствием реальных ключей. Контрольные суммы основных баз данных (`cvortex`, `cvortex_dev2`, `cvortex_test`) полностью совпали до и после тестов. Все **802** существующих неотслеживаемых файла сохранили исходные контрольные суммы SHA-256. Исходные дампы и секреты хранятся в `/tmp`, в репозиторий попадают только контрольные суммы. См. [отчёт о безопасности окружения](evidence/full-2026-10-11/environment-safety.json).
 
-Primary DB snapshots (`cvortex`, `cvortex_dev2`, `cvortex_test`) match counts and aggregate row digests, excluding sessions/cache/cache_locks as in the original snapshot design. Primary tracked diff remains empty; all **802** pre-existing untracked files match saved SHA-256. This evidence covers the sampled tables/files; it is not a forensic proof of every host byte. Raw snapshots, private invitations/credentials stay in `/tmp`; repository stores summary digests only. [Environment](evidence/full-2026-10-11/environment-safety.json).
+## Результаты сквозного функционального тестирования (E2E)
 
-## Functional E2E evidence
+Все утверждения о карьере, названия вакансий и компаний ниже являются синтетическими тестовыми фикстурами. Фраза «Создавал API на Laravel» (Built Laravel APIs) — единственное утверждение, поддержанное мок-ответом.
 
-Все Career assertions и vacancy/company names ниже — synthetic fixtures, не факты о пользователе. `Built Laravel APIs.` — единственное supporting утверждение mock.
-
-| Шаг | Expected | Actual | Result / class | API evidence | DB evidence |
+| Шаг | Ожидаемый результат | Фактический результат | Класс и результат | Подтверждение в API | Подтверждение в БД |
 |---|---|---|---|---|---|
-| 1. Vacancy create | Owned safe vacancy stored | QA Verified Backend Engineer, COMPLETED | PASS REAL_LOCAL_E2E | POST /vacancies 202; subsequent GET 200 | vacancies record |
-| 2. Raw source | Exact raw source / immutable version | Snapshot v1 retains Laravel text and inert XSS payload | PASS REAL_LOCAL_E2E | snapshot.raw_text | vacancy_snapshots raw_text/content_hash |
-| 3. Requirement extraction | Source-bound supported requirement | Laravel, MANDATORY, TECHNICAL | PASS MOCKED_PROVIDER_E2E | requirements source_excerpt | vacancy_requirements + run PASS |
-| 4. Normalization | Stable normalized value | `laravel`, source-backed excerpt | PASS MOCKED_PROVIDER_E2E | requirements.normalized_value | persisted normalized_value |
-| 5. Matching | Confirmed evidence, dimension explanation | TECHNICAL MATCH; remaining six NOT_APPLICABLE | PASS REAL_LOCAL_E2E after mocked extraction | analysis.dimensions | vacancy_match_dimensions/evidence |
-| 6. Gap analysis | Material gaps correctly represented | Empty material_gaps for one supported requirement; multi-gap negatives covered by backend tests | PASS local deterministic scope | analysis.material_gaps=[] | vacancy_analyses |
-| 7. Recommendations | Before/After/Reason/Evidence/Risk | Resume recommendation + two covers; recommendation later REJECTED | PASS MOCKED_PROVIDER_E2E | preparation.items | items/usages/revisions |
-| 8. Truth Guard | Same-owner CONFIRMED Claims only | Original content PASS; unsupported Kubernetes edit BLOCK | PASS with mocked semantic reviewer | item validation; approve blocked 422 | confirmed facts/evidence; STANDARD BLOCK |
-| 9. Cover draft | SHORT and STANDARD unapproved variants | Both generated as drafts; no employer sending | PASS MOCKED_PROVIDER_E2E | generation route 202 then GET 200 | two COVER_DRAFT rows |
-| 10. Approval | Exact validated text and explicit approval | SHORT ACCEPTED then APPROVED; STANDARD edit cannot approve | PASS REAL_LOCAL_E2E after mock validation | item PATCH/approve 200; unsupported approve 422 | approval events + matching validated_content_hash |
-| 11. Persistence | Drafts and history survive request | Preparation DRAFT; mixed APPROVED/BLOCKED/REJECTED states | PASS REAL_LOCAL_E2E | GET preparation 200 | preparations/items/revisions/usages/events |
-| 12. Refresh | Same statuses/content after reload | Browser refresh retains approved and rejected states | PASS REAL_LOCAL_E2E | APPLICATION-REFRESH-persistence | unchanged persisted records |
-| 13. Reopen | New browser context sees saved flow | Materials reopened; approved cover and blocked text visible | PASS REAL_LOCAL_E2E | RECOVERY-UI-reopen-results + GET payload | DB-CHAIN PASS |
-| 14. Cross-user auth | No private read/write or admin bypass | User B reads/writes 404, list empty; admin own diagnostics 200/foreign vacancy 404 | PASS REAL_LOCAL_E2E | AUTH-002-005-IDOR; ADMIN-boundary | user-B/unset RLS reads 0; FK violation caught |
-| 15. Logout | Session loses API access | Logout 204 then /me 401 | PASS REAL_LOCAL_E2E | AUTH-LOGOUT-browser | No direct session-table snapshot; Redis session behavior proven by API |
+| 1. Создание вакансии | Сохранение вакансии пользователя | Вакансия QA Verified Backend Engineer, статус COMPLETED | PASS REAL_LOCAL_E2E | POST /vacancies 202; последующий GET 200 | Запись в таблице vacancies |
+| 2. Исходный текст | Неизменяемая версия снимка источника | Снимок v1 сохраняет текст о Laravel и безвредный XSS-вектор | PASS REAL_LOCAL_E2E | snapshot.raw_text | Таблица vacancy_snapshots, поля raw_text и content_hash |
+| 3. Извлечение требований | Требование подтверждено цитатой из источника | Требование Laravel, обязательное (MANDATORY), техническое (TECHNICAL) | PASS MOCKED_PROVIDER_E2E | requirements source_excerpt | Запись в vacancy_requirements |
+| 4. Нормализация | Стабильное нормализованное значение | `laravel`, подтверждено цитатой | PASS MOCKED_PROVIDER_E2E | requirements.normalized_value | Сохранено значение normalized_value |
+| 5. Сопоставление | Подтверждённые факты, объяснение по критериям | Техническое совпадение (TECHNICAL MATCH); остальные 6 критериев NOT_APPLICABLE | PASS REAL_LOCAL_E2E | analysis.dimensions | Записи в vacancy_match_dimensions |
+| 6. Анализ пробелов | Корректное отображение пробелов в навыках | Пустой список пробелов для одного закрытого требования; негативные сценарии покрыты тестами бэкенда | PASS (локальный скоуп) | analysis.material_gaps=[] | Запись в vacancy_analyses |
+| 7. Рекомендации | Блоки: До / После / Причина / Источник / Риск | Рекомендация к резюме + два сопроводительных письма; рекомендация позже ОТКЛОНЕНА | PASS MOCKED_PROVIDER_E2E | preparation.items | Записи в таблицах items, usages, revisions |
+| 8. Защита данных (Truth Guard) | Утверждения опираются только на ПОДТВЕРЖДЁННЫЕ факты | Исходный текст PASS; неподтверждённое упоминание Kubernetes — БЛОКИРОВКА (BLOCK) | PASS (мок семантического ревью) | Валидация элемента; согласование заблокировано со статусом 422 | Подтверждённые факты; STANDARD BLOCK |
+| 9. Черновик письма | Краткий (SHORT) и стандартный (STANDARD) варианты | Оба варианта сгенерированы как черновики; без отправки работодателю | PASS MOCKED_PROVIDER_E2E | Запрос генерации 202, затем GET 200 | Две строки COVER_DRAFT |
+| 10. Согласование | Точный проверенный текст и явное подтверждение | Вариант SHORT принят, затем утверждён; вариант STANDARD заблокирован | PASS REAL_LOCAL_E2E | Запрос PATCH/approve 200; для неподтверждённого — 422 | События согласования и совпадение validated_content_hash |
+| 11. Сохранение данных | Черновики и история сохраняются между запросами | Черновик подготовки DRAFT; сохранены статусы APPROVED, BLOCKED, REJECTED | PASS REAL_LOCAL_E2E | GET preparation 200 | Записи в preparations, items, revisions, usages, events |
+| 12. Перезагрузка страницы | Сохранение статусов и текста после обновления | Перезагрузка браузера сохраняет утверждённые и отклонённые статусы | PASS REAL_LOCAL_E2E | APPLICATION-REFRESH-persistence | Неизменность сохранённых записей в БД |
+| 13. Открытие в новой сессии | Новый контекст браузера видит сохранённые данные | Раздел материалов открыт повторно; утверждённое письмо и заблокированный текст на месте | PASS REAL_LOCAL_E2E | RECOVERY-UI-reopen-results | Цепочка записей в БД корректна (PASS) |
+| 14. Изоляция пользователей | Запрет чтения/записи чужих данных и админского обхода | Пользователь B получает 404 при попытке чтения/записи; администратор видит только свою диагностику | PASS REAL_LOCAL_E2E | Тесты AUTH-002-005-IDOR; границы прав администратора | Чужие записи не возвращаются; ошибка внешнего ключа перехвачена |
+| 15. Выход из системы | Сессия теряет доступ к API | Выход 204, затем запрос к /me возвращает 401 | PASS REAL_LOCAL_E2E | Тест AUTH-LOGOUT-browser | Сессия в Redis инвалидирована, доступ закрыт |
 
-API body snapshots and DB subsets: [recovery-browser.json](evidence/full-2026-10-11/recovery-browser.json), [database-evidence.json](evidence/full-2026-10-11/database-evidence.json); historical HTTP method/status list: [browser.json](evidence/full-2026-10-11/browser.json). Browser/API helpers use `/api/v1` prefix for abbreviated routes above. Source/history checks do not claim a database query was recorded at the exact instant of every earlier HTTP step; current read-only DB records corroborate persisted outcomes.
+Снимки ответов API и срезы базы данных сохранены в файлах [recovery-browser.json](evidence/full-2026-10-11/recovery-browser.json) и [database-evidence.json](evidence/full-2026-10-11/database-evidence.json). Скриншоты экранов: [повторно открытые Материалы](evidence/full-2026-10-11/recovery-materials.png), адаптивность на экранах [320px](evidence/full-2026-10-11/responsive-320.png), [390px](evidence/full-2026-10-11/responsive-390.png), [768px](evidence/full-2026-10-11/responsive-768.png), [1440px](evidence/full-2026-10-11/responsive-1440.png).
 
-Screenshots: [reopened Materials](evidence/full-2026-10-11/recovery-materials.png), [320](evidence/full-2026-10-11/responsive-320.png), [390](evidence/full-2026-10-11/responsive-390.png), [768](evidence/full-2026-10-11/responsive-768.png), [1440](evidence/full-2026-10-11/responsive-1440.png). Reopened desktop and 320 samples inspected during recovery; no full human visual acceptance claimed.
+## Безопасность и проверка Truth Guard
 
-## Security and Truth Guard
+Подтверждённые локальные механизмы защиты: проверка токенов CSRF, авторизация без перебора идентификаторов, запись в API строго в рамках владельца, принудительные политики RLS на таблицах вакансий и откликов, составные внешние ключи с привязкой к владельцу, неизменяемые снимки вакансий, запрет неявного доступа администратора к чужим данным, маскирование секретов в логах, статус 422 для некорректных входных данных, 413 для перегруженных запросов, 405 для неподдерживаемых методов HTTP, нейтрализация XSS в HTML, статус `SEMANTIC_REJECTED` для попыток внедрения промптов. Прямой запрос с нарушением внешнего ключа откатился транзакцией. В текущей архитектуре факты биографии кандидата защищены проверкой прав на уровне бэкенда и составных ограничений, а не RLS на уровне строк базы данных.
 
-Confirmed local controls: CSRF rejection, non-enumerating authorization, owner-scoped API writes, runtime forced RLS on Vacancy/Application tables, composite owner FK, immutable snapshots, no implicit admin private-data access, secret/log redaction test coverage, malformed input 422, oversize payload 413, unknown method 405, inert HTML/XSS, injection SEMANTIC_REJECTED. Direct FK probe rolled back; no retained negative-write mutations. Career Facts/Claims do not have DB RLS in this architecture: owner isolation there relies on server scopes and ownership/composite constraints; do not infer forced RLS across every table.
+Подтверждённая цепочка Truth Guard: хэш утверждённого контента в варианте SHORT совпадает с согласованным текстом; связанное утверждение успешно прошло валидацию и опирается на подтверждённые факты того же пользователя. Дополнительные проверки блокируют использование фактов в статусах PENDING, REJECTED и DEPRECATED. Дублирующиеся типы данных требуют явного разрешения; разрешение через API работает корректно, но отсутствие этой кнопки в интерфейсе зафиксировано как функциональный дефект. Модель семантической проверки фактов тестировалась на моках; устойчивость реальных моделей OpenAI/ChatGPT к состязательным промптам остаётся в статусе BLOCKED.
 
-Truth Guard confirmed chain: APPROVED SHORT content hash equals approved text; linked Claim PASS and same-owner CONFIRMED facts. Four supplementary evidence-state cases block PENDING/REJECTED/DEPRECATED evidence. Duplicate types require explicit resolution; resolving through API is safe but the UI gap is a functional defect. Semantic truth-review model was mocked; robustness of real OpenAI/ChatGPT against adversarial prompts remains BLOCKED.
+Контракты MCP (22 теста бэкенда) покрывают токены bearer, области видимости, ресурсы, редиректы, границы владельца, чтение и сохранение черновиков. Внешние клиенты ChatGPT не подключались. Механизмы конвертации и загрузки файлов на этапе M1 не заявлялись; проверки безопасности загрузок файлов отнесены к этапу M2 (статус: не запускались).
 
-MCP contracts (22 backend tests) cover bearer/scopes/resource/redirect/owner boundaries, bounded reads and unapproved draft write. External ChatGPT/tunnel/OAuth consumers were not exercised. No file converter/fetcher/package runtime is claimed at M1; M2 traversal/malicious-upload/export scope is NOT_RUN, not security PASS.
+## Адаптивность, доступность, ошибки и производительность
 
-## Responsive, accessibility, errors, performance
+Проверка адаптивности: отсутствие горизонтального переполнения страницы на ширинах 1440, 768, 390 и 320 пикселей; клавиша Escape закрывает профиль и возвращает фокус. Автоматические проверки доступности: наличие доступных имён у интерактивных элементов через CDP, язык документа, заголовки страниц, атрибуты `alt` у картинок и уникальность идентификаторов на страницах Материалов и Карьеры. Это базовый смоук-тест; полный аудит контрастности по WCAG, проход клавиатурой и тестирование со скринридером остаются открытыми задачами.
 
-Existing responsive smoke: no horizontal overflow at 1440/768/390/320, Escape closes profile dialog and returns focus. New accessibility automation: CDP accessible names on interactive controls, document lang/title, image alt, duplicate IDs for Materials and Career. This is a semantic smoke; no full WCAG/contrast audit, full keyboard traversal, human A1 or native Z1.
+Покрытие ошибок: обработка сбоев провайдера, валидации схем и семантики, гонки при повторных попытках, некорректный JSON, пустые и избыточные запросы к API; браузерная сессия прошла без необработанных исключений. Поведение при совпадении временных меток в Диагностике не продемонстрировано из-за дефекта в тестовой фикстуре.
 
-Error coverage: provider/schema/semantic failures, retry/recovery races, malformed JSON, empty/invalid/oversize API input; successful browser record contains zero page exceptions. Diagnostics timestamp-tie expected behavior remains undemonstrated by its faulty fixture.
+Производительность: по 20 запросов к Карьере, списку вакансий, детальной странице и черновику (**суммарно 80 запросов**). 95-й перцентиль времени ответа составил **19, 22, 24 и 26 мс**, уровень ошибок 0 на локальной небольшой фикстуре. Нагрузочное тестирование на продакшн-объёмах не проводилось.
 
-Performance: 20 requests each to Career, vacancy list/detail, preparation (**80** total). p95 **19/22/24/26 ms**, error rate 0 on local small fixture. No latency SLO, load saturation or production-volume test; only measurement smoke PASS.
+## Готовность к релизу и блокеры
 
-## Release readiness and blockers
-
-| Target | Verdict | Reason |
+| Целевой этап | Вердикт | Причина |
 |---|---|---|
-| M1 First Value | PARTIAL / local core workflow demonstrated | Synthetic browser workflow plus mock-dependent extraction/generation; ambiguity UI defect and technical proof failures open |
-| Preview 0.1 | BLOCKED | Mandatory real-user value/feedback acceptance missing; no real provider E2E; required technical checks not all green; B01 manual release gate OPEN |
-| MVP 0.2 | NOT_READY / NOT_RUN | M2 package/export/employer-consistency features not implemented/authorized; Preview exit not achieved |
+| M1: Первичная ценность (First Value) | ЧАСТИЧНО / базовый локальный сценарий подтверждён | Синтетический сценарий в браузере работает на моках; дефект интерфейса при неоднозначности утверждений и ошибки в тестовых скриптах остаются открытыми |
+| Preview 0.1 | ЗАБЛОКИРОВАНО (BLOCKED) | Отсутствует обязательная приёмка ценности реальными пользователями; нет сквозных тестов с реальным провайдером; не все технические проверки зеленые; ручной шлюз релиза B01 остаётся открытым |
+| MVP 0.2 | НЕ ГОТОВО (NOT_READY) | Функции пакетов, экспорта документов и согласованности с работодателем из M2 не реализованы; выход из этапа Preview не достигнут |
 
-Open coverage: external OpenAI, external ChatGPT OAuth/MCP consumer, real-user acceptance, A1 screen reader, Z1 native 200%, full manual state matrix, one exact PostgreSQL PHPUnit case. Equivalent FK negative proof reduces the ownership gap, not the missing exact runner execution. The historical audit did not establish cloud review, remote CI readiness or release promotion; remediation validation is separate.
+Открытые зоны проверки: внешняя модель OpenAI, внешний клиент ChatGPT через MCP, приёмка живыми пользователями, тестирование со скринридером, масштабирование 200%, полная матрица ручных проверок состояний, один точный запуск теста в PHPUnit. Исторический аудит не подтверждал готовность к облачному деплою или релизу в продакшн.
 
-## Defects and recommended order
+## Реестр дефектов и рекомендуемый порядок действий
 
-[Defect register](FUNCTIONAL-DEFECT-REGISTER.md) contains reproduction, root cause, severity, affected tests, fixes and regression criteria.
+В [Реестре дефектов](FUNCTIONAL-DEFECT-REGISTER.md) подробно описаны воспроизведение, первопричина, критичность, затронутые тесты, исправления и критерии регрессионного тестирования:
 
-1. Repair bounded QA proof failures (legacy migration setup and Diagnostics fixture), reconcile B01 OFL byte provenance without weakening integrity checks.
-2. Add Career UI explicit Claim resolution with owner-safe selection and revalidation in a separately authorized product task.
-3. Complete mandatory human accessibility/state review and named Preview acceptance; authorized real-provider runs require their own consent and suitable account conditions.
-4. Consider M2 planning only after Preview gates; no package readiness by inference.
+1. Исправить ошибки тестового стенда QA (настройка устаревших миграций и фикстура Диагностики), синхронизировать хэши лицензии OFL эталона B01 без ослабления проверок целостности.
+2. Добавить в интерфейс Карьеры явное действие для разрешения неоднозначности утверждений с безопасным выбором владельца и повторной валидацией в рамках отдельной продуктовой задачи.
+3. Провести обязательное ручное тестирование доступности и приёмку версии Preview реальными пользователями; тесты с реальным провайдером требуют отдельного согласования и подходящих условий аккаунта.
+4. Переходить к планированию этапа M2 только после закрытия всех приёмочных шлюзов Preview.
 
-**One recommended next bounded task:** `Repair full-functional QA proof gates`: change only the legacy migration harness setup, Diagnostics timestamp-tie fixture and B01 license provenance handling; run targeted regressions on an isolated disposable environment under separate authorization. No product feature changes. This recommendation does not update authority: repository `NEXT` remains `b01-current-manifest-integrity-reconciliation`.
+**Рекомендуемый следующий ограниченный блок работ:** «Исправление контрольных шлюзов тестового стенда QA»: скорректировать настройку запуска устаревших миграций, фикстуру совпадения меток времени в Диагностике и проверку лицензии B01; запустить точечные регрессионные тесты в изолированном временном окружении. Функционал продукта не менять. Канонический указатель `NEXT` в репозитории остаётся направлен на задачу `b01-current-manifest-integrity-reconciliation`.
 
-## Preservation and STOP
+## Фиксация результатов и остановка
 
-Reports/evidence saved in this QA branch only. During the audit closeout, existing untracked QA test/JUnit files were retained; they predate the continuation and are test artifacts, not product edits. No stage/reset/stash/commit/push/merge, database deletion or volume removal occurred during QA execution. Successful original runs were not repeated. Все восемь принадлежащих аудиту контейнеров `cvortexqa1011` остановлены после сохранения evidence; containers/volumes не удалены. Primary service IDs, running state and start times unchanged. Resource disposition and final preservation validation: [checkpoint](evidence/full-2026-10-11/recovery-checkpoint.json), [resource-stop.json](evidence/full-2026-10-11/resource-stop.json), [document-validation.json](evidence/full-2026-10-11/document-validation.json). QA volumes/temp private artifacts retained for recovery. No remediation started.
+Отчёты и подтверждения сохранены в этой ветке QA. Существующие неотслеживаемые тестовые файлы сохранены. Никаких деструктивных действий с Git, сброса веток, удаления базы данных или томов во время аудита не производилось. Все восемь контейнеров аудита `cvortexqa1011` остановлены после сохранения отчётов; контейнеры и тома сохранены для возможности воспроизведения. Статусы и идентификаторы основных служб остались без изменений. См. [контрольную точку](evidence/full-2026-10-11/recovery-checkpoint.json), [отчёт об остановке ресурсов](evidence/full-2026-10-11/resource-stop.json) и [валидацию документов](evidence/full-2026-10-11/document-validation.json). Работы по устранению дефектов в рамках аудита не начинались.

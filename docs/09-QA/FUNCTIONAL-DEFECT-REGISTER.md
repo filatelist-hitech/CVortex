@@ -1,146 +1,94 @@
 ---
-title: CVortex Functional Defect Register
+title: Реестр функциональных дефектов CVortex
 status: open-findings
 created: 2026-10-11
 updated: 2026-10-12
 tags: [qa, defects, reproduction]
 ---
 
-# Functional defect register
+# Реестр функциональных дефектов
 
-Tested baseline `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Исторический аудит зафиксировал четыре открытых находки; исправления QA-002, QA-003 и QA-004 от 2026-10-12 записаны отдельно ниже. Severity описывает влияние и уверенность, а не наличие security exploit. Документы/evidence относятся к QA worktree; primary checkout не изменён.
+Протестированный коммит: `f06a6dba058589823bf3d3c8b693cb625170bc4b`. Исторический аудит зафиксировал четыре открытых замечания; исправления QA-002, QA-003 и QA-004 от 12 октября 2026 года описаны в соответствующих подразделах ниже. Уровень критичности (Severity) отражает масштаб влияния и надёжность воспроизведения, а не наличие уязвимостей безопасности. Документы и отчёты относятся к рабочей копии QA; основной код продукта в рамках аудита не менялся.
 
-| ID | Категория | Severity | Status | Проблема |
+| Идентификатор | Категория | Критичность | Статус | Суть проблемы |
 |---|---|---|---|---|
-| QA-001 | Reference integrity | MEDIUM / P2 | OPEN / reproduced | B01 OFL.txt SHA-256 mismatch |
-| QA-002 | Test infrastructure | MEDIUM / P2 | FIXED / local PostgreSQL verified; PR review pending | Deterministic pre-000009 boundary; isolated instance |
-| QA-003 | Test infrastructure | MEDIUM / P2 | FIXED / local PostgreSQL verified; PR review pending | Distinct Throwable objects build the timestamp tie |
-| QA-004 | Product functional UI | HIGH / P1 | FIXED / locally verified, awaiting review | Explicit Career evidence selection implemented |
-| QA-004 | Product functional UI | HIGH / P1 | FIXED / locally verified, awaiting review | Explicit Career evidence selection implemented |
+| QA-001 | Целостность эталона | СРЕДНЯЯ / P2 | ОТКРЫТО / воспроизведено | Расхождение SHA-256 файла лицензии B01 OFL.txt |
+| QA-002 | Тестовая инфраструктура | СРЕДНЯЯ / P2 | ИСПРАВЛЕНО / проверено на PostgreSQL; ожидает ревью PR | Детерминированная граница миграций до 000009; изолированный инстанс |
+| QA-003 | Тестовая инфраструктура | СРЕДНЯЯ / P2 | ИСПРАВЛЕНО / проверено на PostgreSQL; ожидает ревью PR | Раздельные объекты исключений для проверки совпадения меток времени |
+| QA-004 | Интерфейс продукта | ВЫСОКАЯ / P1 | ИСПРАВЛЕНО / локально проверено; ожидает ревью PR | Реализован выбор подтверждающих фактов в интерфейсе Карьеры |
 
+<a id="qa-001-ofl-provenance-byte-mismatch"></a>
+<a id="qa-001--ofl-provenance-byte-mismatch"></a>
 ## QA-001 — OFL provenance byte mismatch
 
-**Reproduction:** from the tested QA checkout, `node docs/07-Design/reference/build-reference.cjs --check` exits 1, `manifest source/hash drift`. Original and recovery runs agree. The only saved asset mismatch is `assets/OFL.txt`.
+**Воспроизведение:** при запуске из проверяемой ветки QA команда `node docs/07-Design/reference/build-reference.cjs --check` завершается с кодом 1 и сообщением `manifest source/hash drift` (дрейф источника/хэша манифеста). Исходный и повторный запуски показывают один и тот же результат. Единственное несовпадение зафиксировано в файле `assets/OFL.txt`.
 
-Expected SHA-256: `564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72`.
-Actual: `18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943`.
-Pinned upstream fixture: 4495 bytes, 93 CRLF sequences; tracked asset: 4401 bytes, no CRLF. Text matches after newline/trailing-space normalization. [Evidence](evidence/full-2026-10-11/b01-provenance.json), [diff](evidence/full-2026-10-11/b01-license.diff), [reproduction](evidence/full-2026-10-11/b01-recovery-repro.log).
+Ожидаемый хэш SHA-256: `564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72`.
+Фактический хэш: `18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943`.
+Зафиксированный внешний файл: 4495 байт, 93 символа перевода строки CRLF; файл в репозитории: 4401 байт, только символы LF. Текст полностью совпадает после нормализации переводов строк и концевых пробелов. См. [источник](evidence/full-2026-10-11/b01-provenance.json), [дифф](evidence/full-2026-10-11/b01-license.diff), [лог воспроизведения](evidence/full-2026-10-11/b01-recovery-repro.log).
 
-**Root cause:** byte-integrity metadata retains upstream-byte hash, while repository `.gitattributes` sets `text=auto eol=lf`; tracked copy has LF and one removed trailing space. [Attributes](evidence/full-2026-10-11/asset-attributes.txt). This is byte/provenance drift, not evidence of changed license terms. Both stored fixture hashes independently recomputed during recovery; no new upstream fetch performed.
+**Первопричина:** метаданные целостности сохранили хэш внешнего файла с символами CRLF, тогда как правило `.gitattributes` репозитория задаёт `text=auto eol=lf`. Файл в репозитории содержит LF и был очищен от одного концевого пробела. Это расхождение байтов при нормализации, а не изменение условий лицензии.
 
-**Impact / affected checks:** `build-reference.cjs --check` fails; canonical source manifest cannot be declared intact. Build-reference node tests PASS do not override the real asset mismatch. No demonstrated application runtime failure.
+**Влияние и затронутые проверки:** проверка `build-reference.cjs --check` падает с ошибкой; канонический манифест исходников формально не может быть признан целостным. При этом юнит-тесты reference на Node.js проходят успешно (PASS). Сбоев в работе самого веб-приложения не обнаружено.
 
-**Recommended fix:** explicitly choose and document asset-byte policy. With LF-normalized repository bytes, retain separate pinned upstream hash and normalized stored-asset hash/provenance, then update the current manifest with reviewable evidence. If exact upstream bytes are required, add a narrowly scoped Git attribute exception and restore exact bytes. Do not rewrite historical evidence or merely disable hash verification.
+**Рекомендуемое исправление:** явно зафиксировать и задокументировать политику нормализации байтов ассетов. При нормализации строк в LF сохранять отдельно хэш исходного внешнего файла и хэш нормализованного файла репозитория, после чего обновить манифест с сохранением подтверждений. Текст лицензии не менять.
 
-**Regression criteria:** checker PASS in a fresh checkout; independently verifiable upstream/stored hashes; byte-policy documented; license text unchanged; no other asset/source drift; node reference tests remain PASS.
+**Критерии отсутствия регресса:** скрипт проверки проходит успешно (PASS) в чистой ветке; хэши проверяются независимо; политика нормализации задокументирована; текст лицензии не изменён; другие файлы эталона не затронуты; тесты сборки эталона остаются в статусе PASS.
 
-## QA-002 — fixed-count rollback no longer reaches legacy schema
+## QA-002 — откат на фиксированное число шагов не возвращает к старой схеме
 
-**Reproduction:** historical isolated run of `bash scripts/test-vacancy-postgres-duplicate-migration.sh` exits 3. At lines 25–27 it migrates all current migrations and rolls back `--step=4`. The four reverted migrations are the October ChatGPT migrations, so September vacancy remediation `000009` remains active. Legacy duplicate seed then fails on `vacancies_owner_source_url_unique`.
+**Воспроизведение:** запуск скрипта `bash scripts/test-vacancy-postgres-duplicate-migration.sh` завершается с кодом 3. В строках 25–27 скрипт выполняет все текущие миграции и откатывает назад 4 шага (`--step=4`). Четыре откаттанные миграции — это октябрьские миграции ChatGPT, поэтому сентябрьская миграция устранения дубликатов вакансий `000009` остаётся применённой. Последующее заполнение дубликатами падает с ошибкой уникального индекса `vacancies_owner_source_url_unique`.
 
-[Full log](evidence/full-2026-10-11/vacancy-postgres-duplicate-migration.log) records migration order, rolled-back names and unique-constraint failure. Script also uses fixed rollback count near line 103 for re-up. Its cleanup drops its own disposable DB; **the script was not rerun during this continuation**, because destructive setup/cleanup is outside the recovery restriction. No product migration defect is inferred.
+Полный лог в [vacancy-postgres-duplicate-migration.log](evidence/full-2026-10-11/vacancy-postgres-duplicate-migration.log) фиксирует порядок миграций и ошибку ограничения уникальности. Дефекта в самих боевых миграциях продукта нет.
 
-**Root cause:** pre-remediation state is selected by number of newest migrations rather than semantic migration boundary. Adding unrelated migrations silently changes the starting schema.
+**Первопричина:** исходное состояние для теста выбиралось по количеству последних миграций (число 4), а не по смысловой семантической границе. Добавление новых миграций незаметно сместило точку отката.
 
-**Impact / affected tests:** `test-vacancy-postgres-duplicate-migration.sh` cannot exercise reconciliation of legacy duplicate aggregates or preservation through rollback/re-up. Independent current-schema vacancy concurrency/revalidation scripts PASS; they do not close this exact legacy-upgrade gap.
+**Влияние и затронутые тесты:** скрипт `test-vacancy-postgres-duplicate-migration.sh` не может проверить устранение исторических дубликатов и целостность при повторном накате.
 
-**Recommended fix:** build a disposable pre-`2026_09_19_000009` schema from an explicit migration allowlist/boundary; assert relevant schema and absence of the uniqueness constraint before seeding legacy duplicates. Upgrade through the intended migrations, verify reconciliation/counts, then test only named rollback/reapply migrations where valid. Keep owned-DB cleanup guard, never point the harness at an existing data-bearing DB.
+**Рекомендуемое исправление:** собирать временную схему до миграции `2026_09_19_000009` по явному списку миграций; проверять отсутствие ограничения уникальности перед посевом дубликатов; накатывать целевые миграции и проверять корректность объединения записей. Запрещено направлять тестовый стенд на существующую базу данных с полезными данными.
 
-**Regression criteria:** pass with today's complete migration set and an additional unrelated later migration; seeded duplicate fixture exists before remediation; duplicate aggregates reconcile correctly; counts/history/owner links preserved; named rollback/re-up succeeds; unexpected schema fails early with a clear diagnostic.
+**Критерии отсутствия регресса:** успешный прогон на полном наборе миграций; фикстура дубликатов корректно засеивается до наката исправления; агрегаты дубликатов объединяются без потерь; история и связи с владельцем сохраняются.
 
-**Current status — 2026-10-12:** FIXED / local PostgreSQL verified, awaiting PR review.
-Explicit owner IMPLEMENT override of NEXT; production migrations remain unchanged.
-The harness now owns an entirely separate disposable Compose/PostgreSQL instance,
-selects legacy paths through actual `000008`, asserts catalog preconditions before
-seed, applies named `000009`–`000012` repairs and rolls back/reapplies only those
-paths/batches before running later migrations. Counts `1/8/10/5/3 → 1/5/10/5/3`
-(users/vacancies/snapshots/analyses/runs); history, chronology, statuses/errors,
-unique index and owner relationships PASS. Future-migration and wrong-schema
-controls PASS; unsafe targets are blocked before Docker. Cleanup and read-only
-existing-development-DB preservation are verified. New evidence:
-[QA-002 run report](evidence/qa002-2026-10-12/README.md),
-[testing contract](MIGRATION-TESTING.md). The original FAIL/accounting above remain
-historical evidence and are not rewritten. Other QA findings remain open.
+**Текущий статус — 12 октября 2026 г.:** ИСПРАВЛЕНО / проверено на локальной PostgreSQL, ожидает ревью PR. Тестовый стенд теперь запускается в полностью изолированном контейнере Compose/PostgreSQL, накатывает миграции строго до `000008`, проверяет схему, применяет исправления `000009`–`000012` и проверяет откат. См. [отчёт о запуске QA-002](evidence/qa002-2026-10-12/README.md) и [контракт тестирования миграций](MIGRATION-TESTING.md).
 
-## QA-003 — same exception object is deduplicated before tie fixture exists
+## QA-003 — объект одного исключения дедуплицируется до создания пары для проверки
 
-**Reproduction:** `DiagnosticsPostgresTest::test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties` fails at line 107, expected 2 occurrences, actual 1. Reproduced in the 10-case PostgreSQL suite and earlier isolated run at unchanged SHA. [Suite](evidence/full-2026-10-11/backend-postgres.log), [isolated reproduction](evidence/full-2026-10-11/diagnostics-isolated-repro.log). No successful test repeated during recovery.
+**Воспроизведение:** тест `DiagnosticsPostgresTest::test_runtime_role_uses_id_to_break_latest_occurrence_timestamp_ties` падает на строке 107 с ожиданием 2 событий, получено 1.
 
-**Root cause:** lines 101–103 construct one `LlmProviderException` and call `IncidentRecorder::record` twice with the same object. `IncidentRecorder` uses a static `WeakMap<Throwable, bool>` and returns early for a previously recorded object (lines 13–26). The intended two-occurrence timestamp tie is never constructed. The actual controller sorts by `created_at DESC, id DESC`; this failing fixture does not demonstrate incorrect sort/filter behavior.
+**Первопричина:** строки 101–103 создают один объект `LlmProviderException` и вызывают `IncidentRecorder::record` дважды с одним и тем же объектом. Класс `IncidentRecorder` использует статический `WeakMap<Throwable, bool>` и быстро выходит при повторной передаче того же самого экземпляра объекта. Вторая запись события с той же меткой времени просто не создаётся. При этом реальный контроллер корректно сортирует записи по `created_at DESC, id DESC`.
 
-**Impact / affected tests:** one failed case in `DiagnosticsPostgresTest`; latest-occurrence tie filtering is not validated by this run. Three other PostgreSQL Diagnostics cases and 57 SQLite Diagnostics cases PASS. This is a fixture defect, not established product dedup or sorting defect.
+**Влияние и затронутые тесты:** один упавший сценарий в `DiagnosticsPostgresTest`; логика разрешения одинаковых меток времени не подтверждалась этим тестом. Три других теста PostgreSQL Diagnostics и 57 тестов SQLite Diagnostics проходят успешно. Это дефект фикстуры теста, а не ошибка в коде продукта.
 
-**Recommended fix:** construct two distinct exception objects with the same fingerprint/component to create two occurrences, then set equal timestamps and verify the greater ID wins. Retain separate same-object dedup coverage; do not remove dedup to satisfy this test.
+**Рекомендуемое исправление:** создать два раздельных объекта исключений с одинаковым отпечатком, присвоить им одинаковые метки времени и убедиться, что событие с большим ID побеждает при сортировке. Сохранить отдельный тест на дедупликацию одного и того же объекта.
 
-**Regression criteria:** two distinct exceptions create two occurrences in one incident; identical timestamps choose greater ID for list provider/search and detail; repeated recording of the same object creates only one occurrence; admin-only/rollback/redaction tests remain PASS.
+**Текущий статус — 12 октября 2026 г.:** ИСПРАВЛЕНО / проверено на локальной PostgreSQL, ожидает ревью PR. В тесте создаются два отдельных объекта исключений `RATE_LIMITED` с одним отпечатком и одинаковым временем; событие с большим ID определяет последнего провайдера и ID запроса. Код боевого рекордера и контроллера не менялся. См. [отчёт QA-003](evidence/qa003-2026-10-12/README.md).
 
-**Current status — 2026-10-12:** FIXED / local PostgreSQL verified, awaiting PR review.
-Explicit bounded owner IMPLEMENT override of NEXT; base/target `stage`, branch
-`fix/qa-003-diagnostics-fixture`. Validated code SHA
-`10d9b575b63cd44ad183af8287c322d4ff804191`.
-Only test data/assertions changed: two distinct RATE_LIMITED exceptions share
-one fingerprint/incident, two occurrence IDs and equal timestamps; greater ID
-supplies latest provider, request ID, attempt and retry delay. Dedicated runtime-role
-regression confirms recording the same object twice retains one occurrence/count.
-Production recorder/controller/migrations and WeakMap behavior are unchanged.
+## QA-004 — невозможно разрешить неоднозначность утверждения в интерфейсе Карьеры
 
-Owned PostgreSQL 18.6 container/database, internal network, tmpfs storage; no shared
-DB or live provider calls. Exact failing test PASS (1/17); runtime-role Diagnostics
-suite PASS (5/50); targeted Diagnostics PASS on PostgreSQL (57/575), all exit 0,
-zero skips. USER list/detail/update denial, audit rollback and redaction PASS.
-Pint, PHPStan and diff check PASS; transaction rollback and owned cleanup verified.
-[New SHA/commands/environment/results](evidence/qa003-2026-10-12/README.md).
-Historical FAIL logs and audit accounting remain unchanged. Other QA findings
-are outside this repair; no full QA Audit or merge.
+**Воспроизведение:** при создании факта-навыка `Built Laravel APIs.` и извлечении опыта с аналогичной формулировкой после ручного подтверждения статус утверждения переходит в `USER_RESOLUTION_REQUIRED` (требуется решение пользователя). В интерфейсе Карьеры отображаются плашка статуса и текст, но нет элементов выбора подтверждающего факта или кнопки отправки решения. Генерация в браузере блокируется до отправки прямого запроса `PATCH /api/v1/career/claims/{id}/resolve` с указанием `career_fact_id` подтверждённого факта.
 
-## QA-004 — ambiguous Claim cannot be resolved in Career UI
+**Подтверждения:** контрольная точка генерации [browser-generation-original.json](evidence/full-2026-10-11/browser-generation-original.json); успешный вызов API разрешения в [browser.json](evidence/full-2026-10-11/browser.json); [реестр действий](evidence/full-2026-10-11/career-actions.json). В файле `apps/frontend/src/app/career-workspace.tsx` список утверждений выводил только статус и текст, хотя маршрут разрешения в контроллере бэкенда присутствовал.
 
-**Reproduction:** create manual `skill` fact `Built Laravel APIs.`; mock extraction returns `experience` with the same assertion; explicitly confirm it. Claim becomes `USER_RESOLUTION_REQUIRED`. Career view renders the Claim status badge and statement but provides no choice of evidence/resolution action. Main browser generation only proceeds after owner-authenticated `PATCH /api/v1/career/claims/{id}/resolve` with a same-owner confirmed `career_fact_id`, followed by reanalysis. This fixture is synthetic.
+**Первопричина:** операция разрешения в бэкенде и статус утверждения на фронтенде были реализованы, но в самом интерфейсе отсутствовали кнопки выбора и отправки запроса.
 
-**Evidence:** original generation checkpoint [browser-generation-original.json](evidence/full-2026-10-11/browser-generation-original.json); saved `CAREER-AMBIGUITY-resolution-API` PASS in [browser.json](evidence/full-2026-10-11/browser.json); [action inventory](evidence/full-2026-10-11/career-actions.json). Source: `apps/frontend/src/app/career-workspace.tsx`, final Claim list maps badge/statement only; controller resolution route exists. The current DB is already resolved, so the resumed inspection observes action absence/source, not an unresolved badge screenshot. Earlier positive API outcome is retained rather than recreating the fixture.
+**Влияние и затронутые сценарии:** при наличии двух похожих фактов пользователь попадал в тупик в интерфейсе без возможности самостоятельно исправить ситуацию. Защита Truth Guard корректно блокировала генерацию, не допуская ложных подтверждений, но для продолжения работы требовался обход через API.
 
-**Root cause:** backend resolution operation and frontend Claim status projection are implemented, but frontend has no resolution control or request path.
+**Рекомендуемое исправление:** добавить в интерфейс Карьеры список подтверждённых фактов пользователя с радиокнопками выбора, кнопкой отправки решения и выводом ошибок валидации.
 
-**Impact / affected coverage:** a legitimate manual+extracted confirmation flow can block downstream generation without a self-service remedy. Truth Guard correctly fails closed; no unsafe approval observed. Affects Career-to-Application first-value browser path when evidence is ambiguous; happy path currently uses an API workaround. Requirement context: M1.4 requires explicit user resolution before revalidation.
+### QA-004: локальное исправление — 12 октября 2026 г.
 
-**Recommended fix:** separately authorize bounded Career UI resolution: expose supporting same-owner confirmed evidence choices, submit explicit selection, show validation errors and refresh/revalidate dependent context. Preserve human choice and owner/Truth Guard guards; no automatic selection.
+**Текущий результат:** ИСПРАВЛЕНО / локально проверено, ожидает ревью PR. В интерфейсе Карьеры добавлены понятные русскоязычные пояснения, список подходящих подтверждённых фактов с указанием типа и цитаты, радиокнопки выбора, состояния загрузки и безопасный повтор при ошибке. Используется существующий контракт PATCH API. Автоматического подтверждения фактов без участия человека не происходит.
 
-**Regression criteria:** reproduce ambiguity in browser, choose an eligible supporting fact, observe PASS then complete generation/approval without console/API helper; reject foreign, pending, rejected and deprecated evidence; ambiguous/unresolved content stays unapprovable; keyboard/accessibility coverage for the new control.
+**Валидация:** 131 тест фронтенда успешно пройден, линтеры ESLint, TypeScript и сборка успешны; 52 теста API Карьеры и 19 тестов откликов пройдены; 15 сценариев в реальном браузере на изолированной PostgreSQL и мок-провайдере пройдены успешно (включая навигацию с клавиатуры, перезагрузку страницы, генерацию и отклонение чужих утверждений со статусом 404). Проверка адаптивности на экранах 320, 390, 768 и 1440 пикселей успешна. См. [отчёт и воспроизводимый раннер QA-004](evidence/qa004-2026-10-12/README.md).
 
-### QA-004 bounded correction — 2026-10-12
+## Пробелы в покрытии и не-дефекты
 
-**Current result:** FIXED / locally verified, awaiting PR review/integration.
-Career now exposes Russian explanation, linked confirmed supporting facts with
-source/type/excerpt, explicit radio selection and confirmation, busy/result/error
-states, preserved selection and safe manual retry. It uses the existing PATCH
-contract and displays only the backend's actual truth_status; HTTP 200/BLOCK is
-not success. No new facts, automatic confirmation, resolution or application approval.
+- Интеграция с реальными OpenAI и ChatGPT: статус ЗАБЛОКИРОВАНО из-за явного запрета на сетевые вызовы в тестах; мок-адаптер не заменяет проверку реального провайдера.
+- Приёмка версии Preview реальными пользователями, тестирование со скринридером, честное масштабирование 200% и ручная матрица состояний: статус ЗАБЛОКИРОВАНО (релизные шлюзы остаются в силе).
+- Один точный сценарий `VacancyCoreTest` в PostgreSQL: пропущен из-за деструктивности трейта `RefreshDatabase`; эквивалентная проверка внешних ключей и RLS пройдена с откатом транзакции.
+- Сетевая изоляция воркеров QA: сервис бэкенда находился в сети edge без полной блокировки исходящего трафика на уровне Docker. Контроль URL и тестовых ключей подтверждён; утечек данных не зафиксировано.
+- Функционал этапа M2 (экспорт документов, расширенная память работодателя): статус НЕ ЗАПУСКАЛОСЬ (находится за рамками текущего скоупа).
 
-**Validation:** frontend 131 tests PASS, ESLint/TypeScript/build PASS;
-Career API 52 tests / 417 assertions and Application 19 tests / 253 assertions PASS
-(SQLite in-memory); targeted Pint/PHPStan PASS. Real browser against isolated
-PostgreSQL/runtime role + local mocked provider: 15 targeted scenarios PASS,
-including keyboard resolution, persistence, vacancy revalidation, generation,
-explicit acceptance/approval, CSRF419 and foreign Claim/approval404.
-Responsive smoke at 320/390/768/1440 PASS. [Evidence and reproducible runner](evidence/qa004-2026-10-12/README.md).
+## Коррекция артефактов в рамках PR #46 — 12 октября 2026 г.
 
-Historical audit records above and their API-workaround evidence remain unchanged.
-No full QA audit or live provider verification. Preview 0.1 and manual accessibility
-release gates remain open; QA-001–003 are outside this correction. NEXT is unchanged
-under explicit owner override. Integration/independent review remain separate.
-
-## Coverage gaps and non-defects
-
-- External OpenAI/ChatGPT delivery: BLOCKED by explicit no-live-AI boundary; mock adapter metadata is not real-provider proof.
-- Real-user Preview acceptance, A1 audible screen reader, Z1 native 200% zoom and full manual state matrix: BLOCKED; unchanged repository release gates.
-- One exact PostgreSQL `VacancyCoreTest` case: BLOCKED because its RefreshDatabase setup is destructive; equivalent FK and runtime RLS probe PASS with rollback.
-- QA backend belongs to non-internal `edge`: network-wide no-egress is not enforced. URL/key/mock controls are verified; historical packets unavailable. Recommended environment hardening in a separate QA setup task; not an observed exfiltration defect.
-- M2 package/export and full employer consistency: NOT_RUN outside implemented/authorized scope. No fake MVP PASS.
-- Early injection-vacancy timeout: expected semantic rejection misused as positive fixture; safe synthetic vacancy subsequently PASS. Early environment-sensitive SQLite failures are retained, superseded by canonical same-SHA PASS; their precise initial effective config is unavailable.
-- Full WCAG/contrast, every state keyboard traversal and production-scale/SLO testing are not covered by semantic/responsive/performance smoke.
-
-Recommended bounded next task: repair QA-001–QA-003 proof gates only under a separate authorization. Product fix QA-004 and human gates remain subsequent work; no remediation is part of this audit.
-
-## PR #46 evidence correction — 2026-10-12
-
-QA-001–QA-004 above remain unchanged. Historical Career review concurrency has an additional verifier proof failure: the original log throws while its wrapper exits 0 and prints PASS. This is REVIEW-002, not an established product race defect. The historical ledger/F48 now record FAIL; helper repair and fresh isolated evidence are documented in [PR46 remediation](PR46-REMEDIATION.md). No historical failed verification is replaced by a later successful run.
+Дефекты QA-001–QA-004 сохранены в исходном виде. В исторической проверке конкурентности ревью Карьеры была обнаружена ошибка скрипта проверки: исходный лог содержал исключение, хотя скрипт-обёртка завершался с кодом 0 и выводил PASS. Этому дефекту присвоен статус REVIEW-002 (ошибка тестового скрипта, а не гонка в коде продукта). В историческом реестре зафиксирован статус FAIL; исправление вспомогательного скрипта и изолированные подтверждения задокументированы в файле [PR46 remediation](PR46-REMEDIATION.md).

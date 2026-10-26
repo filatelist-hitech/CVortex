@@ -1,5 +1,5 @@
 ---
-title: Glossary
+title: Словарь терминов (Glossary)
 status: accepted
 owner: product-owner
 created: 2026-09-12
@@ -15,51 +15,51 @@ related:
   - "[[Scope]]"
 ---
 
-# Glossary
+# Словарь терминов
 
-This glossary defines product language for early project phases. Later architecture and data-design phases may add implementation-level precision without silently changing the product meaning.
+Словарь фиксирует терминологию продукта для ранних этапов проекта. Архитектурные спецификации и модели данных могут уточнять технические детали реализации, не изменяя при этом заложенный продуктовый смысл.
 
-| Term | Meaning |
+| Термин | Значение |
 |---|---|
-| **CVortex** | Personal Job Search OS that combines career facts, vacancies, employer history, research, application materials, interviews, and outcomes in one contextual system. |
-| **Career Fact** | Atomic statement about the candidate's real experience, skills, education, achievements, constraints, or history. Only confirmed facts may support employer-facing generated claims. |
-| **Career Fact Base** | Canonical source of truth for candidate facts across all Career Tracks and applications. |
-| **Pending Fact** | Potential Career Fact extracted or proposed by AI but not yet confirmed by the user. It must not be treated as established candidate truth. |
-| **Confirmed Fact** | Career Fact explicitly accepted as true and eligible to support claims. |
-| **Career Track** | Positioning lens such as QA, AQA, backend/API QA, developer, or AI automation. A track changes relevance and emphasis, not the underlying biography. |
-| **Claim** | Candidate-facing or employer-facing assertion constructed from one or more confirmed Career Facts. Claims preserve semantic traceability to their evidence. |
-| **Generated Content** | Concrete wording produced for a resume, cover letter, application answer, interview preparation, or similar artifact. It should trace to Claims and then to confirmed Career Facts. |
-| **Truth Guard** | Cross-cutting validation concept that prevents unsupported candidate statements and checks provenance and important conflicts. It is a validation responsibility, not a conversational persona. |
-| **Employer Memory** | Employer-specific context containing prior vacancies, applications, claims, conversations, salary expectations, work-format statements, interviews, and related history. |
-| **Employer Consistency Check** | Validation step that compares new employer-facing content with confirmed prior statements to the same employer and surfaces or blocks meaningful contradictions. |
-| **Vacancy** | Normalized job opportunity being evaluated by the user. |
-| **Opportunity** | UI working context for a saved Vacancy and its related preparation/Application when one exists. It is not a new persisted entity or lifecycle; a saved vacancy can have no Application yet. |
-| **Application Workspace** | Contextual presentation for one Opportunity: work surface, requirements/match/materials/employer/history sections and an optional evidence inspector. Current ApplicationPreparation is not a sent Application. |
-| **Employers** | Global UI destination for Company references plus the current owner's confirmed employer context. Imported company name alone does not establish a safe employer-memory association. |
-| **Vacancy Source** | Origin of vacancy data, such as pasted text, uploaded file, approved URL source, or a later browser integration. |
-| **Vacancy Snapshot** | Preserved source representation of a vacancy at a point in time so normalization does not erase the original input. |
-| **Vacancy Requirement** | Normalized responsibility, requirement, preference, constraint, or qualification extracted from a vacancy. |
-| **Match** | Structured comparison of vacancy requirements against confirmed candidate context. Match should be multidimensional and explainable. |
-| **Should I Apply** | Decision-support result that explains whether a vacancy should be prioritized, considered, deprioritized, or skipped. It is not an automatic application action. |
-| **Application** | User-specific record connecting a vacancy and employer with the prepared/sent materials, status history, conversations, interviews, and outcome. |
-| **Resume Version** | Immutable or versioned resume content prepared for a particular context or application. |
-| **Resume Recommendation** | Proposed resume change showing what to change and why, with supporting evidence and risk where applicable. It requires user review. |
-| **Cover Letter** | Generated employer-facing letter based on vacancy context, confirmed facts, selected positioning, and Employer Memory. |
-| **Research Source** | External evidence used to support a technical, product, integration, hiring, or market finding. |
-| **Research Finding** | Evidence-backed conclusion derived from one or more Research Sources. |
-| **Research Rule** | Versioned recommendation or operational rule derived from research, with scope, confidence, and review lifecycle. |
-| **LLM Provider** | Adapter responsible for communicating with a specific model provider. Product domain logic should not depend directly on it. |
-| **Model Policy** | Rules for selecting capability/cost tiers and escalation behavior for a task. Concrete provider/model mappings are changeable configuration. |
-| **Skill** | Reusable runtime AI capability with a defined purpose, input/output contract, validation, and version. Runtime product Skills are distinct from development-agent instructions. |
-| **Agent** | Orchestrator used when a task requires coordination of multiple Skills, tools, or steps. Agents should not be created merely as personas. |
-| **Workflow** | Explicit sequence of deterministic and/or AI-assisted steps that produce a product outcome. |
-| **Tool** | Deterministic capability an Agent or Workflow may invoke, such as retrieval, validation, storage, or document rendering. |
-| **Context Builder** | Concept responsible for selecting only relevant context for an AI task instead of sending the entire user history. |
-| **Human Approval** | Mandatory user review/decision gate before important generated content or application actions become final. |
-| **Untrusted Input** | External content such as vacancies, recruiter messages, websites, and imported documents. It is treated as data, never as trusted agent instruction. |
-| **Application Package** | The reviewed set of materials prepared for an application, such as a tailored resume version, cover letter, supporting answers, and associated provenance. |
-| **M0 Runnable Core** | The verified local technical baseline: Nginx, Next.js, Laravel/PHP-FPM, Horizon, PostgreSQL and Redis. It contains no CVortex business functionality. |
-| **M0 Web Entry Point** | The single loopback-bound Nginx origin that serves the frontend at `/` and Laravel at `/api/v1/*`. No other M0 service is host-exposed. |
-| **Liveness** | Operational check that confirms the application request path is running without depending on PostgreSQL or Redis availability. |
-| **Readiness** | Operational check that confirms PostgreSQL and Redis are reachable; it returns a sanitized unavailable state when either dependency fails. |
-| **Private Local Storage** | Persistent Laravel-managed file storage outside the public web root. It survives normal local down/up and is never served directly by Nginx. |
+| **CVortex** | Персональная операционная система поиска работы (Job Search OS), объединяющая факты биографии кандидата, вакансии, историю взаимодействия с работодателями, исследования рынка, отклики, подготовку к интервью и результаты в едином контекстном пространстве. |
+| **Факт о карьере (Career Fact)** | Атомарное утверждение о реальном опыте, навыках, образовании, достижениях, ограничениях или истории кандидата. Только подтверждённые факты могут служить основанием для генерации утверждений в адрес работодателя. |
+| **База подтверждённых фактов (Career Fact Base)** | Канонический источник правды о кандидате по всем карьерным трекам и откликам. |
+| **Неподтверждённый факт (Pending Fact)** | Потенциальный факт, извлечённый нейросетью или предложенный ассистентом, но ещё не подтверждённый пользователем лично. Не считается истинным до ручного подтверждения. |
+| **Подтверждённый факт (Confirmed Fact)** | Факт о карьере, явно принятый пользователем как истинный и допущенный к обоснованию утверждений в откликах. |
+| **Карьерный трек (Career Track)** | Позиционирование кандидата (например: QA, автоматизация тестирования AQA, бэкенд-разработка, QA API, разработка ИИ). Трек меняет расстановку акцентов и релевантность опыта, но не искажает реальную биографию. |
+| **Утверждение о кандидате (Claim)** | Тезис для резюме или работодателя, построенный на одном или нескольких подтверждённых фактах карьеры. Утверждения всегда сохраняют проверяемую смысловую связь с источниками подтверждений. |
+| **Сгенерированный контент (Generated Content)** | Конкретный текст, созданный для резюме, сопроводительного письма, ответа на вопрос анкеты или подготовки к собеседованию. Всегда должен опираться на Утверждения и подтверждённые Факты. |
+| **Защита достоверности (Truth Guard)** | Сквозной механизм валидации, предотвращающий появление неподтверждённых заявлений о кандидате, проверяющий цепочку источников и блокирующий смысловые противоречия. Это строгая серверная проверка, а не текстовая личность чат-бота. |
+| **Память о работодателе (Employer Memory)** | Контекст взаимодействия с конкретным работодателем: прошлые вакансии, отклики, утверждения, переписка, зарплатные ожидания, формат работы, интервью и история договорённостей. |
+| **Проверка согласованности с работодателем (Employer Consistency Check)** | Валидация, сравнивающая новые отправляемые материалы с ранее сделанными заявлениями этому же работодателю, выявляющая и блокирующая смысловые противоречия. |
+| **Вакансия (Vacancy)** | Нормализованное описание позиции, оцениваемое пользователем. |
+| **Возможность (Opportunity)** | Рабочий контекст интерфейса для сохранённой вакансии и привязанной к ней подготовки отклика. Не является отдельной таблицей в БД; сохранённая вакансия может пока не иметь отклика. |
+| **Рабочая область отклика (Application Workspace)** | Контекстное представление вакансии: рабочая зона, требования и соответствие, материалы, контекст работодателя, история и опциональный инспектор подтверждений фактов. |
+| **Работодатели (Employers)** | Глобальный раздел интерфейса для компаний и подтверждённого контекста взаимодействия пользователя с ними. Простое совпадение текстового названия не даёт права связывать историю работодателя. |
+| **Источник вакансии (Vacancy Source)** | Первоисточник данных вакансии: вставленный текст, файл, ссылка или расширение браузера. |
+| **Снимок вакансии (Vacancy Snapshot)** | Неизменяемая копия исходного текста вакансии на момент сохранения, исключающая потерю оригинала при нормализации. |
+| **Требование вакансии (Vacancy Requirement)** | Нормализованная обязанность, требование, пожелание или квалификация, извлечённая из текста вакансии. |
+| **Сопоставление (Match)** | Структурированное сравнение требований вакансии с подтверждённым опытом кандидата. Всегда строится по понятным критериям и поддаётся логическому объяснению. |
+| **Оценка целесообразности (Should I Apply)** | Поддержка принятия решения: приоритизировать отклик, рассмотреть, отложить или пропустить. Не выполняет автоматических действий на сайтах работодателей. |
+| **Отклик (Application)** | Пользовательская запись, связывающая вакансию, работодателя, подготовленные материалы, историю статусов, диалоги, интервью и итоговый результат. |
+| **Версия резюме (Resume Version)** | Зафиксированная неизменяемая или версионированная редакция резюме для конкретного отклика. |
+| **Рекомендация по резюме (Resume Recommendation)** | Предложение по изменению резюме с объяснением причины, источников фактов и рисков. Требует ручной проверки пользователем. |
+| **Сопроводительное письмо (Cover Letter)** | Сгенерированное письмо работодателю на основе требований вакансии, подтверждённых фактов, выбранного позиционирования и памяти о работодателе. |
+| **Источник исследования (Research Source)** | Внешний подтверждённый источник (статья, документация, исследование), используемый для обоснования технических решений или аналитики найма. |
+| **Вывод исследования (Research Finding)** | Обоснованный вывод, полученный на основе одного или нескольких источников исследований. |
+| **Правило исследования (Research Rule)** | Версионированное правило или рекомендация из исследований с указанием границ применения, уровня уверенности и регламента пересмотра. |
+| **Провайдер LLM (LLM Provider)** | Адаптер для взаимодействия с конкретным поставщиком нейросетей (OpenAI и др.). Доменная логика продукта не должна зависеть от конкретного вендора. |
+| **Политика моделей (Model Policy)** | Правила выбора модели по производительности, стоимости и эскалации для конкретной задачи. Конкретные привязки моделей задаются конфигурацией. |
+| **Навык ИИ (Skill)** | Переиспользуемая функция ИИ во время работы приложения со строго определённой задачей, контрактом входа/выхода, валидацией и версией. Отличается от инструкций для coding-агентов. |
+| **Агент (Agent)** | Оркестратор, используемый в случаях, когда задача требует координации нескольких навыков, инструментов или шагов. Не должен создаваться как просто «ролевая маска». |
+| **Сценарий процесса (Workflow)** | Явная последовательность детерминированных шагов и вызовов ИИ, приводящая к заданному продуктовому результату. |
+| **Инструмент (Tool)** | Детерминированная операция, которую может вызывать агент или сценарий (поиск, валидация, сохранение, генерация документа). |
+| **Генератор контекста (Context Builder)** | Компонент, отбирающий строго релевантные факты для конкретного запроса к ИИ вместо отправки всей истории кандидата целиком. |
+| **Согласование человеком (Human Approval)** | Обязательный этап ручной проверки и осознанного решения пользователя перед фиксацией важного сгенерированного текста или отправкой отклика. |
+| **Непроверенные входные данные (Untrusted Input)** | Внешний контент (вакансии, сообщения рекрутеров, сайты, загруженные файлы). Обрабатывается как данные, но никогда — как доверенные инструкции агенту. |
+| **Пакет материалов отклика (Application Package)** | Проверенный комплект материалов для подачи: адаптированное резюме, сопроводительное письмо, ответы на вопросы и цепочки подтверждений фактов. |
+| **Запускаемое ядро M0 (M0 Runnable Core)** | Проверенный локальный технический стек: Nginx, Next.js, Laravel/PHP-FPM, Horizon, PostgreSQL и Redis. Бизнес-логики CVortex не содержит. |
+| **Точка веб-входа M0 (M0 Web Entry Point)** | Единый локальный порт Nginx (`127.0.0.1:8080`), раздающий фронтенд по пути `/` и API Laravel по пути `/api/v1/*`. Другие службы наружу не открываются. |
+| **Проверка жизнеспособности (Liveness)** | Служебная проверка работы веб-сервера без обращения к базе данных или Redis. |
+| **Проверка готовности (Readiness)** | Служебная проверка доступности PostgreSQL и Redis с безопасным сообщением об ошибке при их недоступности. |
+| **Приватное локальное хранилище (Private Local Storage)** | Защищённое файловое хранилище под управлением Laravel за пределами публичной папки веб-сервера. Сохраняется при перезапуске контейнеров и не отдаётся Nginx напрямую. |

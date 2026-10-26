@@ -28,7 +28,7 @@ system_settings (PostgreSQL)
         ↓
 Encrypted overrides with optimistic concurrency
 
-EffectiveSettingsResolver
+SettingsResolver
         ↓
 Precedence resolution → Application Services
 

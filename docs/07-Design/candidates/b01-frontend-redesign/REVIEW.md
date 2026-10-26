@@ -48,8 +48,8 @@ Tab/Shift+Tab, scroll/focus return, user/admin/guest. Убедиться, что
 ## Текущая версия после восстановления
 
 STAGE A имеет TECHNICAL PASS; [README](README.md) и manifest относятся к финальной
-типографике. Stage B personal preview завершён отдельно, см. его
-[review record](../b01-personal-preview/REVIEW.md). Владелец одобрил оба кандидата
+типографике. Stage B personal preview завершён отдельно (запись сохранена в приватном
+локальном каталоге `.local/b01-personal-preview/REVIEW.md`). Владелец одобрил оба кандидата
 только в scope, записанном выше. Active reference не заменён; точный B01 review
 gate остаётся в `docs/07-Design/reference/REVIEW.md`.
 

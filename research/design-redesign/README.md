@@ -20,10 +20,12 @@ node research/design-redesign/preview-server.cjs
 
 | Concept | Mental model | Runnable preview | Desktop screenshot | Mobile screenshot |
 |---|---|---|---|---|
-| A · Career Command Center | Внимание и решения сегодня | [HTML](concept-a/index.html) | [PNG](concept-a/concept-a-preview.png) | [PNG](concept-a/concept-a-mobile.png) |
-| B · Application Workspace | Один отклик со всем контекстом | [HTML](concept-b/index.html) | [PNG](concept-b/concept-b-preview.png) | [PNG](concept-b/concept-b-mobile.png) |
-| C · Career Intelligence | Доказанный опыт и связанные возможности | [HTML](concept-c/index.html) | [PNG](concept-c/concept-c-preview.png) | [PNG](concept-c/concept-c-mobile.png) |
-| D · Career Flow | Этап, prerequisites и следующий human action | [HTML](concept-d/index.html) | [PNG](concept-d/concept-d-preview.png) | [PNG](concept-d/concept-d-mobile.png) |
+| A · Career Command Center | Внимание и решения сегодня | [HTML](concept-a/index.html) | `concept-a-preview.png` | `concept-a-mobile.png` |
+| B · Application Workspace | Один отклик со всем контекстом | [HTML](concept-b/index.html) | `concept-b-preview.png` | `concept-b-mobile.png` |
+| C · Career Intelligence | Доказанный опыт и связанные возможности | [HTML](concept-c/index.html) | `concept-c-preview.png` | `concept-c-mobile.png` |
+| D · Career Flow | Этап, prerequisites и следующий human action | [HTML](concept-d/index.html) | `concept-d-preview.png` | `concept-d-mobile.png` |
+
+> *Примечание: Скриншоты концептов оптимизированы и удалены в PR #51 ради экономии дискового пространства; интерактивные HTML-прототипы доступны по ссылкам.*
 
 Desktop viewport: **1440×1000**; named preview PNGs — full-page captures, высота зависит от состава экрана. Для сравнения первого viewport: `concept-*/concept-*-viewport.png`. Mobile: **390×844**, full-page плюс `*-mobile-viewport.png`. Демо компании, карьерные факты, зарплаты и события полностью **synthetic**; не факты реального пользователя. `CONFIRMED` — только fixture status.
 
