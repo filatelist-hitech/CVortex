@@ -80,3 +80,8 @@ const server = Bun.serve({
 })
 
 console.log(`CVortex Worker HTTP Server listening on port ${server.port}`)
+
+process.on("SIGTERM", () => {
+  server.stop()
+  process.exit(0)
+})
