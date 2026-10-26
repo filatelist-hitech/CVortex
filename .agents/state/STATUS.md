@@ -39,6 +39,40 @@ Mode: IMPLEMENT; branch: `fix/admin-settings-review-followups`; target: `stage`.
 
 ---
 
+## Superlist Swiss UI Refresh — 2026-10-26
+
+Mode: IMPLEMENT; branch: `feature/superlist-ui-refresh`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Design System & Tokens Evolution**:
+   - Implemented **Superlist Swiss Precision** aesthetic across `apps/frontend/src/app/application/tokens.css` and `globals.css`.
+   - Deep obsidian neutral void (`--cv-surface-canvas: #090A0F`, pure void `#05060A`).
+   - Translucent frosted glassmorphism surfaces (`rgba(19, 23, 34, 0.72)`, elevated `rgba(27, 33, 49, 0.82)`, interactive `rgba(36, 44, 66, 0.90)`).
+   - High-precision hairline borders (`rgba(255, 255, 255, 0.09)`, hover `0.24`).
+   - Punchy coral primary accent (`--cv-accent-primary: #FF5533`, hover `#FF6B4D`, glow `rgba(255, 85, 51, 0.35)`).
+   - Sky blue (`#38BDF8`) for provenance/telemetry and emerald (`#22C55E`) for confirmed truth.
+   - Calibrated `--cv-text-muted` / `--text-muted` to `#8590A4` (contrast 6.14:1 on canvas, 5.22:1 on elevated glass, fully compliant with WCAG 2.1 AA > 4.5:1).
+   - Preserved all existing CSS token interfaces and variable names for seamless drop-in compatibility, restoring genuine 64-hex SHA-256 token checksum.
+
+2. **Kinetic Backdrop & Global Shell**:
+   - Added harmonic chromatic aurora backdrop mesh (coral/sky/indigo/emerald radial gradients) with fixed attachment.
+   - Refined `.status-card`, `.workspace-shell`, `.panel`, `.fact-card`, and modal dialogs with backdrop blur (`blur(24px)`).
+   - Upgraded primary CTA buttons to Superlist coral pills with high-contrast obsidian text (`--cv-text-inverse: #05060A`, contrast ratio 6.36:1, strictly WCAG AA compliant), ambient glow, and hover micro-lift (`translateY(-1px) scale(1.02)`).
+   - Integrated `@media (prefers-reduced-motion: reduce)` resets across button hover micro-lifts and logo rotations.
+
+3. **Swiss Geometric Vortex Branding & Header Lockup**:
+   - Extracted shared Swiss Geometric Vortex vector emblem component (`VortexSwissLogo` in `apps/frontend/src/app/vortex-logo.tsx`) with dual semantic fallback token resolution.
+   - Refined header branding lockup across `app-shell.tsx` and `workspace-shell.tsx` with dedicated `.brand-copy` flex column, preventing horizontal crowding/overflow in the 240px navigation column.
+
+4. **Verification**:
+   - Frontend Vitest: 13/13 test files (167/167 tests) PASS cleanly.
+   - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
+   - Frontend ESLint: 0 errors, 0 warnings.
+   - Next.js Production Build: 8/8 static routes compiled successfully (`next build`).
+   - Playwright E2E: 10/10 tests PASS across Desktop Chromium and Mobile Chrome.
+   - Formatting & Hygiene: `git diff --check` PASS (0 whitespace errors).
+>>>>>>> origin/stage
+
 ## Runtime Configuration & Admin System Settings — 2026-10-25
 
 Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential execution.
