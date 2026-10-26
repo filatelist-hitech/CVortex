@@ -30,8 +30,8 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell button:hover:not(:disabled) { background: var(--cv-surface-interactive); border-color: var(--cv-border-hover); transform: translateY(-1px); }
 .application-shell.application-shell button:active:not(:disabled) { transform: scale(.98); background: var(--cv-surface-interactive); }
 .application-shell.application-shell button:disabled { color: var(--cv-text-disabled); cursor: not-allowed; border-style: dashed; transform: none; box-shadow: none; }
-.application-shell.application-shell button.primary { color: #ffffff; background: var(--cv-accent-primary); border-color: var(--cv-accent-primary); font-weight: var(--cv-font-weight-semibold); border-radius: var(--cv-radius-pill); box-shadow: 0 0 16px var(--cv-accent-coral-glow); }
-.application-shell.application-shell button.primary:hover:not(:disabled), .application-shell.application-shell button.primary:active:not(:disabled) { color: #ffffff; background: var(--cv-accent-primary-hover); transform: translateY(-1px) scale(1.02); box-shadow: 0 4px 24px rgba(255, 85, 51, 0.45); }
+.application-shell.application-shell button.primary { color: var(--cv-text-inverse); background: var(--cv-accent-primary); border-color: var(--cv-accent-primary); font-weight: var(--cv-font-weight-bold); border-radius: var(--cv-radius-pill); box-shadow: 0 0 16px var(--cv-accent-coral-glow); }
+.application-shell.application-shell button.primary:hover:not(:disabled), .application-shell.application-shell button.primary:active:not(:disabled) { color: var(--cv-text-inverse); background: var(--cv-accent-primary-hover); transform: translateY(-1px) scale(1.02); box-shadow: 0 4px 24px rgba(255, 85, 51, 0.45); }
 .application-shell.application-shell button.primary:disabled { color: var(--cv-text-disabled); background: var(--cv-surface-elevated); border-color: var(--cv-border-default); box-shadow: none; transform: none; }
 .application-shell.application-shell input, .application-shell.application-shell select, .application-shell.application-shell textarea { width: 100%; min-width: 0; min-height: 44px; padding: var(--cv-space-2) var(--cv-space-3); transition: border-color var(--cv-motion-duration-fast); }
 .application-shell.application-shell input:focus, .application-shell.application-shell select:focus, .application-shell.application-shell textarea:focus { border-color: var(--cv-accent-primary); }
@@ -46,7 +46,8 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .skip-link:focus { top: var(--cv-space-2); }
 .application-shell.application-shell .compact-navigation { display: contents; }
 .application-shell.application-shell .site-header { grid-column: 1 / -1; display: grid; grid-template-columns: 240px minmax(0,1fr) 224px auto; align-items: center; gap: var(--cv-space-6); padding: var(--cv-space-3) var(--cv-space-6); border-bottom: 1px solid var(--cv-border-subtle); background: var(--cv-surface-default); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
-.application-shell.application-shell .brand { position: relative; padding-left: var(--cv-space-3); display: flex; align-items: center; gap: var(--cv-space-2); }
+.application-shell.application-shell .brand { position: relative; padding-left: var(--cv-space-3); display: flex; align-items: center; gap: var(--cv-space-3); }
+.application-shell.application-shell .brand .brand-copy { display: flex; flex-direction: column; gap: 2px; }
 .application-shell.application-shell .vortex-swiss-logo { width: 22px; height: 22px; flex: none; display: grid; place-items: center; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 .application-shell.application-shell .brand:hover .vortex-swiss-logo { transform: rotate(90deg) scale(1.1); }
 .application-shell.application-shell .brand-dot { color: var(--cv-accent-primary); }
@@ -265,7 +266,11 @@ html:has(.application-shell) { scroll-padding-top: 112px; }
 
 }
 @media (prefers-reduced-motion: reduce) {.application-shell.application-shell *, .application-shell.application-shell *::before, .application-shell.application-shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-.application-shell.application-shell button:active:not(:disabled) { transform: none; }
+.application-shell.application-shell button:active:not(:disabled),
+.application-shell.application-shell button:hover:not(:disabled),
+.application-shell.application-shell button.primary:hover:not(:disabled),
+.application-shell.application-shell .opportunity-item:hover,
+.application-shell.application-shell .brand:hover .vortex-swiss-logo { transform: none !important; }
 
 }
 @media (prefers-reduced-transparency: reduce) {.application-shell.application-shell .compact-navigation, .application-shell.application-shell .account-heading, .application-shell.application-shell .account-dialog { background: var(--cv-surface-default); backdrop-filter: none; }

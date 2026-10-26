@@ -9,9 +9,9 @@
   --text-pure: #ffffff;
   --text-primary: #e8ecf5;
   --text-secondary: #9ba5b9;
-  --text-muted: #606a7e;
+  --text-muted: #8590a4;
   --text-disabled: #475062;
-  --text-inverse: #ffffff;
+  --text-inverse: #05060a;
   --border-subtle: rgba(255, 255, 255, 0.09);
   --border-default: rgba(255, 255, 255, 0.16);
   --border-hover: rgba(255, 255, 255, 0.24);
@@ -379,7 +379,8 @@ blockquote { padding: 12px 16px; border-left: 2px solid var(--accent-secondary);
 /* B02 production shell consumes the canonical B01 visual roles. */
 .workspace-shell { display: grid; grid-template-columns: 168px minmax(0, 1fr); grid-template-rows: auto 1fr; min-height: 100vh; min-width: 0; }
 .workspace-global-header { grid-column: 1 / -1; display: grid; grid-template-columns: 240px minmax(0, 1fr) auto; align-items: center; gap: var(--space-6); min-height: 90px; padding: var(--space-3) var(--space-6); border-bottom: 1px solid var(--border-subtle); background: var(--surface-default); }
-.workspace-brand { position: relative; display: flex; align-items: center; gap: var(--space-2); }
+.workspace-brand { position: relative; display: flex; align-items: center; gap: var(--space-3); }
+.workspace-brand .brand-copy { display: flex; flex-direction: column; gap: 2px; }
 .workspace-brand .vortex-swiss-logo { width: 22px; height: 22px; flex: none; display: grid; place-items: center; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 .workspace-brand:hover .vortex-swiss-logo { transform: rotate(90deg) scale(1.1); }
 .workspace-brand strong { font-family: var(--font-brand); font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); line-height: var(--font-line-height-title); color: var(--text-pure); }
@@ -893,4 +894,15 @@ button.secondary:hover:not(:disabled) { background: var(--surface-interactive); 
 @media (max-width: 767px) {
   .provider-selector, .providers-grid { grid-template-columns: 1fr; }
   .settings-header { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vortex-swiss-logo,
+  .workspace-brand .vortex-swiss-logo,
+  .workspace-brand:hover .vortex-swiss-logo,
+  button,
+  .primary-action {
+    transition: none !important;
+    transform: none !important;
+  }
 }

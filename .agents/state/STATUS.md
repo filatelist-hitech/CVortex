@@ -12,15 +12,18 @@ Mode: IMPLEMENT; branch: `feature/superlist-ui-refresh`. One agent / sequential 
    - High-precision hairline borders (`rgba(255, 255, 255, 0.09)`, hover `0.24`).
    - Punchy coral primary accent (`--cv-accent-primary: #FF5533`, hover `#FF6B4D`, glow `rgba(255, 85, 51, 0.35)`).
    - Sky blue (`#38BDF8`) for provenance/telemetry and emerald (`#22C55E`) for confirmed truth.
-   - Preserved all existing CSS token interfaces and variable names for seamless drop-in compatibility.
+   - Calibrated `--cv-text-muted` / `--text-muted` to `#8590A4` (contrast 6.14:1 on canvas, 5.22:1 on elevated glass, fully compliant with WCAG 2.1 AA > 4.5:1).
+   - Preserved all existing CSS token interfaces and variable names for seamless drop-in compatibility, restoring genuine 64-hex SHA-256 token checksum.
 
 2. **Kinetic Backdrop & Global Shell**:
    - Added harmonic chromatic aurora backdrop mesh (coral/sky/indigo/emerald radial gradients) with fixed attachment.
    - Refined `.status-card`, `.workspace-shell`, `.panel`, `.fact-card`, and modal dialogs with backdrop blur (`blur(24px)`).
-   - Upgraded primary CTA buttons to Superlist coral pills with ambient glow and hover micro-lift (`translateY(-1px) scale(1.02)`).
+   - Upgraded primary CTA buttons to Superlist coral pills with high-contrast obsidian text (`--cv-text-inverse: #05060A`, contrast ratio 6.36:1, strictly WCAG AA compliant), ambient glow, and hover micro-lift (`translateY(-1px) scale(1.02)`).
+   - Integrated `@media (prefers-reduced-motion: reduce)` resets across button hover micro-lifts and logo rotations.
 
-3. **Swiss Geometric Vortex Branding**:
-   - Integrated minimalist Swiss Geometric Vortex vector emblem (`.vortex-swiss-logo`) across `app-shell.tsx` and `workspace-shell.tsx` with smooth 90-degree rotation on hover.
+3. **Swiss Geometric Vortex Branding & Header Lockup**:
+   - Extracted shared Swiss Geometric Vortex vector emblem component (`VortexSwissLogo` in `apps/frontend/src/app/vortex-logo.tsx`) with dual semantic fallback token resolution.
+   - Refined header branding lockup across `app-shell.tsx` and `workspace-shell.tsx` with dedicated `.brand-copy` flex column, preventing horizontal crowding/overflow in the 240px navigation column.
 
 4. **Verification**:
    - Frontend Vitest: 13/13 test files (167/167 tests) PASS cleanly.

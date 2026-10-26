@@ -13,7 +13,7 @@
   --cv-text-pure: #FFFFFF;
   --cv-text-primary: #E8ECF5;
   --cv-text-secondary: #9BA5B9;
-  --cv-text-muted: #606A7E;
+  --cv-text-muted: #8590A4;
   --cv-text-disabled: #475062;
   --cv-text-inverse: #05060A;
 
@@ -89,5 +89,5 @@
   --cv-breakpoint-wide: 1440px;
   --cv-shadow-overlay: 0px 16px 40px 0px rgba(0, 0, 0, 0.5);
   --cv-shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
-  --cv-token-source-sha256: "superlist-swiss-edition-2026-10-26";
+  --cv-token-source-sha256: "72565fc8a72458e0f5c28563ab5b4656a5cdbaf1bfa58e8c6c353b87402358e7";
 }

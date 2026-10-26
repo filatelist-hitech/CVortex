@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { WorkspaceProvider, useWorkspace } from "./use-workspace";
 import { Icon, IconSprite } from "./icons";
 import { scenarioLabels, scenarios, type Scenario } from "./model";
+import { VortexSwissLogo } from "../vortex-logo";
 import { VacancyList } from "./vacancy-list";
 import { VacancyHeader } from "./vacancy-header";
 import { WorkspaceTabs, OverviewPanel, RequirementsPanel, MaterialsPanel, EmployerPanel, HistoryPanel } from "./panels";
@@ -75,15 +76,11 @@ export function WorkspaceHeader(props: Identity) {
   const w = useWorkspace();
   return <header className="site-header">
     <div className="brand">
-      <span className="vortex-swiss-logo" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M13 2.5C18.799 2.5 23.5 7.20101 23.5 13C23.5 15.65 22.45 18.05 20.75 19.85" stroke="#FFFFFF" strokeWidth="2.3" strokeLinecap="round"/>
-          <path d="M13 23.5C7.20101 23.5 2.5 18.799 2.5 13C2.5 10.35 3.55 7.95 5.25 6.15" stroke="var(--cv-accent-primary, #FF5533)" strokeWidth="2.3" strokeLinecap="round"/>
-          <circle cx="13" cy="13" r="2.3" fill="var(--cv-accent-primary, #FF5533)"/>
-        </svg>
-      </span>
-      <strong>CVortex<span className="brand-dot">.</span></strong>
-      <span className="type-caption">Your career, in context.</span>
+      <VortexSwissLogo />
+      <div className="brand-copy">
+        <strong>CVortex<span className="brand-dot">.</span></strong>
+        <span className="type-caption">Your career, in context.</span>
+      </div>
     </div>
     <div className="reference-meta">
       <strong className="type-secondary">{w.demo ? "Орбита решения" : "Вакансии"}</strong>
