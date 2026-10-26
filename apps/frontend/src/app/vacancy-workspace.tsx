@@ -261,7 +261,7 @@ export default function VacancyWorkspace() {
   }
 
   return <section className="vacancy-workspace" aria-labelledby="vacancy-title">
-    <div className="section-title"><div><p className="eyebrow">Вакансии</p><h2 id="vacancy-title">Вакансии</h2></div><span className="count">{vacancies.length}</span></div>
+    <div className="section-title"><div><p className="eyebrow">Вакансии</p><h2 id="vacancy-title">Вакансии</h2></div><div style={{ display: "flex", alignItems: "center", gap: "10px" }}><a href="/vacancies/discover" className="secondary" style={{ padding: "6px 14px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 600 }}>🔍 Найти на порталах</a><span className="count">{vacancies.length}</span></div></div>
     <p className="muted">Вставьте текст вакансии. Ссылка сохраняется как источник; содержимое по ней не загружается.</p>
     {error && <div className="alert error" role="alert"><strong>Ошибка обработки вакансии</strong><span>{error}</span><button type="button" className="secondary" onClick={() => void refresh()}>Повторить</button></div>}
     <div className="vacancy-grid">
@@ -284,6 +284,16 @@ export default function VacancyWorkspace() {
         : <ApplicationDraftPanel key={`preparation-${detail.id}`} vacancyId={detail.id} vacancyTitle={detail.title || "Untitled vacancy"} />)}
     </div>}
   </section>;
+}
+
+function humanizeDraftError(err: string): string {
+  if (err.includes("VALIDATION_FAILED")) {
+    return "Для подготовки материалов отклика сначала дождитесь успешного завершения анализа вакансии.";
+  }
+  if (err.includes("LLM_PROVIDER_RATE_LIMITED") || err.includes("429")) {
+    return "Лимит запросов к AI-провайдеру временно исчерпан. Повторите попытку позже.";
+  }
+  return err;
 }
 
 export function ApplicationDraftPanel({ vacancyId, vacancyTitle, canonical = false }: { vacancyId: string; vacancyTitle: string; canonical?: boolean }) {
@@ -431,7 +441,7 @@ export function ApplicationDraftPanel({ vacancyId, vacancyTitle, canonical = fal
     <h3 id="application-draft-title">{canonical ? `Подготовка: ${vacancyTitle}` : `Prepare for ${vacancyTitle}`}</h3>
     <p className="muted">{canonical ? "Материалы остаются приватными. Одобрение не отправляет отклик и не связывается с работодателем." : "Recommendations and cover drafts stay private. Approval does not submit an application or contact an employer."}</p>
     {loading && <p className="loading" role="status">{canonical ? "Загрузка сохранённых материалов…" : "Loading saved preparation…"}</p>}
-    {error && <div className="alert error" role="alert"><span>{error}</span></div>}
+    {error && <div className="alert error" role="alert"><span>{humanizeDraftError(error)}</span></div>}
     {preparation?.stale && <p className="stale-callout" role="status"><strong>{canonical ? "Материалы устарели." : "Preparation is stale."}</strong><span>{canonical ? "Вакансия или подтверждённые факты изменились. Проверьте анализ и откройте материалы заново." : "Vacancy or confirmed Career evidence changed. Reanalyze and reopen it before continuing."}</span></p>}
     {retrySecondsRemaining > 0 && <p role="status">{canonical ? `До повторного запроса к провайдеру: ${retrySecondsRemaining} с.` : `Wait at least ${formatRetryWait(retrySecondsRemaining)} before retrying a provider-backed action.`}</p>}
     {preparation && !loading && <>

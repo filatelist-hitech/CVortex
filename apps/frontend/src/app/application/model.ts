@@ -18,7 +18,7 @@ export function readLocation(): WorkspaceLocation {
   const hash = window.location.hash.slice(1);
   const selected = params.get("opportunity") ?? "";
   const scenario = params.get("scenario");
-  return { selected, section: sections.includes(hash as Section) ? hash as Section : "materials",
+  return { selected, section: sections.includes(hash as Section) ? hash as Section : "overview",
     scenario: scenarios.includes(scenario as Scenario) ? scenario as Scenario : "normal",
     level: params.get("level") === "context" && selected ? "context" : params.get("level") === "list" || !selected ? "list" : "work" };
 }

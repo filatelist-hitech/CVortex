@@ -25,4 +25,4 @@ COPY --chown=cvortex:cvortex . .
 
 USER cvortex
 
-CMD ["python3", "-c", "import signal, sys; signal.signal(signal.SIGTERM, lambda *_: sys.exit(0)); signal.pause()"]
+CMD ["bun", "run", "server.ts"]

@@ -12,6 +12,7 @@ use App\Models\LlmRun;
 use App\Models\User;
 use App\Models\UserAiSetting;
 use App\Services\CareerExtractionService;
+use App\Services\DatabaseOwnerContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -48,6 +49,8 @@ class AiSettingsTest extends TestCase
 
     private function asUser(User $user): self
     {
+        app(DatabaseOwnerContext::class)->set((string) $user->id);
+
         return $this->actingAs($user->fresh());
     }
 
@@ -673,5 +676,32 @@ class AiSettingsTest extends TestCase
         $this->assertSame('gemini-2.0-flash', $response->json('model'));
         $this->assertIsArray($response->json('available_models'));
         $this->assertSame('gemini-2.0-flash', $response->json('available_models.0.id'));
+    }
+
+    public function test_resolver_resolves_user_settings_from_database_owner_context_in_background_jobs(): void
+    {
+        auth()->logout();
+        $this->assertNull(auth()->user());
+
+        UserAiSetting::query()->updateOrCreate(
+            ['owner_id' => $this->userA->id],
+            [
+                'selected_provider' => 'gemini',
+                'gemini_api_key' => 'secret-gemini-key',
+                'gemini_model' => 'gemini-2.0-flash',
+            ]
+        );
+
+        $policy = new ModelPolicy('low_cost_structured_extraction', true);
+        $resolver = app(ModelPolicyResolver::class);
+        $ownerContext = app(DatabaseOwnerContext::class);
+
+        $resolved = $ownerContext->run($this->userA->id, function () use ($resolver, $policy) {
+            return $resolver->resolve($policy);
+        });
+
+        $this->assertSame('gemini', $resolved->provider);
+        $this->assertSame('gemini-2.0-flash', $resolved->model);
+        $this->assertSame('secret-gemini-key', $resolved->apiKey);
     }
 }

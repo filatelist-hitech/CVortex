@@ -35,13 +35,15 @@ describe("B02 authenticated global shell", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch");
     shell();
     const navigation = screen.getByRole("navigation", { name: "Основное меню" });
-    for (const name of ["Сегодня", "Работодатели"]) {
-      expect(within(navigation).getByRole("button", { name })).toBeDisabled();
-      expect(within(navigation).getByRole("button", { name })).toHaveAccessibleDescription("Недоступно");
-      expect(within(navigation).queryByRole("link", { name })).not.toBeInTheDocument();
-    }
+    const employers = within(navigation).getByRole("button", { name: "Работодатели" });
+    expect(employers).toBeDisabled();
+    expect(employers).toHaveAccessibleDescription("Недоступно");
+    expect(within(navigation).queryByRole("link", { name: "Работодатели" })).not.toBeInTheDocument();
+
+    expect(within(navigation).getByRole("link", { name: "Сегодня" })).toHaveAttribute("href", "/");
+    expect(within(navigation).getByRole("link", { name: "Вакансии" })).toHaveAttribute("href", "/vacancies");
+    expect(within(navigation).getByRole("link", { name: "Импорт вакансии" })).toHaveAttribute("href", "/vacancies/import");
     expect(within(navigation).getByRole("link", { name: "Карьера" })).toHaveAttribute("href", "/career");
-    expect(within(navigation).getByRole("link", { name: "Вакансии" })).toHaveAttribute("href", "/");
     expect(within(navigation).getByRole("link", { name: "Настройки" })).toHaveAttribute("href", "/settings");
     expect(fetchMock).not.toHaveBeenCalled();
   });
