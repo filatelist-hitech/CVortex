@@ -73,13 +73,14 @@ class VacancyIngestionService
                             'vacancy' => $vacancy,
                             'snapshot' => $current,
                             'duplicate' => true,
-                            'dispatch' => $recover,
+                            'dispatch' => $recover && $guardResult->isSafeForLlm,
                             'release_lock' => $recover,
                             'posting_guard' => $guardResult,
                         ];
                     }
                 }
-                $dispatch = true;
+                // Do not dispatch asynchronous LLM analysis for dangerous payloads
+                $dispatch = $guardResult->isSafeForLlm;
                 if ($vacancy === null) {
                     $vacancy = Vacancy::query()->create([
                         'owner_id' => $user->id,
@@ -156,6 +157,7 @@ class VacancyIngestionService
                 'duplicate' => true,
                 'dispatch' => false,
                 'release_lock' => false,
+                'posting_guard' => $guardResult,
             ];
         }
 

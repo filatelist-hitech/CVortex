@@ -1,6 +1,6 @@
 # CVortex — проверенное текущее состояние
 
-## AI Job Search Integration: Фаза 1 — Инфраструктура Воркера и Posting Guard (Security Gate) — 2026-10-26
+## AI Job Search Integration: Фаза 1 — Инфраструктура Воркера и Posting Guard (Security Gate & Red Team Remediation) — 2026-10-26
 
 Mode: IMPLEMENT; branch: `feature/ai-job-search-worker-and-posting-guard`; target: `stage`. One agent / sequential execution.
 
@@ -9,27 +9,34 @@ Mode: IMPLEMENT; branch: `feature/ai-job-search-worker-and-posting-guard`; targe
    - Принят `docs/03-ADR/ADR-0028-ai-job-search-integration-and-worker.md` и зарегистрирован в `docs/03-ADR/INDEX.md`.
    - Зафиксированы 4 столпа интеграции `ai-job-search`: изолированный worker-контейнер, защитный барьер Posting Guard от prompt injection, трёхступенчатый контур генерации (Drafter → Reviewer → Truth Guard) и гибридный экспорт PDF (DOCX + LaTeX).
 
-2. **Защитный барьер Posting Guard (`PostingGuardService` и `PostingGuardResult`)**:
+2. **Защитный барьер Posting Guard (`PostingGuardService` и `PostingGuardResult`) & Red Team Remediation**:
    - Реализована детерминированная фильтрация входящего контента вакансий в `apps/backend/app/Services/PostingGuard/`:
      - Вырезание невидимых символов и стеганографии (Zero-width, Bidi tamper, soft hyphens, BOM, Unicode Tag characters U+E0000–U+E007F).
      - Вырезание скрытых HTML-блоков (`display:none`, `visibility:hidden`, `opacity:0`, `aria-hidden="true"`, script, style, svg).
+     - **Исправление `COLLAPSED_BOX_PATTERN`**: замена границы слова `\b` на `(?<![a-zA-Z-])`, устранившая ложное схлопывание легитимного flexbox/grid контента с `min-width: 0` или `min-height: 0`.
+     - **Ликвидация слепых зон CSS-эвазии**: расширен `HIDDEN_STYLE_PATTERN` с детекцией `filter: opacity(0)`, `transform: scale(0)`, микрошрифтов (`font-size: 0.001px`), `clip-path` (polygon/circle/inset) и отрицательных отступов (`margin-left`, `text-indent` < -100px).
+     - **Декодирование CSS Unicode Escapes**: в `normalizeStyle` внедрено шестнадцатеричное декодирование обфусцированных свойств (`\64 isplay: none`, `\76 isibility: hidden`).
      - Детекция попыток Prompt Injection (`ignore instructions`, `system prompt`, `you are an ai`, `jailbreak`).
      - Детекция скам-паттернов (залоги/депозиты, подозрительный редирект в мессенджеры).
      - Обнаружение mixed-script спуфинга (смешение латиницы и кириллицы в одном слове).
-   - Интегрирован в `VacancyIngestionService`: все вакансии перед сохранением снимка и отправкой в LLM очищаются от скрытых инъекций; при выявлении угроз генерируется событие `VACANCY_POSTING_SECURITY_FLAG` в `AuditLogger`.
 
-3. **Вспомогательный Docker-воркер (`apps/worker`)**:
-   - Создан `apps/worker/Dockerfile` на базе Python 3.11 с предустановленным рантаймом **Bun 1.4.4** для портальных скраперов и зависимостями парсинга PDF (`pypdf`).
-   - Портированы утилиты `apps/worker/tools/posting_guard.py` и `apps/worker/tools/page_decode.py`.
-   - Зарегистрирован сервис `worker` в `compose.yaml` (изолированные сети `internal` и `egress`). Образ успешно собран и верифицирован (`bun --version`, `python3 --version`, `posting_guard.py`).
+3. **Защита контура LLM в `VacancyIngestionService`**:
+   - Внедрена безусловная блокировка диспатча очереди асинхронного анализа `AnalyzeVacancy` при `$guardResult->isSafeForLlm === false`.
+   - Вредоносные вакансии сохраняются с санитизированным снимком, регистрируют аудит-событие `VACANCY_POSTING_SECURITY_FLAG` и блокируют дальнейшее исполнение в контуре LLM.
 
-4. **Верификация**:
-   - Backend PHPUnit Unit Suite: 22/22 тестов PASS (73 assertions) в `PostingGuardServiceTest` и `VacancyIngestionPostingGuardTest`.
+4. **Харденинг вспомогательного Docker-воркера (`apps/worker`)**:
+   - Создан `apps/worker/Dockerfile` на базе Python 3.11 с Bun 1.4.4 и `pypdf`.
+   - Назначен непривилегированный системный пользователь `cvortex` с полными правами на директорию `/app`.
+   - Зарегистрирован явный обработчик `SIGTERM` в PID 1 (`signal.signal(signal.SIGTERM, ...)`), обеспечивающий моментальный graceful shutdown (<0.3 с) без 10-секундного ожидания `SIGKILL`.
+   - Синхронизированы алгоритмы и регулярные выражения в `apps/worker/tools/posting_guard.py`.
+
+5. **Верификация**:
+   - Backend Unit Suite: 17/17 тестов PASS (112 assertions) в `PostingGuardServiceTest` и `VacancyIngestionPostingGuardTest`, включая негативные контроли схлопывания, flexbox `min-width: 0`, CSS escapes, transform scale и `Queue::assertNotPushed`.
+   - Backend Full Suite: 491/491 тестов PASS (3767 assertions).
    - Backend Pint: 0 style issues across 241 files (`[PASS]`).
-   - Backend PHPStan: 0 errors across 151 files (`[OK] No errors`).
-   - Docker Compose: `docker compose config --quiet` exit 0.
-   - Frontend Typecheck & ESLint: 0 errors, 0 warnings.
-   - Frontend Vitest: 13 файлов, 167/167 тестов успешно (exit 0).
+   - Backend PHPStan Level 8: 0 errors across 151 files (`[OK] No errors`).
+   - Fast Shutdown Check: `docker compose stop worker` — 0.28s (< 1s, PASS).
+   - Worker Storage Check: `touch /app/test_write.tmp` — PASS.
 
 ---
 

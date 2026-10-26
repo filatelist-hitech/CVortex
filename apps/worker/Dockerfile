@@ -9,13 +9,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Bun runtime for portal search skills
 RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
 
+# Create unprivileged system user cvortex and make Bun accessible globally
+RUN useradd -u 1000 -m -s /bin/bash cvortex \
+    && cp /root/.bun/bin/bun /usr/local/bin/bun \
+    && chmod 755 /usr/local/bin/bun
+
+RUN mkdir -p /app && chown -R cvortex:cvortex /app
 WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=cvortex:cvortex . .
 
-CMD ["python3", "-c", "import time; print('CVortex Worker runtime ready.'); time.sleep(86400)"]
+USER cvortex
+
+CMD ["python3", "-c", "import signal, sys; signal.signal(signal.SIGTERM, lambda *_: sys.exit(0)); signal.pause()"]
