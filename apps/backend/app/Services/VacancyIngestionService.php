@@ -156,6 +156,7 @@ class VacancyIngestionService
                 'duplicate' => true,
                 'dispatch' => false,
                 'release_lock' => false,
+                'posting_guard' => $guardResult,
             ];
         }
 

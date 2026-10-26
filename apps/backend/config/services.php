@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'worker' => [
+        'url' => env('WORKER_SERVICE_URL', 'http://worker:3001'),
+    ],
+
 ];

@@ -261,7 +261,7 @@ export default function VacancyWorkspace() {
   }
 
   return <section className="vacancy-workspace" aria-labelledby="vacancy-title">
-    <div className="section-title"><div><p className="eyebrow">Вакансии</p><h2 id="vacancy-title">Вакансии</h2></div><span className="count">{vacancies.length}</span></div>
+    <div className="section-title"><div><p className="eyebrow">Вакансии</p><h2 id="vacancy-title">Вакансии</h2></div><div style={{ display: "flex", alignItems: "center", gap: "10px" }}><a href="/vacancies/discover" className="secondary" style={{ padding: "6px 14px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 600 }}>🔍 Найти на порталах</a><span className="count">{vacancies.length}</span></div></div>
     <p className="muted">Вставьте текст вакансии. Ссылка сохраняется как источник; содержимое по ней не загружается.</p>
     {error && <div className="alert error" role="alert"><strong>Ошибка обработки вакансии</strong><span>{error}</span><button type="button" className="secondary" onClick={() => void refresh()}>Повторить</button></div>}
     <div className="vacancy-grid">

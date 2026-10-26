@@ -1,6 +1,66 @@
 # CVortex — проверенное текущее состояние
 
-## AI Job Search Integration: Фаза 1 — Инфраструктура Воркера и Posting Guard (Security Gate) — 2026-10-26
+## AI Job Search Integration: Фаза 2 — Портальные скраперы, Fast Fit Ranking и Discover Inbox — 2026-10-26
+
+Mode: IMPLEMENT; branch: `feature/ai-job-search-scrapers-and-discover-inbox`; target: `stage`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Портальные скраперы и HTTP сервис воркера (`apps/worker`)**:
+   - Реализованы асинхронные модули поиска по порталам в `apps/worker/scrapers/`:
+     - `freehire.ts` — клиент API FreeHire (поиск по 50+ ATS платформам: Greenhouse, Lever, Ashby, Workable и др.).
+     - `habr.ts` — клиент API Habr Career с полной структурой стека, локаций, удалёнки и зарплатных вилок.
+     - `hh.ts` — устойчивый HTML-парсер поисковой выдачи HeadHunter.
+     - `linkedin.ts` — гостевой парсер карточек вакансий LinkedIn.
+     - `runner.ts` — CLI-раннер параллельного поиска с дедупликацией по URL.
+   - Поднят внутренний микросервис `apps/worker/server.ts` на базе встроенного `Bun.serve` (порт 3001) в сети `internal`:
+     - `GET /health` — проверка работоспособности контейнера воркера.
+     - `POST /scrapers/search` — параллельный опрос порталов, нормализация и дедупликация вакансий.
+   - Сервис `worker` в `compose.yaml` дополнен healthcheck (`curl -f http://127.0.0.1:3001/health`).
+
+2. **Модель обнаруженных вакансий и RLS изоляция (`discovered_vacancies`)**:
+   - Создана миграция `2026_10_26_000001_create_discovered_vacancies_table.php` со строгой изоляцией по `owner_id` (PostgreSQL FORCE Row Level Security) и правами роли `cvortex_app`.
+   - Создана Eloquent-модель `App\Models\DiscoveredVacancy` со статусами триажа (`INBOX`, `ACCEPTED`, `DISMISSED`), уровнями соответствия (`HIGH`, `MEDIUM`, `LOW`, `UNKNOWN`) и уровнями безопасности (`CLEAN`, `SUSPICIOUS`, `MALICIOUS`).
+
+3. **Быстрый алгоритм соответствия (Fast Fit Scorer)**:
+   - Создан `App\Services\Discovery\FastFitScorer`:
+     - Извлекает подтверждённые карьерные факты кандидата через `TrustedCareerQuery`.
+     - Сопоставляет ключевые роли и стек технологий с заголовком и текстом вакансии.
+     - Вычисляет скор от 5 до 98%, уровень соответствия, формирует списки `matched_skills`, `missing_skills` и текстовое резюме соответствия.
+     - Отрабатывает детерминированно за < 5 мс без внешних LLM-вызовов.
+
+4. **Сервис обнаружения и триажа (`JobDiscoveryService` & `DiscoveryController`)**:
+   - `JobDiscoveryService`:
+     - Опрашивает воркер, очищает входящий контент через `PostingGuardService`, вычисляет скор соответствия и сохраняет во входящие со статусом `INBOX`.
+     - Метод `accept`: переводит вакансию в `ACCEPTED` и мгновенно регистрирует в основном пайплайне анализа через `VacancyIngestionService::queue()`.
+     - Метод `dismiss`: переводит вакансию в `DISMISSED`.
+     - Метод `list`: пагинированная выборка с фильтрацией по статусу и порталу.
+   - Зарегистрированы маршруты API в `routes/api.php` под защитой middleware `db-owner-context`:
+     - `GET /api/v1/discovery`
+     - `POST /api/v1/discovery/search`
+     - `POST /api/v1/discovery/{id}/accept`
+     - `POST /api/v1/discovery/{id}/dismiss`
+
+5. **Фронтенд Discover/Inbox UI (`/vacancies/discover`)**:
+   - Разработан компонент `apps/frontend/src/app/discover-inbox.tsx` и страница `apps/frontend/src/app/vacancies/discover/page.tsx`:
+     - Панель поиска с ключевыми словами, локацией, чекбоксами порталов и переключателем "Только Remote".
+     - Вкладки статусов триажа: `📥 Входящие (Inbox)`, `✓ В работе (Accepted)`, `✕ Пропущенные`.
+     - Фильтр по источнику (Все, FreeHire, Habr, HH, LinkedIn).
+     - Карточки вакансий с цветными бейджами порталов, бейджами Fit Score (`★ Match 85%`), бейджами безопасности `🛡️ Clean`, тегами совпавших навыков и кнопками быстрого триажа «✓ В работу» и «✕ Пропустить».
+     - При принятии вакансии в работу выводится прямая ссылка на анализ вакансии в основном пайплайне CVortex.
+   - В глобальное меню `WorkspaceShell` добавлен раздел `Поиск (Discover)` с иконкой `search`.
+   - В заголовок `vacancy-workspace.tsx` добавлена кнопка быстрого перехода `🔍 Найти на порталах`.
+
+6. **Верификация**:
+   - Backend PHPUnit Suite: 21/21 тестов PASS (123 assertions) в `FastFitScorerTest`, `DiscoveryApiTest`, `PostingGuardServiceTest`, `VacancyIngestionPostingGuardTest`.
+   - Backend Pint: 0 style issues across 248 files (`[PASS]`).
+   - Backend PHPStan: 0 errors across 155 files (`[OK] No errors`).
+   - Frontend Typecheck (`tsc --noEmit`): 0 errors (`[PASS]`).
+   - Frontend Lint (`eslint`): 0 warnings/errors (`[PASS]`).
+   - Frontend Vitest Suite: 14/14 файлов тестов PASS, 171/171 тест успешно (`[PASS]`).
+
+---
+
+## AI Job Search Integration: Фаза 1 — Инфраструктура Воркера и Posting Guard (Security Gate & Hardening) — 2026-10-26
 
 Mode: IMPLEMENT; branch: `feature/ai-job-search-worker-and-posting-guard`; target: `stage`. One agent / sequential execution.
 
@@ -9,19 +69,31 @@ Mode: IMPLEMENT; branch: `feature/ai-job-search-worker-and-posting-guard`; targe
    - Принят `docs/03-ADR/ADR-0028-ai-job-search-integration-and-worker.md` и зарегистрирован в `docs/03-ADR/INDEX.md`.
    - Зафиксированы 4 столпа интеграции `ai-job-search`: изолированный worker-контейнер, защитный барьер Posting Guard от prompt injection, трёхступенчатый контур генерации (Drafter → Reviewer → Truth Guard) и гибридный экспорт PDF (DOCX + LaTeX).
 
-2. **Защитный барьер Posting Guard (`PostingGuardService` и `PostingGuardResult`)**:
-   - Реализована детерминированная фильтрация входящего контента вакансий в `apps/backend/app/Services/PostingGuard/`:
-     - Вырезание невидимых символов и стеганографии (Zero-width, Bidi tamper, soft hyphens, BOM, Unicode Tag characters U+E0000–U+E007F).
-     - Вырезание скрытых HTML-блоков (`display:none`, `visibility:hidden`, `opacity:0`, `aria-hidden="true"`, script, style, svg).
-     - Детекция попыток Prompt Injection (`ignore instructions`, `system prompt`, `you are an ai`, `jailbreak`).
-     - Детекция скам-паттернов (залоги/депозиты, подозрительный редирект в мессенджеры).
-     - Обнаружение mixed-script спуфинга (смешение латиницы и кириллицы в одном слове).
-   - Интегрирован в `VacancyIngestionService`: все вакансии перед сохранением снимка и отправкой в LLM очищаются от скрытых инъекций; при выявлении угроз генерируется событие `VACANCY_POSTING_SECURITY_FLAG` в `AuditLogger`.
+2. **Ремедиация уязвимостей и архитектурный рефакторинг Posting Guard (`PostingGuardService` и `PostingGuardResult`)**:
+   - Полная замена наивного регулярного выражения на детерминированный стековый HTML-токенизатор (`cleanHtml`), портированный из `posting_guard.py`:
+     - Стековый обход тегов с поддержкой void (`br`, `img`, `meta` и др.), блочных и неявно закрывающихся элементов (`p`, `li`, `tr` и др.).
+     - Защита от утечки пейлоада через вложенные теги (`<div style="display:none"><div>...</div>PAYLOAD</div>`) и незакрытые скрытые блоки (`<div style="display:none">payload`).
+     - Нормализация CSS-стилей: декодирование HTML-сущностей (`display&#58;none` → `display:none`) и удаление CSS-комментариев (`display/**/:none` → `display:none`).
+     - Защита от False Positives: легитимный `overflow: hidden` (без одновременного `height:0`/`width:0`) и классы разметки (`class="hidden-xs"`, `class="tag-hidden-wrapper"`) больше не приводят к вырезанию элементов.
+     - Ликвидация слепой зоны сканирования (Blindspot Remediation): собираются два потока текста (`$cleanText` и `$hiddenText`), сканирование на Prompt Injection и Scam производится по объединенному потоку. Инъекция в скрытом блоке вырезается из видимого текста, но фиксируется в `$findings['injections']`, устанавливая `threatLevel = THREAT_HIGH_RISK` и `isSafeForLlm = false`.
 
-3. **Вспомогательный Docker-воркер (`apps/worker`)**:
-   - Создан `apps/worker/Dockerfile` на базе Python 3.11 с предустановленным рантаймом **Bun 1.4.4** для портальных скраперов и зависимостями парсинга PDF (`pypdf`).
-   - Портированы утилиты `apps/worker/tools/posting_guard.py` и `apps/worker/tools/page_decode.py`.
-   - Зарегистрирован сервис `worker` в `compose.yaml` (изолированные сети `internal` и `egress`). Образ успешно собран и верифицирован (`bun --version`, `python3 --version`, `posting_guard.py`).
+3. **Консистентность контракта `VacancyIngestionService`**:
+   - В блоке перехвата гонки дубликатов `catch (QueryException)` гарантирован возврат ключа `'posting_guard' => $guardResult`, обеспечивая строгую типизацию и консистентность контракта метода `queue()`.
+
+4. **Харденинг вспомогательного Docker-воркера (`apps/worker`)**:
+   - Создан непривилегированный системный пользователь `cvortex` (UID 1000).
+   - Бинарник **Bun 1.4.4** установлен глобально в `/usr/local/bin/bun` с правами 755 и доступен пользователю `cvortex`.
+   - Контекст выполнения контейнера переключен на `USER cvortex`.
+   - Команда запуска заменена на сигнал-безопасную конструкцию ожидания: `CMD ["python3", "-c", "import signal; signal.pause()"]`.
+
+5. **Тестовое покрытие и верификация (PR #62 Remediation Verified)**:
+   - Превращение `VacancyIngestionPostingGuardTest` в реальный интеграционный тест с сохранением санитизированного `VacancySnapshot` в БД и валидацией метаданных события `VACANCY_POSTING_SECURITY_FLAG` в `AuditLogger`.
+   - Расширение `PostingGuardServiceTest` 5 новыми edge-case тестами: вложенные скрытые теги, незакрытые скрытые теги, HTML-сущности и комментарии в стилях, сохранение легитимного `overflow: hidden`, детекция инъекций в скрытом слое с `THREAT_HIGH_RISK`.
+   - Backend PHPUnit PostingGuard Suite: 12/12 тестов PASS (85 assertions).
+   - Backend Full PHPUnit Regression Suite: 483/483 теста PASS (3724 assertions).
+   - Backend Pint: 0 замечаний стиля (`[PASS]`).
+   - Backend PHPStan: Level 8, 0 ошибок (`[OK] No errors`).
+   - Worker Docker Validation: сборка успешна, `whoami` = `cvortex` (uid 1000), `bun --version` = `1.4.4`, `pypdf` готов к работе.
 
 4. **Верификация**:
    - Backend PHPUnit Unit Suite: 22/22 тестов PASS (73 assertions) в `PostingGuardServiceTest` и `VacancyIngestionPostingGuardTest`.

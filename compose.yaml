@@ -180,6 +180,11 @@ services:
       context: ./apps/worker
     volumes:
       - ./apps/worker:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3001/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
     networks:
       - internal
