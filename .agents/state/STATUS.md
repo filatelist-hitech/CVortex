@@ -1,5 +1,39 @@
 # CVortex — проверенное текущее состояние
 
+## Admin System Settings Review Remediation (PR #56 Findings) — 2026-10-26
+
+Mode: IMPLEMENT; branch: `fix/admin-settings-review-followups`; target: `stage`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Dynamic Settings Integration (FINDING-01 RESOLVED)**:
+   - Wired `SettingsResolver` into `OpenAiResponsesProvider`: dynamically resolves `api_key`, `base_url`, and `timeout_seconds` from database overrides / environment with defensive fallback to `config(...)`.
+   - Wired `SettingsResolver` into `ModelPolicyResolver`: dynamically resolves model IDs (`ai.model_policies.low_cost.model`, `ai.model_policies.standard.model`) and token cost rates (`input_cost_micros`, `output_cost_micros`) from database overrides.
+   - Wired `SettingsResolver` into `InvitationService` and `CreateInvitation` command: invitation expiration dynamically defaults to `auth.invitation_default_expires_days` (default 7 days) if not explicitly overridden by CLI options.
+   - Wired `SettingsResolver` into `CareerExtractionController` (`ai.career_extraction.max_source_characters`) and `VacancyController` (`ai.vacancy_extraction.max_source_characters`).
+   - Hardened `SettingsRepository`: wrapped `get()` and `all()` in defensive exception handling returning safe defaults if `system_settings` table is unmigrated or unavailable.
+
+2. **Nginx FastCGI Timeout Alignment (FINDING-02 RESOLVED)**:
+   - Removed trailing slashes in `location ^~ /api/v1/admin/settings` and `location ^~ /api/v1/ai` in `infra/nginx/nginx.conf`, ensuring both root index/batch patch endpoints (`/api/v1/admin/settings`) and sub-paths inherit the extended 60-second `fastcgi_read_timeout`.
+
+3. **Admin Test Throttling (FINDING-03 RESOLVED)**:
+   - Added `middleware('throttle:10,1')` to `POST /api/v1/admin/settings/test` in `apps/backend/routes/api.php` to prevent outbound connection hammering or scanning.
+
+4. **Frontend Declarative Routing (FINDING-04 RESOLVED)**:
+   - Cleaned up `apps/frontend/src/app/admin-settings.tsx`: connection test buttons now route strictly through declarative `item.test_target` without heuristic string fallbacks.
+   - Updated frontend Vitest mock fixture and Playwright E2E fixture to declare explicit `test_target: "openai"`.
+
+5. **Verification**:
+   - Backend PHPUnit Settings & AI Suite: 73/73 tests PASS (770 assertions), including newly added regression tests for rate limiting, model policy overrides, dynamic TTL, and dynamic character limits in `AdminSettingsApiTest` and dynamic config consumption in `OpenAiResponsesProviderTest`.
+   - Backend Pint: 0 style issues across 237 files.
+   - Backend PHPStan: 0 errors across 149 files (`[OK] No errors`).
+   - Frontend Vitest: 25/25 tests PASS across `admin-settings.test.tsx`, `access-shell.test.tsx`, and `ai-provider-settings.test.tsx`.
+   - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
+   - Frontend ESLint: 0 errors, 0 warnings.
+   - QA Evidence Integrity: `python3 scripts/qa_evidence.py` PASS, 20/20 Python helper regressions PASS.
+   - B01 Design Reference: 10/10 tests PASS.
+
+---
+
 ## Runtime Configuration & Admin System Settings — 2026-10-25
 
 Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential execution.

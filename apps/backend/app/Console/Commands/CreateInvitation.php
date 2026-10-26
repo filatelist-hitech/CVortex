@@ -8,14 +8,15 @@ use Illuminate\Console\Command;
 
 class CreateInvitation extends Command
 {
-    protected $signature = 'invitation:create {--email= : Target email; omit for a generic invitation} {--expires=7 : Expiry in days (1-30)}';
+    protected $signature = 'invitation:create {--email= : Target email; omit for a generic invitation} {--expires= : Expiry in days (1-30; defaults to system setting)}';
 
     protected $description = 'Create a one-time registration invitation and reveal its token once.';
 
     public function handle(InvitationService $invitations, ConsoleFailureReporter $failures): int
     {
         try {
-            ['invitation' => $invitation, 'token' => $token] = $invitations->create($this->option('email'), (int) $this->option('expires'));
+            $expires = $this->option('expires') !== null ? (int) $this->option('expires') : null;
+            ['invitation' => $invitation, 'token' => $token] = $invitations->create($this->option('email'), $expires);
         } catch (\Throwable $exception) {
             if (($message = $failures->expectedMessage($exception)) !== null) {
                 $this->error($message);

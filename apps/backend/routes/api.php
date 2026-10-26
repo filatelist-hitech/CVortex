@@ -36,7 +36,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/settings', [AdminSettingsController::class, 'index']);
             Route::patch('/settings', [AdminSettingsController::class, 'update']);
             Route::post('/settings/reset', [AdminSettingsController::class, 'reset']);
-            Route::post('/settings/test', [AdminSettingsController::class, 'test']);
+            Route::middleware('throttle:10,1')->post('/settings/test', [AdminSettingsController::class, 'test']);
             Route::get('/settings/environment', [AdminSettingsController::class, 'environment']);
         });
         Route::middleware(['db-owner-context'])->prefix('ai')->group(function (): void {

@@ -90,6 +90,7 @@ const sampleSettings = [
     env_fallback_key: "OPENAI_API_KEY",
     dangerous: false,
     testable: true,
+    test_target: "openai",
     sort_order: 30,
     version: 3,
     updated_at: "2026-10-24T21:00:00Z",

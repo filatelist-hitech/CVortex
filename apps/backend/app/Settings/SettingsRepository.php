@@ -13,7 +13,11 @@ class SettingsRepository
 {
     public function get(string $key): ?SystemSetting
     {
-        return SystemSetting::query()->where('key', $key)->first();
+        try {
+            return SystemSetting::query()->where('key', $key)->first();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -21,7 +25,11 @@ class SettingsRepository
      */
     public function all(): Collection
     {
-        return SystemSetting::query()->get()->keyBy('key');
+        try {
+            return SystemSetting::query()->get()->keyBy('key');
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 
     public function save(string $key, mixed $value, bool $isSecret, ?string $userId = null, ?int $expectedVersion = null): SystemSetting
