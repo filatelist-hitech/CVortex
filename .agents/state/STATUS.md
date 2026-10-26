@@ -1,5 +1,38 @@
 # CVortex — проверенное текущее состояние
 
+## AI Job Search Integration: Фаза 1 — Инфраструктура Воркера и Posting Guard (Security Gate) — 2026-10-26
+
+Mode: IMPLEMENT; branch: `feature/ai-job-search-worker-and-posting-guard`; target: `stage`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Архитектурный стандарт интеграции (ADR-0028)**:
+   - Принят `docs/03-ADR/ADR-0028-ai-job-search-integration-and-worker.md` и зарегистрирован в `docs/03-ADR/INDEX.md`.
+   - Зафиксированы 4 столпа интеграции `ai-job-search`: изолированный worker-контейнер, защитный барьер Posting Guard от prompt injection, трёхступенчатый контур генерации (Drafter → Reviewer → Truth Guard) и гибридный экспорт PDF (DOCX + LaTeX).
+
+2. **Защитный барьер Posting Guard (`PostingGuardService` и `PostingGuardResult`)**:
+   - Реализована детерминированная фильтрация входящего контента вакансий в `apps/backend/app/Services/PostingGuard/`:
+     - Вырезание невидимых символов и стеганографии (Zero-width, Bidi tamper, soft hyphens, BOM, Unicode Tag characters U+E0000–U+E007F).
+     - Вырезание скрытых HTML-блоков (`display:none`, `visibility:hidden`, `opacity:0`, `aria-hidden="true"`, script, style, svg).
+     - Детекция попыток Prompt Injection (`ignore instructions`, `system prompt`, `you are an ai`, `jailbreak`).
+     - Детекция скам-паттернов (залоги/депозиты, подозрительный редирект в мессенджеры).
+     - Обнаружение mixed-script спуфинга (смешение латиницы и кириллицы в одном слове).
+   - Интегрирован в `VacancyIngestionService`: все вакансии перед сохранением снимка и отправкой в LLM очищаются от скрытых инъекций; при выявлении угроз генерируется событие `VACANCY_POSTING_SECURITY_FLAG` в `AuditLogger`.
+
+3. **Вспомогательный Docker-воркер (`apps/worker`)**:
+   - Создан `apps/worker/Dockerfile` на базе Python 3.11 с предустановленным рантаймом **Bun 1.4.4** для портальных скраперов и зависимостями парсинга PDF (`pypdf`).
+   - Портированы утилиты `apps/worker/tools/posting_guard.py` и `apps/worker/tools/page_decode.py`.
+   - Зарегистрирован сервис `worker` в `compose.yaml` (изолированные сети `internal` и `egress`). Образ успешно собран и верифицирован (`bun --version`, `python3 --version`, `posting_guard.py`).
+
+4. **Верификация**:
+   - Backend PHPUnit Unit Suite: 22/22 тестов PASS (73 assertions) в `PostingGuardServiceTest` и `VacancyIngestionPostingGuardTest`.
+   - Backend Pint: 0 style issues across 241 files (`[PASS]`).
+   - Backend PHPStan: 0 errors across 151 files (`[OK] No errors`).
+   - Docker Compose: `docker compose config --quiet` exit 0.
+   - Frontend Typecheck & ESLint: 0 errors, 0 warnings.
+   - Frontend Vitest: 13 файлов, 167/167 тестов успешно (exit 0).
+
+---
+
 ## Admin System Settings Review Remediation (PR #56 Findings) — 2026-10-26
 
 Mode: IMPLEMENT; branch: `fix/admin-settings-review-followups`; target: `stage`. One agent / sequential execution.
