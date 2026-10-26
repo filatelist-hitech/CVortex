@@ -11,9 +11,10 @@ class CareerExtractionController extends Controller
 {
     public function __invoke(Request $request, CareerExtractionService $service): JsonResponse
     {
-        $maxChars = app()->bound(SettingsResolver::class)
+        $rawMaxChars = app()->bound(SettingsResolver::class)
             ? (int) app(SettingsResolver::class)->get('ai.career_extraction.max_source_characters', config('ai.career_extraction.max_source_characters', 30000))
             : (int) config('ai.career_extraction.max_source_characters', 30000);
+        $maxChars = max(1000, $rawMaxChars);
 
         $data = $request->validate([
             'source_text' => ['required', 'string', 'max:'.$maxChars],

@@ -54,9 +54,10 @@ class VacancyController extends Controller
 
     public function store(Request $request, VacancyIngestionService $service): JsonResponse
     {
-        $maxChars = app()->bound(SettingsResolver::class)
+        $rawMaxChars = app()->bound(SettingsResolver::class)
             ? (int) app(SettingsResolver::class)->get('ai.vacancy_extraction.max_source_characters', config('ai.vacancy_extraction.max_source_characters', 50000))
             : (int) config('ai.vacancy_extraction.max_source_characters', 50000);
+        $maxChars = max(1000, $rawMaxChars);
 
         $data = $request->validate([
             'source_text' => ['required', 'string', 'max:'.$maxChars],
