@@ -7,6 +7,7 @@ use App\AI\Data\LlmResponse;
 use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\ProviderRetryAfter;
+use App\Settings\SettingsResolver;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -14,7 +15,7 @@ class OpenAiResponsesProvider
 {
     public function generateResolved(LlmRequest $request, ResolvedModel $resolved, ?string $apiKey = null): LlmResponse
     {
-        $apiKey = ($apiKey !== null && trim($apiKey) !== '') ? trim($apiKey) : (string) config('ai.providers.openai.api_key');
+        $apiKey = ($apiKey !== null && trim($apiKey) !== '') ? trim($apiKey) : $this->resolveConfiguredApiKey();
         $model = $resolved->model;
         if ($apiKey === '' || $model === '') {
             throw new LlmProviderException(LlmProviderException::NOT_CONFIGURED, 'The OpenAI provider is not fully configured.', 'openai', $model);
@@ -22,10 +23,10 @@ class OpenAiResponsesProvider
 
         $startedAt = hrtime(true);
         try {
-            $response = Http::baseUrl(rtrim((string) config('ai.providers.openai.base_url'), '/'))
+            $response = Http::baseUrl($this->resolveBaseUrl())
                 ->withToken($apiKey)
                 ->acceptJson()
-                ->timeout((int) config('ai.providers.openai.timeout_seconds'))
+                ->timeout($this->resolveTimeout())
                 ->post('/responses', [
                     'model' => $model,
                     'store' => false,
@@ -246,7 +247,7 @@ class OpenAiResponsesProvider
     {
         $key = ($apiKey !== null && trim($apiKey) !== '')
             ? trim($apiKey)
-            : (string) config('ai.providers.openai.api_key');
+            : $this->resolveConfiguredApiKey();
 
         $targetModel = ($model !== null && trim($model) !== '')
             ? trim($model)
@@ -265,7 +266,7 @@ class OpenAiResponsesProvider
         }
 
         $startedAt = hrtime(true);
-        $baseUrl = rtrim((string) config('ai.providers.openai.base_url', 'https://api.openai.com/v1'), '/');
+        $baseUrl = $this->resolveBaseUrl();
 
         try {
             $response = Http::baseUrl($baseUrl)
@@ -318,5 +319,41 @@ class OpenAiResponsesProvider
             'latency_ms' => $latencyMs,
             'message' => 'OpenAI connection test successful.',
         ];
+    }
+
+    private function resolveConfiguredApiKey(): string
+    {
+        if (app()->bound(SettingsResolver::class)) {
+            $val = app(SettingsResolver::class)->get('ai.providers.openai.api_key');
+            if (is_string($val) && trim($val) !== '') {
+                return trim($val);
+            }
+        }
+
+        return (string) config('ai.providers.openai.api_key');
+    }
+
+    private function resolveBaseUrl(): string
+    {
+        if (app()->bound(SettingsResolver::class)) {
+            $val = app(SettingsResolver::class)->get('ai.providers.openai.base_url');
+            if (is_string($val) && trim($val) !== '') {
+                return rtrim(trim($val), '/');
+            }
+        }
+
+        return rtrim((string) config('ai.providers.openai.base_url', 'https://api.openai.com/v1'), '/');
+    }
+
+    private function resolveTimeout(): int
+    {
+        if (app()->bound(SettingsResolver::class)) {
+            $val = app(SettingsResolver::class)->get('ai.providers.openai.timeout_seconds');
+            if (is_int($val) && $val > 0) {
+                return $val;
+            }
+        }
+
+        return (int) config('ai.providers.openai.timeout_seconds', 45);
     }
 }

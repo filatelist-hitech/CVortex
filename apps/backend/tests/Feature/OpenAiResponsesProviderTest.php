@@ -7,6 +7,8 @@ use App\AI\Data\ModelPolicy;
 use App\AI\Data\ResolvedModel;
 use App\AI\Exceptions\LlmProviderException;
 use App\AI\Providers\OpenAiResponsesProvider;
+use App\Settings\SettingsResolver;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -146,5 +148,47 @@ class OpenAiResponsesProviderTest extends TestCase
         $this->assertFalse($result['success']);
         $this->assertSame('failed', $result['status']);
         $this->assertSame('NOT_CONFIGURED', $result['error_code']);
+    }
+
+    public function test_dynamic_settings_overrides_are_consumed(): void
+    {
+        $settings = $this->createMock(SettingsResolver::class);
+        $settings->method('get')->willReturnCallback(function (string $key, mixed $default = null) {
+            return match ($key) {
+                'ai.providers.openai.api_key' => 'dynamic-secret-key',
+                'ai.providers.openai.base_url' => 'https://custom-gateway.local/v1',
+                'ai.providers.openai.timeout_seconds' => 99,
+                default => $default,
+            };
+        });
+        $this->app->instance(SettingsResolver::class, $settings);
+
+        Http::fake([
+            'https://custom-gateway.local/v1/responses' => Http::response([
+                'id' => 'resp_123',
+                'status' => 'completed',
+                'output' => [
+                    [
+                        'type' => 'message',
+                        'content' => [
+                            ['type' => 'output_text', 'text' => '{"ok": true}'],
+                        ],
+                    ],
+                ],
+                'usage' => ['input_tokens' => 10, 'output_tokens' => 20],
+            ], 200),
+        ]);
+
+        $request = new LlmRequest('trusted', 'untrusted', ['type' => 'object'], new ModelPolicy('test', true));
+        $model = new ResolvedModel('test', 'openai', 'gpt-4o-mini');
+        $provider = app(OpenAiResponsesProvider::class);
+
+        $response = $provider->generateResolved($request, $model);
+        $this->assertSame(['ok' => true], $response->output);
+
+        Http::assertSent(function (Request $req) {
+            return $req->url() === 'https://custom-gateway.local/v1/responses'
+                && $req->hasHeader('Authorization', 'Bearer dynamic-secret-key');
+        });
     }
 }

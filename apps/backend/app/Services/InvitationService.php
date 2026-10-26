@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AuditEvent;
 use App\Models\Invitation;
 use App\Models\User;
+use App\Settings\SettingsResolver;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,8 +16,15 @@ class InvitationService
     public function __construct(private readonly EmailNormalizer $emails, private readonly AuditLogger $audit) {}
 
     /** @return array{invitation: Invitation, token: string} */
-    public function create(?string $targetEmail, int $expiresInDays): array
+    public function create(?string $targetEmail, ?int $expiresInDays = null): array
     {
+        if ($expiresInDays === null) {
+            $defaultDays = app()->bound(SettingsResolver::class)
+                ? app(SettingsResolver::class)->get('auth.invitation_default_expires_days', 7)
+                : 7;
+            $expiresInDays = is_int($defaultDays) ? $defaultDays : 7;
+        }
+
         if ($expiresInDays < 1 || $expiresInDays > 30) {
             throw ValidationException::withMessages(['expires' => 'Expiry must be between 1 and 30 days.']);
         }

@@ -552,15 +552,7 @@ export default function AdminSystemSettings() {
                     const currentValue = isStaged ? stagedValues[item.key] : item.value;
                     const isSecretUpdated = secretEdits[item.key] !== undefined && secretEdits[item.key].length > 0;
                     const isSecretCleared = clearedSecrets[item.key] === true;
-                    const testTarget: "openai" | "smtp" | "storage" | null =
-                      item.test_target ??
-                      (item.key.includes("openai")
-                        ? "openai"
-                        : item.key.includes("mail")
-                        ? "smtp"
-                        : item.key.includes("storage")
-                        ? "storage"
-                        : null);
+                    const testTarget: "openai" | "smtp" | "storage" | null = item.test_target ?? null;
 
                     return (
                       <div

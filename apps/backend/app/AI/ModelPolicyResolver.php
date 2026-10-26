@@ -8,6 +8,7 @@ use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\ModelSelectionException;
 use App\Models\User;
 use App\Models\UserAiSetting;
+use App\Settings\SettingsResolver;
 
 class ModelPolicyResolver
 {
@@ -45,12 +46,15 @@ class ModelPolicyResolver
         }
 
         $mapping = config('ai.model_policies.'.$policy->id);
+        $dynamicOverrides = $this->resolveDynamicPolicyOverrides($policy);
+        $model = $dynamicOverrides['model'] ?? (is_string($mapping['model'] ?? null) ? $mapping['model'] : null);
+
         if (! is_array($mapping)
             || ! is_string($mapping['provider'] ?? null)
             || trim($mapping['provider']) === ''
             || $mapping['provider'] === 'none'
-            || ! is_string($mapping['model'] ?? null)
-            || trim($mapping['model']) === '') {
+            || ! is_string($model)
+            || trim($model) === '') {
             throw new LlmProviderException(
                 LlmProviderException::NOT_CONFIGURED,
                 'No usable LLM mapping is configured for the requested model policy.',
@@ -63,14 +67,17 @@ class ModelPolicyResolver
             default => null,
         };
 
+        $inputCost = $dynamicOverrides['input_cost_micros'] ?? (is_int($mapping['input_cost_micros_per_million_tokens'] ?? null)
+            ? $mapping['input_cost_micros_per_million_tokens'] : null);
+        $outputCost = $dynamicOverrides['output_cost_micros'] ?? (is_int($mapping['output_cost_micros_per_million_tokens'] ?? null)
+            ? $mapping['output_cost_micros_per_million_tokens'] : null);
+
         return new ResolvedModel(
             policyId: $policy->id,
             provider: $mapping['provider'],
-            model: $mapping['model'],
-            inputCostMicrosPerMillionTokens: is_int($mapping['input_cost_micros_per_million_tokens'] ?? null)
-                ? $mapping['input_cost_micros_per_million_tokens'] : null,
-            outputCostMicrosPerMillionTokens: is_int($mapping['output_cost_micros_per_million_tokens'] ?? null)
-                ? $mapping['output_cost_micros_per_million_tokens'] : null,
+            model: $model,
+            inputCostMicrosPerMillionTokens: $inputCost,
+            outputCostMicrosPerMillionTokens: $outputCost,
             apiKey: $byokKey,
         );
     }
@@ -129,9 +136,11 @@ class ModelPolicyResolver
 
         if ($provider === 'openai') {
             $mapping = config('ai.model_policies.'.$policy->id);
-            $defaultModel = is_string($mapping['model'] ?? null) && trim($mapping['model']) !== ''
-                ? $mapping['model']
-                : (string) config('ai.providers.openai.default_model', 'gpt-4o-mini');
+            $dynamicOverrides = $this->resolveDynamicPolicyOverrides($policy);
+            $defaultModel = $dynamicOverrides['model']
+                ?? (is_string($mapping['model'] ?? null) && trim($mapping['model']) !== ''
+                    ? $mapping['model']
+                    : (string) config('ai.providers.openai.default_model', 'gpt-4o-mini'));
 
             $model = filled($setting->openai_model)
                 ? (string) $setting->openai_model
@@ -145,14 +154,14 @@ class ModelPolicyResolver
             if (is_int($perModelInput)) {
                 $inputCost = $perModelInput;
             } elseif ($isDefaultModel) {
-                $rawInput = ($mapping['provider'] ?? null) === 'openai'
+                $inputCost = $dynamicOverrides['input_cost_micros'] ?? (($mapping['provider'] ?? null) === 'openai'
                     ? ($mapping['input_cost_micros_per_million_tokens'] ?? null)
                     : match ($policy->id) {
                         'low_cost_structured_extraction' => config('ai.providers.openai.extraction_input_cost_micros'),
                         'standard_semantic_generation' => config('ai.providers.openai.draft_input_cost_micros'),
                         default => null,
-                    };
-                $inputCost = is_int($rawInput) ? $rawInput : null;
+                    });
+                $inputCost = is_int($inputCost) ? $inputCost : null;
             } else {
                 $inputCost = null;
             }
@@ -160,14 +169,14 @@ class ModelPolicyResolver
             if (is_int($perModelOutput)) {
                 $outputCost = $perModelOutput;
             } elseif ($isDefaultModel) {
-                $rawOutput = ($mapping['provider'] ?? null) === 'openai'
+                $outputCost = $dynamicOverrides['output_cost_micros'] ?? (($mapping['provider'] ?? null) === 'openai'
                     ? ($mapping['output_cost_micros_per_million_tokens'] ?? null)
                     : match ($policy->id) {
                         'low_cost_structured_extraction' => config('ai.providers.openai.extraction_output_cost_micros'),
                         'standard_semantic_generation' => config('ai.providers.openai.draft_output_cost_micros'),
                         default => null,
-                    };
-                $outputCost = is_int($rawOutput) ? $rawOutput : null;
+                    });
+                $outputCost = is_int($outputCost) ? $outputCost : null;
             } else {
                 $outputCost = null;
             }
@@ -187,5 +196,37 @@ class ModelPolicyResolver
             'The selected AI provider is unsupported.',
             $provider,
         );
+    }
+
+    /**
+     * @return array{model: string|null, input_cost_micros: int|null, output_cost_micros: int|null}
+     */
+    private function resolveDynamicPolicyOverrides(ModelPolicy $policy): array
+    {
+        if (! app()->bound(SettingsResolver::class)) {
+            return ['model' => null, 'input_cost_micros' => null, 'output_cost_micros' => null];
+        }
+
+        /** @var SettingsResolver $settings */
+        $settings = app(SettingsResolver::class);
+        $prefix = match ($policy->id) {
+            'low_cost_structured_extraction' => 'ai.model_policies.low_cost',
+            'standard_semantic_generation' => 'ai.model_policies.standard',
+            default => null,
+        };
+
+        if ($prefix === null) {
+            return ['model' => null, 'input_cost_micros' => null, 'output_cost_micros' => null];
+        }
+
+        $model = $settings->get("{$prefix}.model");
+        $inputCost = $settings->get("{$prefix}.input_cost_micros");
+        $outputCost = $settings->get("{$prefix}.output_cost_micros");
+
+        return [
+            'model' => is_string($model) && trim($model) !== '' ? trim($model) : null,
+            'input_cost_micros' => is_int($inputCost) ? $inputCost : null,
+            'output_cost_micros' => is_int($outputCost) ? $outputCost : null,
+        ];
     }
 }

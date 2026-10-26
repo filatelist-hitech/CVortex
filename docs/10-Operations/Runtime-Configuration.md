@@ -84,6 +84,14 @@ An administrator can revert any database override via `POST /api/v1/admin/settin
 
 ---
 
+## AI Model Policies and Provider Resolution Notes
+
+Operational parameters under `ai.model_policies.*` (such as `ai.model_policies.low_cost.model` and `ai.model_policies.standard.model`) map dynamically into `ModelPolicyResolver` for default extraction and generation pipelines:
+- **OpenAI Pipelines**: Fully consume database overrides for model identifiers, `input_cost_micros`, and `output_cost_micros` at runtime.
+- **Gemini Pipelines**: Model selection for Gemini currently evaluates static deployment config and individual user-level BYOK settings (`user_ai_settings`). Multi-model dynamic registry settings for Gemini are slated for a future iteration.
+
+---
+
 ## Operational Verification
 
 ### Automated Connectivity Tests

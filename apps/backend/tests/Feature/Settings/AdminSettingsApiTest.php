@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Settings;
 
+use App\AI\Data\ModelPolicy;
+use App\AI\ModelPolicyResolver;
 use App\Models\AuditEvent;
 use App\Models\User;
+use App\Services\InvitationService;
 use App\Settings\SettingsResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -400,5 +403,91 @@ class AdminSettingsApiTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+    }
+
+    public function test_admin_test_endpoint_is_rate_limited(): void
+    {
+        $this->actingAs($this->admin);
+
+        for ($i = 0; $i < 10; $i++) {
+            $response = $this->postJson('/api/v1/admin/settings/test', [
+                'target' => 'storage',
+            ]);
+            $response->assertStatus(200);
+        }
+
+        $rateLimited = $this->postJson('/api/v1/admin/settings/test', [
+            'target' => 'storage',
+        ]);
+        $rateLimited->assertStatus(429);
+    }
+
+    public function test_model_policy_resolver_consumes_settings_resolver_overrides(): void
+    {
+        $this->actingAs($this->admin);
+
+        config([
+            'ai.model_policies.low_cost_structured_extraction' => [
+                'provider' => 'openai',
+                'model' => 'gpt-4o-mini',
+                'input_cost_micros_per_million_tokens' => 150,
+                'output_cost_micros_per_million_tokens' => 600,
+            ],
+        ]);
+
+        $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'ai.model_policies.low_cost.model', 'value' => 'gpt-4o', 'expected_version' => 1],
+                ['key' => 'ai.model_policies.low_cost.input_cost_micros', 'value' => 777, 'expected_version' => 1],
+                ['key' => 'ai.model_policies.low_cost.output_cost_micros', 'value' => 888, 'expected_version' => 1],
+            ],
+        ])->assertStatus(200);
+
+        /** @var ModelPolicyResolver $resolver */
+        $resolver = app(ModelPolicyResolver::class);
+        $policy = new ModelPolicy('low_cost_structured_extraction', 'Low cost');
+        $resolved = $resolver->resolve($policy, $this->normalUser);
+
+        $this->assertSame('gpt-4o', $resolved->model);
+        $this->assertSame(777, $resolved->inputCostMicrosPerMillionTokens);
+        $this->assertSame(888, $resolved->outputCostMicrosPerMillionTokens);
+    }
+
+    public function test_invitation_service_uses_dynamic_ttl_setting(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'auth.invitation_default_expires_days', 'value' => 14, 'expected_version' => 1],
+            ],
+        ])->assertStatus(200);
+
+        /** @var InvitationService $invitationService */
+        $invitationService = app(InvitationService::class);
+        ['invitation' => $invitation] = $invitationService->create(null);
+
+        $expectedExpiry = now()->addDays(14)->timestamp;
+        $this->assertEqualsWithDelta($expectedExpiry, $invitation->expires_at->timestamp, 5);
+    }
+
+    public function test_career_extraction_uses_dynamic_max_source_characters(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->patchJson('/api/v1/admin/settings', [
+            'settings' => [
+                ['key' => 'ai.career_extraction.max_source_characters', 'value' => 1200, 'expected_version' => 1],
+            ],
+        ])->assertStatus(200);
+
+        $this->actingAs($this->normalUser);
+
+        $response = $this->postJson('/api/v1/career/extractions', [
+            'source_text' => str_repeat('A', 1250),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['source_text']);
     }
 }

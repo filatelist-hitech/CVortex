@@ -13,7 +13,14 @@ class SettingsRepository
 {
     public function get(string $key): ?SystemSetting
     {
-        return SystemSetting::query()->where('key', $key)->first();
+        try {
+            return SystemSetting::query()->where('key', $key)->first();
+        } catch (QueryException $e) {
+            if ($this->isTableMissingException($e)) {
+                return null;
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -21,7 +28,24 @@ class SettingsRepository
      */
     public function all(): Collection
     {
-        return SystemSetting::query()->get()->keyBy('key');
+        try {
+            return SystemSetting::query()->get()->keyBy('key');
+        } catch (QueryException $e) {
+            if ($this->isTableMissingException($e)) {
+                return collect();
+            }
+            throw $e;
+        }
+    }
+
+    private function isTableMissingException(QueryException $e): bool
+    {
+        $code = (string) $e->getCode();
+        $msg = $e->getMessage();
+
+        return $code === '42P01'
+            || str_contains($msg, 'no such table: system_settings')
+            || (str_contains($msg, 'system_settings') && str_contains($msg, 'does not exist'));
     }
 
     public function save(string $key, mixed $value, bool $isSecret, ?string $userId = null, ?int $expectedVersion = null): SystemSetting

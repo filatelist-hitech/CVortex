@@ -14,6 +14,7 @@ use App\Models\VacancySnapshot;
 use App\Services\VacancyIngestionService;
 use App\Services\VacancyMatchingService;
 use App\Services\VacancyReanalysisService;
+use App\Settings\SettingsResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -53,8 +54,13 @@ class VacancyController extends Controller
 
     public function store(Request $request, VacancyIngestionService $service): JsonResponse
     {
+        $rawMaxChars = app()->bound(SettingsResolver::class)
+            ? (int) app(SettingsResolver::class)->get('ai.vacancy_extraction.max_source_characters', config('ai.vacancy_extraction.max_source_characters', 50000))
+            : (int) config('ai.vacancy_extraction.max_source_characters', 50000);
+        $maxChars = max(1000, $rawMaxChars);
+
         $data = $request->validate([
-            'source_text' => ['required', 'string', 'max:'.config('ai.vacancy_extraction.max_source_characters')],
+            'source_text' => ['required', 'string', 'max:'.$maxChars],
             'source_url' => ['nullable', 'string', 'max:2048', 'url:http,https'],
         ]);
         $result = $service->queue($request->user(), $data['source_text'], $data['source_url'] ?? null);
