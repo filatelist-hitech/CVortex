@@ -8,7 +8,9 @@ use App\AI\Exceptions\LlmProviderException;
 use App\AI\Exceptions\ModelSelectionException;
 use App\Models\User;
 use App\Models\UserAiSetting;
+use App\Services\DatabaseOwnerContext;
 use App\Settings\SettingsResolver;
+use Illuminate\Support\Facades\DB;
 
 class ModelPolicyResolver
 {
@@ -38,10 +40,10 @@ class ModelPolicyResolver
     {
         $user ??= auth()->user();
         if (! $user instanceof User) {
-            $ownerId = \App\Services\DatabaseOwnerContext::currentOwnerId();
-            if (! filled($ownerId) && \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
+            $ownerId = DatabaseOwnerContext::currentOwnerId();
+            if (! filled($ownerId) && DB::getDriverName() === 'pgsql') {
                 try {
-                    $ownerId = \Illuminate\Support\Facades\DB::scalar("SELECT current_setting('cvortex.owner_id', true)");
+                    $ownerId = DB::scalar("SELECT current_setting('cvortex.owner_id', true)");
                 } catch (\Throwable) {
                     $ownerId = null;
                 }

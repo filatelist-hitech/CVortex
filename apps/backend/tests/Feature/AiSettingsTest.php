@@ -12,6 +12,7 @@ use App\Models\LlmRun;
 use App\Models\User;
 use App\Models\UserAiSetting;
 use App\Services\CareerExtractionService;
+use App\Services\DatabaseOwnerContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -48,7 +49,7 @@ class AiSettingsTest extends TestCase
 
     private function asUser(User $user): self
     {
-        app(\App\Services\DatabaseOwnerContext::class)->set((string) $user->id);
+        app(DatabaseOwnerContext::class)->set((string) $user->id);
 
         return $this->actingAs($user->fresh());
     }
@@ -693,7 +694,7 @@ class AiSettingsTest extends TestCase
 
         $policy = new ModelPolicy('low_cost_structured_extraction', true);
         $resolver = app(ModelPolicyResolver::class);
-        $ownerContext = app(\App\Services\DatabaseOwnerContext::class);
+        $ownerContext = app(DatabaseOwnerContext::class);
 
         $resolved = $ownerContext->run($this->userA->id, function () use ($resolver, $policy) {
             return $resolver->resolve($policy);
