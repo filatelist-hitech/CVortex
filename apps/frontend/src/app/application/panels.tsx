@@ -1,5 +1,6 @@
+import { useState } from "react";
+import { api } from "../access-shell";
 import { ApplicationDraftPanel } from "../vacancy-workspace";
-import VacancyChat from "../vacancy-chat";
 import { sections, sectionLabels, type Section } from "./model";
 import { MaterialsHeading, RecommendationCard, supportCopy } from "./recommendation";
 import { useWorkspace } from "./use-workspace";
@@ -67,6 +68,29 @@ const requirementImportanceRussian: Record<string, string> = {
   UNCERTAIN: "Требует уточнения",
 };
 
+const systemPhrasesRussian: Record<string, string> = {
+  "One or more vacancy requirements have no valid confirmed candidate evidence.":
+    "По одному или нескольким ключевым требованиям пока нет подтверждённого опыта.",
+  "The vacancy snapshot contains no supported requirement for this dimension.":
+    "В описании вакансии нет явных требований по этому направлению.",
+  "Candidate evidence is incomplete, so the recommendation remains cautious.":
+    "Подтверждённых фактов опыта пока недостаточно для однозначного матчинга — рекомендация остаётся сдержанной.",
+  "hard requirement unsupported": "обязательное требование не подтверждено опытом",
+  "soft requirement unsupported": "желательное требование не подтверждено опытом",
+  "strongly recommend applying": "Рекомендуется откликнуться (Высокий приоритет)",
+  "worth considering": "Стоит рассмотреть (Средний приоритет)",
+  "skip": "Рекомендуется пропустить",
+};
+
+export function localizeText(text?: string | null): string {
+  if (!text) return "";
+  let result = text;
+  for (const [en, ru] of Object.entries(systemPhrasesRussian)) {
+    result = result.replaceAll(en, ru);
+  }
+  return result;
+}
+
 export function OverviewPanel() {
   const w = useWorkspace();
   const recKey = w.detail?.analysis?.recommendation;
@@ -118,7 +142,7 @@ export function OverviewPanel() {
               <h4 className="type-label">Ключевые факторы соответствия:</h4>
               <ul className="factors-list">
                 {w.detail.analysis.key_reasons.map((reason, i) => (
-                  <li key={i}>{reason}</li>
+                  <li key={i}>{localizeText(reason)}</li>
                 ))}
               </ul>
             </div>
@@ -130,7 +154,7 @@ export function OverviewPanel() {
               <h4 className="type-label">Существенные разрывы (gaps):</h4>
               <ul className="gaps-list">
                 {w.detail.analysis.material_gaps.map((gap, i) => (
-                  <li key={i}><strong>{gap.label}</strong> — {gap.category}</li>
+                  <li key={i}><strong>{gap.label}</strong> — {localizeText(gap.category)}</li>
                 ))}
               </ul>
             </div>
@@ -142,7 +166,7 @@ export function OverviewPanel() {
               <h4 className="type-label">Неопределённости и вопросы:</h4>
               <ul className="uncertainties-list">
                 {w.detail.analysis.uncertainties.map((u, i) => (
-                  <li key={i}><strong>{u.label}</strong> — {u.reason}</li>
+                  <li key={i}><strong>{u.label}</strong> — {localizeText(u.reason)}</li>
                 ))}
               </ul>
             </div>
@@ -170,7 +194,7 @@ export function OverviewPanel() {
                       <h4 className="type-card">{dimName}</h4>
                       <span className={`badge small ${dimStatus.badgeClass}`}>{dimStatus.label}</span>
                     </div>
-                    <p className="type-body">{dim.explanation}</p>
+                    <p className="type-body">{localizeText(dim.explanation)}</p>
                     {dim.candidate_evidence && dim.candidate_evidence.length > 0 && (
                       <details className="evidence-details">
                         <summary className="type-caption">Подтверждающие факты ({dim.candidate_evidence.length})</summary>
@@ -266,6 +290,28 @@ export function RequirementsPanel() {
 
 export function MaterialsPanel() {
   const w = useWorkspace();
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzeMsg, setReanalyzeMsg] = useState("");
+
+  const isPending = !w.demo && (w.item?.status === "PENDING" || w.detail?.analysis_status === "PENDING" || w.detail?.analysis_status === "RUNNING");
+  const isFailed = !w.demo && (w.item?.status === "FAILED" || w.detail?.analysis_status === "FAILED");
+
+  const handleReanalyze = async () => {
+    if (!w.detail?.id || reanalyzing) return;
+    setReanalyzing(true);
+    setReanalyzeMsg("");
+    try {
+      await api(`/api/v1/vacancies/${w.detail.id}/reanalyze`, { method: "POST" });
+      setReanalyzeMsg("Анализ перезапущен. Обновляю вакансию…");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (e) {
+      setReanalyzeMsg(e instanceof Error ? e.message : "Не удалось перезапустить анализ.");
+      setReanalyzing(false);
+    }
+  };
+
   const message = w.demo && w.effective !== "normal" ? w.location.selected === "cedar" && w.effective === "blocked"
     ? ["Нужно устранить противоречие в формате работы", "В примере подтверждено предпочтение только удалённой работы. Правка предлагает гибрид. Название компании не подтверждает связь с работодателем.", "Сравните обе формулировки, устраните противоречие и повторите проверку. До этого нельзя принять правку или одобрить текст."] : w.demo.scenarioMessages[w.effective] : null;
 
@@ -280,17 +326,22 @@ export function MaterialsPanel() {
         </div>
         <RecommendationCard />
       </>
+    ) : isPending ? (
+      <div className="content-card status-pending-card" role="status">
+        <h3 className="type-card">Идёт анализ требований вакансии</h3>
+        <p className="type-secondary">Подготовка материалов отклика (адаптация резюме и сопроводительное письмо) станет доступна сразу после завершения анализа вакансии нейросетью.</p>
+      </div>
+    ) : isFailed ? (
+      <div className="content-card status-failed-card" role="status">
+        <h3 className="type-card">Анализ вакансии не был завершён</h3>
+        <p className="type-secondary">Возникла ошибка при обработке текста вакансии нейросетью. Нажмите кнопку ниже, чтобы перезапустить анализ с вашим активным AI-провайдером.</p>
+        <button type="button" className="primary" style={{ marginTop: 12 }} disabled={reanalyzing} onClick={() => void handleReanalyze()}>
+          {reanalyzing ? "Перезапуск анализа…" : "Повторить анализ вакансии"}
+        </button>
+        {reanalyzeMsg && <p className="type-caption subtle" style={{ marginTop: 8 }}>{reanalyzeMsg}</p>}
+      </div>
     ) : w.detail && w.location.section === "materials" ? (
-      <>
-        <ApplicationDraftPanel canonical key={w.detail.id} vacancyId={w.detail.id} vacancyTitle={w.detail.title ?? "Вакансия"} />
-        <div className="materials-chat-container">
-          <div className="chat-section-header">
-            <h3 className="type-section-sub">Чат по вакансии и подготовка к интервью</h3>
-            <p className="type-caption subtle">Задавайте точечные вопросы по стеку, требованиям и формулировкам сопроводительного письма.</p>
-          </div>
-          <VacancyChat key={`chat-${w.detail.id}`} vacancyId={w.detail.id} />
-        </div>
-      </>
+      <ApplicationDraftPanel canonical key={w.detail.id} vacancyId={w.detail.id} vacancyTitle={w.detail.title ?? "Вакансия"} />
     ) : (
       <div className="content-card" role="status">
         <h3 className="type-card">Материалы пока недоступны</h3>

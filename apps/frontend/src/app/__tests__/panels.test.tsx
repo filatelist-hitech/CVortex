@@ -191,10 +191,10 @@ describe("Refactored Vacancy Panels", () => {
     ).toBeInTheDocument();
   });
 
-  it("MaterialsPanel renders draft items and integrated VacancyChat", async () => {
+  it("MaterialsPanel renders application draft workspace and generation button", async () => {
     renderWithWorkspace(<MaterialsPanel />, "materials");
 
-    expect(await screen.findByText("Mock Vacancy Chat")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Чат по вакансии и подготовка к интервью" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Подготовка: Principal Platform Engineer" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Подготовить рекомендации и черновики" })).toBeInTheDocument();
   });
 });

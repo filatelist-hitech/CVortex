@@ -37,6 +37,20 @@ class ModelPolicyResolver
     public function resolve(ModelPolicy $policy, ?User $user = null): ResolvedModel
     {
         $user ??= auth()->user();
+        if (! $user instanceof User) {
+            $ownerId = \App\Services\DatabaseOwnerContext::currentOwnerId();
+            if (! filled($ownerId) && \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
+                try {
+                    $ownerId = \Illuminate\Support\Facades\DB::scalar("SELECT current_setting('cvortex.owner_id', true)");
+                } catch (\Throwable) {
+                    $ownerId = null;
+                }
+            }
+            if (filled($ownerId)) {
+                $user = User::query()->find($ownerId);
+            }
+        }
+
         $userSetting = ($user instanceof User)
             ? UserAiSetting::query()->where('owner_id', $user->id)->first()
             : null;
@@ -86,14 +100,18 @@ class ModelPolicyResolver
     {
         if ($provider === 'gemini') {
             $defaultModel = match ($policy->id) {
-                'low_cost_structured_extraction' => (string) config('ai.providers.gemini.extraction_model', 'gemini-1.5-flash'),
-                'standard_semantic_generation' => (string) config('ai.providers.gemini.generation_model', 'gemini-1.5-flash'),
-                default => (string) config('ai.providers.gemini.default_model', 'gemini-1.5-flash'),
+                'low_cost_structured_extraction' => (string) config('ai.providers.gemini.extraction_model', 'gemini-2.0-flash'),
+                'standard_semantic_generation' => (string) config('ai.providers.gemini.generation_model', 'gemini-2.0-flash'),
+                default => (string) config('ai.providers.gemini.default_model', 'gemini-2.0-flash'),
             };
 
-            $model = filled($setting->gemini_model)
+            $rawModel = filled($setting->gemini_model)
                 ? (string) $setting->gemini_model
                 : $defaultModel;
+
+            $model = preg_match('/\Agemini-3\./i', $rawModel) === 1
+                ? $defaultModel
+                : $rawModel;
 
             $isDefaultModel = ($model === $defaultModel);
 

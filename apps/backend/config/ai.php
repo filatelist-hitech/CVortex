@@ -1,8 +1,8 @@
 <?php
 
 $aiProvider = env('AI_PROVIDER', 'openai');
-$geminiExtractionModel = env('GEMINI_CAREER_EXTRACTION_MODEL', 'gemini-1.5-flash');
-$geminiDraftModel = env('GEMINI_APPLICATION_DRAFT_MODEL', 'gemini-1.5-flash');
+$geminiExtractionModel = env('GEMINI_CAREER_EXTRACTION_MODEL', 'gemini-2.0-flash');
+$geminiDraftModel = env('GEMINI_APPLICATION_DRAFT_MODEL', 'gemini-2.0-flash');
 $geminiInputCost = env('GEMINI_INPUT_COST_MICROS_PER_MILLION_TOKENS');
 $geminiOutputCost = env('GEMINI_OUTPUT_COST_MICROS_PER_MILLION_TOKENS');
 
@@ -60,8 +60,8 @@ return [
             'api_key' => env('GEMINI_API_KEY'),
             'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
             'timeout_seconds' => (int) env('GEMINI_TIMEOUT_SECONDS', 45),
-            'test_model' => env('GEMINI_TEST_MODEL', 'gemini-1.5-flash'),
-            'default_model' => env('GEMINI_DEFAULT_MODEL', 'gemini-1.5-flash'),
+            'test_model' => env('GEMINI_TEST_MODEL', 'gemini-2.0-flash'),
+            'default_model' => env('GEMINI_DEFAULT_MODEL', 'gemini-2.0-flash'),
             'extraction_model' => $geminiExtractionModel,
             'generation_model' => $geminiDraftModel,
             'input_cost_micros_per_million_tokens' => filled($geminiInputCost) ? (int) $geminiInputCost : null,
