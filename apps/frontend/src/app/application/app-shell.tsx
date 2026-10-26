@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { WorkspaceProvider, useWorkspace } from "./use-workspace";
 import { Icon, IconSprite } from "./icons";
 import { scenarioLabels, scenarios, type Scenario } from "./model";
+import { VortexSwissLogo } from "../vortex-logo";
 import { VacancyList } from "./vacancy-list";
 import { VacancyHeader } from "./vacancy-header";
 import { WorkspaceTabs, OverviewPanel, RequirementsPanel, MaterialsPanel, EmployerPanel, HistoryPanel } from "./panels";
@@ -73,7 +74,21 @@ export function AccountMenu({ email, role, onSignOut }: Identity) {
 
 export function WorkspaceHeader(props: Identity) {
   const w = useWorkspace();
-  return <header className="site-header"><div className="brand"><span className="brand-accent" aria-hidden="true" /><strong>CVortex</strong><span className="type-caption">Your career, in context.</span></div><div className="reference-meta"><strong className="type-secondary">{w.demo ? "Орбита решения" : "Вакансии"}</strong><span className="type-caption">{w.demo ? <>Canonical B01, <b>демо-данные. Направление утверждено; проверка состояний ожидается.</b></> : "Подготовка отклика на основе подтверждённых фактов"}</span></div>{w.demo ? <label className="scenario-picker type-caption">Состояние макета <select id="scenario-select" aria-label="Состояние макета" value={w.location.scenario} onChange={event => w.setScenario(event.target.value as Scenario)}>{scenarios.map((scenario, i) => <option key={scenario} value={scenario}>{scenarioLabels[i]}</option>)}</select></label> : <span className="type-caption">Ваши вакансии и материалы</span>}<AccountMenu {...props} /></header>;
+  return <header className="site-header">
+    <div className="brand">
+      <VortexSwissLogo />
+      <div className="brand-copy">
+        <strong>CVortex<span className="brand-dot">.</span></strong>
+        <span className="type-caption">Your career, in context.</span>
+      </div>
+    </div>
+    <div className="reference-meta">
+      <strong className="type-secondary">{w.demo ? "Орбита решения" : "Вакансии"}</strong>
+      <span className="type-caption">{w.demo ? <>Canonical B01, <b>демо-данные. Направление утверждено; проверка состояний ожидается.</b></> : "Подготовка отклика на основе подтверждённых фактов"}</span>
+    </div>
+    {w.demo ? <label className="scenario-picker type-caption">Состояние макета <select id="scenario-select" aria-label="Состояние макета" value={w.location.scenario} onChange={event => w.setScenario(event.target.value as Scenario)}>{scenarios.map((scenario, i) => <option key={scenario} value={scenario}>{scenarioLabels[i]}</option>)}</select></label> : <span className="type-caption">Ваши вакансии и материалы</span>}
+    <AccountMenu {...props} />
+  </header>;
 }
 
 export function GlobalSidebar() {

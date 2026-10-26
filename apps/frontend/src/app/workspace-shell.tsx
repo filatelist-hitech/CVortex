@@ -3,6 +3,7 @@
 import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import ApplicationWorkspace from "./application/app-shell";
+import { VortexSwissLogo } from "./vortex-logo";
 
 function subscribeLocation(onChange: () => void) {
   window.addEventListener("hashchange", onChange);
@@ -79,7 +80,13 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
   return <div className="workspace-shell">
     <a className="workspace-skip" href="#workspace-content">Перейти к содержимому</a>
     <header className="workspace-global-header">
-      <div className="workspace-brand"><strong>CVortex</strong><span>Your career, in context.</span></div>
+      <div className="workspace-brand">
+        <VortexSwissLogo />
+        <div className="brand-copy">
+          <strong>CVortex<span className="brand-dot">.</span></strong>
+          <span>Your career, in context.</span>
+        </div>
+      </div>
       <div className="workspace-context"><strong>{currentLabel}</strong><span>{destination === "diagnostics" ? "Ошибки и состояние операций" : destination === "settings" ? "Конфигурация AI-провайдеров и ключей" : "Факты, источники и подтверждения"}</span></div>
       <button ref={accountTrigger} type="button" className="workspace-account-trigger secondary" aria-haspopup="dialog" aria-controls="workspace-account-dialog" aria-expanded={accountOpen} onClick={() => { accountDialog.current?.showModal(); setAccountOpen(true); }}>
         <span className="workspace-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</span><span><strong>Профиль</strong><small>{role === "admin" ? "Администратор" : "Пользователь"}</small></span><Icon name="chevron" />
