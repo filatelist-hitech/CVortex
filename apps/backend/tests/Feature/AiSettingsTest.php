@@ -612,4 +612,66 @@ class AiSettingsTest extends TestCase
         $this->assertNull($resolvedGpt4o->inputCostMicrosPerMillionTokens);
         $this->assertNull($resolvedGpt4o->outputCostMicrosPerMillionTokens);
     }
+
+    public function test_user_can_fetch_dynamic_models_by_key(): void
+    {
+        $this->asUser($this->userA);
+
+        Http::fake([
+            '*/models*' => Http::response([
+                'models' => [
+                    [
+                        'name' => 'models/gemini-2.0-flash',
+                        'displayName' => 'Gemini 2.0 Flash',
+                        'supportedGenerationMethods' => ['generateContent'],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->postJson('/api/v1/ai/models', [
+            'provider' => 'gemini',
+            'api_key' => 'custom-key-123',
+        ]);
+
+        $response->assertOk();
+        $data = $response->json('data');
+        $this->assertSame('gemini', $data['provider']);
+        $this->assertCount(1, $data['models']);
+        $this->assertSame('gemini-2.0-flash', $data['models'][0]['id']);
+    }
+
+    public function test_test_connection_returns_available_models_payload(): void
+    {
+        $this->asUser($this->userA);
+
+        Http::fake([
+            '*/models?*' => Http::response([
+                'models' => [
+                    [
+                        'name' => 'models/gemini-2.0-flash',
+                        'displayName' => 'Gemini 2.0 Flash',
+                        'supportedGenerationMethods' => ['generateContent'],
+                    ],
+                ],
+            ], 200),
+            '*/models/gemini-2.0-flash:generateContent*' => Http::response([
+                'candidates' => [
+                    ['content' => ['parts' => [['text' => 'pong']]], 'finishReason' => 'STOP'],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->postJson('/api/v1/ai/test-connection', [
+            'provider' => 'gemini',
+            'api_key' => 'custom-key-123',
+            'model' => 'gemini-2.0-flash',
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('success'));
+        $this->assertSame('gemini-2.0-flash', $response->json('model'));
+        $this->assertIsArray($response->json('available_models'));
+        $this->assertSame('gemini-2.0-flash', $response->json('available_models.0.id'));
+    }
 }

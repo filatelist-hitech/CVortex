@@ -185,4 +185,57 @@ describe("AiProviderSettings", () => {
       }),
     });
   });
+
+  it("updates Gemini available models dynamically on connection test", async () => {
+    mocks.api
+      .mockResolvedValueOnce(defaultSettingsResponse)
+      .mockResolvedValueOnce({
+        status: "healthy",
+        provider: "gemini",
+        model: "gemini-2.0-flash",
+        latency_ms: 210,
+        message: "Модель gemini-1.5-flash не найдена по ключу. Подключение успешно проверено с доступной моделью gemini-2.0-flash.",
+        available_models: [
+          { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Fast)" },
+          { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+        ],
+      });
+
+    render(<AiProviderSettings />);
+    await screen.findByRole("heading", { name: "Настройки AI-провайдеров" });
+
+    const testGeminiBtn = screen.getByRole("button", { name: "Проверить подключение Gemini" });
+    fireEvent.click(testGeminiBtn);
+
+    expect(await screen.findByText("✓ Успешно")).toBeInTheDocument();
+    expect(screen.getByText(/210 мс · gemini-2.0-flash/)).toBeInTheDocument();
+
+    // Select should now reflect gemini-2.0-flash as selected
+    const geminiSelect = screen.getByRole("combobox", { name: "Модель Gemini по умолчанию" });
+    expect(geminiSelect).toHaveValue("gemini-2.0-flash");
+    expect(screen.getByRole("option", { name: "Gemini 2.0 Flash (Fast)" })).toBeInTheDocument();
+  });
+
+  it("refreshes models via explicit button", async () => {
+    mocks.api
+      .mockResolvedValueOnce(defaultSettingsResponse)
+      .mockResolvedValueOnce({
+        data: {
+          provider: "gemini",
+          models: [
+            { id: "gemini-custom-byok", name: "Custom BYOK Model" },
+          ],
+        },
+      });
+
+    render(<AiProviderSettings />);
+    await screen.findByRole("heading", { name: "Настройки AI-провайдеров" });
+
+    const refreshBtn = screen.getByRole("button", { name: "Обновить список по ключу" });
+    fireEvent.click(refreshBtn);
+
+    expect(await screen.findByText(/Список моделей Gemini обновлен: доступно 1 моделей по ключу/)).toBeInTheDocument();
+    const geminiSelect = screen.getByRole("combobox", { name: "Модель Gemini по умолчанию" });
+    expect(geminiSelect).toHaveValue("gemini-custom-byok");
+  });
 });

@@ -16,6 +16,7 @@ $openaiDraftOutputCost = env('OPENAI_APPLICATION_OUTPUT_COST_MICROS_PER_MILLION_
 $isGemini = $aiProvider === 'gemini';
 
 return [
+    'proxy' => env('AI_HTTP_PROXY', env('HTTPS_PROXY', env('HTTP_PROXY'))),
     'asset_root' => env('AI_ASSET_ROOT', is_dir('/runtime-ai') ? '/runtime-ai' : base_path('../../runtime-ai')),
     'default_provider' => $aiProvider,
     'model_policies' => [

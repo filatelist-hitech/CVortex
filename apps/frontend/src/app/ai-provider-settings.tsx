@@ -60,6 +60,7 @@ export default function AiProviderSettings() {
   const [geminiKeyRemoved, setGeminiKeyRemoved] = useState(false);
   const [geminiTesting, setGeminiTesting] = useState(false);
   const [geminiTestResult, setGeminiTestResult] = useState<ConnectionTestResult | null>(null);
+  const [refreshingGeminiModels, setRefreshingGeminiModels] = useState(false);
 
   // OpenAI state
   const [openaiKeyInput, setOpenaiKeyInput] = useState("");
@@ -124,6 +125,27 @@ export default function AiProviderSettings() {
         body: JSON.stringify(payload),
       });
 
+      if (isGemini && Array.isArray(res.available_models) && res.available_models.length > 0) {
+        setSettings((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            gemini: {
+              ...prev.gemini,
+              available_models: res.available_models,
+            },
+          };
+        });
+      }
+
+      if (res.model && typeof res.model === "string") {
+        if (isGemini) {
+          setGeminiModel(res.model);
+        } else {
+          setOpenaiModel(res.model);
+        }
+      }
+
       if (res.success === false || res.status === "failed") {
         setTestResult({
           status: "failed",
@@ -142,14 +164,70 @@ export default function AiProviderSettings() {
         });
       }
     } catch (err) {
+      const rawMsg = err instanceof Error ? err.message : "Проверка подключения не удалась.";
+      const isTimeout = rawMsg.includes("504") || rawMsg.toLowerCase().includes("gateway") || rawMsg.toLowerCase().includes("timeout");
       setTestResult({
         status: "failed",
         provider,
         model,
-        message: err instanceof Error ? err.message : "Проверка подключения не удалась.",
+        message: isTimeout
+          ? "Таймаут подключения (504): провайдер отвечает слишком долго. Попробуйте выбрать другую модель или повторите попытку."
+          : rawMsg,
+        recommendation: isTimeout
+          ? "Модель может находиться в состоянии перегрузки в Google AI Studio или испытывать сетевые задержки. Рекомендуется выбрать gemini-1.5-flash или gemini-2.0-flash."
+          : undefined,
       });
     } finally {
       setTesting(false);
+    }
+  }
+
+  async function handleRefreshGeminiModels() {
+    setRefreshingGeminiModels(true);
+    setFeedback(null);
+    try {
+      const payload: { provider: string; api_key?: string } = { provider: "gemini" };
+      const key = geminiKeyInput.trim();
+      if (key) {
+        payload.api_key = key;
+      }
+      const res = await api("/api/v1/ai/models", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      const models = res.data?.models;
+      if (Array.isArray(models) && models.length > 0) {
+        setSettings((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            gemini: {
+              ...prev.gemini,
+              available_models: models,
+            },
+          };
+        });
+        const currentMatches = models.some((m: ModelOption) => getModelId(m) === geminiModel);
+        if (!currentMatches) {
+          setGeminiModel(getModelId(models[0]));
+        }
+        setFeedback({
+          type: "success",
+          text: `Список моделей Gemini обновлен: доступно ${models.length} моделей по ключу.`,
+        });
+      } else {
+        setFeedback({
+          type: "error",
+          text: "По указанному ключу не обнаружено доступных моделей генерации контента.",
+        });
+      }
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        text: err instanceof Error ? err.message : "Не удалось обновить список моделей Gemini.",
+      });
+    } finally {
+      setRefreshingGeminiModels(false);
     }
   }
 
@@ -385,7 +463,18 @@ export default function AiProviderSettings() {
 
             {/* Выбор модели Gemini */}
             <div className="form-group">
-              <label htmlFor={geminiModelId}>Модель Gemini по умолчанию</label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label htmlFor={geminiModelId}>Модель Gemini по умолчанию</label>
+                <button
+                  type="button"
+                  className="link-button"
+                  style={{ fontSize: "var(--font-size-xs)" }}
+                  disabled={refreshingGeminiModels}
+                  onClick={() => void handleRefreshGeminiModels()}
+                >
+                  {refreshingGeminiModels ? "Обновление моделей…" : "Обновить список по ключу"}
+                </button>
+              </div>
               <select
                 id={geminiModelId}
                 value={geminiModel}
@@ -401,6 +490,11 @@ export default function AiProviderSettings() {
                   );
                 })}
               </select>
+              {geminiConfig.available_models.length > 0 && (
+                <small className="help-text">
+                  Доступно моделей по ключу: {geminiConfig.available_models.length}. Все полученные модели готовы к работе.
+                </small>
+              )}
             </div>
 
             {/* Тестирование подключения Gemini */}

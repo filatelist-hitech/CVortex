@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/settings', [AiSettingsController::class, 'index']);
             Route::patch('/settings', [AiSettingsController::class, 'update']);
             Route::middleware('throttle:10,1')->post('/test-connection', [AiSettingsController::class, 'testConnection']);
+            Route::middleware('throttle:30,1')->post('/models', [AiSettingsController::class, 'models']);
         });
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::middleware('throttle:diagnostics-report')->post('/diagnostics/report', [DiagnosticsController::class, 'report']);

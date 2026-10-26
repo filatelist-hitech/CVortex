@@ -42,11 +42,12 @@ Mode: IMPLEMENT; branch: `feature/admin-system-settings`. One agent / sequential
    - Full Backend PHPUnit Suite: 421/421 tests PASS (3371 assertions, 12 skipped).
    - Backend Pint: 0 style issues across 231 files.
    - Backend PHPStan: 0 errors across 146 files (`[OK] No errors`).
-   - Frontend Vitest: 12/12 test files (159/159 tests) PASS, including `access-shell.test.tsx` (6/6 PASS) and `admin-settings.test.tsx` (11/11 PASS).
+   - Frontend Vitest: 13/13 test files (167/167 tests) PASS, including `access-shell.test.tsx` (6/6 PASS), `admin-settings.test.tsx` (11/11 PASS), and `ai-provider-settings.test.tsx` (8/8 PASS).
    - Frontend TypeScript: `tsc --noEmit` PASS (0 errors).
    - Frontend ESLint: 0 errors, 0 warnings.
    - Playwright E2E: 10/10 tests PASS across Desktop Chromium and Mobile Chrome in `e2e/admin/system-settings.spec.ts`.
    - B01 Reference Integrity: PASS (10/10 tests).
+   - Gemini BYOK Dynamic Discovery & Network Resilience: `GeminiResponsesProvider` dynamically discovers all models supporting `generateContent` by key via `GET /v1beta/models`, caches model catalog, provides automatic fallback on 404, supports optional `AI_HTTP_PROXY`, and Nginx `/api/v1/ai/` and `/api/v1/admin/settings/` fastcgi timeouts extended to 60s eliminating 504 Gateway Timeouts.
    - PR Contract: PASS (`check-pr-contract.sh 56` exit 0).
 
 ---
