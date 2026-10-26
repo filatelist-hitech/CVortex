@@ -141,6 +141,71 @@ Mode: IMPLEMENT; branch: `feature/ai-job-search-worker-and-posting-guard`; targe
 
 ---
 
+## UX/UI Overhaul: Dashboard "Сегодня", Выделенный Импорт Вакансий и Рефакторинг Карточки Вакансии — 2026-10-26
+
+Mode: IMPLEMENT; branch: `feature/ux-ui-overhaul-dashboard-and-vacancies`; target: `stage`. One agent / sequential execution.
+
+### Completed Outcomes
+1. **Главный командный центр «Сегодня» (`/`)**:
+   - Маршрут `/` переведён на `TodayWorkspace`: активная навигация `id: "today"`.
+   - Интерактивный виджет AI (Gemini + OpenAI): переключение провайдера в 1 клик, ввод BYOK API-ключа, кнопка «Проверить подключение» с замером пинга (мс) и динамическим обновлением доступных моделей.
+   - Индикаторы активных фич Truth Guard: «Извлечение фактов из резюме», «Разбор требований вакансий», «Генерация откликов Truth Guard».
+   - Сводка готовности кандидата: счётчики Career Facts и вакансий, умное предупреждение при 0 фактов карьеры.
+   - Быстрые CTA: «+ Импортировать вакансию» (`/vacancies/import`) и «Загрузить резюме в Карьеру» (`/career`).
+
+2. **Выделенный экран «Импорт вакансии» (`/vacancies/import`)**:
+   - Чистая форма вставки текста до 50 000 символов с живым счетчиком и опциональным URL источника.
+   - Информационный бейдж активного AI-провайдера.
+   - Интерактивный 4-шаговый трекер прогресса сохранения и анализа вакансии.
+   - Guard-проверка опыта: предупреждение о необходимости заполнения Career Facts при нулевом опыте.
+
+3. **Полный рефакторинг Карточки Вакансии (`/vacancies`)**:
+   - Снесены легаси-спойлер `<details>` со вторым экземпляром `<VacancyWorkspace />` и кнопка перезагрузки страницы из `OverviewPanel`.
+   - Удалена декоративная растровая заглушка `career-art` из шапки вакансии.
+   - Внедрена наглядная сетка 7 измерений соответствия на русском языке (Навыки, Опыт, Домен, Образование, Локация/Формат, Языки, Условия) с бейджами `Совпадение`, `Частично`, `Пробел/Гэп`.
+   - Человекочитаемый вердикт на русском языке без сырых enum-значений (`STRONGLY_APPLY` → «Рекомендуется откликнуться (Высокий приоритет)»).
+   - Дефолтная вкладка карточки вакансии переведена с `#materials` на `#overview`.
+   - Компактный `VacancyChat` перенесен во вкладку «Материалы».
+
+4. **Глобальная навигация (`WorkspaceShell` и `GlobalSidebar`)**:
+   - Обновлены пути меню: «Сегодня» (`/`), «Вакансии» (`/vacancies`), «+ Импорт вакансии» (`/vacancies/import`).
+
+5. **Верификация**:
+   - TypeScript Typecheck: `npm --prefix apps/frontend run typecheck` (0 ошибок, exit 0).
+   - ESLint: `npm --prefix apps/frontend run lint` (0 ошибок, 0 предупреждений, exit 0).
+   - Vitest: `npm --prefix apps/frontend test` (16 файлов, 178 тестов успешно, exit 0).
+   - Next.js Production Build: `npm --prefix apps/frontend run build` (10 статических маршрутов, exit 0).
+   - PHPUnit: 17/17 тестов AiSettingsTest (116 assertions) и 15/15 unit-тестов бэкенда успешно.
+   - Playwright Smoke E2E: `npm --prefix apps/frontend run test:e2e:smoke` (18/18 тестов успешно).
+
+---
+
+## Comprehensive Documentation Audit, Defect Remediation & Humanization (PR #60) — 2026-10-26
+
+Mode: DOCS; branch: `docs/documentation-audit-remediation` (merged into `stage` via PR #60, commit `f67a2c733b914b01658c163b45092ca8114b8b7c`). One agent / sequential execution.
+
+### Completed Outcomes
+1. **Audit & Remediation across 40 Documentation Files**:
+   - Resolved all broken image references, 0 broken links, and 0 broken anchors across the repository.
+   - Eliminated unhighlighted code blocks (added explicit language tags) and normalized heading hierarchy skips.
+   - Applied `/humanizer` principles to eliminate AI clichés, passive bureaucracy, and unneeded Anglicisms.
+   - Translated foundational product and design specifications into clear, precise technical Russian (`Glossary.md`, `Concept-B-Reconciliation.md`, `Error-Center-UX.md`, `Process-Map.md`, `User-Guide.md`, `M0-Runbook.md`, `M1-Access-Core.md`, `Logging-and-Diagnostics.md`, `GitHub-Governance.md`).
+   - Preserved B01 frozen canonical reference source files (`Design-Foundation.md`, `Application-Workspace.md`, `Design-Handoff.md`) and added anchor `<a id="token-reconciliation-ledger"></a>` to ensure B01 integrity tests pass without drift.
+   - Synchronized cryptographic QA evidence manifest (`scripts/qa_evidence.py --write`), ensuring 88 manifest files verified.
+
+2. **Verification & Delivery**:
+   - `python3 scratch/check_all_links.py`: PASS (0 broken links, 0 broken anchors).
+   - `python3 scratch/check_syntax_and_hierarchy.py`: PASS (0 skips, 0 unhighlighted blocks).
+   - `git diff --check`: PASS (clean).
+   - `node docs/07-Design/reference/build-reference.cjs --check`: PASS.
+   - `node --test docs/07-Design/reference/build-reference.test.cjs`: PASS (10/10 tests OK).
+   - `python3 scripts/qa_evidence.py`: PASS (88 manifest files verified).
+   - `python3 -m unittest discover -s scripts -p 'test_*.py'`: PASS (20/20 unit tests OK).
+   - GitHub Actions CI: `Roadmap metadata` (SUCCESS), `PR contract` (SUCCESS), `m0-quality` (SUCCESS), `e2e-tests` (SUCCESS).
+   - PR #60 squash-merged into `stage`.
+
+---
+
 ## Admin System Settings Review Remediation (PR #56 Findings) — 2026-10-26
 
 Mode: IMPLEMENT; branch: `fix/admin-settings-review-followups`; target: `stage`. One agent / sequential execution.
@@ -212,7 +277,8 @@ Mode: IMPLEMENT; branch: `feature/superlist-ui-refresh`. One agent / sequential 
    - Next.js Production Build: 8/8 static routes compiled successfully (`next build`).
    - Playwright E2E: 10/10 tests PASS across Desktop Chromium and Mobile Chrome.
    - Formatting & Hygiene: `git diff --check` PASS (0 whitespace errors).
->>>>>>> origin/stage
+
+---
 
 ## Runtime Configuration & Admin System Settings — 2026-10-25
 

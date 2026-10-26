@@ -24,8 +24,9 @@ const compactSnapshot = () => window.matchMedia("(max-width: 767px)").matches;
 const serverCompact = () => false;
 
 const directions = [
-  { id: "today", label: "Сегодня", icon: "sun" },
-  { id: "opportunities", label: "Вакансии", icon: "briefcase", href: "/" },
+  { id: "today", label: "Сегодня", icon: "sun", href: "/" },
+  { id: "opportunities", label: "Вакансии", icon: "briefcase", href: "/vacancies" },
+  { id: "import", label: "Импорт вакансии", icon: "plus", href: "/vacancies/import" },
   { id: "discover", label: "Поиск (Discover)", icon: "search", href: "/vacancies/discover" },
   { id: "career", label: "Карьера", icon: "user", href: "/career" },
   { id: "employers", label: "Работодатели", icon: "building" },
@@ -36,6 +37,7 @@ function Icon({ name }: { name: string }) {
   const paths: Record<string, ReactNode> = {
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>,
     briefcase: <><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M8 7v14m8-14v14" /></>,
+    plus: <path d="M12 5v14m-7-7h14" />,
     search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
     user: <><circle cx="12" cy="7" r="4" /><path d="M5 21v-3a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v3" /></>,
     building: <><rect x="4" y="2" width="16" height="20" rx="1" /><path d="M9 22v-5h6v5M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M16 14h.01" /></>,
@@ -48,14 +50,60 @@ function Icon({ name }: { name: string }) {
 export default function WorkspaceShell({ email, role, destination, onSignOut, children }: {
   email: string;
   role: string;
-  destination: "career" | "diagnostics" | "vacancies" | "admin-settings" | "settings" | "discover";
+  destination: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" | "discover";
   onSignOut: () => Promise<void>;
   children: ReactNode;
 }) {
   const hash = useSyncExternalStore(subscribeLocation, currentHash, serverHash);
   const compact = useSyncExternalStore(subscribeCompact, compactSnapshot, serverCompact);
-  const active = destination === "discover" ? "discover" : destination === "career" ? hash === "#vacancy-title" ? "opportunities" : "career" : destination === "settings" ? "settings" : null;
-  const currentLabel = destination === "discover" ? "Поиск вакансий" : destination === "diagnostics" ? "Диагностика" : destination === "admin-settings" ? "Настройки системы" : destination === "settings" ? "Настройки" : active === "opportunities" ? "Вакансии" : "Карьера";
+  const active =
+    destination === "today"
+      ? "today"
+      : destination === "vacancies"
+      ? "opportunities"
+      : destination === "vacancy-import"
+      ? "import"
+      : destination === "discover"
+      ? "discover"
+      : destination === "career"
+      ? hash === "#vacancy-title"
+        ? "opportunities"
+        : "career"
+      : destination === "settings"
+      ? "settings"
+      : null;
+  const currentLabel =
+    destination === "today"
+      ? "Сегодня"
+      : destination === "vacancies"
+      ? "Вакансии"
+      : destination === "vacancy-import"
+      ? "Импорт вакансии"
+      : destination === "discover"
+      ? "Поиск вакансий"
+      : destination === "diagnostics"
+      ? "Диагностика"
+      : destination === "admin-settings"
+      ? "Настройки системы"
+      : destination === "settings"
+      ? "Настройки"
+      : "Карьера";
+  const contextSubtitle =
+    destination === "today"
+      ? "Командный центр поиска работы и подготовки откликов"
+      : destination === "vacancy-import"
+      ? "Вставка текста и автоматический разбор требований"
+      : destination === "vacancies"
+      ? "Подготовка отклика на основе подтверждённых фактов"
+      : destination === "discover"
+      ? "Агрегация вакансий с порталов и оценка соответствия"
+      : destination === "diagnostics"
+      ? "Ошибки и состояние операций"
+      : destination === "settings"
+      ? "Конфигурация AI-провайдеров и ключей"
+      : destination === "admin-settings"
+      ? "Конфигурация системы и интеграций"
+      : "Факты, источники и подтверждения";
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const menuTrigger = useRef<HTMLElement>(null);
@@ -89,7 +137,7 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
           <span>Your career, in context.</span>
         </div>
       </div>
-      <div className="workspace-context"><strong>{currentLabel}</strong><span>{destination === "diagnostics" ? "Ошибки и состояние операций" : destination === "settings" ? "Конфигурация AI-провайдеров и ключей" : "Факты, источники и подтверждения"}</span></div>
+      <div className="workspace-context"><strong>{currentLabel}</strong><span>{contextSubtitle}</span></div>
       <button ref={accountTrigger} type="button" className="workspace-account-trigger secondary" aria-haspopup="dialog" aria-controls="workspace-account-dialog" aria-expanded={accountOpen} onClick={() => { accountDialog.current?.showModal(); setAccountOpen(true); }}>
         <span className="workspace-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</span><span><strong>Профиль</strong><small>{role === "admin" ? "Администратор" : "Пользователь"}</small></span><Icon name="chevron" />
       </button>

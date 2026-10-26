@@ -7,8 +7,17 @@ use Illuminate\Support\Facades\DB;
 
 class DatabaseOwnerContext
 {
+    private static ?string $activeOwnerId = null;
+
+    public static function currentOwnerId(): ?string
+    {
+        return self::$activeOwnerId;
+    }
+
     public function set(string $ownerId): void
     {
+        self::$activeOwnerId = $ownerId;
+
         if (DB::getDriverName() !== 'pgsql') {
             return;
         }
@@ -18,6 +27,8 @@ class DatabaseOwnerContext
 
     public function clear(): void
     {
+        self::$activeOwnerId = null;
+
         if (DB::getDriverName() !== 'pgsql') {
             return;
         }
@@ -31,8 +42,15 @@ class DatabaseOwnerContext
      */
     public function run(string $ownerId, Closure $callback): mixed
     {
+        $previousMemory = self::$activeOwnerId;
+        self::$activeOwnerId = $ownerId;
+
         if (DB::getDriverName() !== 'pgsql') {
-            return $callback();
+            try {
+                return $callback();
+            } finally {
+                self::$activeOwnerId = $previousMemory;
+            }
         }
 
         $previous = DB::scalar("SELECT current_setting('cvortex.owner_id', true)");
@@ -41,6 +59,7 @@ class DatabaseOwnerContext
         try {
             return $callback();
         } finally {
+            self::$activeOwnerId = $previousMemory;
             if (is_string($previous) && $previous !== '') {
                 $this->set($previous);
             } else {
