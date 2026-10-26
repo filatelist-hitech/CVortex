@@ -1,5 +1,5 @@
 ---
-title: Основы дизайна CVortex (Design Foundation)
+title: CVortex Design Foundation
 status: accepted
 owner: project
 created: 2026-09-12
@@ -14,145 +14,137 @@ related:
   - "[[../03-ADR/ADR-0024-git-design-reference-workflow|ADR-0024]]"
 ---
 
-# Основы дизайна CVortex
+# CVortex Design Foundation
 
-<a id="intent-and-authority"></a>
-## Назначение и источники правды
+## Intent and authority
 
-**CVortex — твоя карьера в контексте.** Визуальная система построена на строгом, спокойном техническом стиле с приоритетом тёмной темы: глубокие тёмно-синие поверхности, голубые, синие и фиолетовые акценты и гротескный шрифт Space Grotesk. Интерфейс рассчитан на сосредоточенную работу с плотным потоком данных, а не на неоновые графики в стиле футуристических дашбордов.
+**CVortex — Your career, in context.** uses a dark-first, clean technical visual system: deep navy surfaces, cyan/blue/violet accents, and Space Grotesk. The aim is dense, calm review work—not a neon dashboard having an existential crisis.
 
-Утверждённая ментальная модель продукта — **Концепция B / Рабочая область отклика (Application Workspace)**. Документ [Application Workspace](Application-Workspace.md) описывает каноническую информационную архитектуру, работу с подтверждениями, контекст работодателя и поведение на смартфонах. Настоящие «Основы дизайна» служат единой спецификацией для бренда, токенов, доступности и правил компонентов.
+The selected mental model is **Concept B / Application Workspace**. [Application Workspace](Application-Workspace.md) defines canonical IA, task/evidence/employer interaction and mobile levels. This Foundation remains the one brand/token/accessibility/component system.
 
-Файл [`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) — единственный канонический машинный источник дизайн-токенов в формате DTCG (решение ADR-0014). Согласно [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), поведение и исполняемые эталоны в Git определяют визуальные требования; макеты в Figma опциональны. Процесс передачи макетов и ручное ревью человеком регулируются документом [Design Handoff](Design-Handoff.md). Любые разногласия разрешаются правкой спецификации и эталонов в Git, а не тихим ведением второго макета.
+[`brand/tokens/cvortex.tokens.json`](../../brand/tokens/cvortex.tokens.json) is the sole canonical machine-readable token source (DTCG 2025.10, ADR-0014). Under [ADR-0024](../03-ADR/ADR-0024-git-design-reference-workflow.md), Git-reviewed behavior and executable references define visual intent; Figma is optional. [Design Handoff](Design-Handoff.md) controls reference lifecycle and human review. A disagreement is resolved by reviewing the affected specification/tokens/reference, never by silently editing a second master.
 
-Ограниченный [базовый эталон](reference/README.md) принят в качестве базовой визуальной линии этапа B01 по [ADR-0025](../03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md), а его [порт на React](validation/application-port-2026-10-11/README.md) согласован владельцем для зафиксированного объема экранов. Это не означает личную приёмку каждого отдельного состояния или разрешения. Ручные проверки состояний, скринридеров и честного масштабирования остаются открытыми и блокируют релиз в продакшн.
+The bounded [reference foundation](reference/README.md) is the reviewed B01 visual/product baseline under [ADR-0025](../03-ADR/ADR-0025-b01-reference-acceptance-release-gate.md), and its mapped [Application Workspace React port](validation/application-port-2026-10-11/README.md) is owner-accepted for the documented visual scope. This does not imply personal review of every state or viewport. Manual state/viewport, screen-reader and native zoom checks remain open and block production release.
 
-<a id="principles-and-content-hierarchy"></a>
-## Принципы и иерархия контента
+## Principles and content hierarchy
 
-- **Подтверждения важнее убедительности:** сначала показывайте источник, статус проверки и необходимое действие, и только потом — рекомендацию.
-- **Чёткое разделение сущностей:** факт, рекомендация, предупреждение и блокирующая ошибка должны визуально и текстуально отличаться друг от друга.
-- **Постепенное раскрытие (progressive disclosure):** компактная сводка позволяет раскрыть подробности по клику, не пряча при этом блокировки и обязательные действия.
-- **Понятные глаголы и существительные:** используйте явные формулировки действий («Подтвердить факт», «Разрешить конфликт», «Изучить источник»); интерфейс не должен создавать впечатление, что действия на сайтах работодателей происходят автоматически.
-- **Маркировка выводов нейросетей:** предложения ИИ помечаются плашкой **Рекомендовано** и никогда не оформляются как подтверждённая кандидатом правда. Статус `PENDING` (ожидает подтверждения) отображается янтарным цветом с обязательной текстовой подписью; `CONFIRMED` (подтверждено) — зелёным с текстовой подписью. Цвет никогда не используется как единственный способ передачи смысла.
-- **Осознанность опасных действий:** деструктивные, блокирующие и требующие ручного согласования действия должны иметь явное состояние и понятный следующий шаг. Никаких заранее проставленных галочек согласия и темных паттернов.
-- **Структурированные сравнения:** используйте таблицы и блоки диффов для анализа материалов; для узких экранов предусматривайте читаемый карточный вид.
+- Put evidence before persuasion: show source/provenance, state, and required action before any recommendation.
+- Make a fact, recommendation, warning, and blocking error visually and textually distinct.
+- Prefer progressive disclosure: a compact summary reveals details on demand without hiding a block or required approval.
+- Use concise noun labels and explicit verb actions (`Confirm fact`, `Resolve conflict`, `Review evidence`); never imply an employer action happened automatically.
+- AI output is labelled **Recommended** and never styled as user-confirmed truth. `PENDING` is amber with a text label; `CONFIRMED` is green with a text label. Neither relies on color alone.
+- Destructive, blocking, and manual-approval actions require an explicit state and a clear next step. No preselected approval, no dark patterns.
+- Prefer tables and structured comparisons for review data; preserve readable card/list fallback on compact layouts.
 
-<a id="token-model"></a>
-## Модель дизайн-токенов
+## Token model
 
-Файл токенов содержит базовые примитивные цвета и семантические алиасы, за которыми следуют шкалы типографики, отступов, скруглений, теней, анимаций, брейкпоинтов и слоёв z-index. Документация и код используют исключительно семантические роли (`surface.default`, `text.primary`, `state.blocked`), а не прямые шестнадцатеричные коды цветов. Примитивные цвета используются только внутри самого файла токенов. В [реестре токенов](Concept-B-Reconciliation.md#реестр-согласования-дизайн-токенов) зафиксированы необходимые алиасы; добавление новых ролей требует осознанного обновления канонического файла токенов.
+The token file contains primitive colors and semantic aliases, then typography, space, radius, shadow, motion, breakpoint and layer scales. Product/UI documentation and future code consume semantic roles (`surface.default`, `text.primary`, `state.blocked`), never literal color values. Primitives are reserved for token definitions and derived reference/tool mappings. Existing values remain unchanged in reconciliation. The [token ledger](Concept-B-Reconciliation.md#token-reconciliation-ledger) identifies proposed component aliases, no established obsolete tokens and prototype-only literals; new roles require a bounded canonical token update.
 
-### Цвет и контрастность
+### Color and contrast
 
-Токены `surface.canvas/default/elevated/interactive` задают глубину тёмно-синего пространства. Для разделения соседних тёмных блоков в первую очередь используются границы (border); тень `shadow.raised` применяется для приподнятых временных панелей, а `shadow.overlay` — только для модальных диалогов. Тень никогда не должна заменять границу, индикатор фокуса, статусную плашку или достаточный контраст.
+`surface.canvas/default/elevated/interactive` establish navy depth. Use borders first to differentiate adjacent dark surfaces; `shadow.raised` is for raised transient surfaces and `shadow.overlay` only for dialogs. A shadow never substitutes a border, focus indicator, state label, or contrast.
 
-Обычный текст должен соответствовать требованиям WCAG AA по контрастности не менее **4.5:1** к фону; крупный текст (от 24px обычной насыщенности или от 18.67px жирного шрифта) — не менее **3:1**. Элементы управления, видимый контур фокуса и значимые графические индикаторы состояний должны иметь контраст не менее **3:1**. Токен `text.disabled` сообщает о недоступности элемента вместе с атрибутом `disabled` и текстовой подписью, а не просто приглушает цвет. Для полупрозрачных токенов замер контраста проводится после наложения на непрозрачный фон.
+Normal text must meet WCAG AA contrast of **4.5:1** against its actual opaque background; large text (at least 24 px normal or 18.67 px bold) must meet **3:1**. Controls, visible focus indicators and meaningful graphical state indicators must meet **3:1**. `text.disabled` communicates unavailable state together with disabled semantics and label—not as an action target. Alpha overlay tokens require compositing before contrast assessment.
 
-### Типографика
+### Typography
 
-Базовый шрифт бренда `font.family.brand` — `Space Grotesk` с системными шрифтами в качестве запасных. До включения файла шрифта в продакшн-сборку требуется проверить лицензию, языковое покрытие (кириллица/латиница) и стратегию загрузки. Шрифт из исследовательской папки не считается автоматически лицензированным для продакшна.
+`font.family.brand` is `Space Grotesk` with system fallbacks; no self-hosting or distribution right is assumed. The first production asset task must confirm acquisition, licence, language coverage and loading strategy before shipping a font file. The licensed research font is not automatically approved for production.
 
-Трекинг `font.tracking` использует значения в `rem` (`-0.02rem`, `0rem`, `0.02rem`) и должен напрямую транслироваться в CSS-свойство `letter-spacing` без неявного пересчёта единиц.
+`font.tracking` uses DTCG `dimension` values in `rem` (`-0.02rem`, `0rem`, `0.02rem`) and must be emitted directly as CSS `letter-spacing`; no implicit unit conversion is permitted.
 
-| Роль | Размер / интерлиньяж | Насыщенность | Применение |
+| Role | Size / line height | Weight | Use |
 | --- | --- | --- | --- |
-| Display | 40 / tight | 700 | редкие акцентные заголовки страниц |
-| H1 | 32 / title | 600 | основной заголовок страницы |
-| H2 | 24 / title | 600 | заголовок крупного раздела |
-| H3 | 20 / title | 600 | заголовок панели или подраздела |
-| Body | 16 / body | 400 | основной текст для комфортного чтения |
-| Body compact | 14 / body | 400–500 | плотные таблицы и вспомогательный текст |
-| Label | 12–14 / title | 600, с трекингом | кнопки, элементы управления, статусы, метаданные |
-| Code | 12–14 / body | 400 | идентификаторы, неизменяемые ссылки |
+| Display | 40 / tight | 700 | sparse page-level moments only |
+| H1 | 32 / title | 600 | page heading |
+| H2 | 24 / title | 600 | major section |
+| H3 | 20 / title | 600 | panel or subsection |
+| Body | 16 / body | 400 | minimum normal reading text |
+| Body compact | 14 / body | 400–500 | dense tables and supporting text |
+| Label | 12–14 / title | 600, label tracking | controls, status, metadata |
+| Code | 12–14 / body | 400 | identifiers, immutable references |
 
-Запрещено использовать шрифт мельче 12px. При нехватке места на узких экранах уменьшайте размер крупных заголовков, но сохраняйте читаемый кегль основного текста. Длинные цитаты подтверждений выводятся обычным размером текста с нормальным межстрочным интервалом и переносом слов, а не мелким шрифтом.
+Never use text below 12 px. Reduce display hierarchy on compact screens before reducing body text. Long evidence excerpts use body size, relaxed line height, wrapping and a deliberate disclosure—not tiny type.
 
-<a id="iconography"></a>
-### Иконографика
+### Iconography
 
-Единый источник иконок — библиотека [Lucide](https://lucide.dev/), распространяемая под открытой лицензией ISC. Пакет иконок подключается в рамках выделенной задачи на фронтенд. Запрещено смешивать иконки из разных наборов или рисовать самодельные копии существующих иконок Lucide.
+Use [Lucide](https://lucide.dev/) as the single upstream icon source. It supplies consistent SVG outlines under the ISC licence; The foundation installs no package or copied icon asset; a bounded production component task must pin a compatible package before code consumption. Do not mix icon families or draw ad-hoc substitutes for an existing Lucide icon.
 
-- Используйте базовый размер viewBox 24×24 пикселя и толщину обводки 2px со скруглёнными концами линий. Стандартные размеры при рендере: 16px в плотных таблицах, 20px рядом с кнопками и текстом, 24px для самостоятельных кнопок-иконок; размер 32px зарезервирован для иллюстраций пустых состояний и ошибок.
-- Иконки наследуют цвет через `currentColor`; не задавайте им жёсткие цвета или градиенты. Сохраняйте толщину обводки 2px; не смешивайте контурные и залитые иконки внутри одной группы кнопок.
-- Декоративные иконки помечаются атрибутом `aria-hidden="true"`, не получают фокус с клавиатуры и сопровождаются поясняющим текстом. Информативные иконки должны иметь доступное имя; кнопка из одной иконки без текста обязана иметь атрибут `aria-label`, всплывающую подсказку по наведению/фокусу и интерактивную область не менее 44×44px.
-- Иконки статуса, согласования, блокировки и источников всегда выводятся вместе с понятной текстовой подписью. Иконка сама по себе никогда не должна быть единственным индикатором подтверждения, риска или ошибки.
+- Use the 24 × 24 viewBox and 2 px stroke with round line caps/joins. Default rendered sizes are 16 px in dense table metadata, 20 px beside controls and body text, and 24 px for standalone icon buttons; use 32 px only for empty/error-state illustration accents.
+- Icons inherit semantic `currentColor`; do not give them literal colors, gradients, or a state meaning that is unavailable in accompanying text. Keep their visual weight at 2 px across sizes; do not mix filled and outline variants in one control group.
+- A decorative icon is `aria-hidden`, non-focusable, and has adjacent text that carries the meaning. An informative icon needs an accessible name through its labelled control or visible text; an icon-only button requires an explicit accessible name, tooltip on pointer/keyboard focus, and the normal 44 × 44 px touch target.
+- Status, approval, blocking and provenance icons always appear with their required text label and recovery/action copy. An icon alone never represents confirmation, risk, error, or a destructive action.
+- If optional Figma tooling is used, name instances `Icon / Lucide / {Name} / {16|20|24|32}` and preserve the source viewBox/stroke rather than outlining, recolouring, or detaching vectors without a documented exception.
 
-<a id="layout-shape-motion-and-layers"></a>
-### Сетка, формы, анимация и слои
+### Layout, shape, motion and layers
 
-- Отступы строятся по шкале `space` с шагом 4px. Стандартные вертикальные отступы: 8, 12, 16, 24px; отступы от 32px используются для разделения крупных секций.
-- Радиусы скругления: `radius.sm` для небольших кнопок; `md` для полей ввода и карточек; `lg` для модальных окон и панелей; `pill` (полное скругление) — только для бейджей статусов. Не используйте скругление `pill` для контейнеров данных.
-- Анимации служат исключительно для обратной связи: прозрачность, плавное появление, раскрытие спойлеров, скелетонная загрузка. Используются длительности `motion.duration.fast`, `standard` и `slow`. Запрещено анимировать сдвиги макета или задерживать переход по страницам искусственными анимациями.
-- При включённой системной настройке `prefers-reduced-motion: reduce` отключайте декоративные анимации и цикличные эффекты, оставляя мгновенное появление контента. Если операция длится заметно, показывайте текстовый статус или скелетон с понятным значением прогресса.
-- Слои z-index строго семантические: `base` (контент), `sticky` (закреплённая навигация), `popover` (всплывающие меню и подсказки), `modal` (модальные окна и затемнение фона), `toast` (временные системные уведомления). Хардкод произвольных чисел в z-index запрещён.
+- Space is the `space` scale (4 px base). Standard stacks are 8/12/16/24 px; 32+ is reserved for section separation. One-off values require a documented layout reason.
+- `radius.sm` is small controls; `md` is inputs/cards; `lg` is modal/panel; `pill` is badges only. Do not use pills for primary data containers.
+- Motion only supports feedback: opacity, transform, disclosure, progress and non-blocking skeletons. Use `motion.duration.fast`, `motion.duration.standard` and `motion.duration.slow`; do not animate layout shifts, critical state changes, or route progress as a delay.
+- Under `prefers-reduced-motion: reduce`, remove non-essential transforms and looping effects; retain an immediate static state and textual progress. Loading longer than a brief transition needs a status message/skeleton, with a determinate progress value when known.
+- Layers are semantic only: `base` content, `sticky` navigation, `popover` menus/tooltips, `modal` dialog plus overlay, `toast` temporary announcements. New z-index literals are prohibited.
 
-<a id="responsive-pwa-strategy"></a>
-### Стратегия адаптивности и PWA
+### Responsive PWA strategy
 
-В документе [Application Workspace](Application-Workspace.md#адаптивная-трансформация-под-разные-экраны) детально описаны правила перехода экранов: список → рабочая область → подтверждения. Точки останова выражают давление макета, а не конкретные модели устройств: **смартфоны <480px**, **планшеты ≥768px**, **десктопы ≥1024px**, **широкие экраны ≥1440px**. Разработка начинается с одноколоночной мобильной верстки для PWA с поддержкой тач-интерфейса. На планшетах допустимы двухколоночные сводки; на десктопах добавляется постоянная боковая навигация и параллельное отображение инспектора; на широких мониторах ширина колонок ограничивается для удобства чтения. Важные статусы, кнопки согласования и источники фактов присутствуют на любом экране.
+[Application Workspace](Application-Workspace.md#responsive-transformation) refines pane collapse and list → workspace → evidence navigation. The old generic column guidance below is a foundation constraint, not permission to force three panes at 1024 px. Breakpoints express layout pressure, not named devices: **compact <480**, **tablet ≥768**, **desktop ≥1024**, **wide ≥1440**. Start from one-column, touch-safe mobile PWA composition. At tablet, permit two-column review summaries; at desktop, add persistent navigation and side-by-side evidence; at wide, cap reading measure and retain whitespace rather than stretching tables forever. Important state, approval controls and provenance remain present in every layout; secondary metadata may collapse into disclosure.
 
-Интерактивные элементы должны иметь область нажатия не менее 44×44px на мобильных устройствах. На десктопе допустима более плотная верстка, но с обязательным сохранением читаемости текста и видимого контура фокуса. Интерфейс обязан поддерживать масштабирование до 200% без появления горизонтальной полосы прокрутки страницы (за исключением таблиц с собственной горизонтальной прокруткой).
+Target touch controls at least 44×44 CSS px where practical. Desktop density may use compact rows, but must preserve keyboard targets, readable text, and a non-overlapping focus ring. Support 200% zoom/reflow without two-dimensional page scrolling except intrinsically wide data tables, which require an explicit horizontal-scroll affordance and retained headers.
 
-<a id="interaction-and-semantic-states"></a>
-## Взаимодействие и семантические состояния
+## Interaction and semantic states
 
-Для каждого интерактивного компонента определены состояния: по умолчанию, наведение (hover), нажатие (active), выбор (selected), фокус (`focus-visible`), отключено (disabled), загрузка (loading) и ошибка (error). Наведение мыши является лишь дополнительным улучшением; пользователи клавиатуры и сенсорных экранов получают аналогичную обратную связь. Индикатор фокуса использует токен `border.focus` и внешнее кольцо толщиной 2px.
+Every interactive component documents default, hover, active, selected (where applicable), `focus-visible`, disabled, loading and error. Hover is enhancement only; keyboard and touch receive equivalent outcomes. Focus-visible uses `border.focus` plus a 2 px outside ring, never color-only selection.
 
-| Семантическое состояние | Требования к отображению и правила |
+| Semantic state | Required presentation and rule |
 | --- | --- |
-| Обычное / наведение / нажатие / выбрано | Изменение семантического фона и границы; выбранный элемент имеет постоянную текстовую или иконочную метку |
-| Загрузка (Loading) | Элемент блокируется только если операцию нельзя безопасно повторить; отображается спиннер/скелетон и понятный текстовый статус |
-| Успех / предупреждение / ошибка | Иконка, текстовая метка, понятное объяснение и семантический цвет |
-| Блокировка (Blocked) | Токен `state.blocked`, иконка остановки, понятная причина и путь исправления; без обходных лазеек для согласования |
-| Ожидает подтверждения человеком | Токен `state.pending`, метка «Ожидает подтверждения», источник и кнопка проверки; не должно быть похоже на подтверждённый факт |
-| Подтверждено (Confirmed) | Токен `state.confirmed`, метка «Подтверждено» и метаданные проверки |
-| Отклонено / устарело | Приглушённый цвет с чётким текстом; сохранение истории и источника без тихого исчезновения |
-| Сгенерировано ИИ / рекомендовано | Токен `state.recommended`, плашка «Рекомендация ИИ», пояснение и кнопки ревью; не является статусом факта биографии |
-| Источник доступен | Токен `state.provenance`, плашка/ссылка «Подтверждение доступно»; клик открывает контекст источника, а не фейковый балл уверенности |
+| Neutral / hover / active / selected | semantic surface/border change; selected has persistent text/icon cue |
+| Loading | disabled only when action cannot safely repeat; show spinner/skeleton plus readable status |
+| Success / warning / error | icon, label, text explanation and semantic color |
+| Blocked | `state.blocked`, stop icon, explicit reason and resolution path; no approval escape hatch |
+| Pending human confirmation | `state.pending`, `Pending confirmation` label, source/review action; cannot resemble confirmed |
+| Confirmed | `state.confirmed`, `Confirmed` label and confirmation metadata where material |
+| Rejected / deprecated | muted status plus explicit word; preserve history/provenance, never silently disappear |
+| AI-generated / recommended | `state.recommended`, `AI recommendation` label, explanation and review action; not fact status |
+| Provenance available | `state.provenance`, `Evidence available` label/link; opening it shows source context, not a false certainty score |
 
-Результаты проверок Truth Guard не являются обычными плашками: `BLOCK` использует паттерн блокировки; `USER_RESOLUTION_REQUIRED` показывает предупреждение с описанием конфликта и кнопками выбора решения; статус `PASS` может быть подтверждён только после выполнения требований ручного согласования человеком.
+Truth Guard outcomes are not generic alerts: `BLOCK` uses the blocked pattern; `USER_RESOLUTION_REQUIRED` uses warning plus named conflict and resolution controls; `PASS` may be confirmed only after the governing human-approval state is separately satisfied.
 
-<a id="component-taxonomy-and-patterns"></a>
-## Таксономия компонентов и паттерны
+## Component taxonomy and patterns
 
-Данная таксономия задаёт структуру интерфейса, а не бэклог задач. Все компоненты наследуют требования доступности и используют семантические токены.
+This is a taxonomy, not a production component backlog. All components inherit the accessibility/state contract above and use semantic tokens.
 
-| Группа | Базовый набор компонентов | Требования |
+| Group | Foundation set | Requirements |
 | --- | --- | --- |
-| Примитивы | Button, IconButton, Link, Input, Textarea, Select/Combobox, Checkbox, Radio, Switch, Badge, Tooltip, Divider, Progress/Spinner/Skeleton | Семантическая основа HTML по возможности; подписи, описания, ошибки, состояния загрузки и фокуса |
-| Компоновка и навигация | Каркас приложения (App shell), верхняя и боковая панели, хлебные крошки, вкладки, адаптивная навигация | Голосовое озвучивание текущего экрана; навигация не должна зависеть только от иконки без подписи; быстрый поиск добавляется при наличии подтверждённой потребности |
-| Данные и ревью | Таблицы DataGrid, карточки списков, фильтры и поиск, блоки диффов (до/после), панели подтверждений, карточки рекомендаций, понятный статус без фейковых баллов, история и аудит-лог | Элементы сортировки и фильтрации сообщают своё состояние; таблицы адаптируются под мобильные устройства; источники и статусы сохраняют текстовые подписи |
-| Обратная связь | Встроенная валидация полей, баннеры предупреждений, всплывающие уведомления (toast), диалоги подтверждения, блокирующие ошибки, экраны пустого состояния, нехватки прав и работы офлайн | Ошибки указывают конкретное поле и способ исправления; уведомление toast не может быть единственным местом фиксации важного события; модальные окна корректно управляют фокусом |
+| Primitives | Button, IconButton, Link, Input, Textarea, Select/Combobox, Checkbox, Radio, Switch, Badge, Tooltip, Divider, Progress/Spinner/Skeleton | semantic native base where possible; labels, descriptions, errors, disabled/loading state, focus-visible |
+| Composition / navigation | App shell, top/sidebar navigation, breadcrumbs, tabs, responsive navigation | current location announced; no navigation depends only on icon or hover; command/search surface is deferred until workflow need is confirmed |
+| Data / review | Table/DataGrid, list/card, filter/search controls, diff/before-after, evidence disclosure, recommendation card, confidence/status without fake score, timeline/history, activity/audit | sortable/filterable controls expose state; tables have compact fallback; evidence and status retain labels |
+| Feedback | inline validation, alert/banner, toast, confirmation dialog, blocking error, empty/error/permission-denied/network-offline state | errors identify field/action and recovery; toast is not the sole record of a critical event; modal manages focus |
 
-Доменные паттерны строятся из этих базовых кирпичиков: ревью фактов биографии показывает статус, подтверждение и кнопки подтверждения/отклонения; анализ вакансии разделяет исходный текст, нормализованные требования и рекомендации; матрица соответствия сопоставляет подтверждённые факты и неизвестные зоны; ревью резюме и писем строится на визуальном диффе, цепочке фактов и явном согласовании; предупреждения о конфликтах с работодателем показывают противоречие и способ разрешения. Ни один компонент не имеет права утверждать, что нейросеть или парсер текста сами по себе подтвердили истинность факта о кандидате.
+Domain patterns compose those foundations: Career Fact review shows status, evidence and explicit confirm/reject; vacancy analysis separates raw source, normalized requirement and recommendation; match dimensions list confirmed evidence versus unknown/unconfirmed; resume/cover review uses diff plus provenance and approval; employer conflict and Truth Guard block expose contradiction/evidence and resolution; application timeline marks manual confirmation distinctly. No pattern may imply that an LLM, imported text, or confidence score confirmed a fact.
 
-### Расширение таксономии для рабочей области
+### Workspace taxonomy extension
 
-Используйте существительные в PascalCase. Это схема классификации, а не разрешение на создание лишних абстракций или переименование существующих компонентов.
+Use PascalCase nouns and the existing primitive conventions. This is a scoped taxonomy, not authority to build every named abstraction or rename current screens.
 
-| Уровень | Компоненты и ответственность | Границы применимости |
+| Level | Names / responsibility | Boundary |
 | --- | --- | --- |
-| Примитив | Button, IconButton, Link, поля форм, Badge, Divider, Disclosure, Skeleton | Базовое семантическое поведение без доменной логики; использование существующих токенов. |
-| Компонент | StatusBadge, PriorityLabel, NextAction, DiffViewer, EvidencePopover | Сборка из примитивов; статус, приоритет и действие разделены. Короткие поповеры не содержат кнопок согласования. |
-| Паттерн | WorkspaceShell, WorkspaceNavigation, ContextInspector, EvidencePanel, RecommendationReview, ActivityTimeline | Правила раскладки и взаимодействия, контекст, управление фокусом, цепочки фактов и согласование; выделяются только при явной пользе переиспользования. |
-| Доменный компонент | OpportunityList, ApplicationHeader, RequirementItem, MatchDimension, EmployerMemorySummary | Реальные данные домена, границы владельца и ревизии, сопоставление статусов. Шапка ApplicationHeader честно отображает текущий этап работы. |
-| Текущая реализация | CareerWorkspace, VacancyWorkspace, ApplicationDraftPanel, VacancyChat, Diagnostics | Текущий рабочий код служит базой интеграции; появление названий в таксономии не требует немедленного переписывания файлов. |
+| Primitive | Existing Button/IconButton/Link, form controls, Badge, Divider, Disclosure, Skeleton | Domain-free semantic/native behavior; use existing tokens. |
+| Component | StatusBadge, PriorityLabel, NextAction, DiffViewer, EvidencePopover | Compose primitives; status/priority/action remain separate. Short popovers never host blockers or approval. |
+| Pattern | WorkspaceShell, WorkspaceNavigation, ContextInspector, EvidencePanel, RecommendationReview, ActivityTimeline | Layout/interaction contracts, selected context, focus/recovery, provenance and exact approval; only factor when reuse justifies it. |
+| Feature component | OpportunityList, ApplicationHeader, RequirementItem, MatchDimension, EmployerMemorySummary | Real domain data/availability, owner/revision scope and exact state mapping. ApplicationHeader labels current vacancy/preparation honestly. |
+| Existing implementation | CareerWorkspace, VacancyWorkspace, ApplicationDraftPanel, VacancyChat, Diagnostics | Current code is the integration baseline; names in this taxonomy do not imply new files or replacement code. |
 
-Все уровни документируют состояния: нормальное, загрузка, пустое, ошибка, устаревание, блокировка и статус согласования. Компонент сводки памяти работодателя `EmployerMemorySummary` отложен до появления доменного контракта подтверждённых связей с компаниями. Карточка `RecommendationReview` объединяет просмотр диффа `DiffViewer` и панель подтверждений `EvidencePanel`. См. также [контракт рабочей области](Application-Workspace.md) и [регламент передачи макетов](Design-Handoff.md).
+All levels document normal/loading/empty/failed/stale/blocked and relevant approval/selection states. EmployerMemorySummary is deferred until confirmed association and its domain contract exist. RecommendationReview composes DiffViewer and EvidencePanel; a separate approval gate targets the exact revision. See [Workspace contract](Application-Workspace.md) and [handoff mapping](Design-Handoff.md).
 
-<a id="accessibility-acceptance-baseline"></a>
-## Базовые требования к приёмке доступности
+## Accessibility acceptance baseline
 
-Любые будущие доработки компонентов принимаются только при выполнении всех правил доступности:
+Future component work is acceptable only when it meets all applicable rules:
 
-1. Использование нативных семантических элементов HTML в приоритете над ARIA; каждый элемент управления имеет программное доступное имя и видимую текстовую подпись; сообщения об ошибках и подсказки связаны с полями.
-2. Все основные сценарии полностью доступны для управления с клавиатуры с логичным порядком клавиши Tab, видимым контуром фокуса, отсутствием клавиатурных ловушек и закрытием диалогов по клавише Escape с возвратом фокуса на исходный элемент.
-3. Ошибки описываются понятным текстом, привязываются к некорректным полям и озвучиваются скринридером при динамическом появлении; асинхронные уведомления используют подходящие live regions, не прерывая ввод данных пользователем.
-4. Цвет, положение на экране, иконка или анимация никогда не должны быть единственным носителем смысла. Любой статус обязательно сопровождается текстом.
-5. Обеспечение контрастности по стандарту WCAG AA для всех состояний: фокус, неактивное состояние, ошибка и выбранный элемент — а не только для текста по умолчанию.
-6. Поддержка отключения анимаций (`prefers-reduced-motion`), честное масштабирование страницы до 200%, интерактивные области от 44px, автоматический перенос строк и правильный порядок чтения для скринридеров. Текст плейсхолдера не заменяет видимый лейбл поля.
-7. Модальные окна озвучивают своё название и цель, удерживают фокус внутри во время показа и возвращают его при закрытии; причины блокировок не должны прятаться во всплывающих подсказках.
-8. Экраны ошибок, нехватки прав, закрытых чужих профилей и работы офлайн не раскрывают приватные данные и предлагают понятный и безопасный путь дальнейших действий.
+1. Use semantic HTML and native controls before ARIA; every control has a programmatic name, visible label unless context safely supplies it, and help/error text is associated.
+2. Entire primary workflow is keyboard-operable with logical tab order, visible focus, no keyboard trap (except contained modal focus), and Escape/return-focus behavior for dialogs.
+3. Errors are identified in text, linked to invalid fields, and announced when dynamically inserted; asynchronous status uses an appropriate live region without interrupting critical input.
+4. Color, position, icon, and motion never carry the only meaning. Status has text and, where helpful, an icon/pattern.
+5. Meet the contrast targets above in rendered context; test focus, disabled, error and selected states—not just default text.
+6. Respect reduced motion, 200% zoom/reflow, touch targets, text wrapping, and screen-reader reading order. Do not use placeholder text as a label.
+7. Dialogs announce title/purpose, constrain focus while open, restore trigger focus on close, and never bury a blocking explanation behind a tooltip.
+8. Permission denial, masked sensitive fields, cross-user denial, and offline/error states reveal no private data and provide a safe recovery path.
 
-Реализация интерфейса обязана подтверждать соблюдение этих правил тестами в браузере и проверками со вспомогательными технологиями.
+Implementation must validate these with rendered UI and assistive-technology/browser checks; this phase only sets the baseline.

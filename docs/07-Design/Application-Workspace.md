@@ -1,5 +1,5 @@
 ---
-title: Рабочая область отклика (Application Workspace) — информационная архитектура и контракт взаимодействия
+title: Application Workspace — Information Architecture and Interaction Contract
 status: accepted
 owner: project
 created: 2026-10-07
@@ -8,138 +8,138 @@ tags: [design, information-architecture, application-workspace, truth-first, res
 related: ["[[Design-Foundation]]", "[[Design-Handoff]]", "[[Concept-B-Reconciliation]]", "[[../01-Product/Phase-06-Product-Design|Product Design]]", "[[../03-ADR/ADR-0024-git-design-reference-workflow|ADR-0024]]"]
 ---
 
-# Рабочая область отклика (Application Workspace)
+# Application Workspace
 
-## Направление и границы реализации
+## Direction and implementation boundary
 
-**Концепция B / Рабочая область отклика (Application Workspace)** — утверждённое ключевое направление интерфейса CVortex. В центре рабочего контекста пользователя находится конкретная вакансия со всеми принятыми решениями, подтверждениями фактов, черновиками материалов и контекстом работодателя. Этот документ задаёт **целевой контракт взаимодействия**, а не заявляет, что все описанные экраны уже полностью выведены в продакшн. Размеры в пикселях и демонстрационные статусы в [прототипе концепции B](../../research/design-redesign/concept-b/index.html) носят поисковый характер.
+**Concept B / Application Workspace** is the selected CVortex direction. The user's working context is one opportunity, with its vacancy, decisions, evidence, draft materials and employer context. This is an accepted **target interaction contract**, not a claim that these surfaces are shipped. Pixel values and fixture status labels in [Concept B](../../research/design-redesign/concept-b/index.html) are exploratory inputs.
 
-Цвета бренда, примитивы, семантические состояния и правила доступности определены в [Основах дизайна](Design-Foundation.md). В документе [Согласование дизайна](Concept-B-Reconciliation.md) зафиксированы различия, подтверждения тестов и зависимости реализации. Текущий документ добавляет продуктовые паттерны в существующую систему, а не создаёт вторую дизайн-систему.
+Brand, primitives, semantic states and accessibility remain in [Design Foundation](Design-Foundation.md). [Reconciliation](Concept-B-Reconciliation.md) records differences, actual evidence and implementation dependencies. This document adds product patterns to that system rather than replacing it with a second design system.
 
-## Каноническая глобальная информационная архитектура
+## Canonical global information architecture
 
-| Раздел | Назначение | Контекст и текущие границы реализации |
+| Destination | Responsibility | Contextual content / current boundary |
 | --- | --- | --- |
-| **Сегодня (Today)** | Компактная сводка задач и входящих действий с быстрыми переходами в рабочую область | Только реальные задачи, требующие проверки, устаревшие анализы или действия, созданные пользователем. Никакой искусственной срочности, фейковых счётчиков или придуманных интервью. На старте строится как проекция данных из Карьеры, Вакансий и черновиков. |
-| **Возможности (Opportunities)** | Сохранённые вакансии до и после создания отклика: список → выбранная рабочая область | Текущая вакансия, требования, детерминированное соответствие, сохранённая подготовка и черновики. Полный жизненный цикл отклика ждёт реализации своего доменного среза. Это основное рабочее пространство пользователя. |
-| **Карьера (Career)** | Каноническая база подтверждённых фактов пользователя (Fact Base), черновики на проверке, утверждения и подтверждающие документы | Текущее ручное ревью фактов из вставленного текста; будущие разделы треков и файлов подключаются только после реализации. При переходе в Карьеру из конкретной вакансии возврат назад восстанавливает контекст этой вакансии. |
-| **Работодатели (Employers)** | Сквозная история взаимодействия с конкретным работодателем по всем вакансиям | Интерфейсное название для сущности «Компания» (Company) и приватного контекста работодателя, а не переименованная таблица в базе данных. Требует независимо подтверждённой связи с компанией и модели с изоляцией по владельцу; на старте показывает понятную плашку недоступности без выдуманных историй. |
-| **Настройки (Settings)** | Учётная запись, параметры подключения ИИ и системные настройки | Только реально поддерживаемые элементы управления. Доступная только администраторам «Диагностика» размещается здесь как служебный пункт, сохраняя эндпоинт `/diagnostics` и проверку серверных прав; она не является шестым продуктовым разделом. |
+| **Today** | A small review/next-action inbox linking into the same selected workspace | Only real pending reviews, stale analyses or user-entered actions. No invented urgency, application totals or interview agenda. Initially a projection of available Career/Vacancy/draft data. |
+| **Opportunities** | Saved vacancies before and after an application exists; list → selected workspace | Current Vacancy, requirements, deterministic match, saved preparation and drafts. Full application lifecycle waits for its domain slice. This is the primary job-work destination. |
+| **Career** | Owner's canonical Fact Base, pending review, Claims and career evidence | Current manual/pasted-source review; future tracks/files are enabled only after implementation. Returning to the originating opportunity restores its context. |
+| **Employers** | Employer-level history across opportunities | UI label for Company + private employer context, not a renamed database entity. Requires independently confirmed association and an implemented owner-scoped model; initially a clear unavailable explanation, without synthetic histories. |
+| **Settings** | Account and available AI connection/context preferences | Current supported controls only. Admin-only Diagnostics is a utility entry here, retaining `/diagnostics` and server authorization; it is not a sixth job-search destination. |
 
-Почему именно пять разделов: Карьера хранит переиспользуемую правду о кандидате; Возможности содержат работу по конкретным вакансиям; Работодатели отвечают за согласованность истории взаимодействия с компаниями; Настройки управляют параметрами системы; Сегодня показывает, что требует внимания прямо сейчас, и даёт быстрые ссылки на остальные четыре раздела. Документы и исследования — это артефакты и контекст, а не отдельные разделы верхнего уровня. Попытка сделать пошаговый мастер из семи шагов ошибочно превратила бы нелинейную работу над откликом в принудительный конвейер.
+Why five destinations: Career owns reusable candidate truth; Opportunities owns job-specific work; Employers owns cross-opportunity consistency; Settings owns operational choices; Today answers what needs attention and deep-links to the other four. Documents and Research are artifacts/context, not competing global destinations. A seven-stage wizard would incorrectly make nonlinear application work sequential.
 
-**Документы** живут внутри контекста резюме, сопроводительного письма и материалов с точным указанием версии и статуса согласования. Будущую общую библиотеку файлов можно будет открыть из Карьеры (для переиспользуемых материалов) или из Возможностей (для подготовленных откликов) с фильтрацией по владельцу; сейчас такой библиотеки в коде нет. Формирование файлов DOCX и PDF регулируется решением ADR-0016 и задачами этапа M2.
+**Documents** live in the active Resume/Cover/Materials context with exact version and approval state. A later library can be reached from Career (reusable inputs) or Opportunities (prepared artifacts), with owner/scope filters; no library is implied today. DOCX/PDF output remains governed by ADR-0016 and M2.
 
-**Исследования** располагаются в контексте работодателя (информация о компании), в разделе требований и соответствия (внешние требования рынка) и в Карьере (актуальные правила найма). У каждого источника сохраняются дата, URL, цепочка происхождения и свежесть; внешние исследования ни при каких условиях не могут заменить подтверждённые факты биографии кандидата при обосновании утверждений.
+**Research** lives under Employer context for company findings, under Requirements/Match for relevant external findings, and under Career for reusable recruiting rules when implemented. Sources retain date, URL, provenance and freshness; external research never supports a candidate Claim in place of confirmed Career Facts. A later searchable knowledge collection is subordinate navigation, not a new global destination by default.
 
-## Вакансия ↔ Возможность ↔ Отклик
+## Vacancy ↔ Opportunity ↔ Application
 
-| Понятие | Контракт сущности |
+| Term | Contract |
 | --- | --- |
-| Вакансия (Vacancy) | Существующая вакансия пользователя с неизменяемыми снимками исходного текста, требованиями и анализом. Может существовать без отклика. |
-| Возможность (Opportunity) | Контекст интерфейса, объединяющий вакансию и подготовку отклика к ней. Отдельная таблица `Opportunity`, ресурс API или новый конечный автомат не создаются. |
-| Подготовка отклика (ApplicationPreparation) | Текущий агрегат сохранённого черновика и материалов, прикреплённый к вакансии. Не является доказательством того, что отклик уже отправлен работодателю. |
-| Отклик (Application) | Концептуальная сущность пользователя из Фазы 06 / M2, связывающая вакансию, подтверждённую компанию, точные версии материалов и историю взаимодействия. В кодовой базе пока не реализована. |
+| Vacancy | Existing user-owned vacancy with immutable source snapshots, requirements and analysis. It can exist without an Application. |
+| Opportunity | Presentation context combining a Vacancy and any related existing preparation/Application. No `Opportunity` table, API resource or new state machine is authorized. |
+| ApplicationPreparation | Current saved preparation/draft aggregate attached to the vacancy. It is not evidence that an employer application exists or was sent. |
+| Application | Conceptual user-owned record from Phase 06/M2 linking vacancy, confirmed employer association, exact materials and lifecycle/history. It is not yet implemented here. |
 
-Концептуальное соотношение «одна вакансия — несколько откликов» сохраняется на будущее. Если к вакансии позже будет привязано несколько откликов, появится селектор версий; их согласования и переписка никогда не смешиваются. До этого момента в шапке пишется честное **Вакансия / подготовка**, а не фиктивный статус отправленного отклика. Название компании из текста вакансии считается непроверенным и не может служить ключом для объединения с приватной Памятью о работодателе.
+Conceptual Vacancy → Application cardinality is preserved. If multiple Applications later exist for a vacancy, show a separate application/version selector; never merge their approvals or conversations. Until then the header says **Vacancy / preparation**, not a fabricated sent Application. Imported company name is untrusted metadata, never sufficient for joining private Employer Memory.
 
-## Анатомия рабочей области и навигация
+## Workspace anatomy and navigation
 
-Компоновка для десктопа: глобальная навигация + список возможностей + основная рабочая область задачи + опциональный контекстный инспектор. Комфортная ширина рабочей зоны важнее постоянной видимости всех колонок сразу. Фиксированная ширина колонок из прототипа не переносится в дизайн-токены.
+Desktop composition: global navigation + opportunity list + main work surface + optional context inspector. Preserve readable working width before making every pane persistent. No fixed prototype column widths are adopted as tokens.
 
-В шапке всегда выводятся: должность, наличие названия компании, статус (подготовка или отправленный отклик), доменный статус и следующее безопасное действие человека с указанием причин блокировки, если они есть. Диапазон зарплаты, валюта, период и формат работы выводятся компактной второй строкой, если они известны; неизвестные параметры прямо помечаются как неизвестные. Приоритет является вторичной пользовательской отметкой. Никаких додуманных данных из фикстур или фальшивых «процентов заполненности».
+The header always identifies role, company/name availability, whether this is vacancy/preparation or a real Application, the corresponding domain status, and the next safe human action with any blocking reason. Salary amount/basis/currency/period and work format are the compact second line when known; unknown values are labelled unknown. Priority is secondary user-owned metadata when supported. None is inferred from a fixture or converted into a fake completeness score.
 
-Чётко разделяются: **статус анализа**, **класс рекомендации**, **статус проверки/согласования черновика**, **жизненный цикл отклика**, **приоритет** и **следующее действие**. Кнопка «Подать отклик» (APPLY) означает поддержку принятия решения, а не автоматическую отправку резюме работодателю. Статусы «Подготовка / Переписка / Интервью» из прототипа являются демонстрацией, а не утверждёнными полями базы данных. Применяются только реальные значения перечислений из API, а неизвестные значения безопасно отображаются в интерфейсе.
+Keep **analysis status**, **recommendation class**, **draft review/approval**, **application lifecycle**, **priority** and **next action** separate. `APPLY` means decision support, not submission. `Prepare/Communicate/Interview` in the prototype are demonstrations, not newly approved persisted states. Use actual API enum mappings and expose unknown values safely; do not invent lifecycle transitions in presentation.
 
-Внутри рабочей области используются **локальные ссылки на подразделы** с подсветкой активного экрана и поддержкой прямых ссылок. Это не виджет вкладок ARIA, притворяющийся ссылками, а полноценная постраничная навигация. На десктопе ссылки располагаются в строку; на компактных экранах сворачиваются в меню подразделов с понятными подписями. Переключение между подразделами не сбрасывает выбранную вакансию и не уничтожает несохранённый текст ревью.
+Use **local section links** inside the selected workspace, with a current-section indication and stable deep-link semantics. This navigation is not an ARIA tab widget pretending to be browser navigation. Desktop may display a wrapping link row; compact screens use a labelled section menu. Section choice does not change the selected opportunity or discard unsaved review text.
 
-| Основной подраздел | Содержание и вторичная навигация | Доступность |
+| Primary section | Contents / secondary navigation | Availability |
 | --- | --- | --- |
-| **Обзор (Overview)** | Следующее действие, явные блокеры, краткая сводка соответствия/пробелов/рисков, готовность материалов и недавняя активность | Сводки строятся строго на основе доступных данных; никакой выдуманной «готовности». |
-| **Требования и соответствие (Requirements & Match)** | Требования и точные цитаты из источника; 7 критериев оценки; пробелы, неизвестные параметры и риски; исходный текст вакансии | Контракт текущего анализа вакансий. Локальные фильтры и якоря вместо двух конкурирующих глобальных страниц. |
-| **Материалы (Materials)** | Переключение: **Резюме / Сопроводительное письмо**; рекомендации, визуальный дифф, точная ревизия, подтверждения фактов и согласование; экспорт файлов появится позже | Текущие черновики рекомендаций и писем. Честные названия: без заявлений о наличии готового экспорта цельного документа резюме. |
-| **Контекст работодателя (Employer context)** | Информация о компании, подтверждённые обязательства и история; переписка и интервью появятся позже | Отложенные функции честно отображаются как недоступные. Встроенный чат анализа вакансии — это аналитический инструмент, а не переписка с рекрутером. |
-| **История (History)** | Доступные ревизии источника, анализа и черновиков с решениями; история отклика, диалогов и интервью появится позже | Только реально зафиксированные события. История изменений не заменяет цепочку подтверждения фактов. |
+| **Overview** | Next action, explicit blockers, brief match/gaps/risks, artifact readiness and recent activity | Summaries only from currently available data; no fabricated readiness. |
+| **Requirements & Match** | Requirements and source wording; seven match dimensions; gaps, unknowns and risks; raw vacancy disclosure | Current Vacancy/analysis contract. Separate local anchors/filters rather than two competing global pages. |
+| **Materials** | **Resume / Cover** subnavigation; recommendations, diff, exact revision, provenance and approval; files/export later | Current recommendation and cover drafts. Label recommendations honestly; no claim that a complete ResumeVersion/document exists. |
+| **Employer context** | Company findings, confirmed commitments and history; **Conversations / Interview** subviews when available | Deferred employer/journey capabilities remain explicitly unavailable. Embedded vacancy AI chat is a contextual analysis tool, distinct from recruiter conversations. |
+| **History** | Available source/analysis/preparation revisions and decisions; later lifecycle/conversations/interviews/outcome | Only recorded events. History does not substitute provenance. |
 
-Недоступные подразделы скрываются или снабжаются понятным объяснением, почему функция пока не работает и что требуется для её включения. На этапе постепенного развёртывания глобальные разделы могут показывать заглушки с описанием статуса разработки. Запрещено заполнять будущие экраны фальшивыми «живыми» демо-записями.
+Hide unavailable contextual subviews with a discoverable explanation where it matters; a disabled control includes why and prerequisites. Global target destinations may display unavailable-state copy during staged rollout. Never fill future surfaces with live-looking demo records.
 
-Выбор вакансии сохраняет поисковый запрос, фильтры, позицию прокрутки и активный подраздел. Кнопки браузера «Назад»/«Вперёд» и прямые ссылки возвращают в то же самое состояние. Если выбранная запись перестаёт попадать под условия фильтра, показывается уведомление или происходит возврат к списку; тихих переключений быть не должно. Запросы данных, ответы от бэкенда и содержимое инспектора строго изолированы рамками выбранного владельца, вакансии и ревизии; задержавшийся сетевой ответ не может перезаписать данные другой вакансии. При наличии несохранённых правок перед уходом с экрана выводится диалог «Остаться / Сбросить изменения». Конкретная структура URL утверждается в рамках задачи на шелл приложения.
+Selection preserves list query/filter/scroll and active section. Back/forward and deep links must restore the same location. When a selected record falls outside a filter, show an explicit selected-record notice or return to the list; never switch silently. Fetches, pending results and inspector content are scoped to the selected owner/record/revision; late results cannot overwrite another opportunity. Changes with unsaved text offer Stay/Discard before navigation; do not promise server autosave until it exists. Production URL mapping is a bounded shell-task decision, not an API redesign.
 
-## Контекстный инспектор
+## Context inspector
 
-Инспектор — это специальная вспомогательная панель для **выбранного требования, критерия оценки, утверждения, рекомендации или обязательства работодателя**. На широких экранах при клике на подтверждение или причину инспектор открывается рядом с основной рабочей зоной. Если ничего не выбрано, инспектор закрыт. Причина блокировки всегда остаётся видна по месту (inline), даже если инспектор закрыт.
+The inspector is a named complementary region for the **selected requirement, dimension, Claim, recommendation or employer commitment**. On wide desktop, opening a relevant evidence/reason control shows it next to the main task. With no selection it is closed; a compact context entry remains available. A blocking reason always remains inline even when the inspector is closed.
 
-В инспекторе отображаются: название, тип и статус элемента, источник и ревизия, почему элемент важен, краткие цитаты подтверждений и ссылки на полный источник. Цепочка подтверждений фактов наглядно показывает путь: фрагмент текста и ревизия → Утверждение о кандидате → ПОДТВЕРЖДЁННЫЙ факт биографии того же пользователя → цитата из первоисточника и метаданные ручного подтверждения человеком. Автор и время действия в аудит-логе отделены от подтверждения истинности факта. Текст вакансии и сообщения рекрутеров помечаются как непроверенные и выводятся как обычный текст без исполнения HTML.
+Show the selected item's title/type/state, source/revision, why it is relevant, concise evidence excerpts and links to full source. Provenance exposes content span/revision → Claim → same-owner `CONFIRMED` Career Facts → source and human confirmation metadata. Audit actor/time is separate from truth support. Raw vacancy/recruiter text is labelled untrusted and rendered as text.
 
-Клик по элементу обновляет содержимое незакреплённого инспектора. Кнопка **Закрепить (Pin)** оставляет элемент открытым при переходе по основной задаче внутри той же вакансии; при этом показывается плашка закреплённого элемента и отметка об устаревании, если контекст изменился. Закрепление — это состояние сессии интерфейса, а не заморозка старых данных в базе. Переключение на другую вакансию сбрасывает выбор и закрепление, полностью очищая контекст перед загрузкой новых данных. Кнопка **Закрыть** сворачивает инспектор и возвращает фокус клавиатуры на элемент вызова; кнопка **Открепить** возвращает инспектор в режим следования за текущим выбором. Инспектор никогда не открывается от простого наведения курсора мыши.
+An explicit selection updates the unpinned inspector. **Pin** keeps the current item within that same opportunity while the main task changes; show the pinned item label and stale state. Pin is session UI state, not permission to freeze old evidence. Switching opportunities clears selection/pin and removes old context before loading new context. Revalidation updates or invalidates pinned evidence. **Close** collapses the inspector and returns focus to its trigger; **Unpin** returns to selection-following behavior. Evidence never follows hover alone.
 
-Контекст работодателя выводится только при наличии подтверждённой связи с компанией того же пользователя и доступных данных. Если связи нет, пишется: **Контекст работодателя недоступен — подтвердите связь с компанией**. Склеивать данные только по текстовому совпадению названия запрещено.
+Employer context appears only for a confirmed same-owner employer association with available data. Missing association says **Employer context unavailable — confirm association** when such a workflow exists; do not join by imported name. Current analysis chat's unavailable employer-memory boundary remains intact.
 
-На экранах средней ширины инспектор превращается в выдвижную шторку (drawer) с управлением фокусом. На мобильных устройствах используется отдельный полноэкранный уровень **Контекст / Подтверждения**: длинный текст подтверждений требует нормальной ширины для чтения, а не крошечного всплывающего окна. Короткие всплывающие подсказки не должны содержать кнопок согласования или снятия блокировок.
+At intermediate width use a focus-managed context drawer. On mobile use the separate **Context / Evidence** level below; long evidence receives full readable width rather than a miniature popover. Short explanatory tooltips/popovers do not host approval or critical blocker resolution.
 
-## Ревью рекомендаций ИИ
+## AI recommendation review
 
-Канонический порядок отображения: **Рекомендация → Причина → Подтверждение (источник) → Риск → До / После → Принять / Редактировать / Отклонить**. Карточка предложения располагается непосредственно рядом с изменяемым требованием или текстом черновика, а не прячется на отдельной странице чат-бота. Краткая сводка подтверждений предшествует визуальному диффу; раскрытие полной цепочки опционально. Информацию о рисках или блокировках нельзя скрывать за спойлерами.
+Canonical order: **Recommendation → Reason → Evidence → Risk → Before / After → Accept / Edit / Reject**. Keep the proposal adjacent to the affected requirement or draft content, not in a mandatory chatbot page. Evidence summary precedes the diff; expanding the full trace is optional. A risk or block cannot be hidden behind disclosure.
 
-Действие «Принять» прикрепляет проверенную точную формулировку к черновику отклика; оно не подтверждает факт биографии, не утверждает весь документ целиком и не регистрирует отправку отклика. Действие «Редактировать» создаёт или обновляет неутверждённую ревизию и повторно проверяет её по актуальным фактам. Действие «Отклонить» сохраняет отметку об отклонении и не совершает лишних вызовов к ИИ-провайдеру. Отдельная кнопка **Согласовать контент** фиксирует текущую точную ревизию, статус валидации и осознанное решение пользователя. Любое редактирование или изменение зависимых данных аннулирует предыдущее согласование; отрисовка зелёного бейджика в UI не даёт права считать контент согласованным в обход проверок бэкенда.
+Accept attaches the validated exact suggestion to draft preparation; it does not confirm a Career Fact, approve all materials or record an application. Edit creates/updates an unapproved revision and revalidates against current evidence. Reject retains a recorded rejection where supported and performs no provider operation. Separate **Approve content** identifies the exact current revision, validation status and user decision. Editing or dependency changes invalidate eligibility/approval according to the governing API; rendering a green badge cannot grant approval.
 
-Метрики уверенности должны иметь понятное описание границ и источников. Текущая оценка уверенности извлечения данных нейросетью — это некалиброванный вероятностный сигнал модели: в интерфейсе пишется пояснение вида **Извлечено ИИ — сверьтесь с первоисточником**, а точные числа выводятся только тогда, когда для них есть задокументированная практическая интерпретация. Результат детерминированного сопоставления — это соответствие правилам, а не вероятность успеха. Никаких общих процентов «совместимости с ATS», индикаторов субъективной уверенности и фальшивых агрегированных баллов.
+Meaningful confidence must identify its scope, source and limitations. Current extraction confidence is an uncalibrated inference signal: show text such as **AI extraction — review source**, with numeric details only if a documented interpretation makes them useful. Deterministic match result is not probability. No universal AI/ATS/interview percentage, synthetic certainty bar or normalized aggregate score.
 
-| Состояние анализа / ревью | Требования к интерфейсу |
+| Analysis / review state | Required UX |
 | --- | --- |
-| Не анализировалось / пусто | Исходный текст сохранён; явно указано отсутствие анализа или подтверждений. Кнопка «Анализировать» активна только при наличии прав и настроенной конфигурации. Никаких выдуманных совпадений. |
-| Идёт анализ / загрузка | Указана операция и выбранная вакансия; отображается понятный статус; контекст остаётся доступным для чтения. Блокируются только небезопасные повторные вызовы к провайдерам. Никакого нарисованного прогресс-бара. Отмена операции только при поддержке сервером. |
-| Ошибка | Суть проблемы → понятная причина (или пометка «причина неизвестна») → влияние на результат → безопасное следующее действие; сохранённые данные не теряются. Безопасный код ошибки без сырых трейсов и скрытых промптов. |
-| Устаревшие данные | Видимая причина (изменился исходник или подтверждение факта), время анализа и кнопка повторного запуска; устаревший контент не может служить основанием для утверждения. Старый текст помечается плашкой «устарело». |
-| Повторный анализ | Запускается только явным действием пользователя, с предпросмотром передаваемого контекста при необходимости; только через настроенный маршрут без скрытых платных шлюзов. Строгое соблюдение пауз `Retry-After` и изоляции пользователей. |
-| Ошибка валидации черновика | Введённый текст сохраняется; показываются поле, причина ошибки и способ исправления. Кнопки «всё равно применить» при отсутствии подтверждённых фактов не существует. |
+| Not analyzed / empty | Preserve source; name missing analysis/evidence. Explicit Analyze only when configured and authorized. No fabricated match. |
+| Loading / running | Name operation and selected vacancy; status/live feedback; keep safe existing context readable. Disable only unsafe repeated/provider actions. No invented progress. Cancellation only if supported. |
+| Failed | Problem → known cause/unknown cause → impact → safe next action; preserve known saved source/drafts, but do not assert all data unchanged. Reference code safely. No raw stack/prompt. |
+| Stale | Visible reason (source/evidence revision changed), analysis time/version and re-analysis action; stale content is not current evidence for new approval. Retain historical wording with a stale label. |
+| Re-analysis | Explicit user action, context preview/consent for provider transmission where required; configured provider path, no silent paid fallback. Honor supported cooldown/Retry-After and ownership/revision fences. |
+| Failed draft review | Retain entered text where safe; show field/revision reason and recovery. No “accept anyway” for absent provenance. |
 
-Полноэкранная ошибка из прототипа лишь иллюстрировала состояние сбоя. В реальном приложении ошибки выводятся локально по месту выполнения операции. Кнопка «Повторить» повторяет только упавшую операцию, не перезапуская остальной анализ. Сохраняется регламент задержек Центра ошибок: операции генерации, редактирования и согласования блокируются на время задержки от провайдера; отклонение черновика без вызова провайдера остаётся доступным всегда.
+The prototype's whole-screen Error simulation illustrates a state only. Production uses operation-level errors in the current workspace whenever possible. Retry repeats the named failed operation; it does not silently restart unrelated analysis or generation. Preserve existing Error Center cooldown semantics: provider-backed generation/edit/accept/approve are gated by a positive bounded delay; provider-free Reject remains available.
 
-## Постепенное раскрытие подтверждений (Truth-first)
+## Truth-first progressive disclosure
 
-В обычном состоянии для блока текста отображаются: плашка **Предложение ИИ / неутверждённый черновик**, ссылка на подтверждение факта, статус согласования и плашка блокировки при наличии нарушений. Запрещено красить весь сгенерированный абзац в зелёный цвет со статусом `ПОДТВЕРЖДЕНО`: этот статус относится исключительно к фактам биографии кандидата; утверждения имеют свои результаты валидации, а итоговый текст — собственный статус согласования человеком.
+Normal state: content shows **AI recommendation / unapproved draft**, a labelled evidence link, approval state and visible blocker if present. Do not paint an entire generated paragraph `CONFIRMED`; that state belongs to Career Facts, while Claims have validation outcomes and content has its own approval state.
 
 ```mermaid
 flowchart TB
-  G["Выбранный сгенерированный фрагмент и ревизия"] --> C["Утверждение и результат валидации"]
-  C --> F["ПОДТВЕРЖДЁННЫЕ факты карьеры того же пользователя"]
-  F --> S["Цитата из источника и отметка ручного подтверждения"]
-  G -. отдельное действие .-> A["Согласование текста человеком"]
+  G[Selected generated span and revision] --> C[Claim and validation outcome]
+  C --> F[Same-owner CONFIRMED Career Facts]
+  F --> S[Source excerpt and human confirmation]
+  G -. separate decision .-> A[Human content approval]
 ```
 
-| Условие | Отображение в интерфейсе и разрешённые действия |
+| Condition | Presentation / allowed action |
 | --- | --- |
-| Просмотр подтверждений | Цепочка выбранного фрагмента в инспекторе; точные цитаты, ревизия и метаданные подтверждения человеком. Фокус возвращается на прежнее место в черновике. |
-| Отсутствие или невалидность цепочки фактов | Статус **БЛОКИРОВКА (BLOCK)** с указанием недостающего факта; блокировка использования и утверждения текста; исправление подтверждений или удаление неподтверждённых фраз. |
-| Конфликт подтверждённых данных | Статус **ТРЕБУЕТСЯ РЕШЕНИЕ ПОЛЬЗОВАТЕЛЯ (USER_RESOLUTION_REQUIRED)** с показом обоих утверждений, источников, дат и явного выбора решения. Противоречие остаётся заблокированным до подтверждения валидацией после разрешения конфликта. |
-| Факт ожидает подтверждения | Статус **Ожидает подтверждения**, источник помечен; кнопка перехода к проверке в Карьеру. Ни принятие рекомендации, ни автоматический парсинг не делают факт подтверждённым. Возврат к вакансии и повторная валидация после ручного подтверждения. |
-| Устаревший или отклонённый факт | Историческая цепочка сохраняется; факт не может служить опорой для новых утверждений. Обновление или удаление зависимого текста. |
-| Блокировка генерации | Показ невыполненного предварительного условия и безопасного действия для исправления. Никаких обходов проверок, принудительных согласований или игнорирования правил. |
+| Evidence inspection | Selected span/Claim trace in inspector; exact excerpts, revision and confirmation metadata. Return to unchanged draft position. |
+| Missing or invalid provenance | **BLOCK** with missing link/fact named; disable use/approval of affected content; repair evidence or remove unsupported wording. |
+| Conflicting valid evidence | **USER_RESOLUTION_REQUIRED** with both statements, sources, dates/scope and explicit resolution. A confirmed employer contradiction remains blocked until governing validation passes after resolution. |
+| Pending Career Fact | **Pending confirmation**, labelled source; open Career review. Neither recommendation acceptance nor source extraction confirms it. Return to the originating task and revalidate after explicit confirmation. |
+| Deprecated / rejected evidence | Preserve historical trace and status; not eligible support for a new Claim. Refresh or remove affected content. |
+| Blocked generation | Show which prerequisite fails and safe repair action. No skip gate, forced approval or universal confidence override. |
 
-Фронтенд лишь отображает серверные решения; бэкенд API остаётся единственным строгим контролёром правил. Видимость на экране, кэшированные данные или роль администратора не дают права нарушать границы изоляции персональных данных.
+Frontend copy represents server decisions; the API remains the enforcing boundary. Screen visibility, cached evidence or admin role grants no private-data authority.
 
-## Память о работодателе как контекст решений
+## Employer Memory as decision context
 
-В разделах «Обзор», «Контекст работодателя» и рядом с карточками ревью выводится краткая сводка **Что мы уже сообщали этому работодателю**. Порядок блоков: неразрешённые противоречия и обещания → последние подтверждённые ожидания по зарплате и формату работы → ранее согласованные утверждения и версии материалов → недавняя переписка и интервью → предыдущие вакансии компании. Зарплата указывается с типом (гросс/нет), валютой, периодом и датой; запрещено сравнивать несовместимые суммы за месяц и за год как противоречие.
+Show a compact **What we already told this employer** summary in Overview/Employer context and near materially affected recommendation review. Order: unresolved contradictions/commitments → last confirmed salary/work-format expectations → previously used approved Claims/material versions → recent relevant conversation/interview → previous vacancies. Salary includes basis/currency/period/date; do not compare incompatible gross/net/month/year values as a contradiction.
 
-Каждый пункт ссылается на точный согласованный текст или подтверждённое высказывание с указанием отклика или источника переписки и даты. Запись об отправленном сообщении и утверждённый черновик — это разные сущности; нельзя писать «уже сообщили» для утверждённого черновика, который ещё не отправлялся. Важные обязательства включают контрольные даты, доступность для выхода и обещания только тогда, когда они явно зафиксированы. Хронологическая лента дополняет эти сводки, но не заменяет их. Состояния отсутствия истории, неизвестных данных и отсутствия связи с компанией отображаются раздельно.
+Every item links to exact approved content or explicit confirmed statement, its application/conversation source and date. A sent-message record and an approved draft are different states; do not say “already told” for an unsubmitted approved draft. Important commitments include follow-up dates, availability and promises only when recorded/confirmed. A timeline supports these summaries but is not the memory's primary interface. Unknown/no history/unavailable association are distinct states.
 
-Импортированные сообщения рекрутеров считаются непроверенными источниками. Они могут предлагать факты на проверку, но не имеют права автоматически перезаписывать подтверждённые данные кандидата или стирать зафиксированные обязательства. Новые формулировки сравниваются только в рамках подтверждённой связи с тем же работодателем. При конфликте формулировок объясняются обе стороны противоречия и требуемое действие; склеивать компании с похожими названиями автоматически запрещено. Реализация сервиса `EmployerConsistencyCheck` и полноценной Памяти о работодателе отложена до соответствующего доменного среза.
+Imported recruiter messages remain untrusted. They may propose pending facts, never update confirmed candidate truth or erase prior commitments. Compare new wording against the same confirmed employer association. Explain both sides of a contradiction and the resolution required; never merge similarly named companies automatically or infer employer history from free text. Actual EmployerConsistencyCheck/general Employer Memory implementation is deferred to its authorized domain slice.
 
-## Адаптивная трансформация под разные экраны
+## Responsive transformation
 
-| Ширина экрана | Компоновка интерфейса |
+| Layout pressure | Composition |
 | --- | --- |
-| Смартфоны и узкие экраны (<768 CSS px) | Один активный экран: **Список возможностей → Рабочая область задачи → Контекст и подтверждения**. Системная кнопка браузера «Назад» и экранная кнопка возврата восстанавливают фильтры списка или исходное место чтения. Меню подразделов сохраняет выбранную вакансию; глобальная навигация сворачивается в компактное меню с подписями без непонятных иконок без текста. |
-| Планшеты (≥768 px при нехватке места для всех колонок) | Рабочая область задачи в приоритете; список вакансий открывается как боковая панель; инспектор открывается поверх как шторка. Одновременно открыта только одна всплывающая панель; закрытие по клавише Escape с возвратом фокуса. |
-| Десктопы (≥1024 px при достаточной ширине) | Постоянно видимые глобальная навигация, список вакансий и рабочая область. Инспектор может оставаться шторкой; не заставляйте интерфейс сжиматься в три колонки только ради факта широкого экрана. |
-| Широкие мониторы (≥1440 px) | Список + рабочая область + постоянно открытый инспектор рядом с компактной колонкой глобального меню. Инспектор можно закрыть; ширина текстовых колонок ограничивается для удобства чтения, без растягивания таблиц и диффов на весь экран. |
+| Compact and remaining narrow widths (<768 CSS px) | Single primary level: **Opportunities list → workspace → Context / Evidence**. Browser Back and labelled Back restore list filters/scroll or the initiating content/focus. Local section menu retains selected opportunity; global navigation is a labelled compact menu, without inventing icon-only destinations. |
+| Tablet (≥768, insufficient width for all panes) | Workspace first; opportunity list is a separately opened side panel; context is an overlay/drawer. Only one transient panel at a time, Escape/close/focus return. |
+| Desktop (≥1024 when readable widths fit) | Persistent global navigation and list + workspace. Context can remain a drawer; never force three data panes because a breakpoint exists. |
+| Wide (≥1440 when readable widths fit) | List + workspace + inspector alongside a compact global rail. Inspector is optional/closable; cap prose width and avoid stretching diff/table columns. |
 
-Пороговые значения используют канонические токены; свободное пространство, зум и длина текста могут переводить панели в свернутый вид раньше. Мобильный интерфейс — это не длинная простыня из списка, задачи и инспектора из прототипа. Выбранная вакансия, защита от потери несохранённых данных, ревизия, блокеры и кнопки согласования работают одинаково на любом экране. Блоки «До / После» на смартфонах располагаются друг под другом с чёткими заголовками; длинные идентификаторы переносятся или имеют кнопку копирования. Горизонтальная прокрутка страницы запрещена, за исключением широких таблиц с явной прокруткой внутри контейнера. Автономный режим PWA позволяет читать сохранённые локальные данные и честно сообщает о недоступности сетевых действий; никаких фиктивных офлайн-согласований.
+These thresholds reuse canonical tokens; available space, zoom and text length may collapse panes earlier. Mobile is not the prototype's long stacked list/task/inspector page. Selection, unsaved-review guard, current revision, blockers and approval survive every layout. Mobile Before/After stacks with explicit labels; long identifiers wrap or have safe copy controls. No page-wide horizontal scroll except labelled intrinsically wide tables. PWA offline state permits supported local reading and explains unavailable actions; no offline approval/queued employer action is invented.
 
-## Доступность и критерии приёмки состояний
+## Accessibility and state acceptance
 
-Применяются все правила Основ дизайна: семантические ориентиры (landmarks), навигация с понятными метками и подсветкой текущего места, интерактивные элементы от 44×44 пикселей, размер шрифта от 12px для служебных подписей и от 16px для основного чтения, достаточный контраст, логичный порядок фокуса с клавиатуры, видимый индикатор фокуса, поддержка отключения анимаций и голосовые оповещения об изменении статусов. Предусмотрена быстрая ссылка для перехода к основной рабочей зоне в обход списка. Изменение размера колонок не должно ломать логический порядок чтения или прятать важные кнопки.
+Apply all Design Foundation criteria: semantic landmarks, labelled navigation/current location, 44×44 practical touch targets, ≥12 px metadata/16 px long reading text, contrast, logical keyboard order, visible focus, reduced motion and status announcements. Skip navigation/list to the main task. Pane resize/reorder cannot alter reading order or obscure critical actions.
 
-При смене выбранной вакансии скринридер озвучивает её название и статус загрузки; фокус не перехватывается принудительно, если пользователь уже перешёл к другому элементу. Модальные окна и шторки сообщают своё назначение, удерживают фокус внутри и возвращают его на кнопку открытия при закрытии. При удалении элемента или его исчезновении из-за фильтра фокус безопасно переводится на заголовок списка. Доступность обязательно проверяется на ширинах 320, 390, 768, 1024 и 1440 пикселей, при честном масштабировании до 200%, на длинных текстах на русском и английском языках, при навигации только с клавиатуры и со скринридером. Просмотр исследовательского прототипа подтверждает лишь общее визуальное направление; полноценная приёмка интерфейса и вспомогательных технологий является обязательным требованием для каждого этапа разработки.
+Selection change announces the named opportunity and loading/result state; do not steal focus if the user moved elsewhere. Drawers/dialogs announce their purpose, manage focus and restore the trigger; deletion/filter disappearance returns to a safe list heading. Verify 320/390/768/1024/1440 widths, real 200% zoom, long Russian/English copy, keyboard and screen-reader navigation. Browser prototype inspection is evidence for direction only; production/assistive-technology acceptance remains required per bounded slice.
