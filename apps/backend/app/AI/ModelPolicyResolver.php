@@ -46,12 +46,15 @@ class ModelPolicyResolver
         }
 
         $mapping = config('ai.model_policies.'.$policy->id);
+        $dynamicOverrides = $this->resolveDynamicPolicyOverrides($policy);
+        $model = $dynamicOverrides['model'] ?? (is_string($mapping['model'] ?? null) ? $mapping['model'] : null);
+
         if (! is_array($mapping)
             || ! is_string($mapping['provider'] ?? null)
             || trim($mapping['provider']) === ''
             || $mapping['provider'] === 'none'
-            || ! is_string($mapping['model'] ?? null)
-            || trim($mapping['model']) === '') {
+            || ! is_string($model)
+            || trim($model) === '') {
             throw new LlmProviderException(
                 LlmProviderException::NOT_CONFIGURED,
                 'No usable LLM mapping is configured for the requested model policy.',
@@ -64,8 +67,6 @@ class ModelPolicyResolver
             default => null,
         };
 
-        $dynamicOverrides = $this->resolveDynamicPolicyOverrides($policy);
-        $model = $dynamicOverrides['model'] ?? $mapping['model'];
         $inputCost = $dynamicOverrides['input_cost_micros'] ?? (is_int($mapping['input_cost_micros_per_million_tokens'] ?? null)
             ? $mapping['input_cost_micros_per_million_tokens'] : null);
         $outputCost = $dynamicOverrides['output_cost_micros'] ?? (is_int($mapping['output_cost_micros_per_million_tokens'] ?? null)

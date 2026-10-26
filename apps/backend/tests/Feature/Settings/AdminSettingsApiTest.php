@@ -426,6 +426,15 @@ class AdminSettingsApiTest extends TestCase
     {
         $this->actingAs($this->admin);
 
+        config([
+            'ai.model_policies.low_cost_structured_extraction' => [
+                'provider' => 'openai',
+                'model' => 'gpt-4o-mini',
+                'input_cost_micros_per_million_tokens' => 150,
+                'output_cost_micros_per_million_tokens' => 600,
+            ],
+        ]);
+
         $this->patchJson('/api/v1/admin/settings', [
             'settings' => [
                 ['key' => 'ai.model_policies.low_cost.model', 'value' => 'gpt-4o', 'expected_version' => 1],
