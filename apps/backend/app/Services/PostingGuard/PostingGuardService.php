@@ -143,12 +143,12 @@ class PostingGuardService
     /**
      * CSS declarations that deterministically hide content.
      */
-    private const HIDDEN_STYLE_PATTERN = '/display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0(?![.\d]*[1-9])|font-size\s*:\s*0(?:\.0+)?(?:px|pt|em|rem|%)?(?![\d.])|color\s*:\s*transparent|clip\s*:\s*rect\(\s*0|clip-path\s*:\s*inset\(\s*100%|(?:left|top|text-indent)\s*:\s*-\d{4,}px/i';
+    private const HIDDEN_STYLE_PATTERN = '/display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0(?![.\d]*[1-9])|filter\s*:\s*opacity\(\s*0|transform\s*:\s*scale(?:[XY])?\(\s*0|font-size\s*:\s*(?:0(?:\.0+)?|0?\.\d{2,})(?:px|pt|em|rem|%)?(?![\d.])|color\s*:\s*transparent|clip\s*:\s*rect\(\s*0|clip-path\s*:\s*(?:inset\(\s*100%|polygon\(\s*0\s+0|circle\(\s*0)|(?<![a-zA-Z-])(?:left|top|right|bottom|text-indent|margin-left|margin-top)\s*:\s*-\d{3,}(?:px|em|rem|%|vw|vh)/i';
 
     /**
      * Collapsed box CSS: zero height or width.
      */
-    private const COLLAPSED_BOX_PATTERN = '/\b(?:max-)?(?:height|width)\s*:\s*0(?:\.0+)?(?:px|em|rem|%|pt)?(?![\d.])/i';
+    private const COLLAPSED_BOX_PATTERN = '/(?<![a-zA-Z-])(?:max-)?(?:height|width)\s*:\s*0(?:\.0+)?(?:px|em|rem|%|pt)?(?![\d.])/i';
 
     /**
      * Clipped overflow CSS.
@@ -480,13 +480,19 @@ class PostingGuardService
     }
 
     /**
-     * Decodes HTML entities and strips CSS comments from style declaration.
+     * Decodes HTML entities, strips CSS comments, and decodes CSS hex escape sequences.
      */
     private function normalizeStyle(string $style): string
     {
         $decoded = html_entity_decode($style, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $decoded = (string) preg_replace('/\/\*.*?\*\//s', '', $decoded);
 
-        return (string) preg_replace('/\/\*.*?\*\//s', '', $decoded);
+        // Decode CSS hex escape sequences like \64 isplay -> display
+        return (string) preg_replace_callback(
+            '/\\\\([0-9a-fA-F]{1,6})\s?/',
+            static fn (array $m): string => mb_chr((int) hexdec($m[1]), 'UTF-8') ?: '',
+            $decoded
+        );
     }
 
     /**

@@ -9,9 +9,29 @@ use App\Services\TrustedCareerQuery;
 
 class FastFitScorer
 {
+    private const BOUNDARY_LEFT = '(?<=^|[\s,.;:!?\(\)\[\]\/\-\_])';
+
+    private const BOUNDARY_RIGHT = '(?=$|[\s,.;:!?\(\)\[\]\/\-\_])';
+
+    /** @var array<string, list<string>> */
+    private array $candidateFactsCache = [];
+
+    /** @var array<string, array{skills: list<string>, normalized: list<string>}> */
+    private array $candidateKeywordsCache = [];
+
     public function __construct(
         private readonly ?TrustedCareerQuery $trustedCareerQuery = null,
     ) {}
+
+    public function clearCache(?string $userId = null): void
+    {
+        if ($userId !== null) {
+            unset($this->candidateFactsCache[$userId], $this->candidateKeywordsCache[$userId]);
+        } else {
+            $this->candidateFactsCache = [];
+            $this->candidateKeywordsCache = [];
+        }
+    }
 
     /**
      * @return array{
@@ -22,7 +42,13 @@ class FastFitScorer
      */
     public function score(User $user, string $title, ?string $description = null): array
     {
-        $facts = $this->loadUserCandidateFacts($user);
+        $userId = (string) $user->id;
+
+        if (! isset($this->candidateFactsCache[$userId])) {
+            $this->candidateFactsCache[$userId] = $this->loadUserCandidateFacts($user);
+        }
+
+        $facts = $this->candidateFactsCache[$userId];
 
         if (empty($facts)) {
             return [
@@ -37,7 +63,11 @@ class FastFitScorer
             ];
         }
 
-        $userKeywords = $this->extractCandidateKeywords($facts);
+        if (! isset($this->candidateKeywordsCache[$userId])) {
+            $this->candidateKeywordsCache[$userId] = $this->extractCandidateKeywords($facts);
+        }
+
+        $userKeywords = $this->candidateKeywordsCache[$userId];
         $searchableText = mb_strtolower($title.' '.($description ?? ''));
 
         // Check title match
@@ -48,7 +78,7 @@ class FastFitScorer
             'backend', 'frontend', 'fullstack', 'full-stack', 'lead', 'senior', 'staff',
             'principal', 'architect', 'developer', 'engineer', 'devops', 'techlead',
             'teamlead', 'cto', 'qa', 'data engineer', 'php', 'python', 'go', 'golang',
-            'react', 'vue', 'laravel', 'node', 'typescript', 'java', 'c#', 'rust',
+            'react', 'vue', 'laravel', 'node', 'typescript', 'java', 'c#', 'c++', 'rust',
         ];
 
         foreach ($roleTerms as $role) {
@@ -61,7 +91,7 @@ class FastFitScorer
         $matchedSkills = [];
         foreach ($userKeywords['skills'] as $skill) {
             $skillLower = mb_strtolower($skill);
-            $pattern = '/(?:\b|_|-)'.preg_quote($skillLower, '/').'(?:\b|_|-)/iu';
+            $pattern = '/'.self::BOUNDARY_LEFT.preg_quote($skillLower, '/').self::BOUNDARY_RIGHT.'/iu';
             if (preg_match($pattern, $searchableText) === 1) {
                 $matchedSkills[] = $skill;
             }
@@ -74,13 +104,13 @@ class FastFitScorer
             'Docker', 'Kubernetes', 'PostgreSQL', 'MySQL', 'Redis', 'Kafka', 'RabbitMQ',
             'Elasticsearch', 'GraphQL', 'AWS', 'GCP', 'Linux', 'CI/CD', 'GitLab',
             'FastAPI', 'Django', 'Spring', 'NestJS', 'Next.js', 'Vue', 'React',
-            'TypeScript', 'PHP', 'Laravel', 'Go', 'Golang', 'Python',
+            'TypeScript', 'PHP', 'Laravel', 'Go', 'Golang', 'Python', 'C#', 'C++', '.NET',
         ];
 
         $missingSkills = [];
         foreach ($commonTechStack as $tech) {
             $techLower = mb_strtolower($tech);
-            $pattern = '/(?:\b|_|-)'.preg_quote($techLower, '/').'(?:\b|_|-)/iu';
+            $pattern = '/'.self::BOUNDARY_LEFT.preg_quote($techLower, '/').self::BOUNDARY_RIGHT.'/iu';
             if (preg_match($pattern, $searchableText) === 1) {
                 if (! in_array($techLower, $userKeywords['normalized'], true)) {
                     $missingSkills[] = $tech;
@@ -175,19 +205,20 @@ class FastFitScorer
             'AWS', 'CI/CD', 'GitLab', 'REST', 'GraphQL', 'Microservices', 'Clean Architecture',
             'Domain Driven Design', 'Backend', 'Frontend', 'Fullstack', 'Lead', 'Senior',
             'Teamlead', 'Techlead', 'Staff', 'Architect', 'Developer', 'Engineer',
+            'C#', 'C++', '.NET', 'QA',
         ];
 
         foreach ($dictionary as $word) {
             $lower = mb_strtolower($word);
-            $pattern = '/(?:\b|_|-)'.preg_quote($lower, '/').'(?:\b|_|-)/iu';
+            $pattern = '/'.self::BOUNDARY_LEFT.preg_quote($lower, '/').self::BOUNDARY_RIGHT.'/iu';
             if (preg_match($pattern, $allText) === 1) {
                 $detectedSkills[] = $word;
                 $normalized[] = $lower;
             }
         }
 
-        // Also normalize raw words from facts
-        preg_match_all('/[a-zA-Zа-яА-Я0-9\+\#\.\-]{3,}/u', $allText, $words);
+        // Also normalize raw words from facts (length >= 2 to include C#, Go, QA, etc.)
+        preg_match_all('/[a-zA-Zа-яА-Я0-9\+\#\.\-]{2,}/u', $allText, $words);
         foreach ($words[0] as $w) {
             $normalized[] = mb_strtolower($w);
         }

@@ -5,6 +5,7 @@ namespace App\Services\Discovery;
 use App\Models\DiscoveredVacancy;
 use App\Models\User;
 use App\Services\DatabaseOwnerContext;
+use App\Services\PostingGuard\PostingGuardResult;
 use App\Services\PostingGuard\PostingGuardService;
 use App\Services\VacancyIngestionService;
 use Carbon\CarbonImmutable;
@@ -87,13 +88,18 @@ class JobDiscoveryService
                 $guardResult = $this->postingGuard->inspect($rawTextToInspect);
 
                 $securityLevel = match ($guardResult->threatLevel) {
-                    'MALICIOUS' => DiscoveredVacancy::SECURITY_MALICIOUS,
-                    'SUSPICIOUS' => DiscoveredVacancy::SECURITY_SUSPICIOUS,
+                    PostingGuardResult::THREAT_HIGH_RISK, 'MALICIOUS' => DiscoveredVacancy::SECURITY_MALICIOUS,
+                    PostingGuardResult::THREAT_SUSPICIOUS => DiscoveredVacancy::SECURITY_SUSPICIOUS,
                     default => DiscoveredVacancy::SECURITY_CLEAN,
                 };
 
-                // Fast Fit Scoring
-                $fitResult = $this->fitScorer->score($user, $title, $description ?? $snippet);
+                // Fast Fit Scoring using sanitized clean text
+                $fitResult = $this->fitScorer->score($user, $title, $guardResult->cleanText);
+
+                $cleanDescription = $description !== null ? $guardResult->cleanText : null;
+                $cleanSnippet = $description === null && $snippet !== null
+                    ? $guardResult->cleanText
+                    : ($snippet !== null ? $this->postingGuard->inspect($snippet)->cleanText : null);
 
                 $publishedAt = null;
                 if (! empty($job['published_at'])) {
@@ -120,8 +126,8 @@ class JobDiscoveryService
                         'company' => $company,
                         'location' => $location,
                         'salary_text' => $salaryText,
-                        'snippet' => $snippet,
-                        'description' => $description,
+                        'snippet' => $cleanSnippet,
+                        'description' => $cleanDescription,
                         'fit_score' => $fitResult['score'],
                         'fit_level' => $fitResult['level'],
                         'fit_reasons' => $fitResult['reasons'],

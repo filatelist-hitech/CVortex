@@ -101,4 +101,62 @@ class FastFitScorerTest extends TestCase
         $this->assertEmpty($result['reasons']['matched_skills']);
         $this->assertNotEmpty($result['reasons']['missing_skills']);
     }
+
+    public function test_matches_csharp_cpp_dotnet_and_two_letter_skills(): void
+    {
+        $user = new User(['id' => '01HQTESTUSER000000000000004']);
+
+        $fact = new CareerFact([
+            'assertion_approved' => 'Senior Developer with strong background in C#, C++, .NET Core, Go and QA automation.',
+            'status' => CareerFact::STATUS_CONFIRMED,
+        ]);
+
+        $trustedMock = Mockery::mock(TrustedCareerQuery::class);
+        $trustedMock->shouldReceive('forMatching')
+            ->once()
+            ->with($user)
+            ->andReturn(['facts' => [$fact], 'claims' => []]);
+
+        $scorer = new FastFitScorer($trustedMock);
+
+        $result = $scorer->score(
+            $user,
+            'Senior C# / C++ Software Engineer',
+            'Developing game engines with C++, C#, and .NET services.'
+        );
+
+        $this->assertGreaterThanOrEqual(70, $result['score']);
+        $this->assertSame(DiscoveredVacancy::FIT_HIGH, $result['level']);
+        $this->assertTrue($result['reasons']['title_match']);
+        $this->assertContains('C#', $result['reasons']['matched_skills']);
+        $this->assertContains('C++', $result['reasons']['matched_skills']);
+        $this->assertContains('.NET', $result['reasons']['matched_skills']);
+    }
+
+    public function test_memoizes_candidate_facts_and_keywords_per_user(): void
+    {
+        $user = new User(['id' => '01HQTESTUSER000000000000005']);
+
+        $fact = new CareerFact([
+            'assertion_approved' => 'Staff Go Engineer proficient in Docker and Kubernetes.',
+            'status' => CareerFact::STATUS_CONFIRMED,
+        ]);
+
+        $trustedMock = Mockery::mock(TrustedCareerQuery::class);
+        // Ensure forMatching is invoked EXACTLY ONCE despite multiple score() calls
+        $trustedMock->shouldReceive('forMatching')
+            ->once()
+            ->with($user)
+            ->andReturn(['facts' => [$fact], 'claims' => []]);
+
+        $scorer = new FastFitScorer($trustedMock);
+
+        $res1 = $scorer->score($user, 'Staff Go Engineer', 'Cloud infrastructure with Docker');
+        $res2 = $scorer->score($user, 'Senior Go Developer', 'Microservices with Kubernetes');
+        $res3 = $scorer->score($user, 'Lead DevOps Engineer', 'Docker and Kubernetes clusters');
+
+        $this->assertTrue($res1['reasons']['title_match']);
+        $this->assertTrue($res2['reasons']['title_match']);
+        $this->assertSame(DiscoveredVacancy::FIT_HIGH, $res1['level']);
+    }
 }

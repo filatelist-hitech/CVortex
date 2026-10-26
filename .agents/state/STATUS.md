@@ -1,5 +1,41 @@
 # CVortex — проверенное текущее состояние
 
+## AI Job Search Scrapers & Discover Inbox: Code Review Remediation (PR #63) — 2026-10-26
+
+Mode: IMPLEMENT → REVIEW; branch: `feature/ai-job-search-scrapers-and-discover-inbox`; target: `stage`. One agent / sequential execution.
+
+### Completed Remediation Outcomes
+1. **[CRITICAL] Исправление маппинга угроз PostingGuard и санитизация (`JobDiscoveryService.php`)**:
+   - Внедрено строгое сопоставление констант `PostingGuardResult::THREAT_HIGH_RISK` и `'MALICIOUS'` с `DiscoveredVacancy::SECURITY_MALICIOUS`.
+   - Санитизированный текст (`$guardResult->cleanText`) сохраняется в `discovered_vacancies` и передается в `FastFitScorer`, исключая утечки raw HTML-инъекций и невидимых символов в аналитический контур.
+
+2. **[CRITICAL] Запуск Bun HTTP-сервера воркера (`compose.yaml` & `Dockerfile`)**:
+   - В `compose.yaml` добавлена директива `command: ["bun", "run", "server.ts"]` для сервиса `worker`.
+   - В `apps/worker/Dockerfile` обновлен дефолтный `CMD ["bun", "run", "server.ts"]`. Микросервис поиска штатно поднимается при `docker compose up` и проходит healthcheck `http://127.0.0.1:3001/health`.
+
+3. **[HIGH] Мемоизация и устранение N+1 запросов в FastFitScorer**:
+   - В `FastFitScorer.php` добавлены локальные кэши `$candidateFactsCache` и `$candidateKeywordsCache` по ключу `(string)$user->id`.
+   - Запросы к БД через `TrustedCareerQuery` и нормализация словаря выполняются ровно 1 раз на пользователя при скоринге пакета вакансий.
+
+4. **[MEDIUM] Границы слов и спецсимволы в FastFitScorer (`C#`, `C++`, `.NET`, `QA`)**:
+   - Заменены границы `(?:\b|_|-)` на пунктуационно-независимые lookarounds: `(?<=^|[\s,.;:!?\(\)\[\]\/\-\_])` и `(?=$|[\s,.;:!?\(\)\[\]\/\-\_])`.
+   - Длина нормализуемых токенов расширена с `{3,}` до `{2,}`. В словари и роли добавлены `C#`, `C++`, `.NET`, `QA`.
+
+5. **[MEDIUM/LOW] Защита от состояний гонки и корректная навигация в DiscoverInbox**:
+   - В `apps/frontend/src/app/discover-inbox.tsx` добавлен `AbortController` (через `activeAbortControllerRef`) для отмены устаревших сетевых запросов при переключении табов.
+   - Устранен дублирующий вызов `loadList` при сабмите поиска.
+   - Ссылка на принятую вакансию теперь передает целевой ID: `href={`/?selected=${acceptedCoreId}`}`.
+
+6. **Верификация**:
+   - Backend PHPUnit: 24/24 тестов PASS (139 assertions) в `DiscoveryApiTest`, `FastFitScorerTest`, `PostingGuardServiceTest`, `VacancyIngestionPostingGuardTest`.
+   - Backend Pint: 0 style issues across 248 files (`[PASS]`).
+   - Backend PHPStan: 0 errors across 155 files (`[OK] No errors`).
+   - Frontend Vitest Suite: 5/5 тестов PASS в `discover-inbox.test.tsx`, 172/172 тестов PASS по всему фронтенду.
+   - Frontend Linters: ESLint (0 errors/warnings), TypeScript (0 errors).
+   - PR Contract: `bash scripts/check-pr-contract.sh 63` — valid.
+
+---
+
 ## AI Job Search Integration: Фаза 2 — Портальные скраперы, Fast Fit Ranking и Discover Inbox — 2026-10-26
 
 Mode: IMPLEMENT; branch: `feature/ai-job-search-scrapers-and-discover-inbox`; target: `stage`. One agent / sequential execution.

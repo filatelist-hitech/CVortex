@@ -178,6 +178,7 @@ services:
     logging: *local-logging
     build:
       context: ./apps/worker
+    command: ["bun", "run", "server.ts"]
     volumes:
       - ./apps/worker:/app
     healthcheck:

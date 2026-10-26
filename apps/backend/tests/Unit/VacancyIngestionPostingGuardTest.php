@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Jobs\AnalyzeVacancy;
 use App\Models\AuditEvent;
 use App\Models\User;
 use App\Models\VacancySnapshot;
@@ -109,5 +110,41 @@ TEXT;
         $this->assertNotEmpty($metadata['findings']['injections']);
         $this->assertGreaterThanOrEqual(1, $metadata['findings']['stripped_html_blocks']);
         $this->assertGreaterThanOrEqual(2, $metadata['findings']['stripped_invisible_count']);
+
+        // LLM Contour Safety Gate: do not dispatch AnalyzeVacancy for compromised source
+        Queue::assertNotPushed(AnalyzeVacancy::class);
+    }
+
+    public function test_safe_posting_dispatches_analyze_vacancy_job(): void
+    {
+        Queue::fake();
+
+        $guard = new PostingGuardService;
+        $ownerContext = app(DatabaseOwnerContext::class);
+        $auditLogger = app(AuditLogger::class);
+
+        $service = new VacancyIngestionService($ownerContext, $guard, $auditLogger);
+
+        /** @var User $user */
+        $user = User::query()->create([
+            'email' => 'clean_candidate@example.test',
+            'password' => 'a very long safe passphrase',
+        ]);
+
+        $cleanSource = <<<'TEXT'
+Senior Laravel Engineer
+Company: Acme Systems
+Location: Remote
+We are seeking a seasoned backend engineer with deep experience in Laravel and PostgreSQL.
+TEXT;
+
+        $result = $service->queue($user, $cleanSource, null);
+
+        $this->assertTrue($result['dispatch']);
+        /** @var PostingGuardResult $guardResult */
+        $guardResult = $result['posting_guard'];
+        $this->assertTrue($guardResult->isSafeForLlm);
+
+        Queue::assertPushed(AnalyzeVacancy::class);
     }
 }

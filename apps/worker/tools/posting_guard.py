@@ -89,11 +89,13 @@ HIDDEN_STYLE = re.compile(
     r"display\s*:\s*none"
     r"|visibility\s*:\s*hidden"
     r"|opacity\s*:\s*0(?![.\d]*[1-9])"
-    r"|font-size\s*:\s*0(?:\.0+)?(?:px|pt|em|rem|%)?(?![\d.])"
+    r"|filter\s*:\s*opacity\(\s*0"
+    r"|transform\s*:\s*scale(?:[XY])?\(\s*0"
+    r"|font-size\s*:\s*(?:0(?:\.0+)?|0?\.\d{2,})(?:px|pt|em|rem|%)?(?![\d.])"
     r"|color\s*:\s*transparent"
     r"|clip\s*:\s*rect\(\s*0"
-    r"|clip-path\s*:\s*inset\(\s*100%"
-    r"|(?:left|top|text-indent)\s*:\s*-\d{4,}px",
+    r"|clip-path\s*:\s*(?:inset\(\s*100%|polygon\(\s*0\s+0|circle\(\s*0)"
+    r"|(?<![a-zA-Z-])(?:left|top|right|bottom|text-indent|margin-left|margin-top)\s*:\s*-\d{3,}(?:px|em|rem|%|vw|vh)",
     re.I,
 )
 PRESTRIP = re.compile(r"<!DOCTYPE[^>]*>|<\?[^>]*\?>", re.I)
@@ -208,18 +210,31 @@ CSS_COMMENT = re.compile(r"/\*.*?\*/", re.S)
 # A box collapsed to nothing with its overflow clipped hides its content as
 # surely as display:none. Either half alone is everyday layout CSS (overflow:
 # hidden is on most cards; height:0 is a spacer), so both must be present.
-COLLAPSED_BOX = re.compile(r"\b(?:max-)?(?:height|width)\s*:\s*0(?:\.0+)?(?:px|em|rem|%|pt)?(?![\d.])", re.I)
+COLLAPSED_BOX = re.compile(r"(?<![a-zA-Z-])(?:max-)?(?:height|width)\s*:\s*0(?:\.0+)?(?:px|em|rem|%|pt)?(?![\d.])", re.I)
 CLIPPED = re.compile(r"\boverflow(?:-[xy])?\s*:\s*hidden\b", re.I)
+CSS_HEX_ESCAPE = re.compile(r"\\([0-9a-fA-F]{1,6})\s?")
+
+
+def _decode_css_escapes(s: str) -> str:
+    def _replace(m):
+        try:
+            return chr(int(m.group(1), 16))
+        except (ValueError, OverflowError):
+            return ""
+
+    return CSS_HEX_ESCAPE.sub(_replace, s)
 
 
 def _style(attrs: dict) -> str:
-    """The style attribute as a browser reads it: entities decoded, CSS comments gone.
+    """The style attribute as a browser reads it: entities decoded, CSS comments gone, CSS hex escapes decoded.
 
-    A browser decodes `display&#58;none` before parsing the CSS and ignores
-    `/**/` inside a declaration, so both hid the content while the regex saw
-    neither. Normalise before matching.
+    A browser decodes `display&#58;none` before parsing the CSS, ignores
+    `/**/` inside a declaration, and decodes hex escapes like `\64 isplay`,
+    so all hid the content while naive regexes missed them. Normalise before matching.
     """
-    return CSS_COMMENT.sub("", html.unescape(attrs.get("style", "")))
+    decoded = html.unescape(attrs.get("style", ""))
+    decoded = CSS_COMMENT.sub("", decoded)
+    return _decode_css_escapes(decoded)
 
 
 def _is_hidden(raw_attrs: str) -> bool:

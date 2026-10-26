@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "./access-shell";
 
@@ -51,8 +51,15 @@ export default function DiscoverInbox() {
   const [success, setSuccess] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [acceptedMap, setAcceptedMap] = useState<Record<string, string>>({});
+  const activeAbortControllerRef = useRef<AbortController | null>(null);
 
   const loadList = useCallback(async (tab = activeTab, portal = portalFilter) => {
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    activeAbortControllerRef.current = controller;
+
     setLoadingList(true);
     setError("");
     try {
@@ -60,12 +67,25 @@ export default function DiscoverInbox() {
       params.set("status", tab);
       if (portal) params.set("portal", portal);
 
-      const res = await api(`/api/v1/discovery?${params.toString()}`);
-      setItems(res.items || []);
+      const res = await api(`/api/v1/discovery?${params.toString()}`, {
+        signal: controller.signal,
+      });
+
+      if (!controller.signal.aborted) {
+        setItems(res.items || []);
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось загрузить вакансии");
+      if (caught instanceof Error && caught.name === "AbortError") {
+        return;
+      }
+      if (!controller.signal.aborted) {
+        setError(caught instanceof Error ? caught.message : "Не удалось загрузить вакансии");
+      }
     } finally {
-      setLoadingList(false);
+      if (activeAbortControllerRef.current === controller) {
+        activeAbortControllerRef.current = null;
+        setLoadingList(false);
+      }
     }
   }, [activeTab, portalFilter]);
 
@@ -73,6 +93,14 @@ export default function DiscoverInbox() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadList(activeTab, portalFilter);
   }, [loadList, activeTab, portalFilter]);
+
+  useEffect(() => {
+    return () => {
+      if (activeAbortControllerRef.current) {
+        activeAbortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const togglePortal = (portalName: string) => {
     setPortals((prev) =>
@@ -102,8 +130,11 @@ export default function DiscoverInbox() {
 
       const count = res.count ?? 0;
       setSuccess(`Поиск завершён: обнаружено ${count} подходящих вакансий!`);
-      setActiveTab("INBOX");
-      await loadList("INBOX", portalFilter);
+      if (activeTab === "INBOX") {
+        await loadList("INBOX", portalFilter);
+      } else {
+        setActiveTab("INBOX");
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Ошибка при поиске вакансий на порталах");
     } finally {
@@ -484,7 +515,7 @@ export default function DiscoverInbox() {
                 {acceptedCoreId && (
                   <div style={{ marginTop: "4px" }}>
                     <Link
-                      href="/"
+                      href={`/?selected=${acceptedCoreId}`}
                       style={{ color: "var(--accent-primary)", fontSize: "13px", fontWeight: 600 }}
                     >
                       Перейти к анализу вакансии в пайплайне CVortex →

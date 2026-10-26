@@ -143,7 +143,9 @@ describe("Discover Inbox UI", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/добавлена в пайплайн/i)).toBeInTheDocument();
-      expect(screen.getByText(/Перейти к анализу вакансии в пайплайне CVortex →/i)).toBeInTheDocument();
+      const pipelineLink = screen.getByRole("link", { name: /Перейти к анализу вакансии в пайплайне CVortex →/i });
+      expect(pipelineLink).toBeInTheDocument();
+      expect(pipelineLink).toHaveAttribute("href", "/?selected=vac-core-999");
     });
   });
 
@@ -174,5 +176,30 @@ describe("Discover Inbox UI", () => {
     await waitFor(() => {
       expect(screen.queryByText("Junior Manual QA ↗")).not.toBeInTheDocument();
     });
+  });
+
+  it("aborts previous pending list request when switching tabs", async () => {
+    const signals: AbortSignal[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      const url = String(input);
+      if (url.includes("/api/v1/discovery?")) {
+        if (options?.signal) {
+          signals.push(options.signal);
+        }
+        return Response.json({ items: [], meta: { total: 0 } });
+      }
+      throw new Error(`Unexpected url: ${url}`);
+    });
+
+    render(<DiscoverInbox />);
+
+    const acceptedTab = screen.getByRole("button", { name: /В работе/i });
+    fireEvent.click(acceptedTab);
+
+    await waitFor(() => {
+      expect(signals.length).toBeGreaterThanOrEqual(2);
+    });
+
+    expect(signals[0].aborted).toBe(true);
   });
 });
