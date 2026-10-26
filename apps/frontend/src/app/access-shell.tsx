@@ -10,6 +10,7 @@ import WorkspaceShell from "./workspace-shell";
 import AiProviderSettings from "./ai-provider-settings";
 import TodayWorkspace from "./today-workspace";
 import VacancyImportWorkspace from "./vacancy-import";
+import DiscoverInbox from "./discover-inbox";
 
 type User = { id: string; email: string; role: string; status: string };
 type Mode = "login" | "register";
@@ -104,7 +105,7 @@ export async function api(path: string, options: RequestInit = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export default function AccessShell({ registrationRoute = false, destination = "today" }: { registrationRoute?: boolean; destination?: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" }) {
+export default function AccessShell({ registrationRoute = false, destination = "today" }: { registrationRoute?: boolean; destination?: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" | "discover" }) {
   const router = useRouter();
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
@@ -160,6 +161,8 @@ export default function AccessShell({ registrationRoute = false, destination = "
         ? <main id="workspace-content" tabIndex={-1} className="career-shell admin-settings-shell"><AdminSystemSettings /></main>
         : destination === "settings"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell settings-shell"><AiProviderSettings /></main>
+        : destination === "discover"
+        ? <main id="workspace-content" tabIndex={-1} className="career-shell discover-shell"><DiscoverInbox /></main>
         : destination === "today"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell today-shell"><TodayWorkspace email={user.email} role={user.role} /></main>
         : destination === "vacancy-import"

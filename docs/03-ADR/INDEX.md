@@ -57,6 +57,7 @@ This index is the canonical inventory of CVortex architecture decisions. An `acc
 | [ADR-0025](ADR-0025-b01-reference-acceptance-release-gate.md) | B01 Reference Acceptance and Release Gate | accepted | OWNER_CONSTRAINT | 2026-10-11 | Design / governance | Amends ADR-0024 validation timing | — |
 | [ADR-0026](ADR-0026-gemini-llm-provider-integration.md) | Google Gemini LLM Provider Integration and BYOK Routing | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-24 | AI / providers | Amends ADR-0010, ADR-0011 | — |
 | [ADR-0027](ADR-0027-runtime-system-settings.md) | Runtime System Settings and Administrative Configuration Control Plane | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-24 | Configuration / Admin | — | — |
+| [ADR-0028](ADR-0028-ai-job-search-integration-and-worker.md) | AI Job Search Integration: Dedicated Auxiliary Worker, Security Guard, and 3-Stage Truth-First Pipeline | accepted | DERIVED_ARCHITECTURAL_DECISION | 2026-10-26 | Worker / Scrapers / Security / AI | Amends ADR-0005, ADR-0016 | — |
 
 ## Freeze rule
 

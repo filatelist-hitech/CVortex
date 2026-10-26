@@ -27,6 +27,7 @@ const directions = [
   { id: "today", label: "Сегодня", icon: "sun", href: "/" },
   { id: "opportunities", label: "Вакансии", icon: "briefcase", href: "/vacancies" },
   { id: "import", label: "Импорт вакансии", icon: "plus", href: "/vacancies/import" },
+  { id: "discover", label: "Поиск (Discover)", icon: "search", href: "/vacancies/discover" },
   { id: "career", label: "Карьера", icon: "user", href: "/career" },
   { id: "employers", label: "Работодатели", icon: "building" },
   { id: "settings", label: "Настройки", icon: "settings", href: "/settings" },
@@ -37,6 +38,7 @@ function Icon({ name }: { name: string }) {
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>,
     briefcase: <><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M8 7v14m8-14v14" /></>,
     plus: <path d="M12 5v14m-7-7h14" />,
+    search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
     user: <><circle cx="12" cy="7" r="4" /><path d="M5 21v-3a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v3" /></>,
     building: <><rect x="4" y="2" width="16" height="20" rx="1" /><path d="M9 22v-5h6v5M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M16 14h.01" /></>,
     settings: <><path d="m9 3 1-1h4l1 3 3 1 3-1 2 4-2 2v3l2 2-2 4-3-1-3 1-1 3h-4l-1-3-3-1-3 1-2-4 2-2v-3l-2-2 2-4 3 1 3-1Z" /><circle cx="12" cy="12" r="3" /></>,
@@ -48,7 +50,7 @@ function Icon({ name }: { name: string }) {
 export default function WorkspaceShell({ email, role, destination, onSignOut, children }: {
   email: string;
   role: string;
-  destination: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings";
+  destination: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" | "discover";
   onSignOut: () => Promise<void>;
   children: ReactNode;
 }) {
@@ -61,6 +63,8 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
       ? "opportunities"
       : destination === "vacancy-import"
       ? "import"
+      : destination === "discover"
+      ? "discover"
       : destination === "career"
       ? hash === "#vacancy-title"
         ? "opportunities"
@@ -75,6 +79,8 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
       ? "Вакансии"
       : destination === "vacancy-import"
       ? "Импорт вакансии"
+      : destination === "discover"
+      ? "Поиск вакансий"
       : destination === "diagnostics"
       ? "Диагностика"
       : destination === "admin-settings"
@@ -89,6 +95,8 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
       ? "Вставка текста и автоматический разбор требований"
       : destination === "vacancies"
       ? "Подготовка отклика на основе подтверждённых фактов"
+      : destination === "discover"
+      ? "Агрегация вакансий с порталов и оценка соответствия"
       : destination === "diagnostics"
       ? "Ошибки и состояние операций"
       : destination === "settings"

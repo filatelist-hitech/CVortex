@@ -8,15 +8,21 @@ use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\VacancySnapshot;
 use App\Queue\PendingJobRecovery;
+use App\Services\PostingGuard\PostingGuardResult;
+use App\Services\PostingGuard\PostingGuardService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class VacancyIngestionService
 {
-    public function __construct(private readonly DatabaseOwnerContext $ownerContext) {}
+    public function __construct(
+        private readonly DatabaseOwnerContext $ownerContext,
+        private readonly PostingGuardService $postingGuard,
+        private readonly AuditLogger $auditLogger,
+    ) {}
 
-    /** @return array{vacancy: Vacancy, snapshot: VacancySnapshot, duplicate: bool} */
+    /** @return array{vacancy: Vacancy, snapshot: VacancySnapshot, duplicate: bool, posting_guard?: PostingGuardResult} */
     public function queue(User $user, string $sourceText, ?string $sourceUrl): array
     {
         return $this->ownerContext->run(
@@ -25,14 +31,16 @@ class VacancyIngestionService
         );
     }
 
-    /** @return array{vacancy: Vacancy, snapshot: VacancySnapshot, duplicate: bool} */
+    /** @return array{vacancy: Vacancy, snapshot: VacancySnapshot, duplicate: bool, posting_guard?: PostingGuardResult} */
     private function queueForOwner(User $user, string $sourceText, ?string $sourceUrl): array
     {
+        $guardResult = $this->postingGuard->inspect($sourceText);
+        $cleanText = $guardResult->cleanText;
         $sourceUrl = filled($sourceUrl) ? trim((string) $sourceUrl) : null;
-        $contentHash = hash('sha256', $this->canonicalText($sourceText));
+        $contentHash = hash('sha256', $this->canonicalText($cleanText));
 
         try {
-            $result = DB::transaction(function () use ($user, $sourceText, $sourceUrl, $contentHash): array {
+            $result = DB::transaction(function () use ($user, $cleanText, $sourceUrl, $contentHash, $guardResult): array {
                 $this->lockLogicalVacancy((string) $user->id, $sourceUrl);
                 $vacancy = $sourceUrl === null ? null : Vacancy::query()
                     ->where('owner_id', $user->id)
@@ -65,19 +73,21 @@ class VacancyIngestionService
                             'vacancy' => $vacancy,
                             'snapshot' => $current,
                             'duplicate' => true,
-                            'dispatch' => $recover,
+                            'dispatch' => $recover && $guardResult->isSafeForLlm,
                             'release_lock' => $recover,
+                            'posting_guard' => $guardResult,
                         ];
                     }
                 }
-                $dispatch = true;
+                // Do not dispatch asynchronous LLM analysis for dangerous payloads
+                $dispatch = $guardResult->isSafeForLlm;
                 if ($vacancy === null) {
                     $vacancy = Vacancy::query()->create([
                         'owner_id' => $user->id,
                         'source_type' => 'PASTED_TEXT',
                         'source_url' => $sourceUrl,
-                        'title' => $this->deterministicTitle($sourceText),
-                        'company' => $this->deterministicCompany($sourceText),
+                        'title' => $this->deterministicTitle($cleanText),
+                        'company' => $this->deterministicCompany($cleanText),
                         'analysis_status' => Vacancy::STATUS_PENDING,
                     ]);
                 } else {
@@ -85,8 +95,8 @@ class VacancyIngestionService
                         'analysis_status' => Vacancy::STATUS_PENDING,
                         'error_code' => null,
                         'active_run_token' => null,
-                        'title' => $this->deterministicTitle($sourceText) ?? $vacancy->title,
-                        'company' => $this->deterministicCompany($sourceText),
+                        'title' => $this->deterministicTitle($cleanText) ?? $vacancy->title,
+                        'company' => $this->deterministicCompany($cleanText),
                     ])->save();
                 }
 
@@ -96,12 +106,27 @@ class VacancyIngestionService
                     (string) $user->id,
                     (string) $vacancy->id,
                     $version,
-                    $sourceText,
+                    $cleanText,
                     $sourceUrl,
                     $contentHash,
                     now(),
                 );
                 PendingJobRecovery::reserve($vacancy);
+
+                if (! $guardResult->isClean()) {
+                    $this->auditLogger->record(
+                        eventType: 'VACANCY_POSTING_SECURITY_FLAG',
+                        actorType: 'USER',
+                        actorUser: $user,
+                        subjectType: 'vacancy',
+                        subjectId: (string) $vacancy->id,
+                        metadata: [
+                            'threat_level' => $guardResult->threatLevel,
+                            'threat_summary' => $guardResult->threatSummary,
+                            'findings' => $guardResult->findings,
+                        ],
+                    );
+                }
 
                 return [
                     'vacancy' => $vacancy,
@@ -109,6 +134,7 @@ class VacancyIngestionService
                     'duplicate' => false,
                     'dispatch' => $dispatch,
                     'release_lock' => false,
+                    'posting_guard' => $guardResult,
                 ];
             });
         } catch (QueryException) {
@@ -131,6 +157,7 @@ class VacancyIngestionService
                 'duplicate' => true,
                 'dispatch' => false,
                 'release_lock' => false,
+                'posting_guard' => $guardResult,
             ];
         }
 

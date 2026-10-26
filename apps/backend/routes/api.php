@@ -9,6 +9,7 @@ use App\Http\Controllers\CareerExtractionController;
 use App\Http\Controllers\ChatGptConnectionController;
 use App\Http\Controllers\CurrentUserController;
 use App\Http\Controllers\DiagnosticsController;
+use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\VacancyChatController;
 use App\Http\Controllers\VacancyController;
@@ -64,6 +65,11 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/career/facts/{id}/supersede', [CareerController::class, 'supersede'])->name('career.supersede');
             Route::patch('/career/claims/{id}/resolve', [CareerController::class, 'resolveClaim'])->name('career.claim.resolve');
             Route::middleware('db-owner-context')->group(function (): void {
+                Route::get('/discovery', [DiscoveryController::class, 'index'])->name('discovery.index');
+                Route::post('/discovery/search', [DiscoveryController::class, 'search'])->name('discovery.search');
+                Route::post('/discovery/{id}/accept', [DiscoveryController::class, 'accept'])->name('discovery.accept');
+                Route::post('/discovery/{id}/dismiss', [DiscoveryController::class, 'dismiss'])->name('discovery.dismiss');
+
                 Route::get('/vacancies', [VacancyController::class, 'index'])->name('vacancies.index');
                 Route::post('/vacancies', [VacancyController::class, 'store'])->name('vacancies.store');
                 Route::middleware('throttle:chatgpt')->group(function (): void {
