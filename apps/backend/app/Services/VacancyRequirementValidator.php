@@ -115,7 +115,33 @@ class VacancyRequirementValidator
         $labelTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($label), -1, PREG_SPLIT_NO_EMPTY) ?: []);
         $excerptTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($excerpt), -1, PREG_SPLIT_NO_EMPTY) ?: []);
 
-        return $labelTokens !== [] && array_diff($labelTokens, $excerptTokens) === [];
+        if ($labelTokens === []) {
+            return false;
+        }
+
+        foreach ($labelTokens as $token) {
+            $matched = false;
+            foreach ($excerptTokens as $exToken) {
+                if ($token === $exToken) {
+                    $matched = true;
+                    break;
+                }
+                $len1 = mb_strlen($token);
+                $len2 = mb_strlen($exToken);
+                if ($len1 >= 4 && $len2 >= 4) {
+                    $stemLen = min($len1, $len2) - 2;
+                    if ($stemLen >= 3 && mb_substr($token, 0, $stemLen) === mb_substr($exToken, 0, $stemLen)) {
+                        $matched = true;
+                        break;
+                    }
+                }
+            }
+            if (! $matched) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function labelIdentifiesRequirement(string $label, string $excerpt): bool
