@@ -128,7 +128,7 @@ class VacancyRequirementValidator
                 }
                 $len1 = mb_strlen($token);
                 $len2 = mb_strlen($exToken);
-                if ($len1 >= 4 && $len2 >= 4) {
+                if ($len1 >= 4 && $len2 >= 4 && abs($len1 - $len2) <= 3) {
                     $stemLen = min($len1, $len2) - 2;
                     if ($stemLen >= 3 && mb_substr($token, 0, $stemLen) === mb_substr($exToken, 0, $stemLen)) {
                         $matched = true;

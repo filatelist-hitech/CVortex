@@ -50,7 +50,7 @@ class CareerExtractionService
 
     public function queue(User $user, string $sourceText): CareerSource
     {
-        $sourceText = trim($sourceText);
+        $sourceText = str_replace("\r\n", "\n", trim($sourceText));
         $profile = $this->facts->profileFor($user);
 
         try {
@@ -108,7 +108,7 @@ class CareerExtractionService
 
     private function performExtraction(User $user, string $sourceText, string $runToken): CareerSource
     {
-        $sourceText = trim($sourceText);
+        $sourceText = str_replace("\r\n", "\n", trim($sourceText));
         $hash = hash('sha256', $sourceText);
         $profile = $this->facts->profileFor($user);
         $source = CareerSource::query()->firstOrCreate(
@@ -349,6 +349,7 @@ class CareerExtractionService
      */
     private function validateOutput(array $output, string $sourceText): array
     {
+        $sourceText = str_replace("\r\n", "\n", $sourceText);
         $facts = $output['facts'] ?? null;
         $outputKeys = array_keys($output);
         $validKeys = ['facts', 'schema_version'];
@@ -373,18 +374,28 @@ class CareerExtractionService
             : ['fact_type', 'assertion', 'source_excerpt', 'value', 'polarity', 'status', 'confidence'];
 
         foreach ($facts as $candidate) {
+            $assertion = isset($candidate['assertion']) && is_string($candidate['assertion'])
+                ? str_replace("\r\n", "\n", $candidate['assertion'])
+                : ($candidate['assertion'] ?? null);
+            $sourceExcerpt = isset($candidate['source_excerpt']) && is_string($candidate['source_excerpt'])
+                ? str_replace("\r\n", "\n", $candidate['source_excerpt'])
+                : ($candidate['source_excerpt'] ?? null);
+            $value = isset($candidate['value']) && is_string($candidate['value'])
+                ? str_replace("\r\n", "\n", $candidate['value'])
+                : ($candidate['value'] ?? null);
+
             if (! is_array($candidate)
                 || array_diff(array_keys($candidate), $allowedCandidateKeys) !== []
                 || ! isset($candidate['fact_type'], $candidate['assertion'], $candidate['source_excerpt'])
                 || ! is_string($candidate['fact_type'])
-                || ! is_string($candidate['assertion'])
-                || trim($candidate['assertion']) === ''
-                || mb_strlen($candidate['assertion']) > 1000
-                || ! is_string($candidate['source_excerpt'])
-                || trim($candidate['source_excerpt']) === ''
-                || mb_strlen($candidate['source_excerpt']) > 2000
-                || ! str_contains($sourceText, $candidate['source_excerpt'])
-                || ! str_contains($candidate['source_excerpt'], $candidate['assertion'])) {
+                || ! is_string($assertion)
+                || trim($assertion) === ''
+                || mb_strlen($assertion) > 1000
+                || ! is_string($sourceExcerpt)
+                || trim($sourceExcerpt) === ''
+                || mb_strlen($sourceExcerpt) > 2000
+                || ! str_contains($sourceText, $sourceExcerpt)
+                || ! str_contains($sourceExcerpt, $assertion)) {
                 throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
             }
 
@@ -395,9 +406,9 @@ class CareerExtractionService
             }
 
             if (isset($candidate['value'])) {
-                if (! is_string($candidate['value'])
-                    || trim($candidate['value']) === ''
-                    || ! str_contains($candidate['assertion'], $candidate['value'])) {
+                if (! is_string($value)
+                    || trim($value) === ''
+                    || ! str_contains($assertion, $value)) {
                     throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
                 }
             }
@@ -442,13 +453,12 @@ class CareerExtractionService
                 }
             }
 
-            if (! $this->semantics->supports($type, $candidate['assertion'])) {
+            if (! $this->semantics->supports($type, $assertion)) {
                 throw new CareerOutputException(CareerOutputException::SEMANTIC_REJECTED);
             }
 
             $polarity = $candidate['polarity'] ?? 'positive';
-            $value = $candidate['value'] ?? null;
-            $dedupKey = hash('sha256', $candidate['fact_type']."\0".($value ?? '')."\0".$polarity."\0".$candidate['assertion']."\0".$candidate['source_excerpt']);
+            $dedupKey = hash('sha256', $candidate['fact_type']."\0".($value ?? '')."\0".$polarity."\0".$assertion."\0".$sourceExcerpt);
             if (isset($seen[$dedupKey])) {
                 continue;
             }
@@ -456,8 +466,8 @@ class CareerExtractionService
 
             $validated[] = [
                 'fact_type' => $candidate['fact_type'],
-                'assertion' => $candidate['assertion'],
-                'source_excerpt' => $candidate['source_excerpt'],
+                'assertion' => $assertion,
+                'source_excerpt' => $sourceExcerpt,
                 'confidence' => isset($candidate['confidence']) ? (float) $candidate['confidence'] : 1.0,
                 'value' => $value,
                 'polarity' => $polarity,

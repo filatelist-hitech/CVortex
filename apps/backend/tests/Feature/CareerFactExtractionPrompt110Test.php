@@ -562,6 +562,33 @@ class CareerFactExtractionPrompt110Test extends TestCase
         $this->assertSame('  Опыт работы с:  Go', $fact->assertion_original, 'Assertion leading/trailing whitespace must not be trimmed.');
     }
 
+    public function test_crlf_source_text_is_normalized_and_matches_lf_excerpts(): void
+    {
+        $sourceText = "Резюме:\r\nОпыт работы с: Go, Python.\r\nКонец.";
+        $providerOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'value' => 'Go',
+                    'polarity' => 'positive',
+                    'assertion' => 'Опыт работы с: Go',
+                    'source_excerpt' => "Опыт работы с: Go, Python.\n",
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+
+        $user = $this->user('crlf-user@example.test');
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$providerOutput]));
+
+        $source = app(CareerExtractionService::class)->extract($user, $sourceText);
+
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
+        $fact = CareerFact::query()->where('owner_id', $user->id)->firstOrFail();
+        $this->assertSame('Опыт работы с: Go', $fact->assertion_original);
+    }
+
     private function user(string $email): User
     {
         return User::query()->create(['email' => $email, 'password' => 'a very long safe passphrase'])->fresh();
