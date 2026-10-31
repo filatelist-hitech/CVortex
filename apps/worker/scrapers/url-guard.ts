@@ -1,7 +1,7 @@
 /**
  * URL Guard & SSRF Protection for Worker Scrapers.
  * Prevents SSRF attacks against internal networks, cloud metadata endpoints,
- * loopback, and container services.
+ * loopback, container services, IPv6-mapped addresses, and DNS rebinding wildcard domains.
  */
 
 const INTERNAL_HOSTNAMES = new Set([
@@ -16,6 +16,25 @@ const INTERNAL_HOSTNAMES = new Set([
   "scheduler",
   "frontend",
 ])
+
+const INTERNAL_DOMAIN_SUFFIXES = [
+  ".local",
+  ".internal",
+  ".lan",
+  ".test",
+  ".corp",
+  ".home",
+  ".arpa",
+]
+
+const WILDCARD_DNS_DOMAINS = [
+  "nip.io",
+  "sslip.io",
+  "traefik.me",
+  "localtest.me",
+  "vcap.me",
+  "fwhs.me",
+]
 
 /**
  * Checks whether an IPv4 address string falls into private, loopback, or metadata ranges.
@@ -43,7 +62,7 @@ function isPrivateIPv4(ip: string): boolean {
   // 169.254.0.0/16 (Link-local & AWS/GCP/Azure Instance Metadata 169.254.169.254)
   if (b0 === 169 && b1 === 254) return true
 
-  // 0.0.0.0/8 (Current network)
+  // 0.0.0.0/8 (Current network / unspecified)
   if (b0 === 0) return true
 
   // 100.64.0.0/10 (Carrier-grade NAT)
@@ -53,39 +72,89 @@ function isPrivateIPv4(ip: string): boolean {
 }
 
 /**
+ * Extracts and decodes an embedded IPv4 address from IPv4-mapped IPv6 strings
+ * in both dotted format (::ffff:127.0.0.1) and WHATWG-normalized hex format (::ffff:7f00:1).
+ */
+function decodeIpv6MappedIpv4(cleanHost: string): string | null {
+  // Case 1: dotted notation like ::ffff:127.0.0.1 or 64:ff9b::127.0.0.1
+  const dotMatch = cleanHost.match(/(?:^|:)(?:ffff|64:ff9b):(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/)
+  if (dotMatch) {
+    return dotMatch[1]
+  }
+
+  // Case 2: hex notation like ::ffff:7f00:1 or ::ffff:a9fe:a9fe or 64:ff9b::7f00:1
+  const hexMatch = cleanHost.match(/(?:^|:)(?:ffff|64:ff9b):([0-9a-f]{1,4}):([0-9a-f]{1,4})$/)
+  if (hexMatch) {
+    const hi = parseInt(hexMatch[1], 16)
+    const lo = parseInt(hexMatch[2], 16)
+    const b0 = (hi >> 8) & 0xff
+    const b1 = hi & 0xff
+    const b2 = (lo >> 8) & 0xff
+    const b3 = lo & 0xff
+    return `${b0}.${b1}.${b2}.${b3}`
+  }
+
+  return null
+}
+
+/**
  * Checks whether a hostname or IP address refers to private or internal infrastructure.
  */
 export function isPrivateOrInternalHost(hostname: string): boolean {
   const normalized = hostname.toLowerCase().trim()
+  const cleanHost = normalized.replace(/^\[|\]$/g, "")
 
-  if (INTERNAL_HOSTNAMES.has(normalized)) {
+  if (INTERNAL_HOSTNAMES.has(cleanHost)) {
+    return true
+  }
+
+  if (INTERNAL_DOMAIN_SUFFIXES.some(suffix => cleanHost.endsWith(suffix))) {
+    return true
+  }
+
+  // Wildcard DNS rebinding domain detection (nip.io, sslip.io, etc.)
+  if (WILDCARD_DNS_DOMAINS.some(domain => cleanHost === domain || cleanHost.endsWith("." + domain))) {
+    return true
+  }
+
+  // Check for embedded IPv4 addresses in wildcard or custom domain names (e.g. 127.0.0.1.nip.io or 127-0-0-1.example.com)
+  const embeddedIpv4 = cleanHost.match(/(?:^|\.)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?:\.|$)/)
+  if (embeddedIpv4 && isPrivateIPv4(embeddedIpv4[1])) {
+    return true
+  }
+  const dashedIpv4 = cleanHost.match(/(?:^|\.)(\d{1,3})-(\d{1,3})-(\d{1,3})-(\d{1,3})(?:\.|$)/)
+  if (dashedIpv4 && isPrivateIPv4(`${dashedIpv4[1]}.${dashedIpv4[2]}.${dashedIpv4[3]}.${dashedIpv4[4]}`)) {
+    return true
+  }
+
+  // IPv6 loopback, unspecified, link-local, unique-local, multicast, documentation
+  if (cleanHost === "::1" || cleanHost === "::") {
     return true
   }
 
   if (
-    normalized.endsWith(".local") ||
-    normalized.endsWith(".internal") ||
-    normalized.endsWith(".lan") ||
-    normalized.endsWith(".test")
+    cleanHost.startsWith("fe80:") ||
+    /^fe[89ab][0-9a-f]:/i.test(cleanHost) ||
+    cleanHost.startsWith("fc") ||
+    cleanHost.startsWith("fd") ||
+    cleanHost.startsWith("ff") || // Multicast
+    cleanHost.startsWith("2001:db8:") || // Documentation
+    cleanHost.startsWith("100::") || // Discard prefix
+    cleanHost.startsWith("64:ff9b:") || // Well-known NAT64 prefix
+    cleanHost.startsWith("2002:") // 6to4 prefix
   ) {
     return true
   }
 
-  // IPv6 loopback / private
-  if (
-    normalized === "::1" ||
-    normalized === "[::1]" ||
-    normalized.startsWith("fe80:") ||
-    normalized.startsWith("[fe80:") ||
-    normalized.startsWith("fc00:") ||
-    normalized.startsWith("fd00:")
-  ) {
+  // IPv6-mapped IPv4 check (e.g. [::ffff:127.0.0.1], [::ffff:7f00:1], [::ffff:a9fe:a9fe])
+  const mappedIpv4 = decodeIpv6MappedIpv4(cleanHost)
+  if (mappedIpv4 && isPrivateIPv4(mappedIpv4)) {
     return true
   }
 
   // IPv4 check
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(normalized)) {
-    return isPrivateIPv4(normalized)
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(cleanHost)) {
+    return isPrivateIPv4(cleanHost)
   }
 
   return false

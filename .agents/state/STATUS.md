@@ -23,8 +23,9 @@ Mode: IMPLEMENT → REVIEW; branch: `fix/discovery-code-review-remediation`; tar
 
 4. **[MEDIUM-01] SSRF Guard в воркере (`apps/worker/scrapers/url-guard.ts`)**:
    - Разработан модуль защиты от SSRF: блокируются адреса облачных метаданных (`169.254.169.254`), RFC 1918 приватные подсети, loopback (`127.0.0.0/8`, `::1`), Docker hostnames (`postgres`, `redis`, `backend` и др.) и нестандартные порты.
+   - Усилена защита против векторов второго порядка: добавлено декодирование IPv6-mapped IPv4 (`[::ffff:...]`, `[64:ff9b:...]`), блокировка unspecified адреса (`[::]`), multicast/ULA, а также обнаружение wildcard DNS rebinding доменов (`nip.io`, `sslip.io` и др.) и внедренных приватных IP-адресов.
    - Интегрирован в `freehire.ts`, `linkedin.ts`, `server.ts` и `runner.ts`. Небезопасные ссылки замещаются безопасным каноническим URL портала.
-   - Написаны тесты `url-guard.test.ts` (6/6 PASS).
+   - Написаны тесты `url-guard.test.ts` (9/9 PASS).
 
 5. **[MEDIUM-02] Выделенный Rate Limiting на `POST /api/v1/discovery/search` (`apps/backend/routes/api.php`)**:
    - Навешан middleware `throttle:3,1` (не более 3 запросов поиска в минуту на пользователя), предотвращающий истощение пула PHP-FPM воркеров и блокировку IP внешними порталами.
