@@ -304,6 +304,264 @@ class CareerFactExtractionPrompt110Test extends TestCase
         }
     }
 
+    public function test_contradictory_facts_with_differing_polarities_do_not_collide_on_hash(): void
+    {
+        $sourceText = 'Опыт: Работал с Python, но не работал с Python для ML.';
+        $providerOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'value' => 'Python',
+                    'polarity' => 'positive',
+                    'assertion' => 'Работал с Python',
+                    'source_excerpt' => 'Опыт: Работал с Python, но не работал с Python для ML.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'skill',
+                    'value' => 'Python',
+                    'polarity' => 'negative',
+                    'assertion' => 'не работал с Python для ML.',
+                    'source_excerpt' => 'Опыт: Работал с Python, но не работал с Python для ML.',
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+
+        $user = $this->user('contradiction-polarity@example.test');
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$providerOutput]));
+
+        $source = app(CareerExtractionService::class)->extract($user, $sourceText);
+
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
+        $facts = CareerFact::query()->where('owner_id', $user->id)->get();
+        $this->assertCount(2, $facts);
+        $this->assertCount(2, $facts->pluck('candidate_hash')->unique());
+    }
+
+    public function test_schema_110_strictly_requires_value_polarity_and_status(): void
+    {
+        $sourceText = 'Стек: Docker, Kubernetes.';
+        $user = $this->user('missing-mandatory-fields@example.test');
+
+        // Missing 'value'
+        $missingValueOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'polarity' => 'positive',
+                    'assertion' => 'Стек: Docker',
+                    'source_excerpt' => 'Стек: Docker, Kubernetes.',
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$missingValueOutput]));
+        try {
+            app(CareerExtractionService::class)->extract($user, $sourceText);
+            $this->fail('Missing value in schema 1.1.0 must fail SCHEMA_INVALID.');
+        } catch (CareerOutputException $e) {
+            $this->assertSame(CareerOutputException::SCHEMA_INVALID, $e->category);
+        }
+
+        // Missing 'polarity'
+        $missingPolarityOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'value' => 'Docker',
+                    'assertion' => 'Стек: Docker',
+                    'source_excerpt' => 'Стек: Docker, Kubernetes.',
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$missingPolarityOutput]));
+        try {
+            app(CareerExtractionService::class)->extract($user, $sourceText);
+            $this->fail('Missing polarity in schema 1.1.0 must fail SCHEMA_INVALID.');
+        } catch (CareerOutputException $e) {
+            $this->assertSame(CareerOutputException::SCHEMA_INVALID, $e->category);
+        }
+
+        // Missing 'status'
+        $missingStatusOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'value' => 'Docker',
+                    'polarity' => 'positive',
+                    'assertion' => 'Стек: Docker',
+                    'source_excerpt' => 'Стек: Docker, Kubernetes.',
+                ],
+            ],
+        ];
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$missingStatusOutput]));
+        try {
+            app(CareerExtractionService::class)->extract($user, $sourceText);
+            $this->fail('Missing status in schema 1.1.0 must fail SCHEMA_INVALID.');
+        } catch (CareerOutputException $e) {
+            $this->assertSame(CareerOutputException::SCHEMA_INVALID, $e->category);
+        }
+    }
+
+    public function test_excluded_category_in_schema_110_fails_as_schema_invalid(): void
+    {
+        $sourceText = 'Окончил МГУ в 2018 году.';
+        $user = $this->user('excluded-category-user@example.test');
+
+        $educationOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'education',
+                    'value' => 'МГУ',
+                    'polarity' => 'positive',
+                    'assertion' => 'Окончил МГУ в 2018 году.',
+                    'source_excerpt' => 'Окончил МГУ в 2018 году.',
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$educationOutput]));
+        try {
+            app(CareerExtractionService::class)->extract($user, $sourceText);
+            $this->fail('Excluded fact_type education must fail SCHEMA_INVALID.');
+        } catch (CareerOutputException $e) {
+            $this->assertSame(CareerOutputException::SCHEMA_INVALID, $e->category);
+        }
+    }
+
+    public function test_multilingual_semantic_cues_across_all_fact_types(): void
+    {
+        $sourceText = 'Управлял командой разработки из 5 человек. Mentored junior developers. Maintained automated test suites. Отвечала за нагрузочное тестирование. Title: Senior QA Engineer. Должность: Ведущий разработчик. Team Lead at FinTech. Basic knowledge of Docker. Базовые знания SQL. Период работы: 01.2020 - 05.2023, ООО Ромашка.';
+        $providerOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'leadership',
+                    'value' => 'командой разработки',
+                    'polarity' => 'positive',
+                    'assertion' => 'Управлял командой разработки из 5 человек.',
+                    'source_excerpt' => 'Управлял командой разработки из 5 человек.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'leadership',
+                    'value' => 'junior developers',
+                    'polarity' => 'positive',
+                    'assertion' => 'Mentored junior developers.',
+                    'source_excerpt' => 'Mentored junior developers.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'responsibility',
+                    'value' => 'automated test suites',
+                    'polarity' => 'positive',
+                    'assertion' => 'Maintained automated test suites.',
+                    'source_excerpt' => 'Maintained automated test suites.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'responsibility',
+                    'value' => 'нагрузочное тестирование',
+                    'polarity' => 'positive',
+                    'assertion' => 'Отвечала за нагрузочное тестирование.',
+                    'source_excerpt' => 'Отвечала за нагрузочное тестирование.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'seniority',
+                    'value' => 'Senior',
+                    'polarity' => 'positive',
+                    'assertion' => 'Title: Senior QA Engineer.',
+                    'source_excerpt' => 'Title: Senior QA Engineer.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'seniority',
+                    'value' => 'Ведущий',
+                    'polarity' => 'positive',
+                    'assertion' => 'Должность: Ведущий разработчик.',
+                    'source_excerpt' => 'Должность: Ведущий разработчик.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'seniority',
+                    'value' => 'Team Lead',
+                    'polarity' => 'positive',
+                    'assertion' => 'Team Lead at FinTech.',
+                    'source_excerpt' => 'Team Lead at FinTech.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'technology_depth',
+                    'value' => 'Docker',
+                    'polarity' => 'positive',
+                    'assertion' => 'Basic knowledge of Docker.',
+                    'source_excerpt' => 'Basic knowledge of Docker.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'technology_depth',
+                    'value' => 'SQL',
+                    'polarity' => 'positive',
+                    'assertion' => 'Базовые знания SQL.',
+                    'source_excerpt' => 'Базовые знания SQL.',
+                    'status' => 'pending',
+                ],
+                [
+                    'fact_type' => 'employment_period',
+                    'value' => '01.2020 - 05.2023',
+                    'polarity' => 'positive',
+                    'assertion' => 'Период работы: 01.2020 - 05.2023, ООО Ромашка.',
+                    'source_excerpt' => 'Период работы: 01.2020 - 05.2023, ООО Ромашка.',
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+
+        $user = $this->user('cues-coverage@example.test');
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$providerOutput]));
+
+        $source = app(CareerExtractionService::class)->extract($user, $sourceText);
+
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
+        $facts = CareerFact::query()->where('owner_id', $user->id)->get();
+        $this->assertCount(10, $facts);
+    }
+
+    public function test_exact_whitespace_in_assertion_is_preserved_without_normalization(): void
+    {
+        $sourceText = "Резюме:\n  Опыт работы с:  Go,  Python.\nКонец.";
+        $providerOutput = [
+            'schema_version' => '1.1.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'value' => 'Go',
+                    'polarity' => 'positive',
+                    'assertion' => '  Опыт работы с:  Go',
+                    'source_excerpt' => "  Опыт работы с:  Go,  Python.\n",
+                    'status' => 'pending',
+                ],
+            ],
+        ];
+
+        $user = $this->user('whitespace-user@example.test');
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$providerOutput]));
+
+        $source = app(CareerExtractionService::class)->extract($user, $sourceText);
+
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
+        $fact = CareerFact::query()->where('owner_id', $user->id)->firstOrFail();
+        $this->assertSame('  Опыт работы с:  Go', $fact->assertion_original, 'Assertion leading/trailing whitespace must not be trimmed.');
+    }
+
     private function user(string $email): User
     {
         return User::query()->create(['email' => $email, 'password' => 'a very long safe passphrase'])->fresh();

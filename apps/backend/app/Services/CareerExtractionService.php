@@ -190,6 +190,7 @@ class CareerExtractionService
                     CareerFact::query()->where('career_source_id', $source->id)->where('status', CareerFact::STATUS_PENDING)->delete();
                     foreach ($candidates as $candidate) {
                         $valuePart = isset($candidate['value']) ? "\0".$candidate['value'] : '';
+                        $polarityPart = isset($candidate['polarity']) ? "\0".$candidate['polarity'] : '';
                         CareerFact::query()->create([
                             'owner_id' => $user->id,
                             'career_profile_id' => $profile->id,
@@ -200,7 +201,7 @@ class CareerExtractionService
                             'source_excerpt' => $candidate['source_excerpt'],
                             'extracted_by' => $skill->id.'@'.$skill->version,
                             'extraction_confidence' => $candidate['confidence'],
-                            'candidate_hash' => hash('sha256', $candidate['fact_type'].$valuePart."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
+                            'candidate_hash' => hash('sha256', $candidate['fact_type'].$valuePart.$polarityPart."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
                             'status' => CareerFact::STATUS_PENDING,
                         ]);
                     }
@@ -359,13 +360,17 @@ class CareerExtractionService
             throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
         }
 
-        if (isset($output['schema_version']) && $output['schema_version'] !== '1.1.0') {
+        $schemaVersion = $output['schema_version'] ?? null;
+        if ($schemaVersion !== null && $schemaVersion !== '1.1.0') {
             throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
         }
 
+        $isV110 = ($schemaVersion === '1.1.0');
         $validated = [];
         $seen = [];
-        $allowedCandidateKeys = ['fact_type', 'assertion', 'source_excerpt', 'value', 'polarity', 'status', 'confidence'];
+        $allowedCandidateKeys = $isV110
+            ? ['fact_type', 'value', 'polarity', 'assertion', 'source_excerpt', 'status']
+            : ['fact_type', 'assertion', 'source_excerpt', 'value', 'polarity', 'status', 'confidence'];
 
         foreach ($facts as $candidate) {
             if (! is_array($candidate)
@@ -381,6 +386,12 @@ class CareerExtractionService
                 || ! str_contains($sourceText, $candidate['source_excerpt'])
                 || ! str_contains($candidate['source_excerpt'], $candidate['assertion'])) {
                 throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+            }
+
+            if ($isV110) {
+                if (! isset($candidate['value'], $candidate['polarity'], $candidate['status'])) {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
             }
 
             if (isset($candidate['value'])) {
@@ -412,7 +423,26 @@ class CareerExtractionService
             }
 
             $type = CareerFactType::tryFrom($candidate['fact_type']);
-            if ($type === null || ! $this->semantics->supports($type, $candidate['assertion'])) {
+            if ($isV110) {
+                $allowedTypes = [
+                    CareerFactType::SKILL,
+                    CareerFactType::EXPERIENCE,
+                    CareerFactType::EMPLOYMENT_PERIOD,
+                    CareerFactType::SENIORITY,
+                    CareerFactType::LEADERSHIP,
+                    CareerFactType::RESPONSIBILITY,
+                    CareerFactType::TECHNOLOGY_DEPTH,
+                ];
+                if ($type === null || ! in_array($type, $allowedTypes, true)) {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
+            } else {
+                if ($type === null) {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
+            }
+
+            if (! $this->semantics->supports($type, $candidate['assertion'])) {
                 throw new CareerOutputException(CareerOutputException::SEMANTIC_REJECTED);
             }
 
@@ -426,7 +456,7 @@ class CareerExtractionService
 
             $validated[] = [
                 'fact_type' => $candidate['fact_type'],
-                'assertion' => trim($candidate['assertion']),
+                'assertion' => $candidate['assertion'],
                 'source_excerpt' => $candidate['source_excerpt'],
                 'confidence' => isset($candidate['confidence']) ? (float) $candidate['confidence'] : 1.0,
                 'value' => $value,

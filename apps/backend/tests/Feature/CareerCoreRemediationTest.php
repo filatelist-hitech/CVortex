@@ -417,7 +417,7 @@ class CareerCoreRemediationTest extends TestCase
             'workflow' => 'career_text_extraction',
             'skill_id' => 'career.fact-extraction',
             'skill_version' => '1.0.0',
-            'prompt_version' => '1.0.0',
+            'prompt_version' => '1.1.0',
             'model_policy' => 'low_cost_structured_extraction',
             'provider' => 'openai',
             'model' => 'provider-resolved-model',
