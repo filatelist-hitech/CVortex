@@ -173,7 +173,9 @@ class FastFitScorer
             $trusted = $this->trustedCareerQuery->forMatching($user);
             $strings = [];
             foreach ($trusted['facts'] as $fact) {
-                $strings[] = $fact->approvedAssertion();
+                if ($fact->polarity !== 'negative') {
+                    $strings[] = $fact->approvedAssertion();
+                }
             }
 
             return $strings;
@@ -182,6 +184,7 @@ class FastFitScorer
         return CareerFact::query()
             ->where('owner_id', $user->id)
             ->where('status', CareerFact::STATUS_CONFIRMED)
+            ->where('polarity', '!=', 'negative')
             ->pluck('assertion_approved')
             ->filter()
             ->values()

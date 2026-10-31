@@ -72,6 +72,13 @@ CVortex requires multi-provider resilience for runtime AI workflows (such as car
 - Ongoing maintenance of Gemini-specific schema adjustments.
 - Quota and rate-limit variances between OpenAI and Gemini require distinct observability.
 
+## Amendment — 2026-11-01: Schema Sanitization for Google Developer API v1beta
+
+In Section 3, the schema sanitizer behavior is amended for compatibility with Google Gemini REST API v1beta (`generativelanguage.googleapis.com`):
+1. **Keyword Sanitization**: Google's `v1beta/models/{model}:generateContent` endpoint rejects standard OpenAPI keywords (`minItems`, `maxItems`, `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `default`, `title`, `examples`) with `HTTP 400 INVALID_ARGUMENT (unknown field / unsupported property)`.
+2. **Deterministic Enforcement Boundary**: In accordance with the *Deterministic Before AI* architectural principle, these keywords are stripped in `GeminiResponsesProvider::sanitizeSchema()` before payload transmission.
+3. **Backend Authority**: Strict validation of string lengths, array bounds (`count($facts) <= 50`), and numeric ranges is enforced deterministically by CVortex backend domain validators (`CareerExtractionService`, `VacancyRequirementValidator`, etc.) before any data is persisted.
+
 ## References
 
 - [ADR-0010 Provider-independent LLM Boundary](ADR-0010-provider-independent-llm.md)

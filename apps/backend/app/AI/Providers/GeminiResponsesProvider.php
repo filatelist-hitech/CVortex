@@ -580,7 +580,7 @@ class GeminiResponsesProvider
      * - Removes schema meta-keywords ($schema, $id, $defs, definitions)
      * - Normalizes nullable union types (e.g. type: ["string", "null"] -> type: "string", nullable: true)
      * - Removes additionalProperties keyword without damaging user properties named 'additionalProperties'
-     * - Preserves required, properties, items, enum, and numeric/string constraints
+     * - Preserves required, properties, items, and enum (stripping unsupported keywords minItems, maxItems, minimum, maximum, minLength, maxLength, pattern, default, title, examples which are enforced downstream by deterministic backend validators)
      *
      * @param  array<string, mixed>  $schema
      * @return array<string, mixed>

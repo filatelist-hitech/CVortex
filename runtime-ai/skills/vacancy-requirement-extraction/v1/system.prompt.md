@@ -12,6 +12,7 @@ CRITICAL NORMALIZATION RULES:
 - `normalized_value` should be `null` unless it matches one of these strict formats:
   - For EXPERIENCE: only `years:<number>` or `months:<number>` (e.g. `years:1`). If a range is given (e.g. '1–3 года') or unit is ambiguous, return `null`!
   - For WORK_FORMAT: strictly one of 'remote', 'hybrid', 'office', or `null`. If multiple formats or options are stated, return `null`!
+  - For LOCATION: canonical lowercase city or country name when explicitly stated, or `null`.
   - For TECHNICAL / DOMAIN / other: return `null`.
   - When in doubt, always set `normalized_value` to `null`.
 - For `source_excerpt`, use only the single concise clause stating the requirement.

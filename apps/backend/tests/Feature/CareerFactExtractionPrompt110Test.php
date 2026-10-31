@@ -7,9 +7,14 @@ use App\AI\Data\LlmRequest;
 use App\AI\Data\LlmResponse;
 use App\AI\Exceptions\CareerOutputException;
 use App\Models\CareerFact;
+use App\Models\CareerFactType;
+use App\Models\CareerProfile;
 use App\Models\CareerSource;
 use App\Models\User;
 use App\Services\CareerExtractionService;
+use App\Services\CareerSemanticValidator;
+use App\Services\Discovery\FastFitScorer;
+use App\Services\VacancyRequirementValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -70,9 +75,14 @@ class CareerFactExtractionPrompt110Test extends TestCase
         $hashes = $facts->pluck('candidate_hash')->all();
         $this->assertCount(4, array_unique($hashes), 'Each atomized skill must have a distinct candidate hash.');
 
+        $expectedValues = ['PHP', 'Codeception', 'Selenium', 'PostgreSQL'];
+        $this->assertSame($expectedValues, $facts->pluck('fact_value')->all());
+
         foreach ($facts as $fact) {
             $this->assertSame(CareerFact::STATUS_PENDING, $fact->status);
             $this->assertSame(CareerFact::PROVENANCE_EXTRACTION, $fact->provenance_type);
+            $this->assertSame('positive', $fact->polarity);
+            $this->assertNull($fact->extraction_confidence);
             $this->assertSame('Стек: PHP, Codeception, Selenium, PostgreSQL', $fact->source_excerpt);
             $this->assertSame('Стек: PHP, Codeception, Selenium, PostgreSQL', $fact->assertion_original);
         }
@@ -204,6 +214,8 @@ class CareerFactExtractionPrompt110Test extends TestCase
         $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
         $fact = CareerFact::query()->where('owner_id', $user->id)->sole();
         $this->assertSame(CareerFact::STATUS_PENDING, $fact->status);
+        $this->assertSame('ClickHouse', $fact->fact_value);
+        $this->assertSame('negative', $fact->polarity);
         $this->assertSame('Не работал с ClickHouse.', $fact->assertion_original);
     }
 
@@ -587,6 +599,105 @@ class CareerFactExtractionPrompt110Test extends TestCase
         $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
         $fact = CareerFact::query()->where('owner_id', $user->id)->firstOrFail();
         $this->assertSame('Опыт работы с: Go', $fact->assertion_original);
+    }
+
+    public function test_leadership_semantic_validator_rejects_nominal_job_titles(): void
+    {
+        $validator = app(CareerSemanticValidator::class);
+
+        $this->assertFalse($validator->supports(CareerFactType::LEADERSHIP, 'Worked as Tech Lead at FinTech Corp.'));
+        $this->assertFalse($validator->supports(CareerFactType::LEADERSHIP, 'Team Lead at FinTech.'));
+        $this->assertTrue($validator->supports(CareerFactType::SENIORITY, 'Worked as Tech Lead at FinTech Corp.'));
+        $this->assertTrue($validator->supports(CareerFactType::SENIORITY, 'Team Lead at FinTech.'));
+        $this->assertTrue($validator->supports(CareerFactType::LEADERSHIP, 'Led a team of 5 engineers.'));
+        $this->assertTrue($validator->supports(CareerFactType::LEADERSHIP, 'Руководил командой разработки.'));
+    }
+
+    public function test_skill_semantic_validator_respects_word_boundaries(): void
+    {
+        $validator = app(CareerSemanticValidator::class);
+
+        // Word boundary tests: "истек" should NOT match "стек", "совладелец" should NOT match "владе"
+        $this->assertFalse($validator->supports(CareerFactType::SKILL, 'Истек срок трудового договора.'));
+        $this->assertFalse($validator->supports(CareerFactType::SKILL, 'Совладелец компании ООО Ромашка.'));
+        $this->assertTrue($validator->supports(CareerFactType::SKILL, 'Стек: PHP, PostgreSQL.'));
+        $this->assertTrue($validator->supports(CareerFactType::SKILL, 'Владею технологиями Docker, Kubernetes.'));
+    }
+
+    public function test_legacy_schema_version_100_is_accepted_without_exception(): void
+    {
+        $sourceText = 'Опыт: Разрабатывал на Go.';
+        $providerOutput = [
+            'schema_version' => '1.0.0',
+            'facts' => [
+                [
+                    'fact_type' => 'skill',
+                    'assertion' => 'Разрабатывал на Go.',
+                    'source_excerpt' => 'Опыт: Разрабатывал на Go.',
+                    'confidence' => 0.9,
+                ],
+            ],
+        ];
+
+        $user = $this->user('legacy-version@example.test');
+        $this->app->instance(LlmProvider::class, new ExtractionTestFakeProvider([$providerOutput]));
+
+        $source = app(CareerExtractionService::class)->extract($user, $sourceText);
+
+        $this->assertSame(CareerSource::STATUS_COMPLETED, $source->extraction_status);
+        $fact = CareerFact::query()->where('owner_id', $user->id)->sole();
+        $this->assertSame('Разрабатывал на Go.', $fact->assertion_original);
+        $this->assertSame(0.9, (float) $fact->extraction_confidence);
+    }
+
+    public function test_vacancy_requirement_validator_strict_on_latin_terms(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+
+        $reflection = new \ReflectionClass($validator);
+        $method = $reflection->getMethod('labelSupportedByExcerpt');
+
+        // Latin terms must NOT match on prefixes (e.g. "red", "mys", "gra", "scr")
+        $this->assertFalse($method->invoke($validator, 'Redis', 'Требуется отличное знание Redux в проекте.'));
+        $this->assertFalse($method->invoke($validator, 'MySQL', 'Используем MyBatis для работы с данными.'));
+        $this->assertFalse($method->invoke($validator, 'Graph', 'Сборка проекта через Gradle.'));
+        $this->assertFalse($method->invoke($validator, 'Scrum', 'Написание shell script.'));
+        $this->assertFalse($method->invoke($validator, 'React', 'Хранение данных в Realm.'));
+
+        // Exact Latin match works
+        $this->assertTrue($method->invoke($validator, 'Redis', 'Требуется опыт работы с Redis.'));
+        $this->assertTrue($method->invoke($validator, 'PostgreSQL', 'Опыт с PostgreSQL от 2 лет.'));
+
+        // Russian morphology works
+        $this->assertTrue($method->invoke($validator, 'разработчик', 'Ищем ведущего разработчика в команду.'));
+        $this->assertTrue($method->invoke($validator, 'опыт', 'Требуется коммерческим опытом разработки.'));
+    }
+
+    public function test_negative_polarity_facts_are_excluded_from_matching(): void
+    {
+        $user = $this->user('fit-negative@example.test');
+        $profile = CareerProfile::query()->create(['owner_id' => $user->id]);
+
+        $fact = CareerFact::query()->create([
+            'owner_id' => $user->id,
+            'career_profile_id' => $profile->id,
+            'provenance_type' => CareerFact::PROVENANCE_MANUAL,
+            'fact_type' => 'skill',
+            'fact_value' => 'ClickHouse',
+            'polarity' => 'negative',
+            'assertion_original' => 'Не работал с ClickHouse.',
+            'assertion_approved' => 'Не работал с ClickHouse.',
+            'source_excerpt' => 'Не работал с ClickHouse.',
+            'extracted_by' => 'manual',
+            'status' => CareerFact::STATUS_CONFIRMED,
+        ]);
+
+        $scorer = app(FastFitScorer::class);
+        $reflection = new \ReflectionClass($scorer);
+        $loadMethod = $reflection->getMethod('loadUserCandidateFacts');
+
+        $loadedFacts = $loadMethod->invoke($scorer, $user);
+        $this->assertNotContains('Не работал с ClickHouse.', $loadedFacts);
     }
 
     private function user(string $email): User

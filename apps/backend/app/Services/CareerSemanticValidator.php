@@ -13,7 +13,7 @@ class CareerSemanticValidator
         return match ($type) {
             CareerFactType::SKILL => $this->matches($text, [
                 '/\b(?:familiar|knowledge|skills?|experience|proficient|proficiency|expert|used|worked|built(?:\s+with)?|tech\s+stack|stack|technolog(?:y|ies)|tools?|developed|developing|development|tested|testing|frameworks?|libraries|databases?)\b/u',
-                '/знаком|знаю|знани|навык|стек|технологи|инструмент|опыт|владе|умени|умею|использовал|работал|разработ|тестиров|баз\w*\s+данных|фреймворк|библиотек/u',
+                '/(?<=^|[\s,.:;!?"\'«»()\[\]])(?:знаком\w*|знаю|знани\w*|навык\w*|стек|технологи\w*|инструмент\w*|опыт\w*|владе(?:ю|ния?|нием)|умени\w*|умею|использовал\w*|работал\w*|разраб\w*|тестир\w*|баз\w*\s+данных|фреймворк\w*|библиотек\w*)(?=[\s,.:;!?"\'«»()\[\]]|$)/u',
             ]),
             CareerFactType::EXPERIENCE => ! $this->matches($text, [
                 '/\bfamiliar(?:ity)?\b/u', '/\bbasic knowledge\b/u', '/\baware(?:ness)?\b/u',
@@ -23,8 +23,6 @@ class CareerSemanticValidator
                 '/^(?:i\s+)?(?:led|managed|headed|mentored|supervised|coordinated|directed)(?!\s+by\b)\b/u',
                 '/\bi\s+(?:led|managed|headed|mentored|supervised|coordinated|directed)\b/u',
                 '/\b(?:leading|managing|mentoring|supervising|coordinating|directing)\s+(?:a\s+)?(?:team|people|group|function|process|department|colleagues|engineers|developers)\b/u',
-                '/\bserved\s+as\s+(?:a\s+)?(?:team|tech\s+)?lead\b/u',
-                '/\b(?:team|tech)\s+lead\b/u',
                 '/^(?:руководил|руководила|руководство|возглавил|возглавила|возглавлял|возглавляла|управлял|управляла|управление|менторил|менторила|менторство|наставничеств|координировал|координировала|координаци)\w*/u',
                 '/\bя\s+(?:руководил|руководила|возглавил|возглавила|управлял|управляла|менторил|менторила|координировал|координировала)\b/u',
             ]),

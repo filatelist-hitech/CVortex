@@ -308,6 +308,9 @@ class VacancyMatchingService
             ? $this->experienceEvidenceTerms($requirement)
             : $this->concreteLabelSubject($requirement->label);
         foreach ($facts as $fact) {
+            if ($fact->polarity === 'negative') {
+                continue;
+            }
             foreach ($this->candidateClauses($fact->approvedAssertion()) as $clause) {
                 $text = $this->normalize($clause);
                 if ($this->directSupportAllowed($requirement, $text)

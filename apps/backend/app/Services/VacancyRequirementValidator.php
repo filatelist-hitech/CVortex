@@ -126,13 +126,17 @@ class VacancyRequirementValidator
                     $matched = true;
                     break;
                 }
-                $len1 = mb_strlen($token);
-                $len2 = mb_strlen($exToken);
-                if ($len1 >= 4 && $len2 >= 4 && abs($len1 - $len2) <= 3) {
-                    $stemLen = min($len1, $len2) - 2;
-                    if ($stemLen >= 3 && mb_substr($token, 0, $stemLen) === mb_substr($exToken, 0, $stemLen)) {
-                        $matched = true;
-                        break;
+                $isCyrillicToken = (bool) preg_match('/\p{Cyrillic}/u', $token);
+                $isCyrillicExToken = (bool) preg_match('/\p{Cyrillic}/u', $exToken);
+                if ($isCyrillicToken && $isCyrillicExToken) {
+                    $len1 = mb_strlen($token);
+                    $len2 = mb_strlen($exToken);
+                    if ($len1 >= 4 && $len2 >= 4 && abs($len1 - $len2) <= 3) {
+                        $stemLen = min($len1, $len2) - (min($len1, $len2) <= 5 ? 1 : 2);
+                        if ($stemLen >= 3 && mb_substr($token, 0, $stemLen) === mb_substr($exToken, 0, $stemLen)) {
+                            $matched = true;
+                            break;
+                        }
                     }
                 }
             }

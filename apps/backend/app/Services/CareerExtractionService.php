@@ -197,6 +197,8 @@ class CareerExtractionService
                             'career_source_id' => $source->id,
                             'provenance_type' => CareerFact::PROVENANCE_EXTRACTION,
                             'fact_type' => $candidate['fact_type'],
+                            'fact_value' => $candidate['value'] ?? null,
+                            'polarity' => $candidate['polarity'] ?? 'positive',
                             'assertion_original' => $candidate['assertion'],
                             'source_excerpt' => $candidate['source_excerpt'],
                             'extracted_by' => $skill->id.'@'.$skill->version,
@@ -345,7 +347,7 @@ class CareerExtractionService
     }
 
     /** @param array<string, mixed> $output
-     * @return list<array{fact_type: string, assertion: string, source_excerpt: string, confidence: float, value?: ?string, polarity?: string, status?: string}>
+     * @return list<array{fact_type: string, assertion: string, source_excerpt: string, confidence: ?float, value?: ?string, polarity?: string, status?: string}>
      */
     private function validateOutput(array $output, string $sourceText): array
     {
@@ -362,7 +364,7 @@ class CareerExtractionService
         }
 
         $schemaVersion = $output['schema_version'] ?? null;
-        if ($schemaVersion !== null && $schemaVersion !== '1.1.0') {
+        if ($schemaVersion !== null && ! in_array($schemaVersion, ['1.0.0', '1.1.0'], true)) {
             throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
         }
 
@@ -468,7 +470,7 @@ class CareerExtractionService
                 'fact_type' => $candidate['fact_type'],
                 'assertion' => $assertion,
                 'source_excerpt' => $sourceExcerpt,
-                'confidence' => isset($candidate['confidence']) ? (float) $candidate['confidence'] : 1.0,
+                'confidence' => isset($candidate['confidence']) ? (float) $candidate['confidence'] : null,
                 'value' => $value,
                 'polarity' => $polarity,
                 'status' => 'pending',
