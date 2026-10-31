@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import "./application/editorial-split.css";
 import { api } from "./access-shell";
 import type { AiSettingsData, ConnectionTestResult, ModelOption } from "./ai-provider-settings";
 import type { VacancySummary } from "./vacancy-workspace";
@@ -284,6 +285,11 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
   const availableModels = currentConfig?.available_models ?? [];
   const activeModel = currentConfig?.default_model ?? (provider === "gemini" ? "gemini-2.0-flash" : "gpt-4o");
 
+  const urgentVacancies = vacancies.filter(
+    (v) => v.recommendation === "STRONGLY_APPLY" || v.recommendation === "APPLY"
+  );
+  const displayUrgent = urgentVacancies.length > 0 ? urgentVacancies : vacancies.slice(0, 2);
+
   return (
     <section className="today-workspace" aria-labelledby="today-heading">
       <div className="section-title">
@@ -323,6 +329,107 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
           </svg>
           <span>Загрузить резюме в Карьеру</span>
         </Link>
+      </div>
+
+      {/* Morning Paper (Утренний дайджест) — Inspo Editorial Layout */}
+      <div className="morning-paper-card" role="region" aria-label="Утренний дайджест">
+        <div className="morning-paper-header">
+          <div>
+            <h2 className="morning-paper-title font-display">The Morning Paper · Утренний дайджест</h2>
+            <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--cv-text-muted, #8590a4)" }}>
+              Ежедневная колонка: оперативные решения воронки и статус AI-анализа Truth-first
+            </p>
+          </div>
+          <div className="morning-paper-edition font-mono">
+            <span>РЕЖИМ TRUTH-FIRST · МОДЕЛЬ: {activeModel}</span>
+          </div>
+        </div>
+
+        <div className="morning-paper-columns">
+          {/* Column 1: Требует решения прямо сейчас */}
+          <div className="morning-paper-col">
+            <div className="morning-paper-col-header">
+              <span className="urgent-dot" aria-hidden="true" />
+              <span>Требует решения прямо сейчас</span>
+            </div>
+
+            {displayUrgent.length === 0 ? (
+              <div className="morning-paper-item">
+                <p style={{ margin: 0, fontSize: "13px", color: "var(--cv-text-muted, #8590a4)" }}>
+                  Нет горящих вакансий в воронке. Импортируйте описание или начните поиск по порталам.
+                </p>
+                <Link href="/vacancies/import" className="morning-paper-split-cta">
+                  + Импортировать вакансию →
+                </Link>
+              </div>
+            ) : (
+              displayUrgent.slice(0, 2).map((v) => (
+                <div key={`urgent-${v.id}`} className="morning-paper-item">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                    <div>
+                      <strong style={{ fontSize: "14px", color: "var(--cv-text-pure, #ffffff)" }}>
+                        ⚡ {v.title || "Вакансия без названия"}
+                      </strong>
+                      <div style={{ fontSize: "12px", color: "var(--cv-text-secondary, #9ba5b9)" }}>
+                        Организация: {v.company || "Не указана"}
+                      </div>
+                    </div>
+                    {v.recommendation && (
+                      <span className={`badge small ${v.recommendation.toLowerCase()}`} style={{ fontSize: "10.5px" }}>
+                        {v.recommendation === "STRONGLY_APPLY" ? "⭐ Высокий приоритет" : (recommendationLabels[v.recommendation] ?? v.recommendation)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "4px" }}>
+                    <span className="font-mono" style={{ fontSize: "11px", color: "var(--cv-text-muted, #8590a4)" }}>
+                      Статус: {v.analysis_status}
+                    </span>
+                    <Link
+                      href={`/vacancies/${v.id}#split`}
+                      className="morning-paper-split-cta"
+                      title="Открыть сплит-разбор вакансии"
+                    >
+                      Открыть сплит ↔
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Column 2: Свежий поиск & Дискавери */}
+          <div className="morning-paper-col">
+            <div className="morning-paper-col-header">
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--cv-accent-sky, #38bdf8)" }} aria-hidden="true" />
+              <span>Свежий поиск &amp; Дискавери</span>
+            </div>
+
+            <div className="morning-paper-item" style={{ height: "100%", justifyContent: "space-between" }}>
+              <div>
+                <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "var(--cv-text-primary, #e8ecf5)", lineHeight: 1.5 }}>
+                  Параллельный сканер карьерных порталов: <strong>Habr Career, FreeHire, HeadHunter, LinkedIn</strong>. Встроенный PostingGuard защищает от Prompt Injection &amp; SSRF.
+                </p>
+                <div className="font-mono" style={{ fontSize: "11px", color: "var(--cv-text-muted, #8590a4)" }}>
+                  Отслеживается: {vacancies.length} вакансий · Подтверждено: {confirmedFactsCount ?? 0} фактов
+                </div>
+              </div>
+
+              <Link
+                href="/vacancies/discover"
+                className="morning-paper-split-cta"
+                style={{
+                  borderColor: "rgba(56, 189, 248, 0.4)",
+                  background: "rgba(56, 189, 248, 0.08)",
+                  color: "var(--cv-accent-sky, #38bdf8)",
+                  marginTop: "8px",
+                }}
+              >
+                Входящие вакансии (Discover Inbox) →
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Smart Warning: 0 Confirmed Career Facts */}
@@ -532,8 +639,8 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
             ) : (
               <ul className="recent-vacancies-list">
                 {vacancies.slice(0, 4).map((v) => (
-                  <li key={v.id} className="recent-vacancy-item">
-                    <Link href={`/vacancies?opportunity=${v.id}&level=work#overview`} className="vacancy-quick-link">
+                  <li key={v.id} className="recent-vacancy-item" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Link href={`/vacancies?opportunity=${v.id}&level=work#overview`} className="vacancy-quick-link" style={{ flex: 1 }}>
                       <div className="item-main">
                         <strong className="item-title">{v.title || "Вакансия без названия"}</strong>
                         <span className="item-company">{v.company || "Компания не указана"}</span>
@@ -546,6 +653,13 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
                         )}
                         <span className="status-label">{v.analysis_status}</span>
                       </div>
+                    </Link>
+                    <Link
+                      href={`/vacancies/${v.id}#split`}
+                      className="split-jump-pill"
+                      title="Открыть вакансию в сплит-редакторе"
+                    >
+                      ↔ Сплит
                     </Link>
                   </li>
                 ))}

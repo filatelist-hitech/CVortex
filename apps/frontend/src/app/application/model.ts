@@ -1,7 +1,7 @@
 import type { VacancySummary } from "../vacancy-workspace";
 
-export const sections = ["overview", "requirements", "materials", "employer", "history"] as const;
-export const sectionLabels = ["Обзор", "Требования и мой опыт", "Материалы", "Работодатель", "История"];
+export const sections = ["split", "overview", "requirements", "materials", "employer", "history"] as const;
+export const sectionLabels = ["Сплит-редактор ↔", "Обзор", "Требования и мой опыт", "Материалы", "Работодатель", "История"];
 export const scenarios = ["normal", "loading", "empty", "failed", "stale", "blocked", "pending", "approval"] as const;
 export const scenarioLabels = ["Обычное", "Загрузка", "Нет анализа", "Ошибка анализа", "Данные устарели", "Нет подтверждений", "Факт не подтверждён", "Правка принята, текст не одобрен"];
 export type Section = typeof sections[number];
