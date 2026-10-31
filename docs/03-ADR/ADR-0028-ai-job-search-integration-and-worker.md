@@ -4,7 +4,7 @@ status: accepted
 decision_nature: DERIVED_ARCHITECTURAL_DECISION
 owner: project
 created: 2026-10-26
-updated: 2026-10-26
+updated: 2026-10-31
 tags: [architecture, worker, scrapers, security, latex, drafting, interview]
 related: [ADR-0001, ADR-0003, ADR-0005, ADR-0009, ADR-0010, ADR-0016, ADR-0017, ADR-0018]
 ---
@@ -34,7 +34,17 @@ Add an auxiliary headless worker service to `compose.yaml` encapsulating:
 - **Python 3.11**: for deterministic page decoding, security guard validation (`posting_guard.py`), and ATS parsing checks (`pypdf`).
 - **Minimal TeX Environment**: LuaLaTeX and XeLaTeX toolchains for premium typesetting of CVs and cover letters.
 
-The worker is completely decoupled from web traffic and communicates exclusively through **Laravel Horizon & Redis queues** and command dispatchers.
+The worker is decoupled from external public web traffic, attached to internal networks, and communicates through a dual-mode strategy:
+- **Interactive Search (Phase 2)**: Direct inter-service HTTP POST (`POST /scrapers/search` on `http://worker:3001` in network `internal`) bounded by a dedicated rate limiter (`throttle:3,1`) and HTTP client timeouts (30s) to deliver instant responsive feedback to `/vacancies/discover`.
+- **Asynchronous Batch Tasks & Document Pipelines (Phase 3+)**: Scheduled periodic sweeps, full-text batch scrapers, and LaTeX compilation jobs dispatch asynchronously through **Laravel Horizon & Redis queues**.
+
+#### Egress Network & SSRF Security Baseline
+The worker container is connected to `internal` (communicating with `backend`) and `egress` (for external job portal APIs). To prevent SSRF (Server-Side Request Forgery) attacks via untrusted third-party job responses or malicious redirect targets:
+1. All scraper HTTP requests and candidate job source URLs are strictly verified through `url-guard.ts`.
+2. Protocol is constrained strictly to `http:` and `https:`. Sensitive non-standard ports (e.g. database, cache, or management ports) are blocked.
+3. Private and link-local IP blocks are rejected (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `0.0.0.0/8`, `::1`, `fe80::/10`).
+4. Cloud provider instance metadata endpoints (`169.254.169.254`, `169.254.0.0/16`) are blocked unconditionally.
+5. Internal Docker service hostnames (`internal`, `postgres`, `redis`, `backend`, `worker`, `nginx`, etc.) and internal domains (`.local`, `.internal`, `.lan`, `.test`) are denied. Untrusted URLs automatically fallback to trusted portal origin canonical links.
 
 ```mermaid
 flowchart TD
@@ -116,3 +126,15 @@ Implementation is executed in four sequential phases:
 ### Negative / Trade-offs
 - Docker Compose resource footprint increases due to the auxiliary worker image (Python, Bun, TeX packages).
 - Requires maintenance of portal scraping adapters against third-party UI/API changes.
+
+## Amendment — 2026-10-31
+
+### Inter-Service Transport & Rate Limiting (Phase 2 Alignment)
+1. **Interactive Search Transport**: To satisfy user latency expectations on the `/vacancies/discover` screen without blocking users on background queue poll loops, `JobDiscoveryService` uses a direct synchronous HTTP POST call to `http://worker:3001/scrapers/search` (internal network).
+2. **Worker Pool Protection**:
+   - `JobDiscoveryService` enforces a strict 30-second timeout on the HTTP client call.
+   - The route `POST /api/v1/discovery/search` is rate-limited via `throttle:3,1` (maximum 3 searches per minute per user), bounding external portal requests to at most 12 outbound requests per minute.
+   - Long-running scheduled sweeps and full-corpus batch ingests remain queued on Laravel Horizon.
+3. **Egress SSRF Guard**:
+   - Every candidate vacancy `source_url` and scraper outbound link is validated by `apps/worker/scrapers/url-guard.ts`.
+   - Private subnets (RFC 1918), loopback, cloud metadata services (`169.254.169.254`), and internal service hostnames (`backend`, `worker`, `postgres`, `redis`) are rejected at the worker boundary.

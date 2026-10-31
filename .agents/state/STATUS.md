@@ -1,5 +1,56 @@
 # CVortex — проверенное текущее состояние
 
+## Discovery & Posting Guard Security Hardening and Code Review Remediation — 2026-10-31
+
+Mode: IMPLEMENT → REVIEW; branch: `fix/discovery-code-review-remediation`; target: `stage`. Independent reviewer subagent: APPROVED.
+
+### Completed Remediation Outcomes
+1. **[HIGH-01] Изоляция SQLite `:memory:` тестового окружения backend (`apps/backend/phpunit.xml`)**:
+   - Внедрены теги `<server ... force="true"/>` для переменных `DB_CONNECTION`, `DB_DATABASE`, `DB_URL`, `CACHE_STORE`, `QUEUE_CONNECTION`, `SESSION_DRIVER`, `MAIL_MAILER`.
+   - Тесты полностью изолированы от внешних env-переменных Docker/хоста (`DB_CONNECTION=pgsql`). Все 8 тестов `DiscoveryApiTest` и 2 теста `VacancyIngestionPostingGuardTest` проходят стабильно без сбоев RLS `RefreshDatabase` / DROP TABLE privilege.
+   - Полный набор Backend тестов: 480 passed, 13 skipped (Postgres-only live boundary), 3779 assertions.
+
+2. **[HIGH-02] Архитектурное выравнивание ADR-0028 (`docs/03-ADR/ADR-0028-ai-job-search-integration-and-worker.md`)**:
+   - Оформлен блок `## Amendment — 2026-10-31` и дополнен Section 1, зафиксировавший dual-mode транспорт:
+     - Синхронный HTTP POST (`/scrapers/search`) на внутренней Docker сети с `throttle:3,1` и 30с таймаутом для мгновенного отклика UI `/vacancies/discover` (Фаза 2).
+     - Асинхронные очереди Laravel Horizon & Redis для пакетных фоновых задач и LaTeX генерации (Фаза 3+).
+   - Задокументирован Egress SSRF Security Baseline.
+
+3. **[HIGH-03 / MEDIUM-03] Санитизация `title`, `company`, `location`, `salary_text` и разделение `cleanDescription` (`JobDiscoveryService.php`)**:
+   - Входные поля вакансий очищаются через `PostingGuardService->inspect()` от невидимых символов (`\u{200B}`, `\u{200C}`), Bidi-тегов и скрытых HTML-блоков перед записью в `discovered_vacancies`.
+   - Поле `description` инспектируется изолированно без склеивания с префиксом заголовка, устраняя дублирование текста в базе данных.
+   - Добавлены строгие ассерты санитизации и отсутствия префикса в `DiscoveryApiTest`.
+
+4. **[MEDIUM-01] SSRF Guard в воркере (`apps/worker/scrapers/url-guard.ts`)**:
+   - Разработан модуль защиты от SSRF: блокируются адреса облачных метаданных (`169.254.169.254`), RFC 1918 приватные подсети, loopback (`127.0.0.0/8`, `::1`), Docker hostnames (`postgres`, `redis`, `backend` и др.) и нестандартные порты.
+   - Интегрирован в `freehire.ts`, `linkedin.ts`, `server.ts` и `runner.ts`. Небезопасные ссылки замещаются безопасным каноническим URL портала.
+   - Написаны тесты `url-guard.test.ts` (6/6 PASS).
+
+5. **[MEDIUM-02] Выделенный Rate Limiting на `POST /api/v1/discovery/search` (`apps/backend/routes/api.php`)**:
+   - Навешан middleware `throttle:3,1` (не более 3 запросов поиска в минуту на пользователя), предотвращающий истощение пула PHP-FPM воркеров и блокировку IP внешними порталами.
+   - Добавлен тест `test_search_endpoint_is_throttled_to_three_requests_per_minute` (HTTP 429 на 4-й запрос).
+
+6. **[MEDIUM-04] Отмена устаревших запросов через AbortController в `TodayWorkspace` (`today-workspace.tsx`)**:
+   - Добавлены `activeAbortControllerRef` и `actionAbortControllerRef` для отмены висячих сетевых вызовов при быстрой смене вкладок или размонтировании компонента. `AbortError` штатно обрабатывается.
+
+7. **[LOW-02] Удаление мертвого кода в `JobDiscoveryService.php`**:
+   - Удален неиспользуемый arm `'MALICIOUS'` из `match ($guardResult->threatLevel)`.
+
+8. **[LOW-03] Пиннинг версии Bun в `apps/worker/Dockerfile`**:
+   - Зафиксирован `ARG BUN_VERSION=1.4.4` и установка `bash -s -- bun-v${BUN_VERSION}`.
+
+9. **Верификация**:
+   - Backend PHPUnit: 480/480 тестов PASS (13 skipped Postgres live suite, 3779 assertions).
+   - Backend Pint: 0 style issues across 248 files (`[PASS]`).
+   - Backend PHPStan: 0 errors across 155 files (`[OK] No errors`).
+   - Frontend Vitest Suite: 183/183 тестов PASS (17 файлов, 0 errors).
+   - Frontend TypeScript & ESLint: 0 errors / 0 warnings.
+   - Worker SSRF Tests: 6/6 tests PASS (33 assertions).
+   - Python unit tests & QA Evidence: 20/20 PASS.
+   - Независимый аудит (Subagent Reviewer): **APPROVED**.
+
+---
+
 ## AI Job Search Scrapers & Discover Inbox: Code Review Remediation (PR #63) — 2026-10-26
 
 Mode: IMPLEMENT → REVIEW; branch: `feature/ai-job-search-scrapers-and-discover-inbox`; target: `stage`. One agent / sequential execution.

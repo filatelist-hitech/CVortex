@@ -74,8 +74,8 @@ class JobDiscoveryService
                     continue;
                 }
 
-                $title = (string) ($job['title'] ?? 'Без названия');
-                $company = (string) ($job['company'] ?? 'Не указана');
+                $rawTitle = (string) ($job['title'] ?? 'Без названия');
+                $rawCompany = (string) ($job['company'] ?? 'Не указана');
                 $location = isset($job['location']) ? (string) $job['location'] : null;
                 $salaryText = isset($job['salary_text']) ? (string) $job['salary_text'] : null;
                 $description = isset($job['description']) ? (string) $job['description'] : null;
@@ -83,23 +83,40 @@ class JobDiscoveryService
                 $portal = (string) ($job['portal'] ?? 'unknown');
                 $externalId = isset($job['external_id']) ? (string) $job['external_id'] : null;
 
-                // Inspect content with PostingGuard
-                $rawTextToInspect = trim($title."\n".($description ?? $snippet ?? ''));
+                // Inspect each content part with PostingGuard to sanitize invisible chars & HTML tags
+                $titleGuard = $this->postingGuard->inspect($rawTitle);
+                $companyGuard = $this->postingGuard->inspect($rawCompany);
+                $title = trim($titleGuard->cleanText);
+                if ($title === '') {
+                    $title = 'Без названия';
+                }
+                $company = trim($companyGuard->cleanText);
+                if ($company === '') {
+                    $company = 'Не указана';
+                }
+
+                $cleanLocation = $location !== null ? trim($this->postingGuard->inspect($location)->cleanText) : null;
+                $cleanSalaryText = $salaryText !== null ? trim($this->postingGuard->inspect($salaryText)->cleanText) : null;
+
+                $descGuard = $description !== null ? $this->postingGuard->inspect($description) : null;
+                $cleanDescription = $descGuard?->cleanText;
+
+                $snippetGuard = $snippet !== null ? $this->postingGuard->inspect($snippet) : null;
+                $cleanSnippet = $snippetGuard?->cleanText;
+
+                // Overall security threat analysis combining all posting surfaces
+                $rawTextToInspect = trim($rawTitle."\n".($description ?? $snippet ?? '')."\n".$rawCompany);
                 $guardResult = $this->postingGuard->inspect($rawTextToInspect);
 
                 $securityLevel = match ($guardResult->threatLevel) {
-                    PostingGuardResult::THREAT_HIGH_RISK, 'MALICIOUS' => DiscoveredVacancy::SECURITY_MALICIOUS,
+                    PostingGuardResult::THREAT_HIGH_RISK => DiscoveredVacancy::SECURITY_MALICIOUS,
                     PostingGuardResult::THREAT_SUSPICIOUS => DiscoveredVacancy::SECURITY_SUSPICIOUS,
                     default => DiscoveredVacancy::SECURITY_CLEAN,
                 };
 
                 // Fast Fit Scoring using sanitized clean text
-                $fitResult = $this->fitScorer->score($user, $title, $guardResult->cleanText);
-
-                $cleanDescription = $description !== null ? $guardResult->cleanText : null;
-                $cleanSnippet = $description === null && $snippet !== null
-                    ? $guardResult->cleanText
-                    : ($snippet !== null ? $this->postingGuard->inspect($snippet)->cleanText : null);
+                $fitText = $cleanDescription ?? $cleanSnippet ?? $title;
+                $fitResult = $this->fitScorer->score($user, $title, $fitText);
 
                 $publishedAt = null;
                 if (! empty($job['published_at'])) {
@@ -124,8 +141,8 @@ class JobDiscoveryService
                         'external_id' => $externalId,
                         'title' => $title,
                         'company' => $company,
-                        'location' => $location,
-                        'salary_text' => $salaryText,
+                        'location' => $cleanLocation,
+                        'salary_text' => $cleanSalaryText,
                         'snippet' => $cleanSnippet,
                         'description' => $cleanDescription,
                         'fit_score' => $fitResult['score'],
