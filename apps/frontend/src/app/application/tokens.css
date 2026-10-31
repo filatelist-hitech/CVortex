@@ -1,6 +1,7 @@
 /* Inspo Editorial Dark Palette — CVortex tokens.css (DTCG 2025.10 Compatible) */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Inter+Tight:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
+:root,
 .application-shell {
   /* Surfaces & Canvas: Warm Graphite Void */
   --cv-surface-canvas: #0A0B0E;              /* Глубокий тёплый ночной фон */

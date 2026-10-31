@@ -14,6 +14,41 @@ export interface MarginaliaFact {
   provenanceType?: string;
 }
 
+export function TruthStamp({
+  factId,
+  status = "CONFIRMED",
+  className = "",
+}: {
+  factId: string;
+  status?: "CONFIRMED" | "PENDING" | "REJECTED" | string;
+  className?: string;
+}) {
+  const isConfirmed = status === "CONFIRMED";
+  const isPending = status === "PENDING" || status === "PENDING_REVIEW";
+  const displayId = factId.replace(/^cf-|^fact-/, "");
+
+  return (
+    <span
+      className={`truth-stamp font-mono ${
+        isConfirmed ? "truth-stamp-verified" : isPending ? "truth-stamp-pending" : "truth-stamp-neutral"
+      } ${className}`.trim()}
+      data-fact-id={factId}
+      title={`Truth Stamp: ${status} #${displayId}`}
+    >
+      <span className="truth-stamp-prefix" aria-hidden="true">
+        {isConfirmed ? "✓" : isPending ? "⏳" : "·"}
+      </span>
+      <span className="truth-stamp-label">
+        {isConfirmed
+          ? `[ VERIFIED FACT · #${displayId} ]`
+          : isPending
+          ? `[ PENDING REVIEW · #${displayId} ]`
+          : `[ FACT · #${displayId} ]`}
+      </span>
+    </span>
+  );
+}
+
 export function MarginaliaCard({
   fact,
   isHighlighted = false,
@@ -58,6 +93,7 @@ export function MarginaliaCard({
           >
             {isConfirmed ? "[Подтверждено]" : isPending ? "[На проверке]" : `[${fact.status}]`}
           </span>
+          <TruthStamp factId={fact.id} status={fact.status} />
         </div>
         {fact.company && (
           <div className="marginalia-context font-mono">
@@ -105,12 +141,12 @@ export function MarginaliaColumn({
         <span className="marginalia-count font-mono">{facts.length}</span>
       </div>
       <div className="marginalia-cards-list">
-        {facts.map((fact) => {
+        {facts.map((fact, index) => {
           const isHighlighted =
             activeFactId === fact.id || (Boolean(activeReqId) && fact.linkedReqId === activeReqId);
           return (
             <MarginaliaCard
-              key={fact.id}
+              key={`${fact.id}-${fact.linkedReqId ?? index}`}
               fact={fact}
               isHighlighted={isHighlighted}
               onHover={(active) => onHoverFact?.(active ? fact.id : null)}
