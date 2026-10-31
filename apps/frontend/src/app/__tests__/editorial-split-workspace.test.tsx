@@ -175,26 +175,36 @@ describe("EditorialSplitWorkspace", () => {
     expect(screen.getByText(/Подготовка: Principal Systems Architect/)).toBeInTheDocument();
   });
 
-  it("handles mouse dragging on divider to resize editorial split columns", async () => {
+  it("handles mouse dragging and keyboard arrows on divider to resize columns within 25-75% limits", async () => {
     renderEditorialWorkspace();
 
     const divider = await screen.findByRole("separator", { name: "Изменить ширину колонок редактора" });
     expect(divider).toBeInTheDocument();
     expect(divider).toHaveAttribute("aria-valuenow", "45");
+    expect(divider).toHaveAttribute("aria-valuemin", "25");
+    expect(divider).toHaveAttribute("aria-valuemax", "75");
 
     // Initiate drag
     fireEvent.mouseDown(divider, { clientX: 500 });
 
     // Drag to the right
-    window.dispatchEvent(new MouseEvent("mousemove", { clientX: 700 }));
-    window.dispatchEvent(new MouseEvent("mouseup"));
+    fireEvent(window, new MouseEvent("mousemove", { clientX: 700 }));
+    fireEvent(window, new MouseEvent("mouseup"));
 
     // Verify ratio updated
     const updatedValue = Number(divider.getAttribute("aria-valuenow"));
     expect(updatedValue).toBeGreaterThanOrEqual(45);
+
+    // Keyboard resize with arrow keys
+    fireEvent.keyDown(divider, { key: "ArrowLeft" });
+    const afterLeft = Number(divider.getAttribute("aria-valuenow"));
+    expect(afterLeft).toBe(updatedValue - 5);
+
+    fireEvent.keyDown(divider, { key: "ArrowRight" });
+    expect(Number(divider.getAttribute("aria-valuenow"))).toBe(updatedValue);
   });
 
-  it("triggers hover link highlighting on requirement cards", async () => {
+  it("triggers hover link highlighting on requirement cards and applies highlight classes", async () => {
     renderEditorialWorkspace();
 
     const reqTitle = await screen.findByText(/Распределённая архитектура/);
@@ -203,9 +213,10 @@ describe("EditorialSplitWorkspace", () => {
 
     if (parentReqCard) {
       fireEvent.mouseEnter(parentReqCard);
-      expect(parentReqCard).toHaveClass("editorial-req-card");
+      expect(parentReqCard).toHaveClass("is-linked-highlight");
 
       fireEvent.mouseLeave(parentReqCard);
+      expect(parentReqCard).not.toHaveClass("is-linked-highlight");
     }
   });
 });

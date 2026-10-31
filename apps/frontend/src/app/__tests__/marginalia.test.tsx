@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MarginaliaCard, MarginaliaColumn, type MarginaliaFact } from "../application/marginalia";
+import { MarginaliaCard, MarginaliaColumn, TruthStamp, type MarginaliaFact } from "../application/marginalia";
 
 afterEach(() => {
   cleanup();
@@ -130,5 +130,21 @@ describe("MarginaliaColumn", () => {
 
     const pendingCard = screen.getByRole("note", { name: /Маргиналия: факт fact-88/ });
     expect(pendingCard).toHaveClass("is-highlighted");
+  });
+});
+
+describe("TruthStamp", () => {
+  it("renders verified truth stamp with verified styles and fact ID", () => {
+    render(<TruthStamp factId="fact-42" status="CONFIRMED" />);
+    const stamp = screen.getByText(/\[ VERIFIED FACT · #42 \]/);
+    expect(stamp).toBeInTheDocument();
+    expect(stamp.parentElement).toHaveClass("truth-stamp-verified");
+  });
+
+  it("renders pending review truth stamp with pending styles", () => {
+    render(<TruthStamp factId="cf-99" status="PENDING" />);
+    const stamp = screen.getByText(/\[ PENDING REVIEW · #99 \]/);
+    expect(stamp).toBeInTheDocument();
+    expect(stamp.parentElement).toHaveClass("truth-stamp-pending");
   });
 });

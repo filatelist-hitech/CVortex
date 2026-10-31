@@ -13,33 +13,7 @@ export function EditorialSplitWorkspace() {
   const w = useWorkspace();
   const [splitRatio, setSplitRatio] = useState(45); // 45% / 55%
   const [isResizing, setIsResizing] = useState(false);
-  const linker = useProvenanceLinker(w.detail);
   const separatorId = useId();
-
-  // Resize handler
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-    const startX = e.clientX;
-    const startRatio = splitRatio;
-
-    function handleMouseMove(moveEvent: MouseEvent) {
-      const containerWidth = window.innerWidth;
-      const deltaX = moveEvent.clientX - startX;
-      const deltaRatio = (deltaX / containerWidth) * 100;
-      const nextRatio = Math.min(65, Math.max(30, startRatio + deltaRatio));
-      setSplitRatio(Math.round(nextRatio));
-    }
-
-    function handleMouseUp() {
-      setIsResizing(false);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    }
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-  }, [splitRatio]);
 
   // Compute match score percentage
   const matchPercentage = useMemo(() => {
@@ -99,20 +73,54 @@ export function EditorialSplitWorkspace() {
     if (!w.detail?.analysis?.dimensions) return [];
 
     const facts: MarginaliaFact[] = [];
+    const seen = new Set<string>();
     w.detail.analysis.dimensions.forEach((dim) => {
       dim.candidate_evidence?.forEach((ev) => {
-        facts.push({
-          id: ev.id,
-          statement: ev.statement,
-          status: ev.status,
-          linkedReqId: dim.vacancy_requirement_ids?.[0],
-          provenanceType: ev.provenance_type,
-          company: w.item?.company ?? undefined,
-        });
+        const reqId = dim.vacancy_requirement_ids?.[0];
+        const key = `${ev.id}-${reqId ?? ""}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          facts.push({
+            id: ev.id,
+            statement: ev.statement,
+            status: ev.status,
+            linkedReqId: reqId,
+            provenanceType: ev.provenance_type,
+            company: w.item?.company ?? undefined,
+          });
+        }
       });
     });
     return facts;
   }, [w.demo, w.detail, w.item?.company]);
+
+  const linker = useProvenanceLinker(w.detail, marginaliaFacts);
+
+  // Resize handler
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startRatio = splitRatio;
+    const container = e.currentTarget.parentElement;
+    const containerWidth = container ? container.clientWidth : window.innerWidth;
+
+    function handleMouseMove(moveEvent: MouseEvent) {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaRatio = (deltaX / (containerWidth || window.innerWidth)) * 100;
+      const nextRatio = Math.min(75, Math.max(25, startRatio + deltaRatio));
+      setSplitRatio(Math.round(nextRatio));
+    }
+
+    function handleMouseUp() {
+      setIsResizing(false);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  }, [splitRatio]);
 
   return (
     <div
@@ -290,17 +298,17 @@ export function EditorialSplitWorkspace() {
           id={separatorId}
           role="separator"
           aria-valuenow={splitRatio}
-          aria-valuemin={30}
-          aria-valuemax={70}
+          aria-valuemin={25}
+          aria-valuemax={75}
           aria-label="Изменить ширину колонок редактора"
           tabIndex={0}
           className="editorial-split-divider"
           onMouseDown={handleMouseDown}
           onKeyDown={(e) => {
             if (e.key === "ArrowLeft") {
-              setSplitRatio((r) => Math.max(30, r - 5));
+              setSplitRatio((r) => Math.max(25, r - 5));
             } else if (e.key === "ArrowRight") {
-              setSplitRatio((r) => Math.min(70, r + 5));
+              setSplitRatio((r) => Math.min(75, r + 5));
             }
           }}
         >

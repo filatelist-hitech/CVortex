@@ -197,4 +197,29 @@ describe("useProvenanceLinker", () => {
     expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "nearest" });
     expect(target.focus).toHaveBeenCalledWith({ preventScroll: true });
   });
+
+  it("links requirements and facts bidirectionally in demo mode using fallbackFacts", () => {
+    const demoFacts = [
+      {
+        id: "fact-demo-1",
+        statement: "Led Postgres optimization",
+        status: "CONFIRMED",
+        linkedReqId: "req-demo-1",
+      },
+    ];
+
+    const { result } = renderHook(() => useProvenanceLinker(null, demoFacts));
+
+    expect(result.current.getLinkedFactIds("req-demo-1")).toEqual(["fact-demo-1"]);
+    expect(result.current.getLinkedReqIdsForFact("fact-demo-1")).toEqual(["req-demo-1"]);
+
+    act(() => {
+      result.current.hoverFact("fact-demo-1");
+    });
+
+    expect(result.current.activeLink.factId).toBe("fact-demo-1");
+    expect(result.current.activeLink.requirementId).toBe("req-demo-1");
+    expect(result.current.isRequirementHighlighted("req-demo-1")).toBe(true);
+    expect(result.current.isFactHighlighted("fact-demo-1")).toBe(true);
+  });
 });

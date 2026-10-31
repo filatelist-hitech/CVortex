@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { VacancyDetail } from "../vacancy-workspace";
+import type { MarginaliaFact } from "./marginalia";
 
 export type ProvenanceLinkType = "requirement" | "provenance" | "fact";
 
@@ -12,7 +13,10 @@ export interface ActiveProvenanceLink {
   sourceType: ProvenanceLinkType | null;
 }
 
-export function useProvenanceLinker(detail?: VacancyDetail | null) {
+export function useProvenanceLinker(
+  detail?: VacancyDetail | null,
+  fallbackFacts?: MarginaliaFact[]
+) {
   const [activeLink, setActiveLink] = useState<ActiveProvenanceLink>({
     requirementId: null,
     provenanceId: null,
@@ -20,84 +24,147 @@ export function useProvenanceLinker(detail?: VacancyDetail | null) {
     sourceType: null,
   });
 
-  // Resolve which requirement matches which fact from detail dimensions
-  const getLinkedFactIds = useCallback((reqId: string): string[] => {
-    if (!detail?.analysis?.dimensions) return [];
-    const matchedDim = detail.analysis.dimensions.find(d =>
-      d.vacancy_requirement_ids?.includes(reqId)
-    );
-    if (!matchedDim?.candidate_evidence) return [];
-    return matchedDim.candidate_evidence.map(ev => ev.id);
-  }, [detail]);
+  // Resolve which requirement matches which fact from detail dimensions and fallback/demo facts
+  const getLinkedFactIds = useCallback(
+    (reqId: string): string[] => {
+      const factIds = new Set<string>();
 
-  const getLinkedReqIdsForFact = useCallback((factId: string): string[] => {
-    if (!detail?.analysis?.dimensions) return [];
-    const matchedDim = detail.analysis.dimensions.find(d =>
-      d.candidate_evidence?.some(ev => ev.id === factId)
-    );
-    return matchedDim?.vacancy_requirement_ids ?? [];
-  }, [detail]);
+      if (detail?.analysis?.dimensions) {
+        detail.analysis.dimensions.forEach((dim) => {
+          if (dim.vacancy_requirement_ids?.includes(reqId)) {
+            dim.candidate_evidence?.forEach((ev) => factIds.add(ev.id));
+          }
+        });
+      }
 
-  const hoverRequirement = useCallback((reqId: string | null) => {
-    if (!reqId) {
-      setActiveLink({ requirementId: null, provenanceId: null, factId: null, sourceType: null });
-      return;
-    }
-    const linkedFacts = getLinkedFactIds(reqId);
-    setActiveLink({
-      requirementId: reqId,
-      provenanceId: reqId,
-      factId: linkedFacts[0] ?? null,
-      sourceType: "requirement",
-    });
-  }, [getLinkedFactIds]);
+      if (fallbackFacts?.length) {
+        fallbackFacts.forEach((f) => {
+          if (f.linkedReqId === reqId) {
+            factIds.add(f.id);
+          }
+        });
+      }
 
-  const hoverProvenance = useCallback((provenanceId: string | null) => {
-    if (!provenanceId) {
-      setActiveLink({ requirementId: null, provenanceId: null, factId: null, sourceType: null });
-      return;
-    }
-    setActiveLink({
-      requirementId: provenanceId,
-      provenanceId,
-      factId: getLinkedFactIds(provenanceId)[0] ?? null,
-      sourceType: "provenance",
-    });
-  }, [getLinkedFactIds]);
+      return Array.from(factIds);
+    },
+    [detail, fallbackFacts]
+  );
 
-  const hoverFact = useCallback((factId: string | null) => {
-    if (!factId) {
-      setActiveLink({ requirementId: null, provenanceId: null, factId: null, sourceType: null });
-      return;
-    }
-    const linkedReqs = getLinkedReqIdsForFact(factId);
-    setActiveLink({
-      requirementId: linkedReqs[0] ?? null,
-      provenanceId: linkedReqs[0] ?? null,
-      factId,
-      sourceType: "fact",
-    });
-  }, [getLinkedReqIdsForFact]);
+  const getLinkedReqIdsForFact = useCallback(
+    (factId: string): string[] => {
+      const reqIds = new Set<string>();
 
-  const isRequirementHighlighted = useCallback((reqId: string): boolean => {
-    if (!activeLink.requirementId) return false;
-    return activeLink.requirementId === reqId;
-  }, [activeLink.requirementId]);
+      if (detail?.analysis?.dimensions) {
+        detail.analysis.dimensions.forEach((dim) => {
+          if (dim.candidate_evidence?.some((ev) => ev.id === factId)) {
+            dim.vacancy_requirement_ids?.forEach((rid) => reqIds.add(rid));
+          }
+        });
+      }
 
-  const isProvenanceHighlighted = useCallback((provId: string): boolean => {
-    if (!activeLink.provenanceId) return false;
-    return activeLink.provenanceId === provId;
-  }, [activeLink.provenanceId]);
+      if (fallbackFacts?.length) {
+        fallbackFacts.forEach((f) => {
+          if (f.id === factId && f.linkedReqId) {
+            reqIds.add(f.linkedReqId);
+          }
+        });
+      }
 
-  const isFactHighlighted = useCallback((factId: string): boolean => {
-    if (!activeLink.factId && !activeLink.requirementId) return false;
-    if (activeLink.factId === factId) return true;
-    if (activeLink.requirementId) {
-      const linked = getLinkedFactIds(activeLink.requirementId);
-      return linked.includes(factId);
-    }
-    return false;
-  }, [activeLink.factId, activeLink.requirementId, getLinkedFactIds]);
+      return Array.from(reqIds);
+    },
+    [detail, fallbackFacts]
+  );
+
+  const hoverRequirement = useCallback(
+    (reqId: string | null) => {
+      if (!reqId) {
+        setActiveLink({ requirementId: null, provenanceId: null, factId: null, sourceType: null });
+        return;
+      }
+      const linkedFacts = getLinkedFactIds(reqId);
+      setActiveLink({
+        requirementId: reqId,
+        provenanceId: reqId,
+        factId: linkedFacts[0] ?? null,
+        sourceType: "requirement",
+      });
+    },
+    [getLinkedFactIds]
+  );
+
+  const hoverProvenance = useCallback(
+    (provenanceId: string | null) => {
+      if (!provenanceId) {
+        setActiveLink({ requirementId: null, provenanceId: null, factId: null, sourceType: null });
+        return;
+      }
+      const linkedFacts = getLinkedFactIds(provenanceId);
+      setActiveLink({
+        requirementId: provenanceId,
+        provenanceId,
+        factId: linkedFacts[0] ?? null,
+        sourceType: "provenance",
+      });
+    },
+    [getLinkedFactIds]
+  );
+
+  const hoverFact = useCallback(
+    (factId: string | null) => {
+      if (!factId) {
+        setActiveLink({ requirementId: null, provenanceId: null, factId: null, sourceType: null });
+        return;
+      }
+      const linkedReqs = getLinkedReqIdsForFact(factId);
+      setActiveLink({
+        requirementId: linkedReqs[0] ?? null,
+        provenanceId: linkedReqs[0] ?? null,
+        factId,
+        sourceType: "fact",
+      });
+    },
+    [getLinkedReqIdsForFact]
+  );
+
+  const isRequirementHighlighted = useCallback(
+    (reqId: string): boolean => {
+      if (!activeLink.requirementId && !activeLink.factId) return false;
+      if (activeLink.requirementId === reqId) return true;
+      if (activeLink.factId) {
+        const linkedReqs = getLinkedReqIdsForFact(activeLink.factId);
+        return linkedReqs.includes(reqId);
+      }
+      return false;
+    },
+    [activeLink.requirementId, activeLink.factId, getLinkedReqIdsForFact]
+  );
+
+  const isProvenanceHighlighted = useCallback(
+    (provId: string): boolean => {
+      if (!activeLink.provenanceId && !activeLink.requirementId && !activeLink.factId) return false;
+      if (activeLink.provenanceId === provId || activeLink.requirementId === provId) return true;
+      if (activeLink.factId) {
+        const linkedReqs = getLinkedReqIdsForFact(activeLink.factId);
+        return linkedReqs.includes(provId);
+      }
+      return false;
+    },
+    [activeLink.provenanceId, activeLink.requirementId, activeLink.factId, getLinkedReqIdsForFact]
+  );
+
+  const isFactHighlighted = useCallback(
+    (factId: string): boolean => {
+      if (!activeLink.factId && !activeLink.requirementId && !activeLink.provenanceId) return false;
+      if (activeLink.factId === factId) return true;
+      const targetReq = activeLink.requirementId || activeLink.provenanceId;
+      if (targetReq) {
+        const linked = getLinkedFactIds(targetReq);
+        return linked.includes(factId);
+      }
+      return false;
+    },
+    [activeLink.factId, activeLink.requirementId, activeLink.provenanceId, getLinkedFactIds]
+  );
 
   const scrollToLinked = useCallback((id: string, type: ProvenanceLinkType) => {
     if (typeof document === "undefined") return;
@@ -117,8 +184,10 @@ export function useProvenanceLinker(detail?: VacancyDetail | null) {
   // Update DOM classes for active highlighting with CSS transition without rerendering everything
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const allLinked = document.querySelectorAll<HTMLElement>("[data-req-id], [data-provenance], [data-fact-id]");
-    allLinked.forEach(el => {
+    const allLinked = document.querySelectorAll<HTMLElement>(
+      "[data-req-id], [data-provenance], [data-fact-id]"
+    );
+    allLinked.forEach((el) => {
       const reqId = el.getAttribute("data-req-id");
       const provId = el.getAttribute("data-provenance");
       const factId = el.getAttribute("data-fact-id");
@@ -130,8 +199,12 @@ export function useProvenanceLinker(detail?: VacancyDetail | null) {
 
       if (highlighted) {
         el.classList.add("provenance-active-highlight");
+        if (reqId) el.classList.add("is-linked-highlight");
+        if (factId) el.classList.add("is-highlighted");
       } else {
         el.classList.remove("provenance-active-highlight");
+        if (reqId) el.classList.remove("is-linked-highlight");
+        if (factId) el.classList.remove("is-highlighted");
       }
     });
   }, [activeLink, isRequirementHighlighted, isProvenanceHighlighted, isFactHighlighted]);

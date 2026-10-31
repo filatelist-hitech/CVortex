@@ -226,6 +226,14 @@ export default function DiscoverInbox() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [items, safeFocusedIndex, acceptedMap, router]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const activeCard = document.querySelector<HTMLElement>(".discover-card.is-active-card");
+    if (activeCard && typeof activeCard.scrollIntoView === "function") {
+      activeCard.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [safeFocusedIndex]);
+
   const getFitBadge = (score: number, level: string) => {
     if (level === "HIGH" || score >= 70) {
       return <span className="badge badge-fit-high">★ Match {score}%</span>;

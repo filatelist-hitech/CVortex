@@ -222,7 +222,8 @@
   transform: translateX(2px);
 }
 
-.editorial-req-card.is-linked-highlight {
+.editorial-req-card.is-linked-highlight,
+.editorial-req-card.provenance-active-highlight {
   border-color: var(--cv-accent-primary, #ff5533);
   box-shadow: 0 0 16px var(--cv-accent-coral-glow, rgba(255, 85, 51, 0.32));
   background: rgba(255, 85, 51, 0.06);
@@ -420,7 +421,8 @@
   transform: translateX(-2px);
 }
 
-.marginalia-card.is-highlighted {
+.marginalia-card.is-highlighted,
+.marginalia-card.provenance-active-highlight {
   border-color: var(--cv-state-truth, #22c55e);
   box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
   background: rgba(34, 197, 94, 0.08);
@@ -432,6 +434,39 @@
 
 .marginalia-card.pending {
   border-left: 3px solid var(--cv-state-warning, #f59e0b);
+}
+
+/* Truth Stamp Verified Badges */
+.truth-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--cv-radius-pill, 9999px);
+  border: 1px solid var(--cv-border-subtle, rgba(255, 255, 255, 0.07));
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.truth-stamp-verified {
+  background: var(--cv-state-truth-bg, rgba(34, 197, 94, 0.08));
+  border-color: var(--cv-border-verified, rgba(34, 197, 94, 0.4));
+  color: var(--cv-state-truth, #22c55e);
+}
+
+.truth-stamp-pending {
+  background: var(--cv-state-warning-bg, rgba(245, 158, 11, 0.08));
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--cv-state-warning, #f59e0b);
+}
+
+.truth-stamp-neutral {
+  background: var(--cv-surface-interactive, #212530);
+  border-color: var(--cv-border-default, rgba(255, 255, 255, 0.12));
+  color: var(--cv-text-muted, #8590a4);
 }
 
 .marginalia-connector {
