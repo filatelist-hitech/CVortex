@@ -1,36 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Inter+Tight:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 :root {
-  /* Superlist Swiss Precision Edition Tokens */
-  --surface-overlay: rgba(5, 6, 10, 0.85);
-  --surface-canvas: #090a0f;
-  --surface-default: rgba(19, 23, 34, 0.72);
-  --surface-elevated: rgba(27, 33, 49, 0.82);
-  --surface-interactive: rgba(36, 44, 66, 0.90);
-  --surface-sidebar: rgba(13, 15, 23, 0.76);
+  /* Inspo Editorial Dark Palette */
+  --surface-overlay: rgba(6, 7, 9, 0.88);
+  --surface-canvas: #0A0B0E;
+  --surface-void-pure: #060709;
+  --surface-paper: #121419;
+  --surface-default: rgba(18, 20, 26, 0.75);
+  --surface-elevated: #181B22;
+  --surface-interactive: #212530;
+  --surface-sidebar: #0C0D12;
   --text-pure: #ffffff;
   --text-primary: #e8ecf5;
   --text-secondary: #9ba5b9;
   --text-muted: #8590a4;
   --text-disabled: #475062;
   --text-inverse: #05060a;
-  --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-default: rgba(255, 255, 255, 0.16);
-  --border-hover: rgba(255, 255, 255, 0.24);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.22);
   --border-focus: #ff5533;
+  --border-verified: rgba(34, 197, 94, 0.4);
   --border-danger: #ef4444;
   --accent-primary: #ff5533;
   --accent-primary-hover: #ff6b4d;
   --accent-coral: #ff5533;
   --accent-coral-hover: #ff6b4d;
-  --accent-coral-glow: rgba(255, 85, 51, 0.35);
+  --accent-coral-glow: rgba(255, 85, 51, 0.32);
   --accent-sky: #38bdf8;
   --accent-secondary: #38bdf8;
   --accent-tertiary: #a78bfa;
+  --state-truth: #22c55e;
+  --state-truth-bg: rgba(34, 197, 94, 0.08);
   --state-success: #22c55e;
   --state-confirmed: #22c55e;
   --state-warning: #f59e0b;
+  --state-warning-bg: rgba(245, 158, 11, 0.08);
   --state-pending: #f59e0b;
   --state-blocked: #ef4444;
   --state-danger: #ef4444;
+  --state-telemetry: #38bdf8;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -50,17 +59,25 @@
   --font-size-lg: 19px;
   --font-size-xl: 23px;
   --font-size-2xl: 30px;
+  --font-size-display-lg: 32px;
+  --font-size-display-md: 24px;
+  --font-size-title: 18px;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  --font-line-height-body: 1.55;
+  --font-line-height-body: 1.62;
+  --font-line-height-display: 1.18;
+  --font-line-height-tight: 1.25;
   --font-line-height-title: 1.25;
   --font-tracking-compact: -0.025rem;
   --layer-sticky: 100;
   --layer-modal: 300;
   --shadow-overlay: 0px 16px 40px 0px rgba(0, 0, 0, 0.5);
-  --font-brand: "Space Grotesk", Inter, -apple-system, sans-serif;
+  --font-display: "Fraunces", "Instrument Serif", Georgia, serif;
+  --font-body: "Inter Tight", "Geist", -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", SFMono-Regular, monospace;
+  --font-brand: var(--font-display);
 }
 html {
   height: 100%;
@@ -77,16 +94,20 @@ body {
   color: var(--text-primary);
   background-color: var(--surface-canvas);
   background-image:
-    radial-gradient(circle at 80% -10%, rgba(255, 85, 51, 0.14) 0%, transparent 45%),
-    radial-gradient(circle at 10% 110%, rgba(2, 132, 199, 0.14) 0%, transparent 50%),
-    radial-gradient(circle at 60% 40%, rgba(99, 102, 241, 0.09) 0%, transparent 45%),
-    radial-gradient(circle at 50% 0%, #0d101c 0%, #05060a 80%);
+    radial-gradient(circle at 80% -10%, rgba(255, 85, 51, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 10% 110%, rgba(2, 132, 199, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 60% 40%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 0%, #0d101c 0%, #060709 80%);
   background-attachment: fixed;
-  font: var(--font-weight-regular) var(--font-size-md)/var(--font-line-height-body) -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font: var(--font-weight-regular) var(--font-size-md)/var(--font-line-height-body) var(--font-body);
   overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.font-display { font-family: var(--font-display); font-optical-sizing: auto; }
+.font-body { font-family: var(--font-body); }
+.font-mono { font-family: var(--font-mono); }
 
 * {
   box-sizing: border-box;

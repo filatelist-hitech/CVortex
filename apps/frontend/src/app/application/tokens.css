@@ -1,13 +1,16 @@
-/* Superlist Swiss Precision Edition Tokens — CVortex Design System */
+/* Inspo Editorial Dark Palette — CVortex tokens.css (DTCG 2025.10 Compatible) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Inter+Tight:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 .application-shell {
-  /* Surfaces & Void */
-  --cv-surface-canvas: #090A0F;
-  --cv-surface-void-pure: #05060A;
-  --cv-surface-default: rgba(19, 23, 34, 0.72);
-  --cv-surface-elevated: rgba(27, 33, 49, 0.82);
-  --cv-surface-interactive: rgba(36, 44, 66, 0.90);
-  --cv-surface-overlay: rgba(5, 6, 10, 0.85);
-  --cv-surface-sidebar: rgba(13, 15, 23, 0.76);
+  /* Surfaces & Canvas: Warm Graphite Void */
+  --cv-surface-canvas: #0A0B0E;              /* Глубокий тёплый ночной фон */
+  --cv-surface-void-pure: #060709;           /* Абсолютный контрастный фон для сайдбаров */
+  --cv-surface-paper: #121419;              /* Поверхность живого документа резюме */
+  --cv-surface-default: rgba(18, 20, 26, 0.75); /* Полупрозрачные карточки с blur */
+  --cv-surface-elevated: #181B22;           /* Приподнятые панели и маргиналии */
+  --cv-surface-interactive: #212530;        /* Ховеры и активные контролы */
+  --cv-surface-overlay: rgba(6, 7, 9, 0.88);/* Модальные шторки */
+  --cv-surface-sidebar: #0C0D12;
 
   /* Typographic Clarity */
   --cv-text-pure: #FFFFFF;
@@ -17,52 +20,78 @@
   --cv-text-disabled: #475062;
   --cv-text-inverse: #05060A;
 
-  /* Hairlines & Borders */
-  --cv-border-subtle: rgba(255, 255, 255, 0.09);
-  --cv-border-default: rgba(255, 255, 255, 0.16);
-  --cv-border-hover: rgba(255, 255, 255, 0.24);
-  --cv-border-focus: #FF5533;
+  /* Hairline Borders & Rules */
+  --cv-border-subtle: rgba(255, 255, 255, 0.07); /* Тончайшие разделители колонок */
+  --cv-border-default: rgba(255, 255, 255, 0.12);/* Границы карточек */
+  --cv-border-hover: rgba(255, 255, 255, 0.22);  /* Границы при ховере */
+  --cv-border-focus: #FF5533;                    /* Коралловый фокус */
+  --cv-border-verified: rgba(34, 197, 94, 0.4); /* Зеленая рамка подтвержденной правды */
   --cv-border-danger: #EF4444;
 
-  /* Signature Accents */
-  --cv-accent-primary: #FF5533;              /* Superlist signature punch */
-  --cv-accent-primary-hover: #FF6B4D;
-  --cv-accent-coral: #FF5533;
-  --cv-accent-coral-hover: #FF6B4D;
-  --cv-accent-coral-glow: rgba(255, 85, 51, 0.35);
-  --cv-accent-sky: #38BDF8;                /* Technical telemetry */
-  --cv-accent-secondary: #38BDF8;
-  --cv-accent-tertiary: #A78BFA;             /* AI Assistance */
+  /* Typographic Harmony */
+  --cv-font-display: "Fraunces", "Instrument Serif", Georgia, serif;
+  --cv-font-body: "Inter Tight", "Geist", -apple-system, sans-serif;
+  --cv-font-mono: "JetBrains Mono", SFMono-Regular, monospace;
+  --cv-font-family-brand: var(--cv-font-display);
+  --cv-font-family-mono: var(--cv-font-mono);
 
-  /* States (Truth-First Spectrum) */
-  --cv-state-success: #22C55E;              /* Confirmed truth */
-  --cv-state-confirmed: #22C55E;
-  --cv-state-warning: #F59E0B;              /* Attention required */
-  --cv-state-pending: #F59E0B;
-  --cv-state-danger: #EF4444;               /* Hard blocker / error */
-  --cv-state-blocked: #EF4444;
-  --cv-state-recommended: #A78BFA;          /* Draft suggestion */
-  --cv-state-provenance: #38BDF8;           /* Trace telemetry */
+  /* Typographic Hierarchy */
+  --cv-font-size-display-lg: 32px;
+  --cv-font-size-display-md: 24px;
+  --cv-font-size-title: 18px;
+  --cv-font-size-body: 14.5px;
+  --cv-font-size-caption: 12.5px;
+  --cv-font-size-micro: 11px;
 
-  /* Typography */
-  --cv-font-family-brand: "Space Grotesk", Inter, -apple-system, sans-serif;
-  --cv-font-family-mono: "JetBrains Mono", SFMono-Regular, Menlo, monospace;
-  --cv-font-weight-regular: 400;
-  --cv-font-weight-medium: 500;
-  --cv-font-weight-semibold: 600;
-  --cv-font-weight-bold: 700;
   --cv-font-size-xs: 12px;
   --cv-font-size-sm: 13.5px;
   --cv-font-size-md: 15px;
   --cv-font-size-lg: 19px;
   --cv-font-size-xl: 23px;
   --cv-font-size-2xl: 30px;
-  --cv-font-line-height-body: 1.55;
+
+  --cv-font-line-height-display: 1.18;
+  --cv-font-line-height-body: 1.62;
+  --cv-font-line-height-tight: 1.25;
   --cv-font-line-height-title: 1.25;
+
+  --cv-font-weight-regular: 400;
+  --cv-font-weight-medium: 500;
+  --cv-font-weight-semibold: 600;
+  --cv-font-weight-bold: 700;
+
   --cv-font-tracking-label: 0.02rem;
   --cv-font-tracking-compact: -0.025rem;
 
-  /* Spacing Scale */
+  /* Signature Punch & Semantic Spectrum */
+  --cv-accent-primary: #FF5533;             /* Фирменный коралловый punch */
+  --cv-accent-primary-hover: #FF6B4D;
+  --cv-accent-coral: #FF5533;
+  --cv-accent-coral-hover: #FF6B4D;
+  --cv-accent-coral-glow: rgba(255, 85, 51, 0.32);
+  --cv-accent-sky: #38BDF8;                /* Technical telemetry */
+  --cv-accent-secondary: #38BDF8;
+  --cv-accent-tertiary: #A78BFA;             /* AI Assistance */
+
+  /* States (Truth-First Spectrum) */
+  --cv-state-truth: #22C55E;                /* Подтверждённый факт карьеры */
+  --cv-state-truth-bg: rgba(34, 197, 94, 0.08);
+  --cv-state-success: #22C55E;              /* Confirmed truth */
+  --cv-state-confirmed: #22C55E;
+  --cv-state-warning: #F59E0B;              /* Требует внимания / пробел */
+  --cv-state-warning-bg: rgba(245, 158, 11, 0.08);
+  --cv-state-pending: #F59E0B;
+  --cv-state-danger: #EF4444;               /* Блокер / расхождение */
+  --cv-state-blocked: #EF4444;
+  --cv-state-recommended: #A78BFA;          /* Draft suggestion */
+  --cv-state-provenance: #38BDF8;           /* Trace telemetry */
+  --cv-state-telemetry: #38BDF8;            /* Телеметрия / скоринг */
+
+  /* Spacing Scale (Editorial Rythm) */
+  --cv-space-gutter: 24px;
+  --cv-space-card-p: 20px;
+  --cv-space-marginalia-w: 220px;
+
   --cv-space-1: 4px;
   --cv-space-2: 8px;
   --cv-space-3: 12px;
@@ -80,7 +109,8 @@
   --cv-radius-pill: 9999px;
 
   /* Motion & Layers */
-  --cv-motion-duration-fast: 140ms;
+  --cv-spring-damping: 0.32s;
+  --cv-motion-duration-fast: 160ms;
   --cv-motion-duration-standard: 220ms;
   --cv-layer-sticky: 100;
   --cv-layer-modal: 300;
