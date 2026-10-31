@@ -189,6 +189,7 @@ class CareerExtractionService
                     $currentSource = $this->lockCurrentAttempt($source, $runToken);
                     CareerFact::query()->where('career_source_id', $source->id)->where('status', CareerFact::STATUS_PENDING)->delete();
                     foreach ($candidates as $candidate) {
+                        $valuePart = isset($candidate['value']) ? "\0".$candidate['value'] : '';
                         CareerFact::query()->create([
                             'owner_id' => $user->id,
                             'career_profile_id' => $profile->id,
@@ -199,7 +200,7 @@ class CareerExtractionService
                             'source_excerpt' => $candidate['source_excerpt'],
                             'extracted_by' => $skill->id.'@'.$skill->version,
                             'extraction_confidence' => $candidate['confidence'],
-                            'candidate_hash' => hash('sha256', $candidate['fact_type']."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
+                            'candidate_hash' => hash('sha256', $candidate['fact_type'].$valuePart."\0".$candidate['assertion']."\0".$candidate['source_excerpt']),
                             'status' => CareerFact::STATUS_PENDING,
                         ]);
                     }
@@ -343,21 +344,33 @@ class CareerExtractionService
     }
 
     /** @param array<string, mixed> $output
-     * @return list<array{fact_type: string, assertion: string, source_excerpt: string, confidence: float}>
+     * @return list<array{fact_type: string, assertion: string, source_excerpt: string, confidence: float, value?: ?string, polarity?: string, status?: string}>
      */
     private function validateOutput(array $output, string $sourceText): array
     {
         $facts = $output['facts'] ?? null;
-        if (array_keys($output) !== ['facts'] || ! is_array($facts) || ! array_is_list($facts) || count($facts) > 50) {
+        $outputKeys = array_keys($output);
+        $validKeys = ['facts', 'schema_version'];
+        if (! isset($output['facts'])
+            || array_diff($outputKeys, $validKeys) !== []
+            || ! is_array($facts)
+            || ! array_is_list($facts)
+            || count($facts) > 50) {
+            throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+        }
+
+        if (isset($output['schema_version']) && $output['schema_version'] !== '1.1.0') {
             throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
         }
 
         $validated = [];
+        $seen = [];
+        $allowedCandidateKeys = ['fact_type', 'assertion', 'source_excerpt', 'value', 'polarity', 'status', 'confidence'];
+
         foreach ($facts as $candidate) {
             if (! is_array($candidate)
-                || count($candidate) !== 4
-                || array_diff(['fact_type', 'assertion', 'source_excerpt', 'confidence'], array_keys($candidate)) !== []
-                || ! isset($candidate['fact_type'], $candidate['assertion'], $candidate['source_excerpt'], $candidate['confidence'])
+                || array_diff(array_keys($candidate), $allowedCandidateKeys) !== []
+                || ! isset($candidate['fact_type'], $candidate['assertion'], $candidate['source_excerpt'])
                 || ! is_string($candidate['fact_type'])
                 || ! is_string($candidate['assertion'])
                 || trim($candidate['assertion']) === ''
@@ -365,22 +378,60 @@ class CareerExtractionService
                 || ! is_string($candidate['source_excerpt'])
                 || trim($candidate['source_excerpt']) === ''
                 || mb_strlen($candidate['source_excerpt']) > 2000
-                || ! is_numeric($candidate['confidence'])
-                || (float) $candidate['confidence'] < 0
-                || (float) $candidate['confidence'] > 1
                 || ! str_contains($sourceText, $candidate['source_excerpt'])
                 || ! str_contains($candidate['source_excerpt'], $candidate['assertion'])) {
                 throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
             }
+
+            if (isset($candidate['value'])) {
+                if (! is_string($candidate['value'])
+                    || trim($candidate['value']) === ''
+                    || ! str_contains($candidate['assertion'], $candidate['value'])) {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
+            }
+
+            if (isset($candidate['polarity'])) {
+                if (! is_string($candidate['polarity']) || ! in_array($candidate['polarity'], ['positive', 'negative'], true)) {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
+            }
+
+            if (isset($candidate['status'])) {
+                if (! is_string($candidate['status']) || strtolower($candidate['status']) !== 'pending') {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
+            }
+
+            if (isset($candidate['confidence'])) {
+                if (! is_numeric($candidate['confidence'])
+                    || (float) $candidate['confidence'] < 0
+                    || (float) $candidate['confidence'] > 1) {
+                    throw new CareerOutputException(CareerOutputException::SCHEMA_INVALID);
+                }
+            }
+
             $type = CareerFactType::tryFrom($candidate['fact_type']);
             if ($type === null || ! $this->semantics->supports($type, $candidate['assertion'])) {
                 throw new CareerOutputException(CareerOutputException::SEMANTIC_REJECTED);
             }
+
+            $polarity = $candidate['polarity'] ?? 'positive';
+            $value = $candidate['value'] ?? null;
+            $dedupKey = hash('sha256', $candidate['fact_type']."\0".($value ?? '')."\0".$polarity."\0".$candidate['assertion']."\0".$candidate['source_excerpt']);
+            if (isset($seen[$dedupKey])) {
+                continue;
+            }
+            $seen[$dedupKey] = true;
+
             $validated[] = [
                 'fact_type' => $candidate['fact_type'],
                 'assertion' => trim($candidate['assertion']),
                 'source_excerpt' => $candidate['source_excerpt'],
-                'confidence' => (float) $candidate['confidence'],
+                'confidence' => isset($candidate['confidence']) ? (float) $candidate['confidence'] : 1.0,
+                'value' => $value,
+                'polarity' => $polarity,
+                'status' => 'pending',
             ];
         }
 
