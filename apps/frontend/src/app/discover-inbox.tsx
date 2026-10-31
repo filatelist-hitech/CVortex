@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "./access-shell";
 
 export type DiscoveredVacancyItem = {
@@ -38,6 +39,7 @@ const PORTAL_LABELS: Record<string, { name: string; color: string; badgeClass: s
 };
 
 export default function DiscoverInbox() {
+  const router = useRouter();
   const [query, setQuery] = useState("Senior Laravel");
   const [location, setLocation] = useState("");
   const [remoteOnly, setRemoteOnly] = useState(true);
@@ -51,7 +53,10 @@ export default function DiscoverInbox() {
   const [success, setSuccess] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [acceptedMap, setAcceptedMap] = useState<Record<string, string>>({});
+  const [focusedIndex, setFocusedIndex] = useState<number>(0);
   const activeAbortControllerRef = useRef<AbortController | null>(null);
+
+  const safeFocusedIndex = items.length > 0 ? Math.min(Math.max(0, focusedIndex), items.length - 1) : 0;
 
   const loadList = useCallback(async (tab = activeTab, portal = portalFilter) => {
     if (activeAbortControllerRef.current) {
@@ -176,6 +181,50 @@ export default function DiscoverInbox() {
       setActionId(null);
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable);
+
+      if (isInput) return;
+
+      if (e.key === "ArrowDown" || e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.min(prev + 1, Math.max(0, items.length - 1)));
+      } else if (e.key === "ArrowUp" || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === "a" || e.key === "A" || e.key === "ф" || e.key === "Ф") {
+        const item = items[safeFocusedIndex];
+        if (item && item.status === "INBOX") {
+          e.preventDefault();
+          void handleAccept(item);
+        }
+      } else if (e.key === "s" || e.key === "S" || e.key === "ы" || e.key === "Ы") {
+        const item = items[safeFocusedIndex];
+        if (item && item.status === "INBOX") {
+          e.preventDefault();
+          void handleDismiss(item);
+        }
+      } else if (e.key === "Enter") {
+        const item = items[safeFocusedIndex];
+        if (item) {
+          e.preventDefault();
+          const targetId = acceptedMap[item.id] || item.id;
+          router.push(`/vacancies/${targetId}#split`);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [items, safeFocusedIndex, acceptedMap, router]);
 
   const getFitBadge = (score: number, level: string) => {
     if (level === "HIGH" || score >= 70) {
@@ -327,6 +376,16 @@ export default function DiscoverInbox() {
       </div>
 
       {/* VACANCY CARDS LIST */}
+      {items.length > 0 && (
+        <div className="keyboard-shortcuts-bar font-mono" role="region" aria-label="Горячие клавиши ленты">
+          <span style={{ fontWeight: 600, color: "var(--cv-text-pure, #ffffff)" }}>⌨️ Горячие клавиши:</span>
+          <span><kbd className="kbd-badge">[ A ]</kbd> В работу</span>
+          <span><kbd className="kbd-badge">[ S ]</kbd> Пропустить</span>
+          <span><kbd className="kbd-badge">[ ↵ Enter ]</kbd> Открыть сплит</span>
+          <span><kbd className="kbd-badge">[ ↑ / ↓ ]</kbd> Навигация по вакансиям</span>
+        </div>
+      )}
+
       {loadingList ? (
         <p className="empty" style={{ textAlign: "center", padding: "40px" }}>Загрузка вакансий...</p>
       ) : items.length === 0 ? (
@@ -342,28 +401,34 @@ export default function DiscoverInbox() {
         </div>
       ) : (
         <div style={{ display: "grid", gap: "16px" }}>
-          {items.map((item) => {
+          {items.map((item, index) => {
             const portalMeta = PORTAL_LABELS[item.portal] || { name: item.portal, color: "#888", badgeClass: "" };
             const isBusy = actionId === item.id;
             const acceptedCoreId = acceptedMap[item.id];
+            const isFocused = index === safeFocusedIndex;
 
             return (
               <article
                 key={item.id}
-                className="fact-card discover-card"
+                className={`fact-card discover-card ${isFocused ? "is-active-card" : ""}`}
+                onClick={() => setFocusedIndex(index)}
+                onFocus={() => setFocusedIndex(index)}
+                tabIndex={0}
                 style={{
                   display: "grid",
                   gap: "12px",
                   padding: "20px",
-                  border: "1px solid var(--border-subtle)",
+                  border: isFocused ? "1px solid var(--cv-accent-primary, #FF5533)" : "1px solid var(--border-subtle)",
                   borderRadius: "12px",
                   background: "var(--surface-elevated)",
+                  outline: "none",
+                  cursor: "pointer",
                 }}
               >
                 {/* Header row */}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
                   <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
                       <span
                         className="badge"
                         style={{
@@ -379,9 +444,44 @@ export default function DiscoverInbox() {
                       </span>
                       {getFitBadge(item.fit_score, item.fit_level)}
                       {item.security_threat_level === "CLEAN" ? (
-                        <span className="badge confirmed-badge" style={{ fontSize: "11px", padding: "2px 8px" }}>🛡️ Clean</span>
+                        <span className="postingguard-telemetry-pill" title="PostingGuard: Чисто, угроз не обнаружено">
+                          <span className="badge confirmed-badge" style={{ fontSize: "11px", padding: "2px 8px" }}>🛡️ Clean</span>
+                          <span
+                            className="badge font-mono telemetry-pill-code"
+                            style={{
+                              fontSize: "10.5px",
+                              letterSpacing: "0.02em",
+                              background: "rgba(34, 197, 94, 0.08)",
+                              borderColor: "rgba(34, 197, 94, 0.3)",
+                              color: "#22c55e",
+                              padding: "2px 6px",
+                            }}
+                          >
+                            [ CLEAN: 0 threats · SSRF &amp; Injection safe ]
+                          </span>
+                        </span>
                       ) : (
-                        <span className="badge blocked-badge" style={{ fontSize: "11px", padding: "2px 8px" }}>⚠️ {item.security_threat_level}</span>
+                        <span className="postingguard-telemetry-pill" title="PostingGuard: Обнаружены потенциальные риски">
+                          <span className="badge blocked-badge" style={{ fontSize: "11px", padding: "2px 8px" }}>⚠️ {item.security_threat_level}</span>
+                          <span
+                            className="badge font-mono telemetry-pill-code"
+                            style={{
+                              fontSize: "10.5px",
+                              letterSpacing: "0.02em",
+                              background: "rgba(239, 68, 68, 0.12)",
+                              borderColor: "rgba(239, 68, 68, 0.4)",
+                              color: "#ef4444",
+                              padding: "2px 6px",
+                            }}
+                          >
+                            [ SUSPICIOUS: Flagged by PostingGuard ]
+                          </span>
+                        </span>
+                      )}
+                      {isFocused && (
+                        <span className="badge font-mono" style={{ fontSize: "10px", borderColor: "var(--cv-accent-primary, #FF5533)", color: "var(--cv-accent-primary, #FF5533)" }}>
+                          [ Активная ]
+                        </span>
                       )}
                     </div>
 
@@ -405,13 +505,16 @@ export default function DiscoverInbox() {
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                     {item.status === "INBOX" && (
                       <>
                         <button
                           type="button"
                           disabled={isBusy}
-                          onClick={() => void handleAccept(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleAccept(item);
+                          }}
                           style={{
                             background: "var(--state-success)",
                             color: "#fff",
@@ -422,17 +525,20 @@ export default function DiscoverInbox() {
                             cursor: isBusy ? "not-allowed" : "pointer",
                           }}
                         >
-                          {isBusy ? "..." : "✓ В работу"}
+                          {isBusy ? "..." : "✓ В работу"} <span className="kbd-badge" style={{ fontSize: "10px", marginLeft: "4px" }}>A</span>
                         </button>
 
                         <button
                           type="button"
                           className="secondary"
                           disabled={isBusy}
-                          onClick={() => void handleDismiss(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDismiss(item);
+                          }}
                           style={{ padding: "8px 16px", borderRadius: "8px", cursor: isBusy ? "not-allowed" : "pointer" }}
                         >
-                          ✕ Пропустить
+                          ✕ Пропустить <span className="kbd-badge" style={{ fontSize: "10px", marginLeft: "4px" }}>S</span>
                         </button>
                       </>
                     )}
@@ -448,6 +554,15 @@ export default function DiscoverInbox() {
                         Отклонена
                       </span>
                     )}
+
+                    <Link
+                      href={`/vacancies/${acceptedCoreId || item.id}#split`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="split-jump-pill"
+                      title="Открыть вакансию в сплит-редакторе"
+                    >
+                      ↔ Сплит <span className="kbd-badge" style={{ fontSize: "10px", marginLeft: "2px" }}>↵</span>
+                    </Link>
                   </div>
                 </div>
 
