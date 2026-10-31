@@ -12,8 +12,8 @@ class CareerSemanticValidator
 
         return match ($type) {
             CareerFactType::SKILL => $this->matches($text, [
-                '/\b(?:familiar|knowledge|skill|experience|proficient|expert|used|built with)\b/u',
-                '/знаком|знаю|навык|опыт|владею|использовал/u',
+                '/\b(?:familiar|knowledge|skills?|experience|proficient|expert|used|worked|built with|tech stack|technolog(?:y|ies)|tools?|developed|tested)\b/u',
+                '/знаком|знаю|навык|стек|технологи|инструмент|опыт|владею|использовал|работал|разрабатывал|тестировал/u',
             ]),
             CareerFactType::EXPERIENCE => ! $this->matches($text, [
                 '/\bfamiliar(?:ity)?\b/u', '/\bbasic knowledge\b/u', '/\baware(?:ness)?\b/u',

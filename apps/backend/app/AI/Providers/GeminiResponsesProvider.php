@@ -629,8 +629,24 @@ class GeminiResponsesProvider
             return $this->normalizeSchemaNode($merged, $root, [...$refStack, $ref]);
         }
 
-        // 2. Remove meta keys on schema object
-        unset($node['$schema'], $node['$id'], $node['$defs'], $node['definitions'], $node['additionalProperties']);
+        // 2. Remove meta keys and validation keywords unsupported by Gemini
+        unset(
+            $node['$schema'],
+            $node['$id'],
+            $node['$defs'],
+            $node['definitions'],
+            $node['additionalProperties'],
+            $node['maxItems'],
+            $node['minItems'],
+            $node['minimum'],
+            $node['maximum'],
+            $node['minLength'],
+            $node['maxLength'],
+            $node['pattern'],
+            $node['default'],
+            $node['title'],
+            $node['examples'],
+        );
 
         // 3. Normalize nullable union types: e.g. ["string", "null"] => type: "string", nullable: true
         if (isset($node['type']) && is_array($node['type'])) {

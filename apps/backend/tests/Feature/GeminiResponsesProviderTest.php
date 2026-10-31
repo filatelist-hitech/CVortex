@@ -393,7 +393,7 @@ class GeminiResponsesProviderTest extends TestCase
         $this->assertArrayNotHasKey('additionalProperties', $itemSchema);
         $this->assertSame(['content', 'tags'], $itemSchema['required']);
         $this->assertSame('string', $itemSchema['properties']['content']['type']);
-        $this->assertSame(10, $itemSchema['properties']['content']['minLength']);
+        $this->assertArrayNotHasKey('minLength', $itemSchema['properties']['content']);
     }
 
     public function test_sanitize_schema_converts_nullable_union_to_openapi_nullable(): void
@@ -444,7 +444,7 @@ class GeminiResponsesProviderTest extends TestCase
         $this->assertSame(['additionalProperties'], $sanitized['required']);
     }
 
-    public function test_sanitize_schema_preserves_constraints(): void
+    public function test_sanitize_schema_strips_unsupported_validation_keywords_while_preserving_enums(): void
     {
         $provider = app(GeminiResponsesProvider::class);
 
@@ -477,13 +477,13 @@ class GeminiResponsesProviderTest extends TestCase
         $sanitized = $provider->sanitizeSchema($schema);
 
         $this->assertSame(['score', 'category'], $sanitized['required']);
-        $this->assertSame(0.0, $sanitized['properties']['score']['minimum']);
-        $this->assertSame(1.0, $sanitized['properties']['score']['maximum']);
+        $this->assertArrayNotHasKey('minimum', $sanitized['properties']['score']);
+        $this->assertArrayNotHasKey('maximum', $sanitized['properties']['score']);
         $this->assertSame(['A', 'B', 'C'], $sanitized['properties']['category']['enum']);
-        $this->assertSame(1, $sanitized['properties']['tags']['minItems']);
-        $this->assertSame(5, $sanitized['properties']['tags']['maxItems']);
-        $this->assertSame(2, $sanitized['properties']['tags']['items']['minLength']);
-        $this->assertSame(20, $sanitized['properties']['tags']['items']['maxLength']);
+        $this->assertArrayNotHasKey('minItems', $sanitized['properties']['tags']);
+        $this->assertArrayNotHasKey('maxItems', $sanitized['properties']['tags']);
+        $this->assertArrayNotHasKey('minLength', $sanitized['properties']['tags']['items']);
+        $this->assertArrayNotHasKey('maxLength', $sanitized['properties']['tags']['items']);
     }
 
     public function test_sanitize_schema_detects_circular_ref_and_throws(): void
