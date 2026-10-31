@@ -7,8 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Bun runtime for portal search skills
-RUN curl -fsSL https://bun.sh/install | bash
+# Install Bun runtime for portal search skills (pinned version)
+ARG BUN_VERSION=1.4.4
+RUN curl -fsSL https://bun.sh/install | bash -s -- bun-v${BUN_VERSION}
 
 # Create unprivileged system user cvortex and make Bun accessible globally
 RUN useradd -u 1000 -m -s /bin/bash cvortex \

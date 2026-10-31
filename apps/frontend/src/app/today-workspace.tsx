@@ -49,19 +49,27 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
   const [vacancies, setVacancies] = useState<VacancySummary[]>([]);
 
   const isMountedRef = useRef(true);
+  const activeAbortControllerRef = useRef<AbortController | null>(null);
+  const actionAbortControllerRef = useRef<AbortController | null>(null);
 
   const loadData = useCallback(async () => {
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    activeAbortControllerRef.current = controller;
+
     try {
       setLoading(true);
       setError("");
 
       const [aiRes, careerRes, vacanciesRes] = await Promise.allSettled([
-        api("/api/v1/ai/settings"),
-        api("/api/v1/career"),
-        api("/api/v1/vacancies"),
+        api("/api/v1/ai/settings", { signal: controller.signal }),
+        api("/api/v1/career", { signal: controller.signal }),
+        api("/api/v1/vacancies", { signal: controller.signal }),
       ]);
 
-      if (!isMountedRef.current) return;
+      if (controller.signal.aborted || !isMountedRef.current) return;
 
       if (aiRes.status === "fulfilled" && aiRes.value?.data) {
         const data: AiSettingsData = aiRes.value.data;
@@ -87,12 +95,18 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
         setVacancies(vacanciesRes.value.data as VacancySummary[]);
       }
     } catch (err) {
-      if (isMountedRef.current) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+      if (!controller.signal.aborted && isMountedRef.current) {
         setError(err instanceof Error ? err.message : "Не удалось загрузить данные дашборда.");
       }
     } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
+      if (activeAbortControllerRef.current === controller) {
+        activeAbortControllerRef.current = null;
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     }
   }, []);
@@ -104,6 +118,14 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
     void loadData();
     return () => {
       isMountedRef.current = false;
+      if (activeAbortControllerRef.current) {
+        activeAbortControllerRef.current.abort();
+        activeAbortControllerRef.current = null;
+      }
+      if (actionAbortControllerRef.current) {
+        actionAbortControllerRef.current.abort();
+        actionAbortControllerRef.current = null;
+      }
     };
   }, [loadData]);
 
@@ -189,6 +211,12 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
   // Test active connection with ping latency
   async function handleTestConnection() {
     if (testingAi || !aiSettings) return;
+    if (actionAbortControllerRef.current) {
+      actionAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    actionAbortControllerRef.current = controller;
+
     setTestingAi(true);
     setTestResult(null);
 
@@ -207,9 +235,10 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
       const res = await api("/api/v1/ai/test-connection", {
         method: "POST",
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
-      if (!isMountedRef.current) return;
+      if (controller.signal.aborted || !isMountedRef.current) return;
 
       if (res?.data) {
         const result: ConnectionTestResult = res.data;
@@ -230,7 +259,10 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
         }
       }
     } catch (err) {
-      if (isMountedRef.current) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+      if (!controller.signal.aborted && isMountedRef.current) {
         setTestResult({
           status: "failed",
           provider,
@@ -239,8 +271,11 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
         });
       }
     } finally {
-      if (isMountedRef.current) {
-        setTestingAi(false);
+      if (actionAbortControllerRef.current === controller) {
+        actionAbortControllerRef.current = null;
+        if (isMountedRef.current) {
+          setTestingAi(false);
+        }
       }
     }
   }

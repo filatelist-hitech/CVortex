@@ -1,4 +1,5 @@
 import type { DiscoveredJob, SearchOptions } from "./types"
+import { isSafeExternalUrl } from "./url-guard"
 
 export async function searchLinkedIn(opts: SearchOptions): Promise<DiscoveredJob[]> {
   const params = new URLSearchParams()
@@ -45,7 +46,7 @@ export async function searchLinkedIn(opts: SearchOptions): Promise<DiscoveredJob
         link = link.split("?")[0]
       }
 
-      if (title && link) {
+      if (title && link && isSafeExternalUrl(link)) {
         jobs.push({
           portal: "linkedin",
           external_id: link.split("/").pop() || Math.random().toString(36).substring(7),

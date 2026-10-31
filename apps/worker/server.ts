@@ -2,6 +2,7 @@ import { searchFreehire } from "./scrapers/freehire"
 import { searchHeadHunter } from "./scrapers/hh"
 import { searchHabr } from "./scrapers/habr"
 import { searchLinkedIn } from "./scrapers/linkedin"
+import { isSafeExternalUrl } from "./scrapers/url-guard"
 import type { DiscoveredJob, SearchOptions } from "./scrapers/types"
 
 const PORT = parseInt(process.env.PORT || "3001", 10)
@@ -54,7 +55,7 @@ const server = Bun.serve({
         for (const res of results) {
           if (res.status === "fulfilled") {
             for (const job of res.value) {
-              if (!seenUrls.has(job.source_url)) {
+              if (!seenUrls.has(job.source_url) && isSafeExternalUrl(job.source_url)) {
                 seenUrls.add(job.source_url)
                 allJobs.push(job)
               }

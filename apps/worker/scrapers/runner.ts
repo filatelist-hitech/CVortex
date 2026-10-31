@@ -3,6 +3,7 @@ import { searchFreehire } from "./freehire"
 import { searchHeadHunter } from "./hh"
 import { searchHabr } from "./habr"
 import { searchLinkedIn } from "./linkedin"
+import { isSafeExternalUrl } from "./url-guard"
 import type { DiscoveredJob, SearchOptions } from "./types"
 
 async function main() {
@@ -57,7 +58,7 @@ async function main() {
   for (const res of results) {
     if (res.status === "fulfilled") {
       for (const job of res.value) {
-        if (!seenUrls.has(job.source_url)) {
+        if (!seenUrls.has(job.source_url) && isSafeExternalUrl(job.source_url)) {
           seenUrls.add(job.source_url)
           allJobs.push(job)
         }

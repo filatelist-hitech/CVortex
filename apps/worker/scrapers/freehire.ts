@@ -1,4 +1,5 @@
 import type { DiscoveredJob, SearchOptions } from "./types"
+import { sanitizeSourceUrl } from "./url-guard"
 
 export async function searchFreehire(opts: SearchOptions): Promise<DiscoveredJob[]> {
   const params = new URLSearchParams()
@@ -30,7 +31,7 @@ export async function searchFreehire(opts: SearchOptions): Promise<DiscoveredJob
       title: job.title || "Без названия",
       company: job.company?.name || job.company_name || "Не указана",
       location: job.location || (job.work_mode === "remote" ? "Удалённо (Remote)" : "Global"),
-      source_url: job.url || job.apply_url || `https://freehire.me/job/${job.public_slug || job.id}`,
+      source_url: sanitizeSourceUrl(job.url || job.apply_url, `https://freehire.me/job/${job.public_slug || job.id}`),
       salary_text: job.salary ? `${job.salary.min || ''} - ${job.salary.max || ''} ${job.salary.currency || ''}`.trim() : null,
       description: job.description_markdown || job.description || null,
       snippet: job.preview || (job.description ? job.description.slice(0, 300) : null),
