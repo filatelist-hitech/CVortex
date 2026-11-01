@@ -11,9 +11,22 @@ class RuntimeSkillRegistry
         return $this->load('career-fact-extraction/v1', 'career.fact-extraction');
     }
 
-    public function vacancyRequirementExtraction(): RuntimeSkillDefinition
+    public function vacancyRequirementExtraction(?string $version = null): RuntimeSkillDefinition
+    {
+        $version ??= config('ai.vacancy_extraction.version', 'v2');
+        $directory = $version === 'v1' ? 'vacancy-requirement-extraction/v1' : 'vacancy-requirement-extraction/v2';
+
+        return $this->load($directory, 'vacancy.requirement-extraction');
+    }
+
+    public function vacancyRequirementExtractionV1(): RuntimeSkillDefinition
     {
         return $this->load('vacancy-requirement-extraction/v1', 'vacancy.requirement-extraction');
+    }
+
+    public function vacancyRequirementExtractionV2(): RuntimeSkillDefinition
+    {
+        return $this->load('vacancy-requirement-extraction/v2', 'vacancy.requirement-extraction');
     }
 
     public function applicationDraftGeneration(): RuntimeSkillDefinition
