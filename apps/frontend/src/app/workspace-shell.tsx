@@ -47,12 +47,13 @@ function Icon({ name }: { name: string }) {
   return <svg className="workspace-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 }
 
-export default function WorkspaceShell({ email, role, destination, onSignOut, children }: {
+export default function WorkspaceShell({ email, role, destination, onSignOut, children, initialVacancyId }: {
   email: string;
   role: string;
   destination: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" | "discover";
   onSignOut: () => Promise<void>;
   children: ReactNode;
+  initialVacancyId?: string;
 }) {
   const hash = useSyncExternalStore(subscribeLocation, currentHash, serverHash);
   const compact = useSyncExternalStore(subscribeCompact, compactSnapshot, serverCompact);
@@ -125,7 +126,7 @@ export default function WorkspaceShell({ email, role, destination, onSignOut, ch
     finally { setSigningOut(false); }
   }
 
-  if (destination === "vacancies") return <ApplicationWorkspace email={email} role={role} onSignOut={onSignOut} />;
+  if (destination === "vacancies") return <ApplicationWorkspace email={email} role={role} onSignOut={onSignOut} initialVacancyId={initialVacancyId} />;
 
   return <div className="workspace-shell">
     <a className="workspace-skip" href="#workspace-content">Перейти к содержимому</a>

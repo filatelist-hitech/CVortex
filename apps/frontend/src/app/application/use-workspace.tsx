@@ -21,7 +21,7 @@ export function demoAllowed() {
     new URLSearchParams(window.location.search).get("demo") === "b01";
 }
 
-function useController() {
+function useController(initialVacancyId?: string) {
   const size = useSyncExternalStore(subscribeMedia, viewport, () => "desktop");
   const [demo, setDemo] = useState<DemoModule | null>(null);
   const [initialized, setInitialized] = useState(false);
@@ -91,13 +91,18 @@ function useController() {
         if (!active) return;
         const items = result.data as VacancySummary[];
         setVacancies(items.map(vacancyView)); setInitialized(true);
-        const selected = items.some(item => item.id === initial.selected) ? initial.selected : items[0]?.id ?? "";
-        initialize({ ...initial, selected, scenario: "normal" }, false);
+        const selected = (initialVacancyId && items.some(item => item.id === initialVacancyId))
+          ? initialVacancyId
+          : items.some(item => item.id === initial.selected)
+          ? initial.selected
+          : (initialVacancyId || items[0]?.id) ?? "";
+        const section = initialVacancyId && !window.location.hash ? "split" : initial.section;
+        initialize({ ...initial, selected, section, scenario: "normal" }, false);
         if (selected) void loadDetail(selected); else setLoading(false);
       }).catch(caught => { if (active) { setError(caught instanceof Error ? caught.message : "Не удалось загрузить вакансии."); setLoading(false); setInitialized(true); } });
     }
     return () => { active = false; };
-  }, [loadDetail]);
+  }, [loadDetail, initialVacancyId]);
 
   function remember(next: WorkspaceLocation, replace = false) {
     const params = new URLSearchParams(window.location.search);
@@ -211,8 +216,8 @@ function useController() {
     cancelEdit: () => { setEditing(false); focus("edit"); }, allowNavigation };
 }
 
-export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const value = useController();
+export function WorkspaceProvider({ children, initialVacancyId }: { children: ReactNode; initialVacancyId?: string }) {
+  const value = useController(initialVacancyId);
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
 export function useWorkspace() { const context = useContext(WorkspaceContext); if (!context) throw new Error("Workspace provider is missing"); return context; }
