@@ -16,6 +16,8 @@ Mode: IMPLEMENT → REVIEW; branch: `feature/m1.3-vacancy-extraction-prompt-2.0`
    - Реализована строгая валидация `validateV200()`: обязательная проверка всех корневых полей схемы Draft 2020-12 (`quality_control`, `vacancy`, `security_flags` и др.), строгая типизация коллекций и валидация `extraction_status` (`SUCCESS`/`FAILED`).
    - Устранены скрытые fallback-значения и молчаливые допущения: невалидные enum в `work_format` (`value`, `confidence`) и `compensation` (`confidence`) отклоняются со статусом `SCHEMA_INVALID`.
    - Внедрена защита от галлюцинаций в синтезируемых требованиях: несовпадающие цитаты в `compensation`, `location` и `security_flags` отклоняются как галлюцинации (`SCHEMA_INVALID`).
+   - Синтезированные измерения (`LOCATION`, `SALARY`, `WORK_FORMAT`) изолированы от проверки дословного присутствия системных лейблов, нормализация городов переведена на `mb_strtolower()`, а форматы работы поддерживают русские словоформы и стеммы.
+   - Внедрена проверка числовых доказательств в зарплатной цитате: цитаты без цифр при `salary_present: true` бракуются как `SEMANTIC_REJECTED`.
    - Сохранена 100% обратная совместимость со схемой v1.0.0 (`validateV100()`).
    - Добавлена мультиязычная поддержка языковых уровней («на уровне B2», «B2-level») и маркеров важности во множественном числе («будут плюсом»).
 4. **Реестр навыков и конфигурация (`RuntimeSkillRegistry.php`, `config/ai.php`)**:
@@ -25,13 +27,17 @@ Mode: IMPLEMENT → REVIEW; branch: `feature/m1.3-vacancy-extraction-prompt-2.0`
    - Ветка `feature/m1.3-vacancy-extraction-prompt-2.0` синхронизирована с `origin/stage` (разрешен конфликт поправок в ADR-0026).
    - Устранено дублирование 19 файлов из PR #66 в диффе PR #69 на GitHub; итоговый diff изолирован до канонического скоупа Vacancy Extraction 2.0.0.
 6. **Верификация**:
-   - `VacancyExtractionPrompt200Test`: 12/12 PASS (49 assertions, включая unit, negative, adversarial и edge cases).
+   - `VacancyExtractionPrompt200Test`: 17/17 PASS (70 assertions, включая unit, negative, adversarial, multilingual и edge cases).
    - `VacancyCoreTest`: 118/118 PASS (699 assertions, 1 skipped).
    - `CareerFactExtractionPrompt110Test`: 19/19 PASS (79 assertions).
+   - `CareerCoreRemediationTest`: 18/18 PASS (165 assertions).
+   - `GeminiResponsesProviderTest`: 15/15 PASS (78 assertions).
    - `ApplicationDraftTest`: 24/24 PASS (285 assertions).
+   - `Frontend Vitest`: 17 test suites, 183/183 PASS.
    - `PHPStan`: `[OK] No errors` across 155 files.
    - `Laravel Pint`: `[PASS]` across all files.
    - PR Contract: `bash scripts/check-pr-contract.sh 69` — valid (`feature/m1.3-vacancy-extraction-prompt-2.0 → stage`).
+   - CI Pipeline: все 4 проверки GitHub Actions (Governance + Quality/m0 + Playwright E2E) успешны.
 
 ---
 
