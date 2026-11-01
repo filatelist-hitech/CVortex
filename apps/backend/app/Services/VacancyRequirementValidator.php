@@ -14,9 +14,8 @@ class VacancyRequirementValidator
      */
     public function validate(array $output, string $sourceText): array
     {
-        $requirements = $output['requirements'] ?? null;
-        if (array_keys($output) !== ['requirements'] || ! is_array($requirements)
-            || ! array_is_list($requirements) || count($requirements) > 100) {
+        $schemaVersion = $output['schema_version'] ?? null;
+        if ($schemaVersion !== null && $schemaVersion !== '2.0.0') {
             throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
         }
 
@@ -26,7 +25,27 @@ class VacancyRequirementValidator
             throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
         }
 
+        if ($schemaVersion === '2.0.0') {
+            return $this->validateV200($output, $sourceText);
+        }
+
+        return $this->validateV100($output, $sourceText);
+    }
+
+    /**
+     * @param  array<string, mixed>  $output
+     * @return list<array{dimension: string, importance: string, label: string, normalized_value: ?string, source_excerpt: string, confidence: float}>
+     */
+    private function validateV100(array $output, string $sourceText): array
+    {
+        $requirements = $output['requirements'] ?? null;
+        if (array_keys($output) !== ['requirements'] || ! is_array($requirements)
+            || ! array_is_list($requirements) || count($requirements) > 100) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
         $validated = [];
+        $seen = [];
         foreach ($requirements as $candidate) {
             if (! is_array($candidate)
                 || count($candidate) !== 6
@@ -50,50 +69,357 @@ class VacancyRequirementValidator
                 throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
             }
 
-            $label = trim($candidate['label']);
-            $excerpt = trim($candidate['source_excerpt']);
-            if ($this->normalize($label) === '') {
-                throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
-            }
-            if ($this->isInstructionAttack($label.' '.$excerpt)) {
-                continue;
-            }
-            $excerpt = $this->boundClause($label, $excerpt);
-            if ($this->isMarketingNoise($excerpt)) {
-                continue;
-            }
-            if ($this->hasNegatedRequirement($label, $excerpt)) {
-                continue;
-            }
-            $dimension = $this->sourceDimension($label, $excerpt);
-            $requiresSubjectIdentity = in_array($dimension, ['TECHNICAL', 'DOMAIN', 'EXPERIENCE', 'LANGUAGE'], true);
-            $identifiesSubject = ! $requiresSubjectIdentity || ($dimension === 'LANGUAGE'
-                ? $this->languageTokenFromLabel($label) !== null
-                : $this->labelIdentifiesRequirement($label, $excerpt));
-            if (! $this->labelSupportedByExcerpt($label, $excerpt)
-                || ($requiresSubjectIdentity && ! $identifiesSubject)) {
-                throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
-            }
-
-            $normalizedValue = $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']);
-            if ($normalizedValue !== null && ! $this->normalizedValueSupported($dimension, $normalizedValue, $label, $excerpt)) {
-                throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
-            }
-
-            $importance = $this->sourceImportance($label, $excerpt, $candidate['importance']);
-            $validated[] = [
-                // Provider enum values are untrusted derived data. Source wording
-                // determines the persisted match dimension.
-                'dimension' => $dimension,
-                'importance' => $importance,
-                'label' => $label,
-                'normalized_value' => $normalizedValue,
-                'source_excerpt' => $excerpt,
+            $item = $this->validateCandidateItem([
+                'label' => $candidate['label'],
+                'source_excerpt' => $candidate['source_excerpt'],
+                'importance' => $candidate['importance'],
+                'normalized_value' => $candidate['normalized_value'],
                 'confidence' => (float) $candidate['confidence'],
-            ];
+            ], $sourceText);
+
+            if ($item === null) {
+                continue;
+            }
+
+            $hash = hash('sha256', implode("\0", [
+                $item['dimension'], $item['importance'], $item['label'], $item['source_excerpt'],
+            ]));
+            if (isset($seen[$hash])) {
+                continue;
+            }
+            $seen[$hash] = true;
+            $validated[] = $item;
         }
 
         return $validated;
+    }
+
+    /**
+     * @param  array<string, mixed>  $output
+     * @return list<array{dimension: string, importance: string, label: string, normalized_value: ?string, source_excerpt: string, confidence: float}>
+     */
+    private function validateV200(array $output, string $sourceText): array
+    {
+        $requiredKeys = [
+            'schema_version', 'extraction_status', 'vacancy', 'candidate_requirements',
+            'responsibilities', 'technologies', 'employer_context', 'employment_conditions',
+            'compensation', 'location', 'work_format', 'schedule', 'other_information',
+            'security_flags', 'quality_control',
+        ];
+        foreach ($requiredKeys as $key) {
+            if (! array_key_exists($key, $output)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+        }
+
+        $status = $output['extraction_status'];
+        if (! is_string($status) || ! in_array($status, ['SUCCESS', 'FAILED'], true)) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        if ($status === 'FAILED') {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+
+        if (! is_array($output['vacancy'])
+            || ! is_array($output['responsibilities']) || ! array_is_list($output['responsibilities'])
+            || ! is_array($output['technologies']) || ! array_is_list($output['technologies'])
+            || ! is_array($output['employer_context']) || ! array_is_list($output['employer_context'])
+            || ! is_array($output['employment_conditions']) || ! array_is_list($output['employment_conditions'])
+            || ! is_array($output['schedule']) || ! array_is_list($output['schedule'])
+            || ! is_array($output['other_information']) || ! array_is_list($output['other_information'])
+            || ! is_array($output['security_flags']) || ! array_is_list($output['security_flags'])
+            || ! is_array($output['quality_control'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $qc = $output['quality_control'];
+        $qcBooleans = [
+            'all_sections_inspected',
+            'requirements_separated_from_responsibilities',
+            'employer_stack_separated',
+            'alternatives_preserved',
+            'source_traceability_verified',
+            'unsupported_inferences_absent',
+        ];
+        foreach ($qcBooleans as $qcKey) {
+            if (! isset($qc[$qcKey]) || ! is_bool($qc[$qcKey])) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+        }
+        if (! isset($qc['potential_omissions']) || ! is_array($qc['potential_omissions']) || ! array_is_list($qc['potential_omissions'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $candidateRequirements = $output['candidate_requirements'];
+        if (! is_array($candidateRequirements) || ! array_is_list($candidateRequirements) || count($candidateRequirements) > 100) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $allowedRequirementTypes = [
+            'EXPERIENCE', 'TECHNICAL_SKILL', 'TOOL', 'DOMAIN_KNOWLEDGE',
+            'SOFT_SKILL', 'LANGUAGE', 'EDUCATION', 'CERTIFICATION', 'OTHER',
+        ];
+
+        $candidatesPool = [];
+
+        foreach ($candidateRequirements as $candidate) {
+            if (! is_array($candidate)
+                || ! is_string($candidate['id'] ?? null)
+                || ! is_string($candidate['label'] ?? null)
+                || trim($candidate['label']) === ''
+                || mb_strlen($candidate['label']) > 255
+                || ! is_string($candidate['source_excerpt'] ?? null)
+                || trim($candidate['source_excerpt']) === ''
+                || mb_strlen($candidate['source_excerpt']) > 2000
+                || ! str_contains($sourceText, $candidate['source_excerpt'])
+                || ! is_string($candidate['importance'] ?? null)
+                || ! in_array($candidate['importance'], ['MANDATORY', 'PREFERRED', 'UNCERTAIN'], true)
+                || ! is_string($candidate['requirement_type'] ?? null)
+                || ! in_array($candidate['requirement_type'], $allowedRequirementTypes, true)
+                || (! is_null($candidate['normalized_value'] ?? null) && ! is_string($candidate['normalized_value']))
+                || mb_strlen((string) ($candidate['normalized_value'] ?? '')) > 500) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $confidenceRaw = $candidate['confidence'] ?? null;
+            $confidence = match ($confidenceRaw) {
+                'HIGH' => 0.95,
+                'MEDIUM' => 0.8,
+                'LOW' => 0.5,
+                default => is_numeric($confidenceRaw) ? (float) $confidenceRaw : null,
+            };
+
+            if ($confidence === null || $confidence < 0 || $confidence > 1) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $candidatesPool[] = [
+                'label' => $candidate['label'],
+                'source_excerpt' => $candidate['source_excerpt'],
+                'importance' => $candidate['importance'],
+                'normalized_value' => $candidate['normalized_value'],
+                'confidence' => $confidence,
+            ];
+        }
+
+        // Compensation (salary)
+        if (! is_array($output['compensation'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        $comp = $output['compensation'];
+        if (! is_bool($comp['salary_present'] ?? null)) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $compConfidenceRaw = $comp['confidence'] ?? null;
+        $compConfidence = match ($compConfidenceRaw) {
+            'HIGH' => 0.95,
+            'MEDIUM' => 0.8,
+            'LOW' => 0.5,
+            default => is_numeric($compConfidenceRaw) ? (float) $compConfidenceRaw : null,
+        };
+        if ($compConfidence === null || $compConfidence < 0 || $compConfidence > 1) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        if ($comp['salary_present'] === true) {
+            $salExcerptRaw = $comp['source_excerpt'] ?? null;
+            if (! is_string($salExcerptRaw) || trim($salExcerptRaw) === '') {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            $salExcerpt = trim($salExcerptRaw);
+            if (mb_strlen($salExcerpt) > 2000 || ! str_contains($sourceText, $salExcerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            if (preg_match('/\d+/u', $salExcerpt) !== 1) {
+                throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+            }
+
+            $label = preg_match('/\b(?:зарплат\pL*)\b/iu', $salExcerpt) === 1 ? 'Зарплата' : 'Salary';
+            $candidatesPool[] = [
+                'label' => $label,
+                'source_excerpt' => $salExcerpt,
+                'importance' => 'UNCERTAIN',
+                'normalized_value' => null,
+                'is_synthesized' => true,
+                'synthesized_dimension' => 'SALARY',
+                'confidence' => $compConfidence,
+            ];
+        }
+
+        // Work format
+        if (! is_array($output['work_format'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        $wf = $output['work_format'];
+        $wfValue = $wf['value'] ?? null;
+        if (! is_string($wfValue) || ! in_array($wfValue, ['REMOTE', 'HYBRID', 'OFFICE', 'UNSPECIFIED'], true)) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $wfConfidenceRaw = $wf['confidence'] ?? null;
+        $wfConfidence = match ($wfConfidenceRaw) {
+            'HIGH' => 0.95,
+            'MEDIUM' => 0.8,
+            'LOW' => 0.5,
+            default => is_numeric($wfConfidenceRaw) ? (float) $wfConfidenceRaw : null,
+        };
+        if ($wfConfidence === null || $wfConfidence < 0 || $wfConfidence > 1) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        if (in_array($wfValue, ['REMOTE', 'HYBRID', 'OFFICE'], true)) {
+            $wfExcerptRaw = $wf['source_excerpt'] ?? null;
+            if (! is_string($wfExcerptRaw) || trim($wfExcerptRaw) === '') {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            $wfExcerpt = trim($wfExcerptRaw);
+            if (mb_strlen($wfExcerpt) > 2000 || ! str_contains($sourceText, $wfExcerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $label = match ($wfValue) {
+                'REMOTE' => preg_match('/\b(?:удален\pL*)\b/iu', $wfExcerpt) === 1 ? 'Удаленная работа' : 'Remote work',
+                'HYBRID' => preg_match('/\b(?:гибрид\pL*)\b/iu', $wfExcerpt) === 1 ? 'Гибридный формат' : 'Hybrid work',
+                default => preg_match('/\b(?:офис\pL*)\b/iu', $wfExcerpt) === 1 ? 'Офис' : 'Office',
+            };
+            $candidatesPool[] = [
+                'label' => $label,
+                'source_excerpt' => $wfExcerpt,
+                'importance' => 'MANDATORY',
+                'normalized_value' => strtolower($wfValue),
+                'is_synthesized' => true,
+                'synthesized_dimension' => 'WORK_FORMAT',
+                'confidence' => $wfConfidence,
+            ];
+        }
+
+        // Location
+        if (! is_array($output['location']) || ! array_is_list($output['location'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        foreach ($output['location'] as $loc) {
+            if (! is_array($loc)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            $locExcerptRaw = $loc['source_excerpt'] ?? null;
+            if (! is_string($locExcerptRaw) || trim($locExcerptRaw) === '') {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            $locExcerpt = trim($locExcerptRaw);
+            if (mb_strlen($locExcerpt) > 2000 || ! str_contains($sourceText, $locExcerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $locConfidenceRaw = $loc['confidence'] ?? null;
+            $locConfidence = match ($locConfidenceRaw) {
+                'HIGH' => 0.95,
+                'MEDIUM' => 0.8,
+                'LOW' => 0.5,
+                null => 0.8,
+                default => is_numeric($locConfidenceRaw) ? (float) $locConfidenceRaw : null,
+            };
+            if ($locConfidence === null || $locConfidence < 0 || $locConfidence > 1) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $normalizedLoc = ! empty($loc['city']) ? mb_strtolower((string) $loc['city']) : (! empty($loc['country']) ? mb_strtolower((string) $loc['country']) : null);
+            $locLabel = ! empty($loc['city'])
+                ? (string) $loc['city']
+                : (! empty($loc['country']) ? (string) $loc['country'] : (preg_match('/[а-яё]/iu', $locExcerpt) === 1 ? 'Локация' : 'Location'));
+            $candidatesPool[] = [
+                'label' => $locLabel,
+                'source_excerpt' => $locExcerpt,
+                'importance' => 'UNCERTAIN',
+                'normalized_value' => $normalizedLoc,
+                'is_synthesized' => true,
+                'synthesized_dimension' => 'LOCATION',
+                'confidence' => $locConfidence,
+            ];
+        }
+
+        // Security flags
+        foreach ($output['security_flags'] as $flag) {
+            if (! is_array($flag) || ! is_string($flag['flag_type'] ?? null) || ! is_string($flag['source_excerpt'] ?? null)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            if (! str_contains($sourceText, $flag['source_excerpt'])) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+        }
+
+        $validated = [];
+        $seen = [];
+        foreach ($candidatesPool as $candidate) {
+            $item = $this->validateCandidateItem($candidate, $sourceText);
+            if ($item === null) {
+                continue;
+            }
+
+            $hash = hash('sha256', implode("\0", [
+                $item['dimension'], $item['importance'], $item['label'], $item['source_excerpt'],
+            ]));
+            if (isset($seen[$hash])) {
+                continue;
+            }
+            $seen[$hash] = true;
+            $validated[] = $item;
+        }
+
+        return $validated;
+    }
+
+    /**
+     * @param  array{label: string, source_excerpt: string, importance: string, normalized_value: ?string, confidence: float, is_synthesized?: bool, synthesized_dimension?: string}  $candidate
+     * @return array{dimension: string, importance: string, label: string, normalized_value: ?string, source_excerpt: string, confidence: float}|null
+     */
+    private function validateCandidateItem(array $candidate, string $sourceText): ?array
+    {
+        $label = trim($candidate['label']);
+        $excerpt = trim($candidate['source_excerpt']);
+        if ($this->normalize($label) === '') {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+        if ($this->isInstructionAttack($label.' '.$excerpt)) {
+            return null;
+        }
+        $isSynthesized = $candidate['is_synthesized'] ?? false;
+        if (! $isSynthesized) {
+            $excerpt = $this->boundClause($label, $excerpt);
+        }
+        if ($this->isMarketingNoise($excerpt)) {
+            return null;
+        }
+        if ($this->hasNegatedRequirement($label, $excerpt)) {
+            return null;
+        }
+        $dimension = $candidate['synthesized_dimension'] ?? $this->sourceDimension($label, $excerpt);
+        $requiresSubjectIdentity = in_array($dimension, ['TECHNICAL', 'DOMAIN', 'EXPERIENCE', 'LANGUAGE'], true);
+        $identifiesSubject = ! $requiresSubjectIdentity || ($dimension === 'LANGUAGE'
+            ? $this->languageTokenFromLabel($label) !== null
+            : $this->labelIdentifiesRequirement($label, $excerpt));
+        if ((! $isSynthesized && ! $this->labelSupportedByExcerpt($label, $excerpt))
+            || ($requiresSubjectIdentity && ! $identifiesSubject)) {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+
+        $normalizedValue = $candidate['normalized_value'] === null ? null : trim($candidate['normalized_value']);
+        if ($normalizedValue !== null && ! $this->normalizedValueSupported($dimension, $normalizedValue, $label, $excerpt)) {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+
+        $importance = $this->sourceImportance($label, $excerpt, $candidate['importance']);
+
+        return [
+            // Provider enum values are untrusted derived data. Source wording
+            // determines the persisted match dimension.
+            'dimension' => $dimension,
+            'importance' => $importance,
+            'label' => $label,
+            'normalized_value' => $normalizedValue,
+            'source_excerpt' => $excerpt,
+            'confidence' => (float) $candidate['confidence'],
+        ];
     }
 
     private function boundClause(string $label, string $excerpt): string
@@ -112,6 +438,12 @@ class VacancyRequirementValidator
 
     private function labelSupportedByExcerpt(string $label, string $excerpt): bool
     {
+        $labelLang = $this->languageTokenFromLabel($label);
+        $excerptLang = $this->languageTokenFromLabel($excerpt);
+        if ($labelLang !== null && $excerptLang !== null && $labelLang === $excerptLang) {
+            return true;
+        }
+
         $labelTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($label), -1, PREG_SPLIT_NO_EMPTY) ?: []);
         $excerptTokens = array_map(fn (string $token): string => trim($token, '.'), preg_split('/\s+/u', $this->normalize($excerpt), -1, PREG_SPLIT_NO_EMPTY) ?: []);
 
@@ -295,18 +627,16 @@ class VacancyRequirementValidator
         $value = $this->normalize($value);
         $evidence = $this->normalize($excerpt);
         if ($dimension === 'WORK_FORMAT') {
-            $aliases = [
-                'remote' => ['remote', 'remotely', 'work from home', 'удаленно'],
-                'hybrid' => ['hybrid', 'гибрид'],
+            $patterns = [
+                'remote' => '/\b(?:remote|remotely|work\s+from\s+home|working\s+from\s+home|home\s+office|fully\s+remote|telework|удален\pL*|удалён\pL*|дистанционн\pL*)\b/iu',
+                'hybrid' => '/\b(?:hybrid|гибрид\pL*)\b/iu',
                 // “Berlin office” names a place, not an office work arrangement.
-                'office' => ['office required', 'office mandatory', 'office-based', 'office based', 'office work', 'office position', 'office role', 'office arrangement', 'work in the office', 'working in the office', 'based in the office', 'on-site', 'onsite', 'офисная работа', 'офисный формат', 'офисный режим', 'офисная позиция', 'работа в офисе'],
+                'office' => '/\b(?:office\s+required|office\s+mandatory|office[ -]based|office\s+work|office\s+position|office\s+role|office\s+arrangement|work(?:ing)?\s+in\s+the\s+office|based\s+in\s+the\s+office|on[ -]site|onsite|офисн\pL*\s+(?:работ\pL*|формат\pL*|режим\pL*|позици\pL*)|работ\pL*\s+в\s+офисе|только\s+офис)\b/iu',
             ];
             $supported = [];
-            foreach ($aliases as $canonical => $forms) {
-                foreach ($forms as $form) {
-                    if (preg_match('/\b'.preg_quote($this->normalize($form), '/').'\b/iu', $evidence) === 1) {
-                        $supported[$canonical] = true;
-                    }
+            foreach ($patterns as $canonical => $pattern) {
+                if (preg_match($pattern, $evidence) === 1) {
+                    $supported[$canonical] = true;
                 }
             }
 
@@ -322,7 +652,7 @@ class VacancyRequirementValidator
 
     private function hasPreferredCue(string $text): bool
     {
-        return preg_match('/\b(will be a plus|nice to have|preferred|desirable|optional)\b|будет\s+плюсом|желательно|необязательно/iu', $text) === 1;
+        return preg_match('/\b(will be a plus|nice to have|preferred|desirable|optional)\b|буд(?:ет|ут)\s+плюс(?:ом)?|желательно|необязательно/iu', $text) === 1;
     }
 
     private function sourceImportance(string $label, string $excerpt, string $providerImportance): string
@@ -654,8 +984,10 @@ class VacancyRequirementValidator
             return false;
         }
         $language = '(?<language>[\\pL][\\pL-]{2,})';
+        $knownLanguages = '(?:english|russian|german|french|spanish|английск\pL*|русск\pL*|немецк\pL*|французск\pL*|испанск\pL*)';
         $qualification = '(?<qualification>a[1-2]|b[1-2]|c[1-2]|fluent|native|fluency|upper[ -]intermediate|professional[ -]working(?:[ -]proficiency)?)';
         $patterns = [
+            '/\b(?<language>'.$knownLanguages.')(?:\s+язык)?\s*(?:на\s+уровне|уров(?:ень|ня))?\s*'.$qualification.'\b/iu',
             '/\b'.$language.'\s*(?:at\s+)?(?:(?:language\s+)?(?:proficiency|level)\s*(?:at\s+)?)?(?::|is|of)?\s*'.$qualification.'(?:\s+level)?\b/iu',
             '/\b'.$qualification.'(?:[ -]level)?\s+(?:(?:proficiency\s+)?in\s+)?'.$language.'\b/iu',
         ];

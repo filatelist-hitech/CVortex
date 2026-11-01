@@ -1,5 +1,46 @@
 # CVortex — проверенное текущее состояние
 
+## Vacancy Extraction Prompt 2.0.0 and Structured Output Validator (PR #69) — 2026-11-01
+
+Mode: IMPLEMENT → REVIEW; branch: `feature/m1.3-vacancy-extraction-prompt-2.0`; target: `stage`.
+
+### Completed Outcomes
+1. **Канонический Skill v2.0.0 (`runtime-ai/skills/vacancy-requirement-extraction/v2/`)**:
+   - Внедрен промпт 2.0.0 (`system.prompt.md`) с разделением категорий (требования соискателя vs стек работодателя vs обязанности), детерминированной защитой от prompt injection (`security_flags: PROMPT_INJECTION_ATTEMPT`) и блоком самоконтроля (`quality_control`).
+   - Разработана строгая JSON Schema Draft 2020-12 (`output.schema.json`), совместимая с OpenAI Structured Outputs (`strict: true`, без `minLength`/`maxLength`) и Gemini (`responseSchema`).
+   - Зафиксированы синтетические эвалы `evals/adversarial.json` и манифест `skill.json` (версии 2.0.0 / 2.0.0).
+2. **Интеграция в Runtime AI и Backend (`RuntimeSkillRegistry.php`, `config/ai.php`)**:
+   - Реестр навыков по умолчанию загружает версию v2, сохраняя явные методы `vacancyRequirementExtractionV1()` и `vacancyRequirementExtractionV2()`.
+   - В `config/ai.php` обновлена версия вакансионного экстрактора на `2.0.0` с возможностью переопределения через `AI_VACANCY_EXTRACTION_VERSION`.
+3. **Полиморфная валидация в `VacancyRequirementValidator.php` и устранение дефектов ревью**:
+   - Реализована строгая валидация `validateV200()`: обязательная проверка всех корневых полей схемы Draft 2020-12 (`quality_control`, `vacancy`, `security_flags` и др.), строгая типизация коллекций и валидация `extraction_status` (`SUCCESS`/`FAILED`).
+   - Устранены скрытые fallback-значения и молчаливые допущения: невалидные enum в `work_format` (`value`, `confidence`) и `compensation` (`confidence`) отклоняются со статусом `SCHEMA_INVALID`.
+   - Внедрена защита от галлюцинаций в синтезируемых требованиях: несовпадающие цитаты в `compensation`, `location` и `security_flags` отклоняются как галлюцинации (`SCHEMA_INVALID`).
+   - Синтезированные измерения (`LOCATION`, `SALARY`, `WORK_FORMAT`) изолированы от проверки дословного присутствия системных лейблов, нормализация городов переведена на `mb_strtolower()`, а форматы работы поддерживают русские словоформы и стеммы.
+   - Внедрена проверка числовых доказательств в зарплатной цитате: цитаты без цифр при `salary_present: true` бракуются как `SEMANTIC_REJECTED`.
+   - Сохранена 100% обратная совместимость со схемой v1.0.0 (`validateV100()`).
+   - Добавлена мультиязычная поддержка языковых уровней («на уровне B2», «B2-level») и маркеров важности во множественном числе («будут плюсом»).
+4. **Реестр навыков и конфигурация (`RuntimeSkillRegistry.php`, `config/ai.php`)**:
+   - Добавлена детерминированная нормализация версий навыков с выбросом `InvalidArgumentException` при неподдерживаемых версиях.
+   - Синхронизированы версии `career_extraction` в `config/ai.php` с манифестом навыка 1.1.0 (`career-fact-extraction/v1/skill.json`).
+5. **Синхронизация ветки PR #69 с актуальным `stage`**:
+   - Ветка `feature/m1.3-vacancy-extraction-prompt-2.0` синхронизирована с `origin/stage` (разрешен конфликт поправок в ADR-0026).
+   - Устранено дублирование 19 файлов из PR #66 в диффе PR #69 на GitHub; итоговый diff изолирован до канонического скоупа Vacancy Extraction 2.0.0.
+6. **Верификация**:
+   - `VacancyExtractionPrompt200Test`: 17/17 PASS (70 assertions, включая unit, negative, adversarial, multilingual и edge cases).
+   - `VacancyCoreTest`: 118/118 PASS (699 assertions, 1 skipped).
+   - `CareerFactExtractionPrompt110Test`: 19/19 PASS (79 assertions).
+   - `CareerCoreRemediationTest`: 18/18 PASS (165 assertions).
+   - `GeminiResponsesProviderTest`: 15/15 PASS (78 assertions).
+   - `ApplicationDraftTest`: 24/24 PASS (285 assertions).
+   - `Frontend Vitest`: 17 test suites, 183/183 PASS.
+   - `PHPStan`: `[OK] No errors` across 155 files.
+   - `Laravel Pint`: `[PASS]` across all files.
+   - PR Contract: `bash scripts/check-pr-contract.sh 69` — valid (`feature/m1.3-vacancy-extraction-prompt-2.0 → stage`).
+   - CI Pipeline: все 4 проверки GitHub Actions (Governance + Quality/m0 + Playwright E2E) успешны.
+
+---
+
 ## Discovery & Posting Guard Security Hardening and Code Review Remediation — 2026-10-31
 
 Mode: IMPLEMENT → REVIEW; branch: `fix/discovery-code-review-remediation`; target: `stage`. Independent reviewer subagent: APPROVED.

@@ -79,6 +79,11 @@ In Section 3, the schema sanitizer behavior is amended for compatibility with Go
 2. **Deterministic Enforcement Boundary**: In accordance with the *Deterministic Before AI* architectural principle, these keywords are stripped in `GeminiResponsesProvider::sanitizeSchema()` before payload transmission.
 3. **Backend Authority**: Strict validation of string lengths, array bounds (`count($facts) <= 50`), and numeric ranges is enforced deterministically by CVortex backend domain validators (`CareerExtractionService`, `VacancyRequirementValidator`, etc.) before any data is persisted.
 
+## Amendment — 2026-11-01: Deterministic Truth-First Semantic Validation of Career Fact Categories
+
+Under ADR-0009 (Strict Truth Guard), extraction and validation fail closed:
+1. **Deterministic Category Whitelist**: `CareerSemanticValidator` deterministically validates syntax and contextual cues for supported categories (`SKILL`, `EXPERIENCE`, `LEADERSHIP`, `RESPONSIBILITY`, `EMPLOYMENT_PERIOD`, `SENIORITY`, `TECHNOLOGY_DEPTH`).
+2. **Fail-Closed Unchecked Categories**: Fact categories without deterministic semantic validation rules (e.g. `education`, `achievement`, `language`, `certification`) are intentionally rejected (`default => false`). Syntactically well-formed LLM extractions in unvalidated categories never bypass validation into candidate facts without verified deterministic checks.
 ## References
 
 - [ADR-0010 Provider-independent LLM Boundary](ADR-0010-provider-independent-llm.md)

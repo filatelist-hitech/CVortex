@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "extraction_status",
+    "vacancy",
+    "candidate_requirements",
+    "responsibilities",
+    "technologies",
+    "employer_context",
+    "employment_conditions",
+    "compensation",
+    "location",
+    "work_format",
+    "schedule",
+    "other_information",
+    "security_flags",
+    "quality_control"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["2.0.0"]
+    },
+    "extraction_status": {
+      "type": "string",
+      "enum": ["SUCCESS", "FAILED"]
+    },
+    "vacancy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "company", "source_date"],
+      "properties": {
+        "title": { "type": ["string", "null"] },
+        "company": { "type": ["string", "null"] },
+        "source_date": { "type": ["string", "null"] }
+      }
+    },
+    "candidate_requirements": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "category",
+          "label",
+          "description",
+          "source_excerpt",
+          "source_section",
+          "importance",
+          "requirement_type",
+          "normalized_value",
+          "alternatives",
+          "group_id",
+          "confidence"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "type": "string" },
+          "label": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "source_excerpt": { "type": "string" },
+          "source_section": { "type": ["string", "null"] },
+          "importance": {
+            "type": "string",
+            "enum": ["MANDATORY", "PREFERRED", "UNCERTAIN"]
+          },
+          "requirement_type": {
+            "type": "string",
+            "enum": [
+              "EXPERIENCE",
+              "TECHNICAL_SKILL",
+              "TOOL",
+              "DOMAIN_KNOWLEDGE",
+              "SOFT_SKILL",
+              "LANGUAGE",
+              "EDUCATION",
+              "CERTIFICATION",
+              "OTHER"
+            ]
+          },
+          "normalized_value": { "type": ["string", "null"] },
+          "alternatives": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "group_id": { "type": ["string", "null"] },
+          "confidence": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW"]
+          }
+        }
+      }
+    },
+    "responsibilities": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "description",
+          "source_excerpt",
+          "source_section",
+          "related_technologies",
+          "group_id",
+          "confidence"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "source_excerpt": { "type": "string" },
+          "source_section": { "type": ["string", "null"] },
+          "related_technologies": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "group_id": { "type": ["string", "null"] },
+          "confidence": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW"]
+          }
+        }
+      }
+    },
+    "technologies": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "technology_type",
+          "context",
+          "source_excerpt",
+          "source_section",
+          "candidate_requirement_id",
+          "confidence"
+        ],
+        "properties": {
+          "name": { "type": "string" },
+          "technology_type": { "type": ["string", "null"] },
+          "context": {
+            "type": "string",
+            "enum": [
+              "CANDIDATE_REQUIREMENT",
+              "PREFERRED_SKILL",
+              "EMPLOYER_STACK",
+              "RESPONSIBILITY",
+              "MENTIONED_ONLY",
+              "UNCERTAIN"
+            ]
+          },
+          "source_excerpt": { "type": "string" },
+          "source_section": { "type": ["string", "null"] },
+          "candidate_requirement_id": { "type": ["string", "null"] },
+          "confidence": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW"]
+          }
+        }
+      }
+    },
+    "employer_context": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "source_excerpt", "source_section"],
+        "properties": {
+          "description": { "type": "string" },
+          "source_excerpt": { "type": "string" },
+          "source_section": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "employment_conditions": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "source_excerpt", "source_section"],
+        "properties": {
+          "description": { "type": "string" },
+          "source_excerpt": { "type": "string" },
+          "source_section": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "compensation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "salary_present",
+        "salary_min",
+        "salary_max",
+        "currency",
+        "period",
+        "gross_net",
+        "source_excerpt",
+        "confidence"
+      ],
+      "properties": {
+        "salary_present": { "type": "boolean" },
+        "salary_min": { "type": ["number", "null"] },
+        "salary_max": { "type": ["number", "null"] },
+        "currency": { "type": ["string", "null"] },
+        "period": { "type": ["string", "null"] },
+        "gross_net": { "type": ["string", "null"] },
+        "source_excerpt": { "type": ["string", "null"] },
+        "confidence": {
+          "type": "string",
+          "enum": ["HIGH", "MEDIUM", "LOW"]
+        }
+      }
+    },
+    "location": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["city", "region", "country", "office_address", "source_excerpt"],
+        "properties": {
+          "city": { "type": ["string", "null"] },
+          "region": { "type": ["string", "null"] },
+          "country": { "type": ["string", "null"] },
+          "office_address": { "type": ["string", "null"] },
+          "source_excerpt": { "type": "string" }
+        }
+      }
+    },
+    "work_format": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source_excerpt", "confidence"],
+      "properties": {
+        "value": {
+          "type": "string",
+          "enum": ["REMOTE", "HYBRID", "OFFICE", "UNSPECIFIED"]
+        },
+        "source_excerpt": { "type": ["string", "null"] },
+        "confidence": {
+          "type": "string",
+          "enum": ["HIGH", "MEDIUM", "LOW"]
+        }
+      }
+    },
+    "schedule": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["details", "source_excerpt"],
+        "properties": {
+          "details": { "type": "string" },
+          "source_excerpt": { "type": "string" }
+        }
+      }
+    },
+    "other_information": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "source_excerpt"],
+        "properties": {
+          "description": { "type": "string" },
+          "source_excerpt": { "type": "string" }
+        }
+      }
+    },
+    "security_flags": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["flag_type", "source_excerpt", "description"],
+        "properties": {
+          "flag_type": { "type": "string" },
+          "source_excerpt": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "quality_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "all_sections_inspected",
+        "requirements_separated_from_responsibilities",
+        "employer_stack_separated",
+        "alternatives_preserved",
+        "source_traceability_verified",
+        "unsupported_inferences_absent",
+        "potential_omissions"
+      ],
+      "properties": {
+        "all_sections_inspected": { "type": "boolean" },
+        "requirements_separated_from_responsibilities": { "type": "boolean" },
+        "employer_stack_separated": { "type": "boolean" },
+        "alternatives_preserved": { "type": "boolean" },
+        "source_traceability_verified": { "type": "boolean" },
+        "unsupported_inferences_absent": { "type": "boolean" },
+        "potential_omissions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -8,6 +8,7 @@ import { VortexSwissLogo } from "../vortex-logo";
 import { VacancyList } from "./vacancy-list";
 import { VacancyHeader } from "./vacancy-header";
 import { WorkspaceTabs, OverviewPanel, RequirementsPanel, MaterialsPanel, EmployerPanel, HistoryPanel } from "./panels";
+import { EditorialSplitWorkspace } from "./editorial-split-workspace";
 import { EvidencePanel } from "./evidence-panel";
 import { NextAction } from "./recommendation";
 import { useWorkspaceMotion } from "./motion";
@@ -100,6 +101,7 @@ export function GlobalSidebar() {
     {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
     <a className="type-nav" href="/" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="sun" />Сегодня</a>
     <strong className="type-nav" aria-current="page"><Icon name="briefcase" />Вакансии</strong>
+    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
     <a className="type-nav" href="/vacancies/import" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="plus" />Импорт вакансии</a>
     <a className="type-nav" href="/career" onClick={event => { if (!w.allowNavigation()) event.preventDefault(); }}><Icon name="user" />Карьера <small>Факты</small></a>
     <span className="type-nav" title="В приложении ещё нет подтверждённой связи с работодателем"><Icon name="building" />Работодатели <small>Недоступно</small></span>
@@ -109,7 +111,7 @@ export function GlobalSidebar() {
 
 export function VacancyWorkspace() {
   const w = useWorkspace();
-  return <main className="workspace" id="workspace"><VacancyHeader /><NextAction />{!w.demo && w.status && <p className="action-status type-secondary" role="alert">{w.status}</p>}<WorkspaceTabs /><OverviewPanel /><RequirementsPanel /><MaterialsPanel /><EmployerPanel /><HistoryPanel /></main>;
+  return <main className="workspace" id="workspace"><VacancyHeader /><NextAction />{!w.demo && w.status && <p className="action-status type-secondary" role="alert">{w.status}</p>}<WorkspaceTabs />{w.location.section === "split" ? <EditorialSplitWorkspace /> : <><OverviewPanel /><RequirementsPanel /><MaterialsPanel /><EmployerPanel /><HistoryPanel /></>}</main>;
 }
 
 function AppShell(props: Identity) {
@@ -162,4 +164,4 @@ function AppShell(props: Identity) {
   </div>;
 }
 
-export default function ApplicationWorkspace(props: Identity) { return <WorkspaceProvider><AppShell {...props} /></WorkspaceProvider>; }
+export default function ApplicationWorkspace(props: Identity & { initialVacancyId?: string }) { return <WorkspaceProvider initialVacancyId={props.initialVacancyId}><AppShell {...props} /></WorkspaceProvider>; }
