@@ -51,8 +51,9 @@ describe("access shell", () => {
 
     expect(screen.getByRole("heading", { name: "CVortex" })).toBeInTheDocument();
     expect(screen.getByText("Your career, in context.")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Войти" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Войти" })).toBeInTheDocument();
     expect(screen.getByLabelText("Электронная почта")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Регистрация" })).not.toBeInTheDocument();
   });
 
   it("consumes a registration fragment, removes it from history, and submits it only in the registration body", async () => {

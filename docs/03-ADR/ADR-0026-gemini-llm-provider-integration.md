@@ -84,7 +84,6 @@ In Section 3, the schema sanitizer behavior is amended for compatibility with Go
 Under ADR-0009 (Strict Truth Guard), extraction and validation fail closed:
 1. **Deterministic Category Whitelist**: `CareerSemanticValidator` deterministically validates syntax and contextual cues for supported categories (`SKILL`, `EXPERIENCE`, `LEADERSHIP`, `RESPONSIBILITY`, `EMPLOYMENT_PERIOD`, `SENIORITY`, `TECHNOLOGY_DEPTH`).
 2. **Fail-Closed Unchecked Categories**: Fact categories without deterministic semantic validation rules (e.g. `education`, `achievement`, `language`, `certification`) are intentionally rejected (`default => false`). Syntactically well-formed LLM extractions in unvalidated categories never bypass validation into candidate facts without verified deterministic checks.
-
 ## References
 
 - [ADR-0010 Provider-independent LLM Boundary](ADR-0010-provider-independent-llm.md)
