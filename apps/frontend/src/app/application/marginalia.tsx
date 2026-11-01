@@ -16,7 +16,7 @@ export interface MarginaliaFact {
 
 export function TruthStamp({
   factId,
-  status = "CONFIRMED",
+  status = "PENDING",
   className = "",
 }: {
   factId: string;

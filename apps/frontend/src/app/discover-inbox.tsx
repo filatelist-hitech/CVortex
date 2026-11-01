@@ -184,15 +184,25 @@ export default function DiscoverInbox() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
       const target = e.target as HTMLElement | null;
+      const isElement = typeof Element !== "undefined" && target instanceof Element;
       const isInput =
-        target &&
+        isElement &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
           target.tagName === "SELECT" ||
           target.isContentEditable);
 
       if (isInput) return;
+
+      const isInteractive =
+        isElement &&
+        (target.tagName === "BUTTON" ||
+          target.tagName === "A" ||
+          target.tagName === "SUMMARY" ||
+          (typeof target.getAttribute === "function" && target.getAttribute("role") === "button"));
 
       if (e.key === "ArrowDown" || e.key === "j" || e.key === "J") {
         e.preventDefault();
@@ -213,6 +223,7 @@ export default function DiscoverInbox() {
           void handleDismiss(item);
         }
       } else if (e.key === "Enter") {
+        if (isInteractive) return;
         const item = items[safeFocusedIndex];
         if (item) {
           e.preventDefault();

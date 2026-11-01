@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useCallback, useMemo } from "react";
+import { useId, useState, useCallback, useMemo, useRef, useEffect } from "react";
 import "./editorial-split.css";
 import { useWorkspace } from "./use-workspace";
 import { useProvenanceLinker } from "./use-provenance-linker";
@@ -14,10 +14,11 @@ export function EditorialSplitWorkspace() {
   const [splitRatio, setSplitRatio] = useState(45); // 45% / 55%
   const [isResizing, setIsResizing] = useState(false);
   const separatorId = useId();
+  const dragRef = useRef<{ startX: number; startRatio: number; containerWidth: number } | null>(null);
 
   // Compute match score percentage
-  const matchPercentage = useMemo(() => {
-    if (!w.detail?.analysis?.dimensions?.length) return 85;
+  const matchPercentage = useMemo<number | null>(() => {
+    if (!w.detail?.analysis?.dimensions?.length) return null;
     const matches = w.detail.analysis.dimensions.filter(
       (d) => d.result === "MATCH"
     ).length;
@@ -33,7 +34,7 @@ export function EditorialSplitWorkspace() {
     if (w.item?.salary) {
       return `${w.item.salary.min / 1000}k–${w.item.salary.max / 1000}k ₽`;
     }
-    return "€140k–180k";
+    return "Зарплата не указана";
   }, [w.item]);
 
   // Derive marginalia facts from detail or demo
@@ -86,41 +87,70 @@ export function EditorialSplitWorkspace() {
             status: ev.status,
             linkedReqId: reqId,
             provenanceType: ev.provenance_type,
-            company: w.item?.company ?? undefined,
+            company: (ev as { company?: string }).company ?? undefined,
           });
         }
       });
     });
     return facts;
-  }, [w.demo, w.detail, w.item?.company]);
+  }, [w.demo, w.detail]);
 
   const linker = useProvenanceLinker(w.detail, marginaliaFacts);
 
-  // Resize handler
+  // Column resizer with lifecycle cleanup
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    setIsResizing(true);
-    const startX = e.clientX;
-    const startRatio = splitRatio;
     const container = e.currentTarget.parentElement;
     const containerWidth = container ? container.clientWidth : window.innerWidth;
+    dragRef.current = {
+      startX: e.clientX,
+      startRatio: splitRatio,
+      containerWidth: containerWidth || window.innerWidth,
+    };
+    setIsResizing(true);
+  }, [splitRatio]);
+
+  useEffect(() => {
+    if (!isResizing) return;
 
     function handleMouseMove(moveEvent: MouseEvent) {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaRatio = (deltaX / (containerWidth || window.innerWidth)) * 100;
-      const nextRatio = Math.min(75, Math.max(25, startRatio + deltaRatio));
+      if (!dragRef.current) return;
+      const deltaX = moveEvent.clientX - dragRef.current.startX;
+      const deltaRatio = (deltaX / dragRef.current.containerWidth) * 100;
+      const nextRatio = Math.min(75, Math.max(25, dragRef.current.startRatio + deltaRatio));
       setSplitRatio(Math.round(nextRatio));
     }
 
     function handleMouseUp() {
       setIsResizing(false);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      dragRef.current = null;
     }
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-  }, [splitRatio]);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const roleTitle = w.item?.role || w.detail?.title || (w.demo ? "Senior Staff Product Engineer" : "Вакансия не выбрана");
+  const companyTitle = w.item?.company || w.detail?.company || (w.demo ? "Stripe" : "");
+
+  const handleCtaClick = useCallback(() => {
+    if (w.demo) {
+      w.approve();
+    } else {
+      const draftPanel = document.querySelector(".application-draft-panel, [data-testid='application-draft-panel']");
+      if (draftPanel) {
+        draftPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [w]);
+
+  const isCtaDisabled = w.demo
+    ? (!w.safe || !w.accepted || w.approved || w.rejected)
+    : (!w.detail || w.loading);
 
   return (
     <div
@@ -135,20 +165,22 @@ export function EditorialSplitWorkspace() {
           </div>
           <div className="header-title-block">
             <h1 className="header-role-title font-display">
-              {w.item?.role ?? "Senior Staff Product Engineer"}
+              {roleTitle}
             </h1>
-            <span className="header-company font-mono">
-              · {w.item?.company ?? "Stripe"}
-            </span>
+            {companyTitle && (
+              <span className="header-company font-mono">
+                · {companyTitle}
+              </span>
+            )}
           </div>
         </div>
 
         <div className="header-telemetry-group">
           <span
             className="telemetry-pill match-pill font-mono"
-            aria-label={`Матчинг вакансии ${matchPercentage}%`}
+            aria-label={matchPercentage !== null ? `Матчинг вакансии ${matchPercentage}%` : "Матчинг не рассчитан"}
           >
-            [ MATCH {matchPercentage}% ]
+            [ MATCH {matchPercentage !== null ? `${matchPercentage}%` : "—"} ]
           </span>
           <span className="telemetry-pill salary-pill font-mono">
             [ {salaryDisplay} ]
@@ -156,8 +188,8 @@ export function EditorialSplitWorkspace() {
           <button
             type="button"
             className="btn-coral-punch font-mono"
-            disabled={!w.safe || !w.accepted || w.approved || w.rejected}
-            onClick={w.approve}
+            disabled={isCtaDisabled}
+            onClick={handleCtaClick}
             aria-label="Одобрить отклик"
           >
             {w.approved ? "✓ Одобрено" : "( Одобрить отклик )"}

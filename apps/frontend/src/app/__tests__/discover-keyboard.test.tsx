@@ -195,4 +195,52 @@ describe("Discover Inbox Keyboard Navigation & PostingGuard Telemetry", () => {
 
     expect(pushMock).toHaveBeenCalledWith("/vacancies/job-01#split");
   });
+
+  it("ignores shortcut keys when modifier keys (Cmd, Ctrl, Alt) are pressed", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/discovery?")) {
+        return Response.json({ items: mockJobs, meta: { total: 2 } });
+      }
+      throw new Error(`Unexpected url: ${url}`);
+    });
+
+    render(<DiscoverInbox />);
+    await screen.findByText("Senior Platform Architect ↗");
+
+    // Cmd+A (Select All in browser)
+    fireEvent.keyDown(window, { key: "a", metaKey: true });
+    // Ctrl+S (Save page in browser)
+    fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/accept"),
+      expect.anything()
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/dismiss"),
+      expect.anything()
+    );
+  });
+
+  it("does not hijack Enter key when focus is on interactive button", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/discovery?")) {
+        return Response.json({ items: mockJobs, meta: { total: 2 } });
+      }
+      throw new Error(`Unexpected url: ${url}`);
+    });
+
+    render(<DiscoverInbox />);
+    await screen.findByText("Senior Platform Architect ↗");
+
+    const searchButton = screen.getByRole("button", { name: /Найти вакансии/i });
+    searchButton.focus();
+
+    fireEvent.keyDown(searchButton, { key: "Enter" });
+
+    // Enter on button should not navigate away via pushMock
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 });

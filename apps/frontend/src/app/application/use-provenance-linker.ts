@@ -168,12 +168,13 @@ export function useProvenanceLinker(
 
   const scrollToLinked = useCallback((id: string, type: ProvenanceLinkType) => {
     if (typeof document === "undefined") return;
+    const escapedId = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(id) : id.replace(/(["\\])/g, "\\$1");
     const selector =
       type === "requirement"
-        ? `[data-req-id="${id}"]`
+        ? `[data-req-id="${escapedId}"]`
         : type === "provenance"
-        ? `[data-provenance="${id}"]`
-        : `[data-fact-id="${id}"]`;
+        ? `[data-provenance="${escapedId}"]`
+        : `[data-fact-id="${escapedId}"]`;
     const target = document.querySelector<HTMLElement>(selector);
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -181,7 +182,7 @@ export function useProvenanceLinker(
     }
   }, []);
 
-  // Update DOM classes for active highlighting with CSS transition without rerendering everything
+  // Synchronize active highlight classes directly on linked DOM elements alongside React state
   useEffect(() => {
     if (typeof document === "undefined") return;
     const allLinked = document.querySelectorAll<HTMLElement>(

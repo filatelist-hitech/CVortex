@@ -1,5 +1,4 @@
 /* Inspo Editorial Dark Palette — CVortex tokens.css (DTCG 2025.10 Compatible) */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Inter+Tight:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root,
 .application-shell {
@@ -33,7 +32,7 @@
   --cv-font-display: "Fraunces", "Instrument Serif", Georgia, serif;
   --cv-font-body: "Inter Tight", "Geist", -apple-system, sans-serif;
   --cv-font-mono: "JetBrains Mono", SFMono-Regular, monospace;
-  --cv-font-family-brand: var(--cv-font-display);
+  --cv-font-family-brand: "Space Grotesk", Inter, -apple-system, sans-serif;
   --cv-font-family-mono: var(--cv-font-mono);
 
   /* Typographic Hierarchy */

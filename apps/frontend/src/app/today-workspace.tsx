@@ -288,7 +288,7 @@ export default function TodayWorkspace({ email, role }: { email: string; role: s
   const urgentVacancies = vacancies.filter(
     (v) => v.recommendation === "STRONGLY_APPLY" || v.recommendation === "APPLY"
   );
-  const displayUrgent = urgentVacancies.length > 0 ? urgentVacancies : vacancies.slice(0, 2);
+  const displayUrgent = urgentVacancies;
 
   return (
     <section className="today-workspace" aria-labelledby="today-heading">

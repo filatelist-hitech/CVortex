@@ -153,11 +153,13 @@ describe("EditorialSplitWorkspace", () => {
     // Match score pill
     expect(screen.getByText(/\[ MATCH/)).toBeInTheDocument();
 
-    // Salary in JetBrains Mono
-    expect(screen.getByText(/€140k–180k/)).toBeInTheDocument();
+    // Salary in JetBrains Mono (Truth-first placeholder when unspecified)
+    expect(screen.getByText(/\[ Зарплата не указана \]/)).toBeInTheDocument();
 
-    // Coral Punch CTA button
-    expect(screen.getByRole("button", { name: "Одобрить отклик" })).toBeInTheDocument();
+    // Coral Punch CTA button enabled for active vacancy in production mode
+    const ctaButton = screen.getByRole("button", { name: "Одобрить отклик" });
+    expect(ctaButton).toBeInTheDocument();
+    expect(ctaButton).not.toBeDisabled();
   });
 
   it("renders two-column editorial split with requirements anatomy and materials pane", async () => {

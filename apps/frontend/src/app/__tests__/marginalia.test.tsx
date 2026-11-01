@@ -147,4 +147,11 @@ describe("TruthStamp", () => {
     expect(stamp).toBeInTheDocument();
     expect(stamp.parentElement).toHaveClass("truth-stamp-pending");
   });
+
+  it("defaults to PENDING when status prop is omitted to uphold Truth-first fail-closed invariant", () => {
+    render(<TruthStamp factId="fact-101" />);
+    const stamp = screen.getByText(/\[ PENDING REVIEW · #101 \]/);
+    expect(stamp).toBeInTheDocument();
+    expect(stamp.parentElement).toHaveClass("truth-stamp-pending");
+  });
 });
