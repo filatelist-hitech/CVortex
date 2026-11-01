@@ -57,20 +57,11 @@ test.describe("Authentication — Login and Session Lifecycle", () => {
     expect(isValid).toBe(false);
   });
 
-  test("critical: tabs switch between Login and Register @smoke", async ({ page }) => {
+  test("critical: login page does not expose registration tab @smoke", async ({ page }) => {
     await page.goto("/");
 
-    const registerTab = page.locator(".tabs").getByRole("button", { name: "Регистрация" });
-    await registerTab.click();
-
-    // When on / without token, registration tab shows operator guidance
-    await expect(page.getByText("Откройте ссылку регистрации, полученную от оператора.")).toBeVisible();
-    const createBtn = page.locator("form").getByRole("button", { name: "Создать аккаунт" });
-    await expect(createBtn).toBeDisabled();
-
-    // Switch back to Login
-    const loginTab = page.locator(".tabs").getByRole("button", { name: "Войти" });
-    await loginTab.click();
+    await expect(page.locator(".tabs")).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Регистрация" })).not.toBeVisible();
     await expect(page.locator("form").getByRole("button", { name: "Войти" })).toBeEnabled();
   });
 });
