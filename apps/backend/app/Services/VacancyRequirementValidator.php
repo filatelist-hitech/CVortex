@@ -132,6 +132,24 @@ class VacancyRequirementValidator
             throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
         }
 
+        $qc = $output['quality_control'];
+        $qcBooleans = [
+            'all_sections_inspected',
+            'requirements_separated_from_responsibilities',
+            'employer_stack_separated',
+            'alternatives_preserved',
+            'source_traceability_verified',
+            'unsupported_inferences_absent',
+        ];
+        foreach ($qcBooleans as $qcKey) {
+            if (! isset($qc[$qcKey]) || ! is_bool($qc[$qcKey])) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+        }
+        if (! isset($qc['potential_omissions']) || ! is_array($qc['potential_omissions']) || ! array_is_list($qc['potential_omissions'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
         $candidateRequirements = $output['candidate_requirements'];
         if (! is_array($candidateRequirements) || ! array_is_list($candidateRequirements) || count($candidateRequirements) > 100) {
             throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
@@ -189,7 +207,22 @@ class VacancyRequirementValidator
             throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
         }
         $comp = $output['compensation'];
-        if (($comp['salary_present'] ?? false) === true) {
+        if (! is_bool($comp['salary_present'] ?? null)) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $compConfidenceRaw = $comp['confidence'] ?? null;
+        $compConfidence = match ($compConfidenceRaw) {
+            'HIGH' => 0.95,
+            'MEDIUM' => 0.8,
+            'LOW' => 0.5,
+            default => is_numeric($compConfidenceRaw) ? (float) $compConfidenceRaw : null,
+        };
+        if ($compConfidence === null || $compConfidence < 0 || $compConfidence > 1) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        if ($comp['salary_present'] === true) {
             $salExcerptRaw = $comp['source_excerpt'] ?? null;
             if (! is_string($salExcerptRaw) || trim($salExcerptRaw) === '') {
                 throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
@@ -198,16 +231,8 @@ class VacancyRequirementValidator
             if (mb_strlen($salExcerpt) > 2000 || ! str_contains($sourceText, $salExcerpt)) {
                 throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
             }
-
-            $compConfidenceRaw = $comp['confidence'] ?? null;
-            $compConfidence = match ($compConfidenceRaw) {
-                'HIGH' => 0.95,
-                'MEDIUM' => 0.8,
-                'LOW' => 0.5,
-                default => is_numeric($compConfidenceRaw) ? (float) $compConfidenceRaw : null,
-            };
-            if ($compConfidence === null || $compConfidence < 0 || $compConfidence > 1) {
-                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            if (preg_match('/\d+/u', $salExcerpt) !== 1) {
+                throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
             }
 
             $label = preg_match('/\b(?:зарплат\pL*)\b/iu', $salExcerpt) === 1 ? 'Зарплата' : 'Salary';
@@ -298,10 +323,10 @@ class VacancyRequirementValidator
                 throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
             }
 
-            $normalizedLoc = ! empty($loc['city']) ? strtolower((string) $loc['city']) : (! empty($loc['country']) ? strtolower((string) $loc['country']) : null);
-            $locLabel = ! empty($loc['city']) && str_contains($locExcerpt, (string) $loc['city'])
+            $normalizedLoc = ! empty($loc['city']) ? mb_strtolower((string) $loc['city']) : (! empty($loc['country']) ? mb_strtolower((string) $loc['country']) : null);
+            $locLabel = ! empty($loc['city'])
                 ? (string) $loc['city']
-                : (! empty($loc['country']) && str_contains($locExcerpt, (string) $loc['country']) ? (string) $loc['country'] : 'Location');
+                : (! empty($loc['country']) ? (string) $loc['country'] : (preg_match('/[а-яё]/iu', $locExcerpt) === 1 ? 'Локация' : 'Location'));
             $candidatesPool[] = [
                 'label' => $locLabel,
                 'source_excerpt' => $locExcerpt,
@@ -358,7 +383,8 @@ class VacancyRequirementValidator
         if ($this->isInstructionAttack($label.' '.$excerpt)) {
             return null;
         }
-        if (! ($candidate['is_synthesized'] ?? false)) {
+        $isSynthesized = $candidate['is_synthesized'] ?? false;
+        if (! $isSynthesized) {
             $excerpt = $this->boundClause($label, $excerpt);
         }
         if ($this->isMarketingNoise($excerpt)) {
@@ -372,7 +398,7 @@ class VacancyRequirementValidator
         $identifiesSubject = ! $requiresSubjectIdentity || ($dimension === 'LANGUAGE'
             ? $this->languageTokenFromLabel($label) !== null
             : $this->labelIdentifiesRequirement($label, $excerpt));
-        if (! $this->labelSupportedByExcerpt($label, $excerpt)
+        if ((! $isSynthesized && ! $this->labelSupportedByExcerpt($label, $excerpt))
             || ($requiresSubjectIdentity && ! $identifiesSubject)) {
             throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
         }
@@ -601,18 +627,16 @@ class VacancyRequirementValidator
         $value = $this->normalize($value);
         $evidence = $this->normalize($excerpt);
         if ($dimension === 'WORK_FORMAT') {
-            $aliases = [
-                'remote' => ['remote', 'remotely', 'work from home', 'удаленно'],
-                'hybrid' => ['hybrid', 'гибрид'],
+            $patterns = [
+                'remote' => '/\b(?:remote|remotely|work\s+from\s+home|working\s+from\s+home|home\s+office|fully\s+remote|telework|удален\pL*|удалён\pL*|дистанционн\pL*)\b/iu',
+                'hybrid' => '/\b(?:hybrid|гибрид\pL*)\b/iu',
                 // “Berlin office” names a place, not an office work arrangement.
-                'office' => ['office required', 'office mandatory', 'office-based', 'office based', 'office work', 'office position', 'office role', 'office arrangement', 'work in the office', 'working in the office', 'based in the office', 'on-site', 'onsite', 'офисная работа', 'офисный формат', 'офисный режим', 'офисная позиция', 'работа в офисе'],
+                'office' => '/\b(?:office\s+required|office\s+mandatory|office[ -]based|office\s+work|office\s+position|office\s+role|office\s+arrangement|work(?:ing)?\s+in\s+the\s+office|based\s+in\s+the\s+office|on[ -]site|onsite|офисн\pL*\s+(?:работ\pL*|формат\pL*|режим\pL*|позици\pL*)|работ\pL*\s+в\s+офисе|только\s+офис)\b/iu',
             ];
             $supported = [];
-            foreach ($aliases as $canonical => $forms) {
-                foreach ($forms as $form) {
-                    if (preg_match('/\b'.preg_quote($this->normalize($form), '/').'\b/iu', $evidence) === 1) {
-                        $supported[$canonical] = true;
-                    }
+            foreach ($patterns as $canonical => $pattern) {
+                if (preg_match($pattern, $evidence) === 1) {
+                    $supported[$canonical] = true;
                 }
             }
 

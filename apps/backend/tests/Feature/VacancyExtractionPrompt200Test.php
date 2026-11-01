@@ -618,6 +618,146 @@ class VacancyExtractionPrompt200Test extends TestCase
         $this->assertSame('PHP', $result[0]['label']);
     }
 
+    public function test_validator_accepts_inflected_russian_locations_and_rejects_hallucinations(): void
+    {
+        $sourceText = 'Мы находимся в Москве, отличный офис на Арбате.';
+        $validator = app(VacancyRequirementValidator::class);
+
+        // Valid inflected location (Москва in "в Москве")
+        $validLoc = $this->validV200Payload();
+        $validLoc['location'] = [[
+            'city' => 'Москва', 'region' => null, 'country' => 'Россия', 'office_address' => null,
+            'source_excerpt' => 'Мы находимся в Москве',
+        ]];
+        $result = $validator->validate($validLoc, $sourceText);
+        $this->assertCount(1, $result);
+        $this->assertSame('Москва', $result[0]['label']);
+        $this->assertSame('LOCATION', $result[0]['dimension']);
+        $this->assertSame('москва', $result[0]['normalized_value']);
+
+        // Hallucinated city (Владивосток not in excerpt)
+        $hallucinatedCity = $this->validV200Payload();
+        $hallucinatedCity['location'] = [[
+            'city' => 'Владивосток', 'region' => null, 'country' => 'Россия', 'office_address' => null,
+            'source_excerpt' => 'Мы находимся в Москве',
+        ]];
+        try {
+            $validator->validate($hallucinatedCity, $sourceText);
+            $this->fail('Hallucinated city in location must throw SEMANTIC_REJECTED.');
+        } catch (VacancyOutputException $e) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $e->category);
+        }
+    }
+
+    public function test_validator_accepts_diverse_work_format_phrases(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+
+        // Russian remote ("удаленная работа")
+        $srcRuRemote = 'У нас возможна удаленная работа для всех сотрудников.';
+        $pRuRemote = $this->validV200Payload();
+        $pRuRemote['work_format'] = ['value' => 'REMOTE', 'source_excerpt' => 'У нас возможна удаленная работа для всех сотрудников.', 'confidence' => 'HIGH'];
+        $resRuRemote = $validator->validate($pRuRemote, $srcRuRemote);
+        $this->assertCount(1, $resRuRemote);
+        $this->assertSame('Удаленная работа', $resRuRemote[0]['label']);
+        $this->assertSame('remote', $resRuRemote[0]['normalized_value']);
+
+        // Russian hybrid ("гибридный формат")
+        $srcRuHybrid = 'Формат работы: гибридный формат (2 дня офис, 3 дня дом).';
+        $pRuHybrid = $this->validV200Payload();
+        $pRuHybrid['work_format'] = ['value' => 'HYBRID', 'source_excerpt' => 'Формат работы: гибридный формат (2 дня офис, 3 дня дом).', 'confidence' => 'HIGH'];
+        $resRuHybrid = $validator->validate($pRuHybrid, $srcRuHybrid);
+        $this->assertCount(1, $resRuHybrid);
+        $this->assertSame('Гибридный формат', $resRuHybrid[0]['label']);
+        $this->assertSame('hybrid', $resRuHybrid[0]['normalized_value']);
+
+        // English WFH ("Working from home")
+        $srcEnWfh = 'Working from home is allowed for all staff members.';
+        $pEnWfh = $this->validV200Payload();
+        $pEnWfh['work_format'] = ['value' => 'REMOTE', 'source_excerpt' => 'Working from home is allowed for all staff members.', 'confidence' => 'HIGH'];
+        $resEnWfh = $validator->validate($pEnWfh, $srcEnWfh);
+        $this->assertCount(1, $resEnWfh);
+        $this->assertSame('Remote work', $resEnWfh[0]['label']);
+        $this->assertSame('remote', $resEnWfh[0]['normalized_value']);
+    }
+
+    public function test_validator_handles_salary_numerical_evidence_and_rejects_empty_numbers(): void
+    {
+        $validator = app(VacancyRequirementValidator::class);
+
+        // Salary without the literal word "salary"
+        $srcValid = 'Total package: 100 000 - 150 000 USD per year.';
+        $pValid = $this->validV200Payload();
+        $pValid['compensation'] = [
+            'salary_present' => true, 'salary_min' => 100000, 'salary_max' => 150000,
+            'currency' => 'USD', 'period' => 'year', 'gross_net' => 'gross',
+            'source_excerpt' => '100 000 - 150 000 USD per year.', 'confidence' => 'HIGH',
+        ];
+        $resValid = $validator->validate($pValid, $srcValid);
+        $this->assertCount(1, $resValid);
+        $this->assertSame('Salary', $resValid[0]['label']);
+        $this->assertSame('SALARY', $resValid[0]['dimension']);
+
+        // Salary present=true but excerpt has no numbers (fabrication)
+        $srcNoDigits = 'Competitive compensation package and great perks.';
+        $pNoDigits = $this->validV200Payload();
+        $pNoDigits['compensation'] = [
+            'salary_present' => true, 'salary_min' => 5000, 'salary_max' => null,
+            'currency' => 'EUR', 'period' => 'month', 'gross_net' => null,
+            'source_excerpt' => 'Competitive compensation package and great perks.', 'confidence' => 'HIGH',
+        ];
+        try {
+            $validator->validate($pNoDigits, $srcNoDigits);
+            $this->fail('Salary without digits in excerpt must throw SEMANTIC_REJECTED.');
+        } catch (VacancyOutputException $e) {
+            $this->assertSame(VacancyOutputException::SEMANTIC_REJECTED, $e->category);
+        }
+    }
+
+    public function test_validator_strictly_validates_compensation_confidence_when_absent(): void
+    {
+        $sourceText = 'Требуется PHP разработчик.';
+        $validator = app(VacancyRequirementValidator::class);
+
+        $badComp = $this->validV200Payload();
+        $badComp['compensation'] = [
+            'salary_present' => false, 'salary_min' => null, 'salary_max' => null,
+            'currency' => null, 'period' => null, 'gross_net' => null,
+            'source_excerpt' => null, 'confidence' => 'INVALID_ENUM',
+        ];
+        try {
+            $validator->validate($badComp, $sourceText);
+            $this->fail('Invalid confidence on absent salary must throw SCHEMA_INVALID.');
+        } catch (VacancyOutputException $e) {
+            $this->assertSame(VacancyOutputException::SCHEMA_INVALID, $e->category);
+        }
+
+        // Non-boolean salary_present
+        $badBool = $this->validV200Payload();
+        $badBool['compensation']['salary_present'] = 'false';
+        try {
+            $validator->validate($badBool, $sourceText);
+            $this->fail('Non-boolean salary_present must throw SCHEMA_INVALID.');
+        } catch (VacancyOutputException $e) {
+            $this->assertSame(VacancyOutputException::SCHEMA_INVALID, $e->category);
+        }
+    }
+
+    public function test_validator_rejects_malformed_quality_control(): void
+    {
+        $sourceText = 'Требуется PHP разработчик.';
+        $validator = app(VacancyRequirementValidator::class);
+
+        $badQc = $this->validV200Payload();
+        unset($badQc['quality_control']['all_sections_inspected']);
+        try {
+            $validator->validate($badQc, $sourceText);
+            $this->fail('Missing quality_control flag must throw SCHEMA_INVALID.');
+        } catch (VacancyOutputException $e) {
+            $this->assertSame(VacancyOutputException::SCHEMA_INVALID, $e->category);
+        }
+    }
+
     /** @return array<string, mixed> */
     private function validV200Payload(): array
     {
