@@ -27,34 +27,38 @@ export function GlobalHeader({
 
   return (
     <header className="workspace-global-header site-header">
-      <div className="workspace-brand brand">
-        <VortexSwissLogo />
-        <div className="brand-copy">
-          <strong>
-            CVortex<span className="brand-dot">.</span>
-          </strong>
-          <span className="type-caption">Your career, in context.</span>
+      <div className="header-left-group">
+        <div className="workspace-brand brand">
+          <VortexSwissLogo />
+          <div className="brand-copy">
+            <strong>
+              CVortex<span className="brand-dot">.</span>
+            </strong>
+            <span className="type-caption">Your career, in context.</span>
+          </div>
+        </div>
+
+        <div className="header-divider" aria-hidden="true" />
+
+        <div className="workspace-context reference-meta">
+          <strong className="type-secondary">{meta.label}</strong>
+          <span className="type-caption">{meta.subtitle}</span>
         </div>
       </div>
 
-      <div className="workspace-context reference-meta">
-        <strong className="type-secondary">{meta.label}</strong>
-        <span className="type-caption">{meta.subtitle}</span>
+      <div className="header-right-group">
+        {demo && scenarioSelector && (
+          <div className="header-scenario-container">{scenarioSelector}</div>
+        )}
+
+        <UserMenu
+          email={email}
+          role={role}
+          onSignOut={onSignOut}
+          currentDestination={destination}
+          allowNavigation={allowNavigation}
+        />
       </div>
-
-      {demo && scenarioSelector ? (
-        <div className="header-scenario-container">{scenarioSelector}</div>
-      ) : (
-        <div className="header-spacer" aria-hidden="true" />
-      )}
-
-      <UserMenu
-        email={email}
-        role={role}
-        onSignOut={onSignOut}
-        currentDestination={destination}
-        allowNavigation={allowNavigation}
-      />
     </header>
   );
 }

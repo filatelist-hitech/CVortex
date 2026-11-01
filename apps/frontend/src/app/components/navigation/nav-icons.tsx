@@ -41,6 +41,14 @@ export function NavIcon({ name, className = "nav-icon" }: { name: string; classN
     ),
     chevron: <path d="m6 9 6 6 6-6" />,
     "chevron-down": <path d="m6 9 6 6 6-6" />,
+    "chevron-left": <path d="m15 18-6-6 6-6" />,
+    "chevron-right": <path d="m9 18 6-6-6-6" />,
+    "panel-left": (
+      <>
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="9" y1="3" x2="9" y2="21" />
+      </>
+    ),
     shield: (
       <>
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />

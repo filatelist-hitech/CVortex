@@ -189,7 +189,7 @@ export function UserMenu({
             <button
               id="close-account"
               type="button"
-              className="user-menu-close-btn secondary"
+              className="user-menu-close-btn"
               onClick={closeDialog}
               aria-label="Закрыть профиль"
             >
