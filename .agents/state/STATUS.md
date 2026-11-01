@@ -12,17 +12,25 @@ Mode: IMPLEMENT → REVIEW; branch: `feature/m1.3-vacancy-extraction-prompt-2.0`
 2. **Интеграция в Runtime AI и Backend (`RuntimeSkillRegistry.php`, `config/ai.php`)**:
    - Реестр навыков по умолчанию загружает версию v2, сохраняя явные методы `vacancyRequirementExtractionV1()` и `vacancyRequirementExtractionV2()`.
    - В `config/ai.php` обновлена версия вакансионного экстрактора на `2.0.0` с возможностью переопределения через `AI_VACANCY_EXTRACTION_VERSION`.
-3. **Полиморфная валидация в `VacancyRequirementValidator.php`**:
-   - Реализован `validateV200()`: парсинг `candidate_requirements`, маппинг `requirement_type` в `dimension`, маппинг enum `confidence` (`HIGH`/`MEDIUM`/`LOW`), извлечение условий из `compensation` (`SALARY`), `work_format` (`WORK_FORMAT`), `location` (`LOCATION`).
+3. **Полиморфная валидация в `VacancyRequirementValidator.php` и устранение дефектов ревью**:
+   - Реализована строгая валидация `validateV200()`: обязательная проверка всех корневых полей схемы Draft 2020-12 (`quality_control`, `vacancy`, `security_flags` и др.), строгая типизация коллекций и валидация `extraction_status` (`SUCCESS`/`FAILED`).
+   - Устранены скрытые fallback-значения и молчаливые допущения: невалидные enum в `work_format` (`value`, `confidence`) и `compensation` (`confidence`) отклоняются со статусом `SCHEMA_INVALID`.
+   - Внедрена защита от галлюцинаций в синтезируемых требованиях: несовпадающие цитаты в `compensation`, `location` и `security_flags` отклоняются как галлюцинации (`SCHEMA_INVALID`).
    - Сохранена 100% обратная совместимость со схемой v1.0.0 (`validateV100()`).
    - Добавлена мультиязычная поддержка языковых уровней («на уровне B2», «B2-level») и маркеров важности во множественном числе («будут плюсом»).
-4. **Верификация**:
-   - `VacancyExtractionPrompt200Test`: 5/5 PASS (32 assertions).
+4. **Реестр навыков и конфигурация (`RuntimeSkillRegistry.php`, `config/ai.php`)**:
+   - Добавлена детерминированная нормализация версий навыков с выбросом `InvalidArgumentException` при неподдерживаемых версиях.
+   - Синхронизированы версии `career_extraction` в `config/ai.php` с манифестом навыка 1.1.0 (`career-fact-extraction/v1/skill.json`).
+5. **Синхронизация ветки PR #69 с актуальным `stage`**:
+   - Ветка `feature/m1.3-vacancy-extraction-prompt-2.0` синхронизирована с `origin/stage` (разрешен конфликт поправок в ADR-0026).
+   - Устранено дублирование 19 файлов из PR #66 в диффе PR #69 на GitHub; итоговый diff изолирован до канонического скоупа Vacancy Extraction 2.0.0.
+6. **Верификация**:
+   - `VacancyExtractionPrompt200Test`: 12/12 PASS (49 assertions, включая unit, negative, adversarial и edge cases).
    - `VacancyCoreTest`: 118/118 PASS (699 assertions, 1 skipped).
    - `CareerFactExtractionPrompt110Test`: 19/19 PASS (79 assertions).
    - `ApplicationDraftTest`: 24/24 PASS (285 assertions).
    - `PHPStan`: `[OK] No errors` across 155 files.
-   - `Laravel Pint`: `[PASS]` 251 files.
+   - `Laravel Pint`: `[PASS]` across all files.
    - PR Contract: `bash scripts/check-pr-contract.sh 69` — valid (`feature/m1.3-vacancy-extraction-prompt-2.0 → stage`).
 
 ---

@@ -76,8 +76,8 @@ return [
     'career_extraction' => [
         'model_policy' => 'low_cost_structured_extraction',
         'skill_id' => 'career.fact-extraction',
-        'skill_version' => '1.0.0',
-        'prompt_version' => '1.0.0',
+        'skill_version' => '1.1.0',
+        'prompt_version' => '1.1.0',
         'max_source_characters' => 30000,
     ],
     'vacancy_extraction' => [

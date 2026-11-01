@@ -100,7 +100,39 @@ class VacancyRequirementValidator
      */
     private function validateV200(array $output, string $sourceText): array
     {
-        $candidateRequirements = $output['candidate_requirements'] ?? null;
+        $requiredKeys = [
+            'schema_version', 'extraction_status', 'vacancy', 'candidate_requirements',
+            'responsibilities', 'technologies', 'employer_context', 'employment_conditions',
+            'compensation', 'location', 'work_format', 'schedule', 'other_information',
+            'security_flags', 'quality_control',
+        ];
+        foreach ($requiredKeys as $key) {
+            if (! array_key_exists($key, $output)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+        }
+
+        $status = $output['extraction_status'];
+        if (! is_string($status) || ! in_array($status, ['SUCCESS', 'FAILED'], true)) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        if ($status === 'FAILED') {
+            throw new VacancyOutputException(VacancyOutputException::SEMANTIC_REJECTED);
+        }
+
+        if (! is_array($output['vacancy'])
+            || ! is_array($output['responsibilities']) || ! array_is_list($output['responsibilities'])
+            || ! is_array($output['technologies']) || ! array_is_list($output['technologies'])
+            || ! is_array($output['employer_context']) || ! array_is_list($output['employer_context'])
+            || ! is_array($output['employment_conditions']) || ! array_is_list($output['employment_conditions'])
+            || ! is_array($output['schedule']) || ! array_is_list($output['schedule'])
+            || ! is_array($output['other_information']) || ! array_is_list($output['other_information'])
+            || ! is_array($output['security_flags']) || ! array_is_list($output['security_flags'])
+            || ! is_array($output['quality_control'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $candidateRequirements = $output['candidate_requirements'];
         if (! is_array($candidateRequirements) || ! array_is_list($candidateRequirements) || count($candidateRequirements) > 100) {
             throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
         }
@@ -153,86 +185,141 @@ class VacancyRequirementValidator
         }
 
         // Compensation (salary)
-        if (isset($output['compensation']) && is_array($output['compensation'])) {
-            $comp = $output['compensation'];
-            if (($comp['salary_present'] ?? false) === true && is_string($comp['source_excerpt'] ?? null)) {
-                $salExcerpt = trim($comp['source_excerpt']);
-                if ($salExcerpt !== '' && mb_strlen($salExcerpt) <= 2000 && str_contains($sourceText, $salExcerpt)) {
-                    $label = preg_match('/\b(?:зарплат\pL*)\b/iu', $salExcerpt) === 1 ? 'Зарплата' : 'Salary';
-                    $candidatesPool[] = [
-                        'label' => $label,
-                        'source_excerpt' => $salExcerpt,
-                        'importance' => 'UNCERTAIN',
-                        'normalized_value' => null,
-                        'is_synthesized' => true,
-                        'synthesized_dimension' => 'SALARY',
-                        'confidence' => match ($comp['confidence'] ?? null) {
-                            'HIGH' => 0.95,
-                            'MEDIUM' => 0.8,
-                            'LOW' => 0.5,
-                            default => is_numeric($comp['confidence'] ?? null) ? (float) $comp['confidence'] : 0.5,
-                        },
-                    ];
-                }
+        if (! is_array($output['compensation'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        $comp = $output['compensation'];
+        if (($comp['salary_present'] ?? false) === true) {
+            $salExcerptRaw = $comp['source_excerpt'] ?? null;
+            if (! is_string($salExcerptRaw) || trim($salExcerptRaw) === '') {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
             }
+            $salExcerpt = trim($salExcerptRaw);
+            if (mb_strlen($salExcerpt) > 2000 || ! str_contains($sourceText, $salExcerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $compConfidenceRaw = $comp['confidence'] ?? null;
+            $compConfidence = match ($compConfidenceRaw) {
+                'HIGH' => 0.95,
+                'MEDIUM' => 0.8,
+                'LOW' => 0.5,
+                default => is_numeric($compConfidenceRaw) ? (float) $compConfidenceRaw : null,
+            };
+            if ($compConfidence === null || $compConfidence < 0 || $compConfidence > 1) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $label = preg_match('/\b(?:зарплат\pL*)\b/iu', $salExcerpt) === 1 ? 'Зарплата' : 'Salary';
+            $candidatesPool[] = [
+                'label' => $label,
+                'source_excerpt' => $salExcerpt,
+                'importance' => 'UNCERTAIN',
+                'normalized_value' => null,
+                'is_synthesized' => true,
+                'synthesized_dimension' => 'SALARY',
+                'confidence' => $compConfidence,
+            ];
         }
 
         // Work format
-        if (isset($output['work_format']) && is_array($output['work_format'])) {
-            $wf = $output['work_format'];
-            $wfValue = $wf['value'] ?? null;
-            if (is_string($wfValue) && in_array($wfValue, ['REMOTE', 'HYBRID', 'OFFICE'], true) && is_string($wf['source_excerpt'] ?? null)) {
-                $wfExcerpt = trim($wf['source_excerpt']);
-                if ($wfExcerpt !== '' && mb_strlen($wfExcerpt) <= 2000 && str_contains($sourceText, $wfExcerpt)) {
-                    $label = match ($wfValue) {
-                        'REMOTE' => preg_match('/\b(?:удален\pL*)\b/iu', $wfExcerpt) === 1 ? 'Удаленная работа' : 'Remote work',
-                        'HYBRID' => preg_match('/\b(?:гибрид\pL*)\b/iu', $wfExcerpt) === 1 ? 'Гибридный формат' : 'Hybrid work',
-                        default => preg_match('/\b(?:офис\pL*)\b/iu', $wfExcerpt) === 1 ? 'Офис' : 'Office',
-                    };
-                    $candidatesPool[] = [
-                        'label' => $label,
-                        'source_excerpt' => $wfExcerpt,
-                        'importance' => 'MANDATORY',
-                        'normalized_value' => strtolower($wfValue),
-                        'is_synthesized' => true,
-                        'synthesized_dimension' => 'WORK_FORMAT',
-                        'confidence' => match ($wf['confidence'] ?? null) {
-                            'HIGH' => 0.95,
-                            'MEDIUM' => 0.8,
-                            'LOW' => 0.5,
-                            default => is_numeric($wf['confidence'] ?? null) ? (float) $wf['confidence'] : 0.8,
-                        },
-                    ];
-                }
+        if (! is_array($output['work_format'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        $wf = $output['work_format'];
+        $wfValue = $wf['value'] ?? null;
+        if (! is_string($wfValue) || ! in_array($wfValue, ['REMOTE', 'HYBRID', 'OFFICE', 'UNSPECIFIED'], true)) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        $wfConfidenceRaw = $wf['confidence'] ?? null;
+        $wfConfidence = match ($wfConfidenceRaw) {
+            'HIGH' => 0.95,
+            'MEDIUM' => 0.8,
+            'LOW' => 0.5,
+            default => is_numeric($wfConfidenceRaw) ? (float) $wfConfidenceRaw : null,
+        };
+        if ($wfConfidence === null || $wfConfidence < 0 || $wfConfidence > 1) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+
+        if (in_array($wfValue, ['REMOTE', 'HYBRID', 'OFFICE'], true)) {
+            $wfExcerptRaw = $wf['source_excerpt'] ?? null;
+            if (! is_string($wfExcerptRaw) || trim($wfExcerptRaw) === '') {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
             }
+            $wfExcerpt = trim($wfExcerptRaw);
+            if (mb_strlen($wfExcerpt) > 2000 || ! str_contains($sourceText, $wfExcerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $label = match ($wfValue) {
+                'REMOTE' => preg_match('/\b(?:удален\pL*)\b/iu', $wfExcerpt) === 1 ? 'Удаленная работа' : 'Remote work',
+                'HYBRID' => preg_match('/\b(?:гибрид\pL*)\b/iu', $wfExcerpt) === 1 ? 'Гибридный формат' : 'Hybrid work',
+                default => preg_match('/\b(?:офис\pL*)\b/iu', $wfExcerpt) === 1 ? 'Офис' : 'Office',
+            };
+            $candidatesPool[] = [
+                'label' => $label,
+                'source_excerpt' => $wfExcerpt,
+                'importance' => 'MANDATORY',
+                'normalized_value' => strtolower($wfValue),
+                'is_synthesized' => true,
+                'synthesized_dimension' => 'WORK_FORMAT',
+                'confidence' => $wfConfidence,
+            ];
         }
 
         // Location
-        if (isset($output['location']) && is_array($output['location'])) {
-            foreach ($output['location'] as $loc) {
-                if (is_array($loc) && is_string($loc['source_excerpt'] ?? null)) {
-                    $locExcerpt = trim($loc['source_excerpt']);
-                    if ($locExcerpt !== '' && mb_strlen($locExcerpt) <= 2000 && str_contains($sourceText, $locExcerpt)) {
-                        $normalizedLoc = ! empty($loc['city']) ? strtolower((string) $loc['city']) : (! empty($loc['country']) ? strtolower((string) $loc['country']) : null);
-                        $locLabel = ! empty($loc['city']) && str_contains($locExcerpt, (string) $loc['city'])
-                            ? (string) $loc['city']
-                            : (! empty($loc['country']) && str_contains($locExcerpt, (string) $loc['country']) ? (string) $loc['country'] : 'Location');
-                        $candidatesPool[] = [
-                            'label' => $locLabel,
-                            'source_excerpt' => $locExcerpt,
-                            'importance' => 'UNCERTAIN',
-                            'normalized_value' => $normalizedLoc,
-                            'is_synthesized' => true,
-                            'synthesized_dimension' => 'LOCATION',
-                            'confidence' => match ($loc['confidence'] ?? null) {
-                                'HIGH' => 0.95,
-                                'MEDIUM' => 0.8,
-                                'LOW' => 0.5,
-                                default => is_numeric($loc['confidence'] ?? null) ? (float) $loc['confidence'] : 0.8,
-                            },
-                        ];
-                    }
-                }
+        if (! is_array($output['location']) || ! array_is_list($output['location'])) {
+            throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+        }
+        foreach ($output['location'] as $loc) {
+            if (! is_array($loc)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            $locExcerptRaw = $loc['source_excerpt'] ?? null;
+            if (! is_string($locExcerptRaw) || trim($locExcerptRaw) === '') {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            $locExcerpt = trim($locExcerptRaw);
+            if (mb_strlen($locExcerpt) > 2000 || ! str_contains($sourceText, $locExcerpt)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $locConfidenceRaw = $loc['confidence'] ?? null;
+            $locConfidence = match ($locConfidenceRaw) {
+                'HIGH' => 0.95,
+                'MEDIUM' => 0.8,
+                'LOW' => 0.5,
+                null => 0.8,
+                default => is_numeric($locConfidenceRaw) ? (float) $locConfidenceRaw : null,
+            };
+            if ($locConfidence === null || $locConfidence < 0 || $locConfidence > 1) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+
+            $normalizedLoc = ! empty($loc['city']) ? strtolower((string) $loc['city']) : (! empty($loc['country']) ? strtolower((string) $loc['country']) : null);
+            $locLabel = ! empty($loc['city']) && str_contains($locExcerpt, (string) $loc['city'])
+                ? (string) $loc['city']
+                : (! empty($loc['country']) && str_contains($locExcerpt, (string) $loc['country']) ? (string) $loc['country'] : 'Location');
+            $candidatesPool[] = [
+                'label' => $locLabel,
+                'source_excerpt' => $locExcerpt,
+                'importance' => 'UNCERTAIN',
+                'normalized_value' => $normalizedLoc,
+                'is_synthesized' => true,
+                'synthesized_dimension' => 'LOCATION',
+                'confidence' => $locConfidence,
+            ];
+        }
+
+        // Security flags
+        foreach ($output['security_flags'] as $flag) {
+            if (! is_array($flag) || ! is_string($flag['flag_type'] ?? null) || ! is_string($flag['source_excerpt'] ?? null)) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
+            }
+            if (! str_contains($sourceText, $flag['source_excerpt'])) {
+                throw new VacancyOutputException(VacancyOutputException::SCHEMA_INVALID);
             }
         }
 
