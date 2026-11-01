@@ -11,9 +11,28 @@ class RuntimeSkillRegistry
         return $this->load('career-fact-extraction/v1', 'career.fact-extraction');
     }
 
-    public function vacancyRequirementExtraction(): RuntimeSkillDefinition
+    public function vacancyRequirementExtraction(?string $version = null): RuntimeSkillDefinition
+    {
+        $version ??= config('ai.vacancy_extraction.version', 'v2');
+        $normalized = strtolower(trim((string) $version));
+
+        $directory = match ($normalized) {
+            'v1', '1', '1.0.0', '1.0' => 'vacancy-requirement-extraction/v1',
+            'v2', '2', '2.0.0', '2.0' => 'vacancy-requirement-extraction/v2',
+            default => throw new \InvalidArgumentException("Unsupported vacancy extraction skill version [{$version}]."),
+        };
+
+        return $this->load($directory, 'vacancy.requirement-extraction');
+    }
+
+    public function vacancyRequirementExtractionV1(): RuntimeSkillDefinition
     {
         return $this->load('vacancy-requirement-extraction/v1', 'vacancy.requirement-extraction');
+    }
+
+    public function vacancyRequirementExtractionV2(): RuntimeSkillDefinition
+    {
+        return $this->load('vacancy-requirement-extraction/v2', 'vacancy.requirement-extraction');
     }
 
     public function applicationDraftGeneration(): RuntimeSkillDefinition
