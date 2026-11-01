@@ -8,7 +8,7 @@
 .application-shell.application-shell * { box-sizing: border-box; }
 .application-shell.application-shell [hidden], .application-shell.application-shell .icon-sprite { display: none !important; }
 html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padding-block: var(--cv-space-6); }
-.application-shell.application-shell { margin: 0; display: grid; grid-template-columns: 168px minmax(0,1fr); color: var(--cv-text-primary); background: var(--cv-surface-canvas); font: var(--cv-font-weight-regular) var(--cv-font-size-md)/var(--cv-font-line-height-body) var(--working-font); overflow-wrap: anywhere; }
+.application-shell.application-shell { margin: 0; display: grid; grid-template-columns: var(--sidebar-width, 260px) minmax(0,1fr); color: var(--cv-text-primary); background: var(--cv-surface-canvas); font: var(--cv-font-weight-regular) var(--cv-font-size-md)/var(--cv-font-line-height-body) var(--working-font); overflow-wrap: anywhere; transition: grid-template-columns 0.15s ease; }
 .application-shell.application-shell[data-modal-open='true'] { overflow: hidden; }
 .application-shell.application-shell p, .application-shell.application-shell h1, .application-shell.application-shell h2, .application-shell.application-shell h3, .application-shell.application-shell h4, .application-shell.application-shell h5, .application-shell.application-shell h6 { margin: 0; }
 .application-shell.application-shell h1, .application-shell.application-shell h2, .application-shell.application-shell h3, .application-shell.application-shell h4, .application-shell.application-shell h5, .application-shell.application-shell h6 { font: inherit; }
@@ -45,7 +45,34 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .skip-link { position: absolute; top: -100px; left: var(--cv-space-4); z-index: var(--cv-layer-modal); background: var(--cv-surface-elevated); padding: var(--cv-space-3); }
 .application-shell.application-shell .skip-link:focus { top: var(--cv-space-2); }
 .application-shell.application-shell .compact-navigation { display: contents; }
-.application-shell.application-shell .site-header { grid-column: 1 / -1; display: grid; grid-template-columns: 240px minmax(0,1fr) 224px auto; align-items: center; gap: var(--cv-space-6); padding: var(--cv-space-3) var(--cv-space-6); border-bottom: 1px solid var(--cv-border-subtle); background: var(--cv-surface-default); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.application-shell.application-shell .site-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--cv-space-4); padding: var(--cv-space-3) var(--cv-space-6); border-bottom: 1px solid var(--cv-border-subtle); background: var(--cv-surface-default); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.application-shell.application-shell .workspace-account-trigger,
+.application-shell.application-shell .account-trigger {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 4px 14px 4px 6px !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transform: none !important;
+}
+.application-shell.application-shell .workspace-account-trigger:hover,
+.application-shell.application-shell .account-trigger:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  transform: translateY(-0.5px) !important;
+}
+.application-shell.application-shell .account-trigger .account-avatar {
+  display: grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+}
 .application-shell.application-shell .brand { position: relative; padding-left: var(--cv-space-3); display: flex; align-items: center; gap: var(--cv-space-3); }
 .application-shell.application-shell .brand .brand-copy { display: flex; flex-direction: column; gap: 2px; }
 .application-shell.application-shell .vortex-swiss-logo { width: 22px; height: 22px; flex: none; display: grid; place-items: center; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -55,21 +82,11 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .reference-meta { display: grid; gap: var(--cv-space-1); }
 .application-shell.application-shell .reference-meta b { font-weight: var(--cv-font-weight-regular); }
 .application-shell.application-shell .scenario-picker { display: grid; gap: var(--cv-space-1); min-width: 0; }
-.application-shell.application-shell .account-trigger { display: flex; align-items: center; gap: var(--cv-space-2); padding: var(--cv-space-2); text-align: left; }
-.application-shell.application-shell .account-trigger strong, .application-shell.application-shell .account-trigger small { display: block; }
-.application-shell.application-shell .account-avatar { display: grid; place-items: center; width: var(--cv-space-8); height: var(--cv-space-8); flex: none; color: var(--cv-accent-primary); background: var(--cv-surface-elevated); border-radius: var(--cv-radius-pill); border: 1px solid var(--cv-border-subtle); }
-.application-shell.application-shell .account-trigger[aria-expanded='true'] { border-color: var(--cv-accent-primary); background: var(--cv-surface-elevated); }
 .application-shell.application-shell .global-menu { grid-column: 1; grid-row: 2; background: var(--cv-surface-sidebar); border-right: 1px solid var(--cv-border-subtle); padding: var(--cv-space-6) var(--cv-space-3); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .application-shell.application-shell .global-menu > summary { display: none; }
-.application-shell.application-shell .global-nav { display: grid; gap: var(--cv-space-2); position: sticky; top: var(--cv-space-6); }
-.application-shell.application-shell .global-nav > * { display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; gap: var(--cv-space-1) var(--cv-space-2); padding: var(--cv-space-3) var(--cv-space-2); border-radius: var(--cv-radius-md); transition: all 0.15s ease; }
-.application-shell.application-shell .global-nav > *:hover { background: var(--cv-surface-interactive); transform: translateX(2px); }
-.application-shell.application-shell .global-nav .icon { width: 24px; height: 24px; }
-.application-shell.application-shell .global-nav small { grid-column: 2; }
-.application-shell.application-shell .global-nav strong { background: var(--cv-surface-interactive); color: var(--cv-text-pure); font-weight: var(--cv-font-weight-semibold); border-left: 2px solid var(--cv-accent-primary); }
 .application-shell.application-shell .tablet-bar, .application-shell.application-shell .mobile-bar, .application-shell.application-shell .mobile-section.field, .application-shell.application-shell #close-list { display: none; }
-.application-shell.application-shell .layout { grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 272px minmax(0,1fr); min-height: calc(100vh - 90px); }
-.application-shell.application-shell .opportunity-list { padding: var(--cv-space-6) var(--cv-space-4); background: var(--cv-surface-default); border-right: 1px solid var(--cv-border-subtle); min-width: 0; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.application-shell.application-shell .layout { grid-column: 2; grid-row: 2; display: grid; grid-template-columns: var(--list-width, 272px) minmax(0,1fr); min-height: calc(100vh - 90px); position: relative; }
+.application-shell.application-shell .opportunity-list { position: relative; padding: var(--cv-space-6) var(--cv-space-4); background: var(--cv-surface-default); border-right: 1px solid var(--cv-border-subtle); min-width: 0; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 .application-shell.application-shell .pane-heading, .application-shell.application-shell .eyebrow-row, .application-shell.application-shell .section-heading, .application-shell.application-shell .review-head, .application-shell.application-shell .inspector-top { display: flex; align-items: center; justify-content: space-between; gap: var(--cv-space-3); flex-wrap: wrap; }
 .application-shell.application-shell .field { display: block; }
 .application-shell.application-shell .field input, .application-shell.application-shell .field textarea, .application-shell.application-shell .field select { margin-top: var(--cv-space-2); }
@@ -165,19 +182,6 @@ html:has(.application-shell) { background: var(--cv-surface-canvas); scroll-padd
 .application-shell.application-shell .inspector li { position: relative; padding-left: var(--cv-space-4); margin-top: var(--cv-space-4); }
 .application-shell.application-shell .inspector li::before { content: ''; position: absolute; left: -4px; top: var(--cv-space-2); width: 7px; height: 7px; border: 1px solid var(--cv-accent-secondary); background: var(--cv-surface-default); border-radius: var(--cv-radius-pill); }
 .application-shell.application-shell .inspector-note { margin-top: var(--cv-space-3); }
-.application-shell.application-shell .account-dialog { width: min(460px,calc(100vw - 32px)); position: fixed; inset: var(--account-top,80px) var(--cv-space-4) auto auto; margin: 0; max-height: calc(100dvh - var(--account-top,80px) - var(--cv-space-4)); padding: var(--cv-space-5); box-shadow: var(--cv-shadow-overlay); transform-origin: top right; border: 1px solid var(--cv-border-default); border-radius: var(--cv-radius-lg); color: var(--cv-text-primary); background: var(--cv-surface-default); overflow-y: auto; }
-.application-shell.application-shell .account-dialog::backdrop { background: var(--cv-surface-overlay); }
-.application-shell.application-shell .account-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--cv-space-3); position: sticky; top: calc(-1 * var(--cv-space-5)); margin: calc(-1 * var(--cv-space-5)) calc(-1 * var(--cv-space-5)) 0; background: var(--cv-surface-default); z-index: var(--cv-layer-sticky); padding: var(--cv-space-4) var(--cv-space-5); }
-.application-shell.application-shell .account-heading button { flex: none; }
-.application-shell.application-shell .account-heading h2 { margin-top: var(--cv-space-1); }
-.application-shell.application-shell .demo-profile { display: flex; align-items: center; gap: var(--cv-space-3); padding: var(--cv-space-4) 0; }
-.application-shell.application-shell .account-actions, .application-shell.application-shell .admin-utilities { display: grid; gap: var(--cv-space-2); margin-top: var(--cv-space-4); }
-.application-shell.application-shell .account-actions button, .application-shell.application-shell .admin-utilities button { display: grid; grid-template-columns: 24px minmax(0,1fr); gap: var(--cv-space-1) var(--cv-space-3); text-align: left; width: 100%; }
-.application-shell.application-shell .account-actions .icon, .application-shell.application-shell .admin-utilities button .icon { grid-row: span 2; color: var(--cv-accent-secondary); }
-.application-shell.application-shell .account-actions button span, .application-shell.application-shell .admin-utilities button span { grid-column: 2; }
-.application-shell.application-shell .admin-utilities h3 { display: flex; align-items: center; gap: var(--cv-space-2); }
-.application-shell.application-shell .account-feedback { padding: var(--cv-space-3); background: var(--cv-surface-elevated); margin: var(--cv-space-4) 0; border-radius: var(--cv-radius-md); }
-.application-shell.application-shell .session-actions button { display: inline-flex; align-items: center; gap: var(--cv-space-2); }
 .application-shell.application-shell .demo-mode { border-top: 1px solid var(--cv-border-subtle); padding-top: var(--cv-space-4); margin-top: var(--cv-space-4); }
 .application-shell.application-shell .reference-footer { grid-column: 1 / -1; display: flex; gap: var(--cv-space-4); flex-wrap: wrap; justify-content: space-between; padding: var(--cv-space-4) var(--cv-space-6); border-top: 1px solid var(--cv-border-subtle); }
 .application-shell.application-shell .reference-footer > span { max-width: 80ch; }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useId } from "react";
 import { api } from "./access-shell";
+import { SettingsLayout } from "./components/navigation/settings-layout";
 
 export type ModelOption = string | { id: string; name: string };
 
@@ -46,7 +47,7 @@ export type ConnectionTestResult = {
   recommendation?: string;
 };
 
-export default function AiProviderSettings() {
+export default function AiProviderSettings({ role = "user" }: { role?: string } = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -309,15 +310,13 @@ export default function AiProviderSettings() {
   const openaiConfig = settings.openai;
 
   return (
-    <div className="settings-shell">
-      <header className="settings-header">
-        <div>
-          <h1>Настройки AI-провайдеров</h1>
-          <p className="subtle">
-            Управление LLM-провайдерами (Google Gemini, OpenAI), ключами API (BYOK) и маршрутизацией запросов.
-          </p>
-        </div>
-      </header>
+    <SettingsLayout
+      currentTab="ai"
+      role={role}
+      title="Настройки AI-провайдеров"
+      description="Управление LLM-провайдерами (Google Gemini, OpenAI), ключами API (BYOK) и маршрутизацией запросов."
+    >
+      <div className="settings-shell">
 
       {feedback && (
         <div
@@ -672,5 +671,6 @@ export default function AiProviderSettings() {
         </div>
       </form>
     </div>
+    </SettingsLayout>
   );
 }
