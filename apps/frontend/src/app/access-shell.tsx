@@ -160,7 +160,7 @@ export default function AccessShell({ registrationRoute = false, destination = "
         : destination === "admin-settings"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell admin-settings-shell"><AdminSystemSettings /></main>
         : destination === "settings"
-        ? <main id="workspace-content" tabIndex={-1} className="career-shell settings-shell"><AiProviderSettings /></main>
+        ? <main id="workspace-content" tabIndex={-1} className="career-shell settings-shell"><AiProviderSettings role={user.role} /></main>
         : destination === "discover"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell discover-shell"><DiscoverInbox /></main>
         : destination === "today"
