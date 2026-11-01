@@ -6,6 +6,8 @@ import { api, ApiError } from "./access-shell";
 export type Fact = {
   id: string;
   fact_type: string;
+  fact_value?: string | null;
+  polarity?: "positive" | "negative" | string;
   assertion_original: string;
   assertion_approved: string | null;
   source_excerpt: string;
