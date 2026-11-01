@@ -105,7 +105,7 @@ export async function api(path: string, options: RequestInit = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export default function AccessShell({ registrationRoute = false, destination = "today" }: { registrationRoute?: boolean; destination?: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" | "discover" }) {
+export default function AccessShell({ registrationRoute = false, destination = "today", initialVacancyId }: { registrationRoute?: boolean; destination?: "today" | "career" | "diagnostics" | "vacancies" | "vacancy-import" | "admin-settings" | "settings" | "discover"; initialVacancyId?: string }) {
   const router = useRouter();
   const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
   const [mode, setMode] = useState<Mode>(registrationRoute ? "register" : "login");
@@ -154,7 +154,7 @@ export default function AccessShell({ registrationRoute = false, destination = "
     if ((destination === "diagnostics" || destination === "admin-settings") && user.role !== "admin") {
       return <main className="shell"><section className="status-card"><h1>Доступ запрещён</h1><p>{destination === "admin-settings" ? "Настройки системы доступны только администраторам." : "Диагностика доступна только администраторам."}</p><Link href="/">Вернуться к рабочему пространству</Link></section></main>;
     }
-    return <WorkspaceShell email={user.email} role={user.role} destination={destination} onSignOut={onSignOut}>
+    return <WorkspaceShell email={user.email} role={user.role} destination={destination} onSignOut={onSignOut} initialVacancyId={initialVacancyId}>
       {destination === "diagnostics"
         ? <main id="workspace-content" tabIndex={-1} className="career-shell diagnostics-shell"><Diagnostics /></main>
         : destination === "admin-settings"
